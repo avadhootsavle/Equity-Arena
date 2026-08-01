@@ -46,6 +46,16 @@ async function startDB() {
   } catch (err) {
     console.error('Error ensuring stockgame database:', err?.message || err);
   }
+
+  // Automatically run prisma db push and db seed
+  try {
+    console.log('🌱 Synchronizing Prisma database schema & seeding 15 stocks...');
+    execSync('npx prisma db push', { cwd: path.join(__dirname, '..'), stdio: 'inherit' });
+    execSync('npx prisma db seed', { cwd: path.join(__dirname, '..'), stdio: 'inherit' });
+    console.log('🎉 Database push and seed completed successfully!');
+  } catch (err) {
+    console.error('Error pushing schema/seed:', err?.message || err);
+  }
 }
 
 startDB();
