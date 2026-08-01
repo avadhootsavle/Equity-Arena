@@ -1,0 +1,32 @@
+// Environment-driven API base URL (Vite environment variable for Vercel deployment)
+const API_BASE_URL = import.meta.env.VITE_API_URL || '';
+
+export async function apiFetch(endpoint, options = {}) {
+  const token = localStorage.getItem('ignite_token');
+  
+  const headers = {
+    'Content-Type': 'application/json',
+    ...(options.headers || {})
+  };
+
+  if (token) {
+    headers['Authorization'] = `Bearer ${token}`;
+  }
+
+  const response = await fetch(`${API_BASE_URL}${endpoint}`, {
+    ...options,
+    headers
+  });
+
+  const data = await response.json().catch(() => ({}));
+
+  if (!response.ok) {
+    const errorMsg = data.error || data.message || `Request failed with status ${response.status}`;
+    const error = new Error(errorMsg);
+    error.status = response.status;
+    error.data = data;
+    throw error;
+  }
+
+  return data;
+}

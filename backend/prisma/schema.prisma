@@ -1,0 +1,114 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum Role {
+  ADMIN
+  TRADER
+}
+
+enum TransactionType {
+  BUY
+  SELL
+}
+
+model User {
+  id            String        @id @default(uuid())
+  name          String
+  email         String        @unique
+  passwordHash  String
+  role          Role          @default(TRADER)
+  walletBalance Float         @default(20000)
+  isTestAccount Boolean       @default(false)
+  createdAt     DateTime      @default(now())
+  updatedAt     DateTime      @updatedAt
+
+  holdings      Holding[]
+  transactions  Transaction[]
+}
+
+model Stock {
+  id           String         @id @default(uuid())
+  symbol       String         @unique
+  name         String
+  sector       String
+  currentPrice Float
+  basePrice    Float
+  createdAt    DateTime       @default(now())
+  updatedAt    DateTime       @updatedAt
+
+  priceHistories PriceHistory[]
+  holdings       Holding[]
+  transactions   Transaction[]
+  news           News[]
+}
+
+model PriceHistory {
+  id        String   @id @default(uuid())
+  stockId   String
+  price     Float
+  volume    Int      @default(10000)
+  timestamp DateTime @default(now())
+
+  stock     Stock    @relation(fields: [stockId], references: [id], onDelete: Cascade)
+}
+
+model Holding {
+  id          String   @id @default(uuid())
+  userId      String
+  stockId     String
+  quantity    Int
+  avgBuyPrice Float
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  stock       Stock    @relation(fields: [stockId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, stockId])
+}
+
+model Transaction {
+  id        String          @id @default(uuid())
+  userId    String
+  stockId   String
+  type      TransactionType
+  quantity  Int
+  price     Float
+  timestamp DateTime        @default(now())
+
+  user      User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+  stock     Stock           @relation(fields: [stockId], references: [id], onDelete: Cascade)
+}
+
+model News {
+  id        String   @id @default(uuid())
+  message   String
+  stockId   String?
+  timestamp DateTime @default(now())
+
+  stock     Stock?   @relation(fields: [stockId], references: [id], onDelete: SetNull)
+}
+
+model NewsTemplate {
+  id            String   @id @default(uuid())
+  headline      String
+  sector        String
+  effectPercent Float
+  notes         String
+  createdAt     DateTime @default(now())
+}
+
+model AdminAuditLog {
+  id        String   @id @default(uuid())
+  email     String
+  ipAddress String
+  status    String   // 'SUCCESS', 'FAILED', 'RATE_LIMITED'
+  details   String?
+  timestamp DateTime @default(now())
+}

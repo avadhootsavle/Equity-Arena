@@ -1,0 +1,22 @@
+# Dependencies
+node_modules/
+.pnpm-store/
+
+# Environment Variables & Secrets (Keep .env.example)
+.env
+.env.local
+.env.*.local
+!.env.example
+
+# Local Database & Cache
+.pgdata/
+*.sqlite
+*.db
+
+# Build Outputs & Logs
+dist/
+build/
+coverage/
+*.log
+logs/
+.DS_Store
