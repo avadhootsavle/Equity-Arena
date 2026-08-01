@@ -1,4 +1,4 @@
-// Environment-driven API base URL (Vite environment variable for Vercel deployment)
+// Environment-driven API base URL (Vite environment variable for Vercel deployment & ngrok backend tunneling)
 const API_BASE_URL = import.meta.env.VITE_API_URL || '';
 
 export async function apiFetch(endpoint, options = {}) {
@@ -6,6 +6,7 @@ export async function apiFetch(endpoint, options = {}) {
   
   const headers = {
     'Content-Type': 'application/json',
+    'ngrok-skip-browser-warning': '1', // Bypass ngrok free tier browser warning interstitial page
     ...(options.headers || {})
   };
 
