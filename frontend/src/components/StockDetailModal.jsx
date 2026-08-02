@@ -88,47 +88,64 @@ export function StockDetailModal({ stock, userWallet, userHolding, isOpen, onClo
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/85 backdrop-blur-md animate-fadeIn overflow-y-auto">
-      <div className="w-full max-w-3xl glass-panel p-6 rounded-2xl border border-slate-800 shadow-2xl relative space-y-6 my-8">
-        
-        {/* Close Button */}
-        <button
-          onClick={onClose}
-          className="absolute top-4 right-4 p-2 bg-slate-800 hover:bg-slate-700 text-slate-400 hover:text-white rounded-xl transition-colors"
-        >
-          <X className="w-5 h-5" />
-        </button>
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/85 backdrop-blur-md animate-fadeIn">
+      <div className="w-full max-w-3xl max-h-[90vh] glass-panel rounded-2xl border border-slate-800 shadow-2xl relative flex flex-col overflow-hidden">
 
-        {/* Stock Detail Header */}
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-800/80 pb-4 pr-8">
-          <div>
-            <div className="flex items-center gap-2.5">
-              <span className="text-2xl font-extrabold text-white font-mono">{stock.symbol}</span>
-              <span className="px-2.5 py-0.5 rounded-md text-xs font-bold bg-slate-800 text-slate-300 border border-slate-700">
-                {stock.sector}
-              </span>
+        {/* Sticky header: title, price, and the close button live here and never scroll away,
+            regardless of how tall the content below is or how much vertical space the
+            browser's own toolbar takes up (this is what was hiding the X button before). */}
+        <div className="flex-shrink-0 flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-800/80 px-6 pt-5 pb-4">
+          <div className="flex items-start justify-between gap-3 sm:block">
+            <div>
+              <div className="flex items-center gap-2.5">
+                <span className="text-2xl font-extrabold text-white font-mono">{stock.symbol}</span>
+                <span className="px-2.5 py-0.5 rounded-md text-xs font-bold bg-slate-800 text-slate-300 border border-slate-700">
+                  {stock.sector}
+                </span>
+              </div>
+              <h2 className="text-sm font-semibold text-slate-300 mt-0.5">{stock.name}</h2>
             </div>
-            <h2 className="text-sm font-semibold text-slate-300 mt-0.5">{stock.name}</h2>
+
+            {/* Close button, mobile position: next to the title so it's reachable with one thumb */}
+            <button
+              onClick={onClose}
+              className="sm:hidden flex-shrink-0 p-2 bg-slate-800 hover:bg-slate-700 text-slate-400 hover:text-white rounded-xl transition-colors"
+            >
+              <X className="w-5 h-5" />
+            </button>
           </div>
 
-          <div className="flex items-baseline gap-3">
-            <div>
-              <div className="text-[10px] uppercase font-bold text-slate-400">Current Market Price</div>
-              <div className="text-3xl font-extrabold font-mono text-white">
-                {currentPrice.toFixed(2)} <span className="text-lg font-bold text-emerald-400">IC</span>
+          <div className="flex items-center gap-3">
+            <div className="flex items-baseline gap-3">
+              <div>
+                <div className="text-[10px] uppercase font-bold text-slate-400">Current Market Price</div>
+                <div className="text-3xl font-extrabold font-mono text-white">
+                  {currentPrice.toFixed(2)} <span className="text-lg font-bold text-emerald-400">IC</span>
+                </div>
+              </div>
+
+              <div className={`px-2.5 py-1 rounded-lg text-xs font-bold font-mono border flex items-center gap-1 ${
+                isPositive
+                  ? 'bg-emerald-500/15 text-emerald-400 border-emerald-500/30'
+                  : 'bg-rose-500/15 text-rose-400 border-rose-500/30'
+              }`}>
+                {isPositive ? <TrendingUp className="w-3.5 h-3.5" /> : <TrendingDown className="w-3.5 h-3.5" />}
+                <span>{isPositive ? '+' : ''}{stock.percentChange.toFixed(2)}%</span>
               </div>
             </div>
 
-            <div className={`px-2.5 py-1 rounded-lg text-xs font-bold font-mono border flex items-center gap-1 ${
-              isPositive
-                ? 'bg-emerald-500/15 text-emerald-400 border-emerald-500/30'
-                : 'bg-rose-500/15 text-rose-400 border-rose-500/30'
-            }`}>
-              {isPositive ? <TrendingUp className="w-3.5 h-3.5" /> : <TrendingDown className="w-3.5 h-3.5" />}
-              <span>{isPositive ? '+' : ''}{stock.percentChange.toFixed(2)}%</span>
-            </div>
+            {/* Close button, desktop position: next to the price */}
+            <button
+              onClick={onClose}
+              className="hidden sm:inline-flex flex-shrink-0 p-2 bg-slate-800 hover:bg-slate-700 text-slate-400 hover:text-white rounded-xl transition-colors"
+            >
+              <X className="w-5 h-5" />
+            </button>
           </div>
         </div>
+
+        {/* Scrollable body: everything below can scroll freely, header above always stays put */}
+        <div className="overflow-y-auto px-6 py-6 space-y-6">
 
         {/* Analyst Technical Data Badges */}
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
@@ -328,6 +345,9 @@ export function StockDetailModal({ stock, userWallet, userHolding, isOpen, onClo
             </button>
           </form>
         </div>
+
+        </div>
+        {/* end scrollable body */}
 
       </div>
     </div>

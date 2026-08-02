@@ -242,48 +242,73 @@ export function TraderDashboard() {
       />
 
       <header className="border-b border-slate-800/80 bg-slate-950/80 backdrop-blur-md sticky top-0 z-40">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3 flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <div className="p-2 bg-emerald-500/10 border border-emerald-500/30 rounded-xl text-emerald-400">
-              <TrendingUp className="w-5 h-5" />
-            </div>
-            <div>
-              <h1 className="text-base font-bold text-white tracking-wide">EQUITY ARENA TRADER PORTAL</h1>
-              <p className="text-xs text-slate-400">Continuous Real-Time India Stock Exchange</p>
-            </div>
-          </div>
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3">
 
-          <div className="flex items-center gap-4">
-            <div className={`hidden sm:flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-semibold border ${
-              isConnected
-                ? 'bg-emerald-500/10 border-emerald-500/30 text-emerald-400'
-                : 'bg-rose-500/10 border-rose-500/30 text-rose-400'
-            }`}>
-              <Radio className={`w-3.5 h-3.5 ${isConnected ? 'animate-pulse' : ''}`} />
-              <span>{isConnected ? 'Market Stream Live' : 'Disconnected'}</span>
-            </div>
-
-            <div className="px-4 py-1.5 bg-emerald-500/10 border border-emerald-500/30 rounded-xl flex items-center gap-2">
-              <Coins className="w-4 h-4 text-emerald-400" />
+          {/* Mobile: simplified header — just wallet balance and logout, per design request */}
+          <div className="flex sm:hidden items-center justify-between gap-3">
+            <div className="px-3 py-1.5 bg-emerald-500/10 border border-emerald-500/30 rounded-xl flex items-center gap-2">
+              <Coins className="w-4 h-4 text-emerald-400 flex-shrink-0" />
               <div>
                 <div className="text-[10px] uppercase font-bold text-slate-400">Wallet Balance</div>
-                <div className="text-sm font-extrabold font-mono text-emerald-400">
+                <div className="text-sm font-extrabold font-mono text-emerald-400 whitespace-nowrap">
                   {portfolio.walletBalance.toLocaleString('en-US', { minimumFractionDigits: 2 })} <span className="text-xs">IC</span>
                 </div>
               </div>
             </div>
 
-            <div className="h-6 w-px bg-slate-800 hidden sm:block" />
+            <button
+              onClick={logout}
+              className="flex-shrink-0 flex items-center gap-1.5 px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-semibold rounded-lg transition-all border border-slate-700"
+            >
+              <LogOut className="w-3.5 h-3.5" />
+              Logout
+            </button>
+          </div>
 
-            <div className="flex items-center gap-3">
-              <span className="text-xs font-medium text-slate-300 hidden md:inline">{user?.email}</span>
-              <button
-                onClick={logout}
-                className="flex items-center gap-1.5 px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-semibold rounded-lg transition-all border border-slate-700"
-              >
-                <LogOut className="w-3.5 h-3.5" />
-                Logout
-              </button>
+          {/* Desktop: full header with branding, connection status, wallet, and account info */}
+          <div className="hidden sm:flex items-center justify-between gap-3">
+            <div className="flex items-center gap-3 min-w-0">
+              <div className="flex-shrink-0 p-2 bg-emerald-500/10 border border-emerald-500/30 rounded-xl text-emerald-400">
+                <TrendingUp className="w-5 h-5" />
+              </div>
+              <div className="min-w-0">
+                <h1 className="text-base font-bold text-white tracking-wide whitespace-nowrap">EQUITY ARENA</h1>
+                <p className="text-xs text-slate-400 whitespace-nowrap">Real-Time India Stock Exchange</p>
+              </div>
+            </div>
+
+            <div className="flex items-center gap-4">
+              <div className={`flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-semibold border ${
+                isConnected
+                  ? 'bg-emerald-500/10 border-emerald-500/30 text-emerald-400'
+                  : 'bg-rose-500/10 border-rose-500/30 text-rose-400'
+              }`}>
+                <Radio className={`w-3.5 h-3.5 ${isConnected ? 'animate-pulse' : ''}`} />
+                <span>{isConnected ? 'Market Stream Live' : 'Disconnected'}</span>
+              </div>
+
+              <div className="px-4 py-1.5 bg-emerald-500/10 border border-emerald-500/30 rounded-xl flex items-center gap-2">
+                <Coins className="w-4 h-4 text-emerald-400 flex-shrink-0" />
+                <div>
+                  <div className="text-[10px] uppercase font-bold text-slate-400">Wallet Balance</div>
+                  <div className="text-sm font-extrabold font-mono text-emerald-400 whitespace-nowrap">
+                    {portfolio.walletBalance.toLocaleString('en-US', { minimumFractionDigits: 2 })} <span className="text-xs">IC</span>
+                  </div>
+                </div>
+              </div>
+
+              <div className="h-6 w-px bg-slate-800" />
+
+              <div className="flex items-center gap-3">
+                <span className="text-xs font-medium text-slate-300 hidden md:inline">{user?.email}</span>
+                <button
+                  onClick={logout}
+                  className="flex items-center gap-1.5 px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-semibold rounded-lg transition-all border border-slate-700"
+                >
+                  <LogOut className="w-3.5 h-3.5" />
+                  Logout
+                </button>
+              </div>
             </div>
           </div>
         </div>
