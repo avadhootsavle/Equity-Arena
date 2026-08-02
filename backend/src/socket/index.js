@@ -6,15 +6,14 @@ const prisma = new PrismaClient();
 let io = null;
 
 function initSocket(server) {
-  const allowedOrigins = process.env.CLIENT_URL
-    ? [process.env.CLIENT_URL, 'http://localhost:5173', 'http://localhost:3000']
-    : '*';
-
   io = new Server(server, {
     cors: {
-      origin: allowedOrigins,
+      origin: (origin, callback) => {
+        callback(null, true);
+      },
       methods: ['GET', 'POST'],
-      credentials: true
+      credentials: true,
+      allowedHeaders: ['ngrok-skip-browser-warning', 'Authorization', 'Content-Type']
     }
   });
 
