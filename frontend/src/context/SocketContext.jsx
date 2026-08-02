@@ -4,7 +4,7 @@ import { useAuth } from './AuthContext';
 
 const SocketContext = createContext(null);
 
-// Environment-driven Socket server URL (VITE_API_URL for production Vercel/Render connection)
+// Environment-driven Socket server URL (VITE_API_URL for production Vercel/Render/ngrok connection)
 const SOCKET_SERVER_URL = import.meta.env.VITE_API_URL || '/';
 
 export function SocketProvider({ children }) {
@@ -24,6 +24,9 @@ export function SocketProvider({ children }) {
 
     const socketInstance = io(SOCKET_SERVER_URL, {
       auth: { token },
+      extraHeaders: {
+        'ngrok-skip-browser-warning': '1'
+      },
       transports: ['websocket', 'polling']
     });
 
