@@ -2,7 +2,7 @@
 
 ---
 
-## 📋 Requirement's
+## Requirement's
 
 Pls Install this :-
 1. **Node.js** (v18.x or higher) — [Download Node.js](https://nodejs.org/)
