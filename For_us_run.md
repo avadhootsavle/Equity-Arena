@@ -69,19 +69,12 @@ Server running on port 5001
    cd frontend
    npm install
    ```
-
-2. Create a `.env` file inside the `frontend` directory:
-   ```env
-   VITE_API_URL=""
-   ```
-   *(Leaving `VITE_API_URL=""` empty tells Vite to automatically route requests to `http://localhost:5001` via local proxy).*
-
-3. Start the Vite development server:
+2. Start the Vite development server:
    ```bash
    npm run dev
    ```
 
-4. Open your web browser and go to:
+3. Open your web browser and go to:
    ```text
    http://localhost:5173
    ```
