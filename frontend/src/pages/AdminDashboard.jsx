@@ -144,7 +144,7 @@ export function AdminDashboard() {
       });
 
       showToast('Custom news broadcasted to all connected traders!');
-      setRecentNews((prev) => [data.news, ...prev.slice(0, 9)]);
+      setRecentNews((prev) => [data.news, ...(Array.isArray(prev) ? prev.slice(0, 9) : [])]);
       setNewsMessage('');
       setSelectedStockId('');
     } catch (err) {

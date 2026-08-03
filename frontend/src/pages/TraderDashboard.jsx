@@ -152,9 +152,10 @@ export function TraderDashboard() {
     setLoadingNews(true);
     try {
       const data = await apiFetch('/news');
-      setNewsFeed(data);
+      setNewsFeed(Array.isArray(data) ? data : []);
     } catch (err) {
       console.error('Fetch news history error:', err);
+      setNewsFeed([]);
     } finally {
       setLoadingNews(false);
     }
@@ -209,7 +210,7 @@ export function TraderDashboard() {
 
     const handleNewsBroadcast = (news) => {
       setActiveNewsToast(news);
-      setNewsFeed((prev) => [news, ...prev]);
+      setNewsFeed((prev) => Array.isArray(prev) ? [news, ...prev] : [news]);
     };
 
     const handlePortfolioUpdate = (updatedPortfolio) => {
@@ -311,7 +312,7 @@ export function TraderDashboard() {
         setActiveTab={setActiveTab}
         walletBalance={portfolio.availableWalletBalance !== undefined ? portfolio.availableWalletBalance : portfolio.walletBalance}
         lockedFunds={portfolio.lockedFunds || 0}
-        newsCount={newsFeed.length}
+        newsCount={Array.isArray(newsFeed) ? newsFeed.length : 0}
       />
 
       <LiveTickerMarquee stocks={stocks} onSelectStock={handleOpenDetail} />
@@ -610,7 +611,7 @@ export function TraderDashboard() {
                 </div>
 
                 <div className="space-y-2.5 max-h-80 overflow-y-auto pr-1">
-                  {newsFeed.length === 0 ? (
+                  {(!Array.isArray(newsFeed) || newsFeed.length === 0) ? (
                     <div className="text-center py-6 theme-text-dim text-xs font-mono italic">
                       No analyst broadcasts recorded yet.
                     </div>
@@ -707,7 +708,7 @@ export function TraderDashboard() {
                   <NewsFeedSkeleton key={i} />
                 ))}
               </div>
-            ) : newsFeed.length === 0 ? (
+            ) : (!Array.isArray(newsFeed) || newsFeed.length === 0) ? (
               <div className="py-16 text-center theme-text-dim text-xs font-mono italic">
                 No market news broadcasts recorded yet.
               </div>
