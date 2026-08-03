@@ -317,14 +317,21 @@ export function TraderDashboard() {
 
       <LiveTickerMarquee stocks={stocks} onSelectStock={handleOpenDetail} />
 
-      <StockDetailModal
-        stock={selectedStock}
-        userWallet={portfolio.walletBalance}
-        userHolding={selectedStock ? getHoldingForStock(selectedStock.id) : null}
-        isOpen={isDetailModalOpen}
-        onClose={() => setIsDetailModalOpen(false)}
-        onSuccess={handleTradeSuccess}
-      />
+      {(() => {
+        const liveSelectedStock = selectedStock
+          ? (stocks.find((s) => s.id === selectedStock.id) || selectedStock)
+          : null;
+        return (
+          <StockDetailModal
+            stock={liveSelectedStock}
+            userWallet={portfolio.walletBalance}
+            userHolding={liveSelectedStock ? getHoldingForStock(liveSelectedStock.id) : null}
+            isOpen={isDetailModalOpen}
+            onClose={() => setIsDetailModalOpen(false)}
+            onSuccess={handleTradeSuccess}
+          />
+        );
+      })()}
 
       <main className="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-6 space-y-6">
 

@@ -1,5 +1,5 @@
 const { PrismaClient } = require('@prisma/client');
-const { getIO } = require('../socket');
+const { getIo } = require('../socket');
 
 const prisma = new PrismaClient();
 
@@ -48,9 +48,9 @@ async function getCurrentSession() {
 
 function safeEmitSocket(eventName, data) {
   try {
-    const io = getIO();
-    if (io && typeof io.emit === 'function') {
-      io.emit(eventName, data);
+    const io = getIo();
+    if (io) {
+      io.to('traders').emit(eventName, data);
     }
   } catch (err) {
     // Silent fallback when running outside socket server context
