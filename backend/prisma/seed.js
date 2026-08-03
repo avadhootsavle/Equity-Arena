@@ -96,8 +96,8 @@ const ANALYST_NEWS_TEMPLATES = [
   }
 ];
 
-function getRandomPrice5to15() {
-  const val = Math.random() * (15 - 5) + 5;
+function getRandomPrice40to80() {
+  const val = Math.random() * (80 - 40) + 40;
   return Math.round(val * 100) / 100;
 }
 
@@ -151,14 +151,14 @@ async function main() {
 
   for (let i = 0; i < INDIA_SECTOR_STOCKS.length; i++) {
     const item = INDIA_SECTOR_STOCKS[i];
-    const basePrice = getRandomPrice5to15();
+    const basePrice = getRandomPrice40to80();
 
     const histories = [];
     let runningPrice = basePrice * 0.85;
 
     for (let day = 30; day >= 8; day--) {
       const dailyDrift = (Math.random() - 0.48) * 0.05;
-      runningPrice = Math.max(1.0, Math.round(runningPrice * (1 + dailyDrift) * 100) / 100);
+      runningPrice = Math.min(99.00, Math.max(1.0, Math.round(runningPrice * (1 + dailyDrift) * 100) / 100));
 
       histories.push({
         price: runningPrice,
@@ -169,7 +169,7 @@ async function main() {
 
     for (let hour = 7 * 24; hour >= 24; hour -= 3) {
       const hourlyDrift = (Math.random() - 0.49) * 0.02;
-      runningPrice = Math.max(1.0, Math.round(runningPrice * (1 + hourlyDrift) * 100) / 100);
+      runningPrice = Math.min(99.00, Math.max(1.0, Math.round(runningPrice * (1 + hourlyDrift) * 100) / 100));
 
       histories.push({
         price: runningPrice,
@@ -180,7 +180,7 @@ async function main() {
 
     for (let min = 24 * 60; min >= 0; min -= 15) {
       const tickDrift = (Math.random() - 0.49) * 0.01;
-      runningPrice = Math.max(1.0, Math.round(runningPrice * (1 + tickDrift) * 100) / 100);
+      runningPrice = Math.min(99.00, Math.max(1.0, Math.round(runningPrice * (1 + tickDrift) * 100) / 100));
       if (min === 0) runningPrice = basePrice;
 
       histories.push({

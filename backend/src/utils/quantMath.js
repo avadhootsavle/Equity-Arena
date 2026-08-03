@@ -1,6 +1,7 @@
 /**
  * Quant Math Utilities for Realistic Stock Market Simulation
  * Box-Muller Normal Distribution, Geometric Brownian Motion (GBM), and Sector Correlation Matrix
+ * Phase 20b: 40-80 IC Range, 99 IC Hard Ceiling, Dynamic Macro Magnitudes
  */
 
 /**
@@ -17,7 +18,6 @@ function randomNormal(mean = 0, stdDev = 1) {
 
 /**
  * Combines stock-specific normal noise with sector-wide normal noise using correlation coefficient rho
- * Combined Z = sqrt(1 - rho^2) * Z_stock + rho * Z_sector
  */
 function combineSectorNoise(stockNoise, sectorNoise, rho = 0.50) {
   const stockWeight = Math.sqrt(Math.max(0, 1 - Math.pow(rho, 2)));
@@ -27,10 +27,10 @@ function combineSectorNoise(stockNoise, sectorNoise, rho = 0.50) {
 /**
  * Calculates next tick price using Geometric Brownian Motion (GBM) formula:
  * S_{t+dt} = S_t * exp((drift - 0.5 * volatility^2) * dt + volatility * sqrt(dt) * Z)
- * Calibrated specifically for 5 to 15 IC stock price ranges.
+ * Calibrated for 40 to 80 IC starting range with a strict 99 IC ceiling.
  */
 function calculateGBMPrice({ currentPrice, drift, volatility, dt = 0.008, combinedNoise }) {
-  if (isNaN(currentPrice) || currentPrice <= 0) return 10.0;
+  if (isNaN(currentPrice) || currentPrice <= 0) return 60.0;
   
   const adjustedVolatility = Math.max(0.05, Math.min(0.50, volatility || 0.15));
   const safeDrift = isNaN(drift) ? 0 : Math.max(-0.10, Math.min(0.10, drift));
@@ -43,33 +43,41 @@ function calculateGBMPrice({ currentPrice, drift, volatility, dt = 0.008, combin
     return currentPrice;
   }
 
-  // Hard floor bound clamp: stock price never drops below 1.00 IC
-  return Math.max(1.00, Math.round(rawPrice * 100) / 100);
+  // Hard ceiling at 99.00 IC, floor at 1.00 IC
+  const clampedPrice = Math.min(99.00, Math.max(1.00, rawPrice));
+  return Math.round(clampedPrice * 100) / 100;
 }
 
 /**
- * Phase 20: Calculates 3-minute Macro Move target (10% to 30% directional move)
+ * Phase 20b: Calculates Macro Move target (10% to 30% directional move)
  * Direction is weighted by mean reversion pull relative to basePrice
+ * Capped strictly at 99.00 IC max.
  */
 function calculateMacroMoveTarget({ currentPrice, basePrice }) {
-  const safeCurrent = Math.max(1.00, currentPrice || 10.0);
-  const safeBase = Math.max(1.00, basePrice || 10.0);
+  const safeCurrent = Math.min(99.00, Math.max(1.00, currentPrice || 60.0));
+  const safeBase = Math.min(99.00, Math.max(1.00, basePrice || 60.0));
 
   const priceDeviation = (safeCurrent - safeBase) / safeBase;
   const clampDev = Math.max(-1.0, Math.min(1.0, priceDeviation));
 
-  // Base probability of downward move is 50%, weighted up to 80% if stock has run up high
-  const pDown = 0.50 + 0.30 * clampDev;
+  // Base probability of downward move is 50%, weighted up to 85% if stock has run up near ceiling (e.g. > 80 IC)
+  let pDown = 0.50 + 0.35 * clampDev;
+  if (safeCurrent >= 85) {
+    pDown = 0.90; // Extremely high downward pull near 99 IC ceiling
+  }
+
   const isDown = Math.random() < pDown;
 
-  // Magnitude between 10% and 30%
+  // Freshly randomized magnitude between 10% and 30% per cycle
   const magnitude = 0.10 + Math.random() * 0.20;
 
-  const rawTarget = isDown
+  let rawTarget = isDown
     ? safeCurrent * (1 - magnitude)
     : safeCurrent * (1 + magnitude);
 
-  const targetPrice = Math.max(1.00, Math.round(rawTarget * 100) / 100);
+  // Strict clamp at 99.00 IC max and 1.00 IC floor
+  rawTarget = Math.min(99.00, Math.max(1.00, rawTarget));
+  const targetPrice = Math.round(rawTarget * 100) / 100;
 
   return {
     isDown,

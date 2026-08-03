@@ -126,8 +126,8 @@ router.post('/trade/buy', authenticateToken, tradeRateLimiter, async (req, res) 
     const userId = req.user.userId;
 
     const parsedQty = parseInt(quantity, 10);
-    if (!stockId || isNaN(parsedQty) || parsedQty <= 0 || parsedQty > 1000000) {
-      return res.status(400).json({ error: 'Quantity must be a positive integer between 1 and 1,000,000' });
+    if (!stockId || isNaN(parsedQty) || parsedQty <= 0) {
+      return res.status(400).json({ error: 'Quantity must be a positive integer' });
     }
 
     const stock = await prisma.stock.findUnique({ where: { id: stockId } });
@@ -226,8 +226,8 @@ router.post('/trade/sell', authenticateToken, tradeRateLimiter, async (req, res)
     const userId = req.user.userId;
 
     const parsedQty = parseInt(quantity, 10);
-    if (!stockId || isNaN(parsedQty) || parsedQty <= 0 || parsedQty > 1000000) {
-      return res.status(400).json({ error: 'Quantity must be a positive integer between 1 and 1,000,000' });
+    if (!stockId || isNaN(parsedQty) || parsedQty <= 0) {
+      return res.status(400).json({ error: 'Quantity must be a positive integer' });
     }
 
     const stock = await prisma.stock.findUnique({ where: { id: stockId } });
