@@ -1,18 +1,16 @@
-# 🚀 How to Run Equity Arena Locally
-
-A step-by-step guide for running the **Equity Arena** live stock trading simulation platform on your local computer.
+# Run Equity Arena Locally for UI/UX
 
 ---
 
-## 📋 Prerequisites
+## 📋 Requirement's
 
-Before starting, make sure you have the following installed:
+Pls Install this :-
 1. **Node.js** (v18.x or higher) — [Download Node.js](https://nodejs.org/)
 2. **PostgreSQL** — [Download PostgreSQL](https://www.postgresql.org/download/)
 
 ---
 
-## ⚡ Quick 5-Step Startup Guide
+## Now to start Running project
 
 ### Step 1: Clone the Repository
 Open your terminal and run:
@@ -23,15 +21,15 @@ cd Equity-Arena
 
 ---
 
-### Step 2: Set Up Backend Environment & Database
+### Step 2: Run Backend 
 
-1. Navigate to the `backend` folder and install dependencies:
+1. Navigate to the `backend` folder and install the node modules:
    ```bash
    cd backend
    npm install
    ```
 
-2. Create a `.env` file inside the `backend` directory:
+2. Create a `.env` file inside the `backend` directory **Very Important**:
    ```env
    PORT=5001
    DATABASE_URL="postgresql://postgres:postgres@localhost:5432/stockgame?schema=public"
@@ -56,7 +54,6 @@ npm run dev
 ```
 You should see:
 ```text
-📈 Dual-Layer Quant Market Ticker started (Continuous GBM + 3-Min Staggered 10-30% Macro Swings)
 Server running on port 5001
 ```
 
@@ -80,31 +77,3 @@ Server running on port 5001
    ```
 
 ---
-
-## 🔑 User Credentials & Access
-
-### 1. Trader Access
-- You can **Sign Up** a new account directly on the login screen.
-- Every new trader gets **20,000 IC** (Ignite Coins) starting wallet balance.
-
-### 2. Admin Panel Access
-- **Admin Email**: `admin@test.com`
-- **Admin Password**: `admin123`
-- **How to Trigger Admin Login**:
-  - Go to `http://localhost:5173/login`.
-  - Click the **"EQUITY ARENA"** title header badge **5 times rapidly**.
-  - The secret Admin Login modal will pop up on your screen!
-
----
-
-## 🎮 Features to Try Out
-- **Live Stock Exchange Grid**: Real-time prices updating every 1.5 seconds with live green/red price flashes and sparkline charts.
-- **Limit Orders**: Set target buy/sell prices; orders execute automatically when market price matches your target.
-- **3-Hour Game Session Countdown**: Synced countdown timer in header; auto-liquidates holdings to cash 5 minutes before session end.
-- **Analyst Wire News Takeover**: Breaking market news toasts with real-time UI notification chimes.
-- **Dark / Light Theme Toggle**: Click the Sun/Moon icon in the header bar to switch themes.
-- **Audio Sound Mute Toggle**: Click the Speaker icon in the header to toggle news notification sounds.
-
----
-
-Happy Trading! 📈✨
