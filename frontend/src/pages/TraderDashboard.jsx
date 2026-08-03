@@ -15,7 +15,7 @@ import {
   Newspaper, RefreshCw, Clock, Ban, Flame, Zap, Shield
 } from 'lucide-react';
 
-const StockCard = memo(({ stock, onOpenDetail, priceFlash, isFeatured }) => {
+const StockCard = memo(({ stock, onOpenDetail, priceFlash }) => {
   const percentChange = stock && stock.percentChange !== undefined && stock.percentChange !== null ? stock.percentChange : 0;
   const isPositive = percentChange >= 0;
   const flashClass = priceFlash === 'up' ? 'animate-flash-up' : priceFlash === 'down' ? 'animate-flash-down' : '';
@@ -23,9 +23,7 @@ const StockCard = memo(({ stock, onOpenDetail, priceFlash, isFeatured }) => {
   return (
     <div
       onClick={() => onOpenDetail(stock)}
-      className={`theme-bg-card theme-border p-4 rounded-[6px] border hover:border-[#D4A017] transition-all cursor-pointer shadow-md group flex flex-col justify-between active:scale-[0.99] ${
-        isFeatured ? 'col-span-1 md:col-span-2 border-[#D4A017]/40 bg-gradient-to-br from-[var(--bg-card)] to-[#D4A017]/5' : ''
-      } ${flashClass}`}
+      className={`theme-bg-card theme-border p-4 rounded-[6px] border hover:border-[#D4A017] transition-all cursor-pointer shadow-md group flex flex-col justify-between active:scale-[0.99] ${flashClass}`}
     >
       <div>
         <div className="flex items-start justify-between">
@@ -34,11 +32,6 @@ const StockCard = memo(({ stock, onOpenDetail, priceFlash, isFeatured }) => {
               <span className="text-base font-bold theme-text-main font-mono tracking-tight group-hover:text-[#D4A017] transition-colors">
                 {stock.symbol}
               </span>
-              {isFeatured && (
-                <span className="px-2 py-0.5 rounded-[3px] text-[9px] font-mono font-extrabold uppercase bg-[#D4A017]/20 text-[#D4A017] border border-[#D4A017]/30">
-                  ★ TOP MOVER
-                </span>
-              )}
               <span className="px-2 py-0.5 rounded-[3px] text-[10px] font-semibold theme-bg-panel theme-text-muted border theme-border font-mono">
                 {stock.sector}
               </span>
@@ -64,7 +57,7 @@ const StockCard = memo(({ stock, onOpenDetail, priceFlash, isFeatured }) => {
         </div>
 
         <div className="mt-3 py-1 flex items-center justify-between">
-          <Sparkline history={stock.priceHistories} width={isFeatured ? 220 : 130} height={36} />
+          <Sparkline history={stock.priceHistories} width={130} height={36} />
           <button
             onClick={(e) => {
               e.stopPropagation();
@@ -280,11 +273,6 @@ export function TraderDashboard() {
     return portfolio.holdings?.find((h) => h.stockId === stockId);
   };
 
-  // Find top gainer for featured card highlight
-  const topGainerStock = stocks && stocks.length > 0
-    ? [...stocks].sort((a, b) => ((b.percentChange || 0) - (a.percentChange || 0)))[0]
-    : null;
-
   return (
     <div className="min-h-screen theme-bg-main theme-text-main flex flex-col pb-20 md:pb-8 transition-colors">
       
@@ -425,7 +413,6 @@ export function TraderDashboard() {
                         stock={stock}
                         onOpenDetail={handleOpenDetail}
                         priceFlash={stockFlashes[stock.id]}
-                        isFeatured={topGainerStock && topGainerStock.id === stock.id}
                       />
                     ))}
                   </div>
