@@ -1,6 +1,8 @@
 const express = require('express');
 const http = require('http');
 const cors = require('cors');
+const path = require('path');
+const fs = require('fs');
 require('dotenv').config();
 
 const { initSocket } = require('./socket');
@@ -41,7 +43,7 @@ initSocket(server);
 // Start continuous background market drift ticker
 startMarketTicker();
 
-// Routes
+// API Routes
 app.use('/auth', authRoutes);
 app.use('/stocks', stockRoutes);
 app.use('/admin', adminRoutes);
@@ -54,6 +56,17 @@ app.use('/', sessionRoutes); // Mounts GET /api/session, POST /api/admin/session
 app.get('/health', (req, res) => {
   res.json({ status: 'ok', service: 'Equity Arena Backend', timestamp: new Date() });
 });
+
+// Serve frontend static build files (if compiled dist folder exists)
+const distPath = path.join(__dirname, '../../frontend/dist');
+if (fs.existsSync(distPath)) {
+  app.use(express.static(distPath));
+
+  // SPA Fallback: Serve index.html for non-API client routes (/trader, /admin, /login) on hard refresh
+  app.get(/^.*$/, (req, res) => {
+    res.sendFile(path.join(distPath, 'index.html'));
+  });
+}
 
 const PORT = process.env.PORT || 5001;
 
