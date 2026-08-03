@@ -10,6 +10,8 @@ const authRoutes = require('./routes/authRoutes');
 const stockRoutes = require('./routes/stockRoutes');
 const { router: tradeRoutes } = require('./routes/tradeRoutes');
 const adminRoutes = require('./routes/adminRoutes');
+const orderRoutes = require('./routes/orderRoutes');
+const sessionRoutes = require('./routes/sessionRoutes');
 
 const app = express();
 const server = http.createServer(app);
@@ -44,7 +46,9 @@ app.use('/auth', authRoutes);
 app.use('/stocks', stockRoutes);
 app.use('/admin', adminRoutes);
 app.use('/', tradeRoutes); // Mounts GET /portfolio, POST /trade/buy, POST /trade/sell
+app.use('/', orderRoutes); // Mounts POST /orders, DELETE /orders/:id, GET /orders
 app.use('/', stockRoutes); // Mounts GET /news
+app.use('/', sessionRoutes); // Mounts GET /api/session, POST /api/admin/session/start
 
 // Health check endpoint
 app.get('/health', (req, res) => {

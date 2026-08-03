@@ -17,6 +17,23 @@ enum TransactionType {
   SELL
 }
 
+enum OrderType {
+  BUY
+  SELL
+}
+
+enum OrderStatus {
+  PENDING
+  EXECUTED
+  CANCELLED
+}
+
+enum SessionStatus {
+  ACTIVE
+  LIQUIDATING
+  ENDED
+}
+
 model User {
   id            String        @id @default(uuid())
   name          String
@@ -30,6 +47,7 @@ model User {
 
   holdings      Holding[]
   transactions  Transaction[]
+  orders        Order[]
 }
 
 model Stock {
@@ -46,6 +64,7 @@ model Stock {
   holdings       Holding[]
   transactions   Transaction[]
   news           News[]
+  orders         Order[]
 }
 
 model PriceHistory {
@@ -86,6 +105,21 @@ model Transaction {
   stock     Stock           @relation(fields: [stockId], references: [id], onDelete: Cascade)
 }
 
+model Order {
+  id          String      @id @default(uuid())
+  userId      String
+  stockId     String
+  type        OrderType
+  targetPrice Float
+  quantity    Int
+  status      OrderStatus @default(PENDING)
+  createdAt   DateTime    @default(now())
+  executedAt  DateTime?
+
+  user        User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  stock       Stock       @relation(fields: [stockId], references: [id], onDelete: Cascade)
+}
+
 model News {
   id        String   @id @default(uuid())
   message   String
@@ -111,4 +145,12 @@ model AdminAuditLog {
   status    String   // 'SUCCESS', 'FAILED', 'RATE_LIMITED'
   details   String?
   timestamp DateTime @default(now())
+}
+
+model Session {
+  id        String        @id @default(uuid())
+  startTime DateTime      @default(now())
+  endTime   DateTime
+  status    SessionStatus @default(ACTIVE)
+  createdAt DateTime      @default(now())
 }

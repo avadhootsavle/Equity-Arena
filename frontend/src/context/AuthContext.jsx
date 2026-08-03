@@ -3,12 +3,33 @@ import React, { createContext, useContext, useState, useEffect } from 'react';
 const AuthContext = createContext(null);
 
 export function AuthProvider({ children }) {
-  const [token, setToken] = useState(() => localStorage.getItem('ignite_token') || null);
-  const [user, setUser] = useState(() => {
-    const savedUser = localStorage.getItem('ignite_user');
-    return savedUser ? JSON.parse(savedUser) : null;
+  const [token, setToken] = useState(() => {
+    try {
+      return localStorage.getItem('ignite_token') || null;
+    } catch (e) {
+      return null;
+    }
   });
+
+  const [user, setUser] = useState(() => {
+    try {
+      const savedUser = localStorage.getItem('ignite_user');
+      return savedUser ? JSON.parse(savedUser) : null;
+    } catch (e) {
+      localStorage.removeItem('ignite_user');
+      return null;
+    }
+  });
+
   const [loading, setLoading] = useState(false);
+
+  // Keep state synchronized if token is missing but user exists
+  useEffect(() => {
+    if (!token && user) {
+      setUser(null);
+      localStorage.removeItem('ignite_user');
+    }
+  }, [token, user]);
 
   const login = (newToken, newUser) => {
     setToken(newToken);

@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
-import { Radio, X, Sparkles } from 'lucide-react';
+import { Newspaper, X, Radio } from 'lucide-react';
+import { playNewsChime } from '../services/soundService';
 
 export function NewsToast({ news, onClose }) {
   const [progress, setProgress] = useState(100);
@@ -7,8 +8,11 @@ export function NewsToast({ news, onClose }) {
   useEffect(() => {
     if (!news) return;
 
+    // Trigger professional UI notification chime
+    playNewsChime();
+
     const startTime = Date.now();
-    const duration = 6000; // 6 seconds auto-dismiss
+    const duration = 5500; // 5.5 seconds auto-dismiss
 
     const timer = setInterval(() => {
       const elapsed = Date.now() - startTime;
@@ -27,44 +31,63 @@ export function NewsToast({ news, onClose }) {
   if (!news) return null;
 
   return (
-    <div className="fixed bottom-6 right-6 z-50 max-w-md w-full glass-panel p-4 rounded-2xl border border-amber-500/40 shadow-2xl shadow-amber-500/10 animate-slideUp">
-      <div className="flex items-start gap-3">
-        <div className="p-2 bg-amber-500/20 text-amber-400 rounded-xl border border-amber-500/30 flex-shrink-0 animate-pulse">
-          <Radio className="w-5 h-5" />
-        </div>
+    <div className="fixed top-16 right-4 z-50 max-w-sm w-full animate-fadeIn pointer-events-auto shadow-2xl">
+      <div className="theme-bg-card border border-[#D4A017]/60 rounded-[6px] p-4 shadow-xl relative overflow-hidden transition-all">
+        
+        {/* Header */}
+        <div className="flex items-center justify-between pb-2 border-b theme-border">
+          <div className="flex items-center gap-2">
+            <div className="p-1.5 bg-[#D4A017]/10 border border-[#D4A017]/30 rounded-[4px] text-[#D4A017]">
+              <Newspaper className="w-3.5 h-3.5" />
+            </div>
+            <span className="text-xs font-bold font-heading text-[#D4A017] uppercase tracking-wider">
+              ANALYST WIRE
+            </span>
+            {news.stockSymbol && (
+              <span className="px-1.5 py-0.2 bg-[#D4A017]/20 text-[#D4A017] font-mono font-extrabold text-[10px] rounded-[3px] border border-[#D4A017]/40">
+                ${news.stockSymbol}
+              </span>
+            )}
+          </div>
 
-        <div className="flex-1 min-w-0">
-          <div className="flex items-center justify-between gap-2">
-            <span className="text-[10px] font-extrabold uppercase tracking-wider text-amber-400 flex items-center gap-1">
-              <Sparkles className="w-3 h-3" />
-              BREAKING NEWS BROADCAST
+          <div className="flex items-center gap-2">
+            <span className="text-[10px] font-mono theme-text-dim">
+              {new Date(news.timestamp || Date.now()).toLocaleTimeString()}
             </span>
             <button
               onClick={onClose}
-              className="text-slate-400 hover:text-white p-1 rounded-md hover:bg-slate-800 transition-colors"
+              className="p-1 rounded-[3px] theme-bg-panel hover:theme-bg-card-hover theme-text-muted hover:theme-text-main transition-colors min-h-[28px] min-w-[28px] flex items-center justify-center btn-terminal"
+              title="Dismiss Toast"
             >
               <X className="w-3.5 h-3.5" />
             </button>
           </div>
+        </div>
 
-          {news.stockSymbol && (
-            <span className="inline-block mt-1 px-1.5 py-0.5 bg-amber-500/20 text-amber-300 font-mono font-bold text-[10px] rounded border border-amber-500/30">
-              ${news.stockSymbol}
-            </span>
-          )}
-
-          <p className="text-xs text-white font-medium mt-1 leading-relaxed">
-            {news.message}
+        {/* Message Content */}
+        <div className="py-2.5">
+          <p className="text-xs font-semibold theme-text-main leading-relaxed font-mono">
+            "{news.message}"
           </p>
         </div>
-      </div>
 
-      {/* Auto-dismiss Progress Bar */}
-      <div className="w-full bg-slate-800 h-1 rounded-full mt-3 overflow-hidden">
-        <div
-          className="bg-amber-400 h-full transition-all duration-75 ease-linear"
-          style={{ width: `${progress}%` }}
-        />
+        {/* Footer info pill */}
+        <div className="flex items-center justify-between text-[10px] font-mono theme-text-dim pt-1 border-t theme-border">
+          <div className="flex items-center gap-1.5">
+            <Radio className="w-3 h-3 text-[#D4A017] animate-pulse" />
+            <span>Market impact applied</span>
+          </div>
+          <span className="text-[9px] text-[#1DB954] font-bold">LIVE WIRE</span>
+        </div>
+
+        {/* Auto-Dismiss Progress Bar */}
+        <div className="absolute bottom-0 left-0 right-0 h-1 bg-slate-900/40">
+          <div
+            className="bg-[#D4A017] h-full transition-all duration-75 ease-linear"
+            style={{ width: `${progress}%` }}
+          />
+        </div>
+
       </div>
     </div>
   );

@@ -2,10 +2,55 @@
 @tailwind components;
 @tailwind utilities;
 
+:root {
+  /* Phase 19 Exact Design System Tokens (Dark Mode) */
+  --bg-main: #0B0E14;
+  --bg-card: #141822;
+  --bg-card-hover: #1A1F2C;
+  --bg-panel: #1A1F2C;
+  --bg-input: #0F121A;
+  --border-card: #262C3A;
+  --border-hover: #D4A017;
+  --text-main: #F1F3F9;
+  --text-muted: #B8BCC8;
+  --text-dim: #717786;
+  --accent-gold: #D4A017;
+  --gain-green: #1DB954;
+  --loss-red: #E8453C;
+  --card-shadow: 0 1px 2px rgba(0, 0, 0, 0.06), 0 8px 24px rgba(0, 0, 0, 0.12);
+}
+
+[data-theme="light"] {
+  /* Phase 19 Exact Design System Tokens (Light Mode) */
+  --bg-main: #FAF9F6;
+  --bg-card: #FFFFFF;
+  --bg-card-hover: #F5F4EF;
+  --bg-panel: #F3F2EE;
+  --bg-input: #FFFFFF;
+  --border-card: #E2E0D8;
+  --border-hover: #D4A017;
+  --text-main: #1A1D23;
+  --text-muted: #4A4E5A;
+  --text-dim: #7A7E8C;
+  --accent-gold: #D4A017;
+  --gain-green: #1DB954;
+  --loss-red: #E8453C;
+  --card-shadow: 0 1px 2px rgba(0, 0, 0, 0.04), 0 8px 20px rgba(0, 0, 0, 0.06);
+}
+
 @layer base {
   body {
-    font-family: 'Inter', system-ui, -apple-system, sans-serif;
+    font-family: 'IBM Plex Sans', system-ui, sans-serif;
+    background-color: var(--bg-main);
+    color: var(--text-main);
+    transition: background-color 0.2s ease, color 0.2s ease;
   }
+
+  h1, h2, h3, h4, h5, h6, .font-heading {
+    font-family: 'Space Grotesk', sans-serif;
+    font-weight: 700;
+  }
+
   .font-mono {
     font-family: 'JetBrains Mono', monospace;
   }
@@ -13,29 +58,243 @@
 
 /* Custom Scrollbar */
 ::-webkit-scrollbar {
-  width: 6px;
-  height: 6px;
+  width: 5px;
+  height: 5px;
 }
 ::-webkit-scrollbar-track {
-  background: #0f172a;
+  background: var(--bg-main);
 }
 ::-webkit-scrollbar-thumb {
-  background: #334155;
+  background: var(--border-card);
   border-radius: 3px;
 }
 ::-webkit-scrollbar-thumb:hover {
-  background: #475569;
+  background: var(--accent-gold);
 }
 
-/* Glassmorphic utilities */
-.glass-panel {
-  background: rgba(15, 23, 42, 0.75);
-  backdrop-filter: blur(12px);
-  border: 1px solid rgba(255, 255, 255, 0.08);
+/* Design Tokens Utilities */
+.theme-bg-main {
+  background-color: var(--bg-main);
+}
+.theme-bg-card {
+  background-color: var(--bg-card);
+  box-shadow: var(--card-shadow);
+  border-radius: 6px;
+}
+.theme-bg-card-hover:hover {
+  background-color: var(--bg-card-hover);
+}
+.theme-bg-panel {
+  background-color: var(--bg-panel);
+  border-radius: 6px;
+}
+.theme-border {
+  border-color: var(--border-card);
+}
+.theme-text-main {
+  color: var(--text-main);
+}
+.theme-text-muted {
+  color: var(--text-muted);
+}
+.theme-text-dim {
+  color: var(--text-dim);
 }
 
-.glass-card {
-  background: rgba(30, 41, 59, 0.6);
-  backdrop-filter: blur(8px);
-  border: 1px solid rgba(255, 255, 255, 0.05);
+/* Restrained Button & Card Radius Rules */
+.btn-terminal {
+  border-radius: 4px;
+  border: 1px solid rgba(0, 0, 0, 0.25);
+  font-family: 'Space Grotesk', sans-serif;
+  font-weight: 700;
+  transition: all 0.15s ease;
+}
+
+.btn-terminal:active {
+  transform: translateY(1px);
+}
+
+/* Live Price Flash Micro-Animations */
+@keyframes flashGreen {
+  0% {
+    background-color: rgba(29, 185, 84, 0.35);
+    border-color: #1DB954;
+  }
+  100% {
+    background-color: transparent;
+  }
+}
+
+@keyframes flashRed {
+  0% {
+    background-color: rgba(232, 69, 60, 0.35);
+    border-color: #E8453C;
+  }
+  100% {
+    background-color: transparent;
+  }
+}
+
+.animate-flash-up {
+  animation: flashGreen 0.6s ease-out;
+}
+
+.animate-flash-down {
+  animation: flashRed 0.6s ease-out;
+}
+
+/* Trade Execution Success Burst */
+@keyframes successBurst {
+  0% {
+    transform: scale(0.92);
+    opacity: 0;
+  }
+  50% {
+    transform: scale(1.03);
+    opacity: 1;
+  }
+  100% {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+
+.animate-success-burst {
+  animation: successBurst 0.25s ease-out;
+}
+
+/* Trade Execution Error Shake */
+@keyframes errorShake {
+  0%, 100% { transform: translateX(0); }
+  20% { transform: translateX(-6px); }
+  40% { transform: translateX(6px); }
+  60% { transform: translateX(-3px); }
+  80% { transform: translateX(3px); }
+}
+
+.animate-error-shake {
+  animation: errorShake 0.3s ease-in-out;
+}
+
+/* Continuous Live Marquee */
+@keyframes marqueeScroll {
+  0% { transform: translateX(0%); }
+  100% { transform: translateX(-50%); }
+}
+
+.animate-marquee {
+  display: flex;
+  width: max-content;
+  animation: marqueeScroll 26s linear infinite;
+}
+.animate-marquee:hover {
+  animation-play-state: paused;
+}
+
+/* Breaking News Urgency Pulse Border */
+@keyframes newsPulseBorder {
+  0% {
+    border-color: rgba(212, 160, 23, 0.4);
+    box-shadow: 0 0 10px rgba(212, 160, 23, 0.2);
+  }
+  50% {
+    border-color: rgba(212, 160, 23, 1);
+    box-shadow: 0 0 18px rgba(212, 160, 23, 0.5);
+  }
+  100% {
+    border-color: rgba(212, 160, 23, 0.4);
+    box-shadow: 0 0 10px rgba(212, 160, 23, 0.2);
+  }
+}
+
+.animate-news-pulse {
+  animation: newsPulseBorder 1.5s infinite ease-in-out;
+}
+
+/* Phase 22b TV Broadcast News Intro Animation Enhancements */
+@keyframes broadcastGlobeFlyIn {
+  0% {
+    transform: scale3d(0.18, 0.18, 1) rotate(0deg);
+    opacity: 0.15;
+    filter: blur(8px) drop-shadow(0 0 0px rgba(212, 160, 23, 0));
+  }
+  60% {
+    transform: scale3d(1.8, 1.8, 1) rotate(220deg);
+    opacity: 0.9;
+    filter: blur(2px) drop-shadow(0 0 35px rgba(212, 160, 23, 0.8));
+  }
+  85% {
+    transform: scale3d(2.9, 2.9, 1) rotate(320deg);
+    opacity: 1;
+    filter: blur(0px) drop-shadow(0 0 60px rgba(255, 255, 255, 1));
+  }
+  100% {
+    transform: scale3d(3.4, 3.4, 1) rotate(360deg);
+    opacity: 0.95;
+    filter: blur(0px) drop-shadow(0 0 80px rgba(212, 160, 23, 1));
+  }
+}
+
+.animate-broadcast-flyin {
+  animation: broadcastGlobeFlyIn 0.8s cubic-bezier(0.7, 0, 0.15, 1) forwards;
+  will-change: transform, opacity, filter;
+}
+
+@keyframes lightRaySweep {
+  0% { transform: rotate(0deg) scale(0.6); opacity: 0.2; }
+  50% { transform: rotate(180deg) scale(2.0); opacity: 0.8; }
+  100% { transform: rotate(360deg) scale(3.2); opacity: 1; }
+}
+
+.animate-light-rays {
+  animation: lightRaySweep 0.8s cubic-bezier(0.7, 0, 0.15, 1) forwards;
+}
+
+@keyframes impactShake {
+  0%, 100% { transform: translate(0, 0); }
+  20% { transform: translate(-5px, 3px); }
+  40% { transform: translate(5px, -3px); }
+  60% { transform: translate(-3px, -2px); }
+  80% { transform: translate(3px, 2px); }
+}
+
+.animate-impact-shake {
+  animation: impactShake 0.15s ease-in-out;
+}
+
+@keyframes textZoomPunch {
+  0% { transform: scale(1.18); opacity: 0.4; }
+  100% { transform: scale(1.0); opacity: 1; }
+}
+
+.animate-text-zoom-punch {
+  animation: textZoomPunch 0.25s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+@keyframes newsFlashBurst {
+  0% {
+    opacity: 0;
+    background-color: rgba(212, 160, 23, 0);
+  }
+  50% {
+    opacity: 1;
+    background-color: rgba(255, 255, 255, 0.95);
+  }
+  100% {
+    opacity: 0;
+    background-color: rgba(212, 160, 23, 0);
+  }
+}
+
+.animate-flash-burst {
+  animation: newsFlashBurst 0.2s ease-out forwards;
+}
+
+@keyframes globeSpinSlow {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+.animate-globe-spin {
+  animation: globeSpinSlow 4s linear infinite;
 }

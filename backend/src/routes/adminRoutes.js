@@ -2,6 +2,8 @@ const express = require('express');
 const { PrismaClient } = require('@prisma/client');
 const { authenticateToken, requireAdmin } = require('../middleware/authMiddleware');
 const { emitStockUpdate, emitNewsBroadcast } = require('../socket');
+const { checkAndExecuteLimitOrders } = require('../services/orderService');
+const { applyNewsImpact } = require('../services/marketTicker');
 
 const router = express.Router();
 const prisma = new PrismaClient();
@@ -99,7 +101,7 @@ router.post('/stock/:id/adjust', async (req, res) => {
     }
 
     const rawNewPrice = stock.currentPrice * (1 + parsedPercent / 100);
-    const newPrice = Math.max(0.01, Math.round(rawNewPrice * 100) / 100);
+    const newPrice = Math.max(0.50, Math.round(rawNewPrice * 100) / 100);
     const highVolume = getRandomVolume(60000, 150000);
 
     const [updatedStock, newHistory] = await prisma.$transaction([
@@ -129,6 +131,9 @@ router.post('/stock/:id/adjust', async (req, res) => {
       percentChange,
       timestamp: newHistory.timestamp
     });
+
+    // Check limit order execution
+    await checkAndExecuteLimitOrders(updatedStock.id, newPrice);
 
     return res.json({
       message: 'Stock price updated successfully',
@@ -234,6 +239,9 @@ router.post('/news/trigger-template', async (req, res) => {
     };
     pendingDelayedNews.push(pendingItem);
 
+    // Apply Quant news drift & volatility impact shift over duration window
+    applyNewsImpact(template.sector, template.effectPercent, delay + 30);
+
     const totalPreMovePercent = template.effectPercent * 0.15;
     const totalTicks = Math.max(1, Math.floor(delay / 6));
     const preMovePerTickPercent = totalPreMovePercent / totalTicks;
@@ -247,7 +255,7 @@ router.post('/news/trigger-template', async (req, res) => {
 
         for (const stock of targetStocks) {
           const rawNewPrice = stock.currentPrice * (1 + preMovePerTickPercent / 100);
-          const newPrice = Math.max(0.01, Math.round(rawNewPrice * 100) / 100);
+          const newPrice = Math.max(0.50, Math.round(rawNewPrice * 100) / 100);
           const preMoveVolume = getRandomVolume(40000, 90000);
 
           const [updatedStock, newHistory] = await prisma.$transaction([
@@ -277,6 +285,8 @@ router.post('/news/trigger-template', async (req, res) => {
             percentChange,
             timestamp: newHistory.timestamp
           });
+
+          await checkAndExecuteLimitOrders(updatedStock.id, newPrice);
         }
       } catch (err) {
         console.error('Pre-move drift tick error:', err);
@@ -296,7 +306,7 @@ router.post('/news/trigger-template', async (req, res) => {
 
         for (const stock of targetStocks) {
           const rawNewPrice = stock.currentPrice * (1 + remainingEffectPercent / 100);
-          const newPrice = Math.max(0.01, Math.round(rawNewPrice * 100) / 100);
+          const newPrice = Math.max(0.50, Math.round(rawNewPrice * 100) / 100);
           const spikeVolume = getRandomVolume(80000, 180000);
 
           const [updatedStock, newHistory] = await prisma.$transaction([
@@ -326,6 +336,8 @@ router.post('/news/trigger-template', async (req, res) => {
             percentChange,
             timestamp: newHistory.timestamp
           });
+
+          await checkAndExecuteLimitOrders(updatedStock.id, newPrice);
         }
 
         const idx = pendingDelayedNews.findIndex((p) => p.id === pendingItem.id);

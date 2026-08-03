@@ -1,8 +1,9 @@
 import React, { useState, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
+import { useTheme } from '../context/ThemeContext';
 import { apiFetch } from '../services/api';
-import { User, Lock, Mail, ArrowRight, Coins, Shield } from 'lucide-react';
+import { User, Lock, Mail, ArrowRight, Coins, Shield, Sun, Moon } from 'lucide-react';
 
 export function Login() {
   const [activeTab, setActiveTab] = useState('TRADER_SIGNIN'); // 'TRADER_SIGNIN', 'TRADER_REGISTER', 'ADMIN'
@@ -17,16 +18,17 @@ export function Login() {
 
   const clickTimerRef = useRef(null);
   const { login } = useAuth();
+  const { theme, toggleTheme } = useTheme();
   const navigate = useNavigate();
 
-  // Inconspicuous 5-click secret trigger handler on the header badge icon
+  // Secret 5-click trigger handler on the header badge icon
   const handleSecretTriggerClick = () => {
     const nextCount = clickCount + 1;
     setClickCount(nextCount);
 
     if (clickTimerRef.current) clearTimeout(clickTimerRef.current);
     clickTimerRef.current = setTimeout(() => {
-      setClickCount(0); // Reset click counter after 3s of inactivity
+      setClickCount(0);
     }, 3000);
 
     if (nextCount >= 5) {
@@ -62,7 +64,7 @@ export function Login() {
     }
   };
 
-  // Dedicated Hardened Admin Login submit (No quick shortcuts!)
+  // Dedicated Hardened Admin Login submit
   const handleAdminSubmit = async (e) => {
     e.preventDefault();
     setError('');
@@ -84,41 +86,56 @@ export function Login() {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center p-4 bg-[#090d16] relative overflow-hidden">
-      <div className="absolute -top-40 -left-40 w-96 h-96 bg-emerald-500/10 rounded-full blur-3xl pointer-events-none" />
-      <div className="absolute -bottom-40 -right-40 w-96 h-96 bg-indigo-500/10 rounded-full blur-3xl pointer-events-none" />
+    <div className="min-h-screen flex items-center justify-center p-4 theme-bg-main theme-text-main relative overflow-hidden transition-colors">
+      <div className="absolute top-4 right-4 z-50">
+        <button
+          onClick={toggleTheme}
+          title={`Switch to ${theme === 'dark' ? 'Light' : 'Dark'} Mode`}
+          className="px-3 py-2 rounded-[4px] border theme-border theme-bg-card theme-bg-card-hover theme-text-main shadow-sm transition-all flex items-center gap-2 text-xs font-heading font-bold btn-terminal"
+        >
+          {theme === 'dark' ? (
+            <>
+              <Sun className="w-4 h-4 text-[#D4A017]" />
+              <span>Light</span>
+            </>
+          ) : (
+            <>
+              <Moon className="w-4 h-4 text-indigo-600" />
+              <span>Dark</span>
+            </>
+          )}
+        </button>
+      </div>
 
-      <div className="w-full max-w-md">
+      <div className="w-full max-w-md my-auto">
         <div className="text-center mb-8">
           
-          {/* Secret 5-Click Inconspicuous Trigger on Header Badge */}
           <button
             type="button"
             onClick={handleSecretTriggerClick}
-            className="inline-flex items-center gap-2.5 px-4 py-2 rounded-full glass-panel border border-emerald-500/30 text-emerald-400 text-xs font-semibold mb-4 shadow-lg shadow-emerald-500/10 cursor-pointer select-none active:scale-95 transition-all"
+            className="inline-flex items-center gap-2.5 px-4 py-1.5 rounded-[4px] theme-bg-card border border-[#D4A017]/40 text-[#D4A017] text-xs font-mono font-bold mb-4 shadow-sm select-none active:scale-95 transition-all cursor-pointer"
             title="Ignite Coins Exchange"
           >
-            <Coins className="w-4 h-4 text-amber-400" />
-            <span>EQUITY ARENA (IC) TRADER EXCHANGE</span>
+            <Coins className="w-4 h-4 text-[#D4A017]" />
+            <span>EQUITY ARENA (IC) EXCHANGE</span>
           </button>
 
-          <h1 className="text-3xl font-extrabold text-white tracking-tight">
-            Real-Time Stock Exchange
+          <h1 className="text-3xl font-extrabold tracking-tight theme-text-main font-heading uppercase">
+            EQUITY ARENA
           </h1>
-          <p className="text-slate-400 text-xs mt-2">
-            Trade 15 India sector stocks using Ignite Coins (20,000 IC starting balance)
+          <p className="theme-text-muted text-xs mt-2 font-medium">
+            Real-time India stock exchange terminal with 20,000 IC starter capital
           </p>
         </div>
 
-        <div className="glass-panel p-8 rounded-2xl shadow-2xl border border-slate-800">
+        <div className="theme-bg-card p-8 rounded-[6px] border theme-border transition-colors">
           
-          {/* Navigation Tabs */}
-          <div className="flex bg-slate-900/80 p-1 rounded-xl mb-6 border border-slate-800">
+          <div className="flex theme-bg-panel p-1 rounded-[4px] mb-6 border theme-border">
             <button
               type="button"
               onClick={() => { setActiveTab('TRADER_SIGNIN'); setError(''); }}
-              className={`flex-1 py-2 text-xs font-bold rounded-lg transition-all ${
-                activeTab === 'TRADER_SIGNIN' ? 'bg-emerald-500 text-slate-950 shadow-md' : 'text-slate-400 hover:text-white'
+              className={`flex-1 py-2 text-xs font-bold font-heading uppercase rounded-[3px] transition-all min-h-[38px] ${
+                activeTab === 'TRADER_SIGNIN' ? 'bg-[#D4A017] text-slate-950 shadow-sm' : 'theme-text-muted hover:theme-text-main'
               }`}
             >
               Sign In
@@ -126,20 +143,19 @@ export function Login() {
             <button
               type="button"
               onClick={() => { setActiveTab('TRADER_REGISTER'); setError(''); }}
-              className={`flex-1 py-2 text-xs font-bold rounded-lg transition-all ${
-                activeTab === 'TRADER_REGISTER' ? 'bg-emerald-500 text-slate-950 shadow-md' : 'text-slate-400 hover:text-white'
+              className={`flex-1 py-2 text-xs font-bold font-heading uppercase rounded-[3px] transition-all min-h-[38px] ${
+                activeTab === 'TRADER_REGISTER' ? 'bg-[#D4A017] text-slate-950 shadow-sm' : 'theme-text-muted hover:theme-text-main'
               }`}
             >
               Create Account
             </button>
 
-            {/* Hidden Admin Tab (Only visible after 5-click secret trigger!) */}
             {isAdminUnlocked && (
               <button
                 type="button"
                 onClick={() => { setActiveTab('ADMIN'); setError(''); }}
-                className={`flex-1 py-2 text-xs font-bold rounded-lg transition-all flex items-center justify-center gap-1 ${
-                  activeTab === 'ADMIN' ? 'bg-indigo-600 text-white shadow-md' : 'text-indigo-400 hover:text-white'
+                className={`flex-1 py-2 text-xs font-bold font-heading uppercase rounded-[3px] transition-all flex items-center justify-center gap-1 min-h-[38px] ${
+                  activeTab === 'ADMIN' ? 'bg-indigo-600 text-white shadow-sm' : 'text-indigo-400 hover:theme-text-main'
                 }`}
               >
                 <Shield className="w-3.5 h-3.5" />
@@ -149,57 +165,56 @@ export function Login() {
           </div>
 
           {error && (
-            <div className="mb-4 p-3 bg-rose-500/10 border border-rose-500/30 rounded-xl text-rose-400 text-xs font-medium">
+            <div className="mb-4 p-3 bg-[#E8453C]/10 border border-[#E8453C]/30 rounded-[4px] text-[#E8453C] text-xs font-mono">
               {error}
             </div>
           )}
 
-          {/* TRADER SIGNIN & REGISTER FORM */}
           {activeTab !== 'ADMIN' && (
             <form onSubmit={handleTraderSubmit} className="space-y-4">
               {activeTab === 'TRADER_REGISTER' && (
                 <div>
-                  <label className="block text-xs font-semibold text-slate-300 mb-1">Full Name</label>
+                  <label className="block text-xs font-semibold theme-text-muted mb-1 font-heading">Full Name</label>
                   <div className="relative">
-                    <User className="absolute left-3 top-3 w-4 h-4 text-slate-500" />
+                    <User className="absolute left-3 top-3 w-4 h-4 theme-text-dim" />
                     <input
                       type="text"
                       required
                       value={name}
                       onChange={(e) => setName(e.target.value)}
                       placeholder="Trader Name"
-                      className="w-full bg-slate-900/90 border border-slate-800 rounded-xl py-2.5 pl-10 pr-4 text-sm text-white focus:outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 transition-all placeholder:text-slate-600"
+                      className="w-full theme-bg-panel border theme-border rounded-[4px] py-2 pl-10 pr-4 text-sm theme-text-main focus:outline-none focus:border-[#D4A017] transition-all placeholder:theme-text-dim min-h-[40px] font-mono"
                     />
                   </div>
                 </div>
               )}
 
               <div>
-                <label className="block text-xs font-semibold text-slate-300 mb-1">Email Address</label>
+                <label className="block text-xs font-semibold theme-text-muted mb-1 font-heading">Email Address</label>
                 <div className="relative">
-                  <Mail className="absolute left-3 top-3 w-4 h-4 text-slate-500" />
+                  <Mail className="absolute left-3 top-3 w-4 h-4 theme-text-dim" />
                   <input
                     type="email"
                     required
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
                     placeholder="trader@example.com"
-                    className="w-full bg-slate-900/90 border border-slate-800 rounded-xl py-2.5 pl-10 pr-4 text-sm text-white focus:outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 transition-all placeholder:text-slate-600"
+                    className="w-full theme-bg-panel border theme-border rounded-[4px] py-2 pl-10 pr-4 text-sm theme-text-main focus:outline-none focus:border-[#D4A017] transition-all placeholder:theme-text-dim min-h-[40px] font-mono"
                   />
                 </div>
               </div>
 
               <div>
-                <label className="block text-xs font-semibold text-slate-300 mb-1">Password</label>
+                <label className="block text-xs font-semibold theme-text-muted mb-1 font-heading">Password</label>
                 <div className="relative">
-                  <Lock className="absolute left-3 top-3 w-4 h-4 text-slate-500" />
+                  <Lock className="absolute left-3 top-3 w-4 h-4 theme-text-dim" />
                   <input
                     type="password"
                     required
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
                     placeholder="••••••••"
-                    className="w-full bg-slate-900/90 border border-slate-800 rounded-xl py-2.5 pl-10 pr-4 text-sm text-white focus:outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 transition-all placeholder:text-slate-600"
+                    className="w-full theme-bg-panel border theme-border rounded-[4px] py-2 pl-10 pr-4 text-sm theme-text-main focus:outline-none focus:border-[#D4A017] transition-all placeholder:theme-text-dim min-h-[40px] font-mono"
                   />
                 </div>
               </div>
@@ -207,11 +222,11 @@ export function Login() {
               <button
                 type="submit"
                 disabled={loading}
-                className="w-full py-3 bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-bold text-sm rounded-xl shadow-lg shadow-emerald-500/20 flex items-center justify-center gap-2 transition-all active:scale-[0.99] disabled:opacity-50 mt-6"
+                className="w-full py-3 bg-[#D4A017] hover:bg-[#D4A017]/90 text-slate-950 font-extrabold text-xs font-mono uppercase tracking-wider rounded-[4px] shadow flex items-center justify-center gap-2 transition-all active:scale-[0.99] disabled:opacity-50 mt-6 min-h-[44px] btn-terminal"
               >
-                {loading ? 'Processing...' : (
+                {loading ? 'AUTHENTICATING SESSION...' : (
                   <>
-                    <span>{activeTab === 'TRADER_REGISTER' ? 'Create Trader Account (20,000 IC)' : 'Sign In to Portal'}</span>
+                    <span>{activeTab === 'TRADER_REGISTER' ? 'JOIN EXCHANGE (START WITH 20,000 IC)' : 'ENTER TRADING TERMINAL'}</span>
                     <ArrowRight className="w-4 h-4" />
                   </>
                 )}
@@ -219,35 +234,34 @@ export function Login() {
             </form>
           )}
 
-          {/* UNLOCKED ADMIN CONSOLE FORM (Requires real credential entry, no quick shortcuts!) */}
           {activeTab === 'ADMIN' && (
             <form onSubmit={handleAdminSubmit} className="space-y-4">
               <div>
-                <label className="block text-xs font-semibold text-slate-300 mb-1">Admin Email</label>
+                <label className="block text-xs font-semibold theme-text-muted mb-1 font-heading">Admin Email</label>
                 <div className="relative">
-                  <Mail className="absolute left-3 top-3 w-4 h-4 text-slate-500" />
+                  <Mail className="absolute left-3 top-3 w-4 h-4 theme-text-dim" />
                   <input
                     type="email"
                     required
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
                     placeholder="admin@test.com"
-                    className="w-full bg-slate-950 border border-slate-800 rounded-xl py-2.5 pl-10 pr-4 text-sm text-white focus:outline-none focus:border-indigo-500 font-mono"
+                    className="w-full theme-bg-panel border theme-border rounded-[4px] py-2 pl-10 pr-4 text-sm theme-text-main focus:outline-none focus:border-indigo-500 font-mono min-h-[40px]"
                   />
                 </div>
               </div>
 
               <div>
-                <label className="block text-xs font-semibold text-slate-300 mb-1">Admin Password</label>
+                <label className="block text-xs font-semibold theme-text-muted mb-1 font-heading">Admin Password</label>
                 <div className="relative">
-                  <Lock className="absolute left-3 top-3 w-4 h-4 text-slate-500" />
+                  <Lock className="absolute left-3 top-3 w-4 h-4 theme-text-dim" />
                   <input
                     type="password"
                     required
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
                     placeholder="••••••••"
-                    className="w-full bg-slate-950 border border-slate-800 rounded-xl py-2.5 pl-10 pr-4 text-sm text-white focus:outline-none focus:border-indigo-500 font-mono"
+                    className="w-full theme-bg-panel border theme-border rounded-[4px] py-2 pl-10 pr-4 text-sm theme-text-main focus:outline-none focus:border-indigo-500 font-mono min-h-[40px]"
                   />
                 </div>
               </div>
@@ -255,12 +269,12 @@ export function Login() {
               <button
                 type="submit"
                 disabled={loading}
-                className="w-full py-3 bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-xs rounded-xl shadow-lg shadow-indigo-600/20 flex items-center justify-center gap-2 transition-all active:scale-[0.99] disabled:opacity-50 mt-6"
+                className="w-full py-3 bg-indigo-600 hover:bg-indigo-500 text-white font-extrabold text-xs font-mono uppercase tracking-wider rounded-[4px] shadow flex items-center justify-center gap-2 transition-all active:scale-[0.99] disabled:opacity-50 mt-6 min-h-[44px] btn-terminal"
               >
-                {loading ? 'Authenticating...' : (
+                {loading ? 'AUTHENTICATING...' : (
                   <>
                     <Shield className="w-4 h-4" />
-                    <span>AUTHORIZE HOST CONSOLE</span>
+                    <span>AUTHORIZE CONSOLE ACCESS</span>
                     <ArrowRight className="w-4 h-4" />
                   </>
                 )}
