@@ -22,77 +22,250 @@ const INDIA_SECTOR_STOCKS = [
 ];
 
 const ANALYST_NEWS_TEMPLATES = [
+  // --- EASY (Obvious single-sector signals) ---
   {
-    headline: "Tensions escalate between two major oil-exporting nations after reports of border skirmishes. Crude benchmarks jumped over 4% in early international trade. Analysts warn of prolonged supply disruption if the standoff continues.",
-    sector: "Oil & Gas",
-    effectPercent: -15.0,
-    notes: "Crude rally increases input costs for oil refiners"
-  },
-  {
-    headline: "Global defense ministries announced a 12% increase in capital procurement budgets following heightened regional security concerns. Defense contractors saw immediate order book expansion. Market strategists expect strong revenue momentum to sustain through the fiscal year.",
-    sector: "Defense",
-    effectPercent: 20.0,
-    notes: "Order backlog expansion boosts defense manufacturing valuation"
-  },
-  {
-    headline: "New tariffs of 15% were announced on imported semiconductor components and tech hardware overnight. Supply chain leads report immediate margin compression across hardware integrators. Equity analysts have lowered near-term earnings targets for IT hardware players.",
-    sector: "Technology",
-    effectPercent: -12.0,
-    notes: "Import tariffs squeeze tech hardware margins"
-  },
-  {
-    headline: "Bumper monsoon rainfall driven by favorable weather patterns has pushed crop yields to a 5-year high. Agricultural processors reported record raw material inflow. Market observers note strong margin expansion across agrarian suppliers.",
+    headline: "Bumper monsoon rainfall driven by favorable weather patterns has pushed crop yields to a 5-year high nationwide.",
     sector: "Agriculture",
     effectPercent: 18.0,
-    notes: "Record yields drive agricultural processor revenue growth"
+    difficulty: "EASY",
+    stockEffects: JSON.stringify([{ sector: "Agriculture", effectPercent: 18.0 }]),
+    notes: "Direct positive impact on agricultural processors"
   },
   {
-    headline: "The central bank cut its benchmark lending rate by 25 basis points, citing slowing inflation. Financial and real estate stocks are typically the first to react to rate moves, though analysts are split on how much is already priced in.",
-    sector: "Banking/Finance, Real Estate",
-    effectPercent: 15.0,
-    notes: "Rate cut lowers credit costs for banks and real estate developers"
-  },
-  {
-    headline: "A coordinated cyberattack disrupted checkout systems at several major e-commerce and telecom platforms overnight. Full financial impact is still being assessed, with some analysts calling it a temporary glitch and others warning of longer-term trust damage.",
-    sector: "Retail, Telecom",
-    effectPercent: -14.0,
-    notes: "System downtime impacts retail & telecom revenue"
-  },
-  {
-    headline: "A major phase-III clinical trial achieved its primary efficacy endpoint with zero serious adverse events reported. Regulatory authorities granted expedited priority review status. Healthcare analysts project potential blockbuster status upon commercial release.",
-    sector: "Pharmaceuticals",
-    effectPercent: 25.0,
-    notes: "Breakthrough trial results drive pharma valuation surge"
-  },
-  {
-    headline: "A severe maritime blockage in a critical global shipping canal has stranded over 40 container vessels. Daily charter rates surged 35% while transit schedules face 2-week delays. Logistics analysts warn of compounding port congestion through next month.",
-    sector: "Shipping/Logistics",
-    effectPercent: -18.0,
-    notes: "Freight delays spike operational costs for shipping lines"
-  },
-  {
-    headline: "Geopolitical volatility and currency devaluation fears sparked a sharp flight to quality across global markets. Spot bullion prices surged 3.5% in heavy trading volume. Commodities strategists recommend overweight exposure to precious metal miners.",
-    sector: "Precious Metals",
+    headline: "Global defense ministries announced a 15% increase in procurement budgets following heightened regional security concerns.",
+    sector: "Defense",
     effectPercent: 22.0,
-    notes: "Safe haven gold demand drives precious metals mining rally"
+    difficulty: "EASY",
+    stockEffects: JSON.stringify([{ sector: "Defense", effectPercent: 22.0 }]),
+    notes: "Order backlog expansion boosts defense contractors"
   },
   {
-    headline: "The Ministry of New Energy announced a 30% capital subsidy for grid-scale solar and wind storage installations. Clean energy developers received immediate policy tailwinds. Sector analysts anticipate accelerated project commissioning over the next two quarters.",
+    headline: "A major phase-III clinical trial achieved its primary efficacy endpoint with zero adverse events reported.",
+    sector: "Pharmaceuticals",
+    effectPercent: 24.0,
+    difficulty: "EASY",
+    stockEffects: JSON.stringify([{ sector: "Pharmaceuticals", effectPercent: 24.0 }]),
+    notes: "Breakthrough clinical trial drives pharma rally"
+  },
+  {
+    headline: "The Ministry of New Energy announced a 30% capital subsidy for grid-scale solar and wind storage installations.",
     sector: "Renewable Energy",
     effectPercent: 20.0,
-    notes: "Capital subsidy accelerates clean energy project adoption"
+    difficulty: "EASY",
+    stockEffects: JSON.stringify([{ sector: "Renewable Energy", effectPercent: 20.0 }]),
+    notes: "Capital subsidies boost clean energy developers"
   },
   {
-    headline: "Key auto component suppliers reported severe microchip shortages following factory downtime in Southeast Asia. Vehicle assembly lines operate at 60% capacity. Equity research desks have downgraded fiscal guidance across automobile OEMs.",
-    sector: "Automobile",
-    effectPercent: -15.0,
-    notes: "Component shortages force assembly line cutbacks"
-  },
-  {
-    headline: "A surprise summer blockbuster generated 850 million IC at the domestic box office during its opening weekend, surpassing all industry forecasts. Streaming rights negotiations triggered a competitive bidding war. Entertainment analysts foresee record quarterly cash flows.",
+    headline: "A surprise summer blockbuster movie generated record box office revenues during its opening weekend.",
     sector: "Media/Entertainment",
     effectPercent: 16.0,
-    notes: "Record box office revenues boost media studio earnings"
+    difficulty: "EASY",
+    stockEffects: JSON.stringify([{ sector: "Media/Entertainment", effectPercent: 16.0 }]),
+    notes: "Box office surge boosts media studio cash flow"
+  },
+  {
+    headline: "Spot gold prices surged 4% in heavy international trading following currency devaluation fears across emerging markets.",
+    sector: "Precious Metals",
+    effectPercent: 20.0,
+    difficulty: "EASY",
+    stockEffects: JSON.stringify([{ sector: "Precious Metals", effectPercent: 20.0 }]),
+    notes: "Safe haven gold demand drives precious metals rally"
+  },
+  {
+    headline: "Key auto component suppliers reported severe microchip shortages following factory downtime overseas.",
+    sector: "Automobile",
+    effectPercent: -16.0,
+    difficulty: "EASY",
+    stockEffects: JSON.stringify([{ sector: "Automobile", effectPercent: -16.0 }]),
+    notes: "Component shortages force vehicle assembly cutbacks"
+  },
+  {
+    headline: "A severe maritime blockage in a major shipping canal has stranded container vessels, causing 2-week transit delays.",
+    sector: "Shipping/Logistics",
+    effectPercent: -18.0,
+    difficulty: "EASY",
+    stockEffects: JSON.stringify([{ sector: "Shipping/Logistics", effectPercent: -18.0 }]),
+    notes: "Freight delays spike operational costs for shipping lines"
+  },
+
+  // --- MEDIUM (Requires sector knowledge & multi-sector connections) ---
+  {
+    headline: "The central bank cut its benchmark repo rate by 50 basis points to stimulate domestic credit expansion.",
+    sector: "Banking/Finance",
+    effectPercent: 16.0,
+    difficulty: "MEDIUM",
+    stockEffects: JSON.stringify([
+      { sector: "Banking/Finance", effectPercent: 16.0 },
+      { sector: "Real Estate", effectPercent: 18.0 }
+    ]),
+    notes: "Rate cut lowers borrowing costs for banks and home buyers"
+  },
+  {
+    headline: "New tariffs of 15% were announced on imported semiconductor components and tech hardware overnight.",
+    sector: "Technology",
+    effectPercent: -15.0,
+    difficulty: "MEDIUM",
+    stockEffects: JSON.stringify([
+      { sector: "Technology", effectPercent: -15.0 },
+      { sector: "Defense", effectPercent: 12.0 }
+    ]),
+    notes: "Hardware tariffs squeeze tech margins while domestic defense gains allocation"
+  },
+  {
+    headline: "A coordinated cyberattack disrupted checkout and payment systems across major e-commerce platforms overnight.",
+    sector: "Retail",
+    effectPercent: -14.0,
+    difficulty: "MEDIUM",
+    stockEffects: JSON.stringify([
+      { sector: "Retail", effectPercent: -14.0 },
+      { sector: "Telecom", effectPercent: -10.0 }
+    ]),
+    notes: "Downtime hits retail sales volume and telecom infrastructure trust"
+  },
+  {
+    headline: "Government approved a massive 500 billion IC infrastructure development package for highway and urban transit grids.",
+    sector: "Real Estate",
+    effectPercent: 18.0,
+    difficulty: "MEDIUM",
+    stockEffects: JSON.stringify([
+      { sector: "Real Estate", effectPercent: 18.0 },
+      { sector: "Shipping/Logistics", effectPercent: 14.0 }
+    ]),
+    notes: "Transit expansion boosts property valuations and logistics efficiency"
+  },
+  {
+    headline: "International airline passenger traffic reached all-time summer highs while jet fuel prices stabilized.",
+    sector: "Aviation",
+    effectPercent: 19.0,
+    difficulty: "MEDIUM",
+    stockEffects: JSON.stringify([
+      { sector: "Aviation", effectPercent: 19.0 },
+      { sector: "Retail", effectPercent: 10.0 }
+    ]),
+    notes: "Travel boom increases airline passenger yields and duty-free retail"
+  },
+  {
+    headline: "Nationwide 5G network expansion completed 3 months ahead of schedule, covering 90% of metro centers.",
+    sector: "Telecom",
+    effectPercent: 17.0,
+    difficulty: "MEDIUM",
+    stockEffects: JSON.stringify([
+      { sector: "Telecom", effectPercent: 17.0 },
+      { sector: "Technology", effectPercent: 14.0 }
+    ]),
+    notes: "High-speed network rollout drives data subscription and tech service revenue"
+  },
+  {
+    headline: "Regulatory authorities introduced strict price caps on essential generic life-saving medications.",
+    sector: "Pharmaceuticals",
+    effectPercent: -14.0,
+    difficulty: "MEDIUM",
+    stockEffects: JSON.stringify([
+      { sector: "Pharmaceuticals", effectPercent: -14.0 },
+      { sector: "Agriculture", effectPercent: 8.0 }
+    ]),
+    notes: "Price capping squeezes drug manufacturer margins"
+  },
+  {
+    headline: "Eviction notices and commercial property lease defaults rose 8% across secondary business districts.",
+    sector: "Real Estate",
+    effectPercent: -15.0,
+    difficulty: "MEDIUM",
+    stockEffects: JSON.stringify([
+      { sector: "Real Estate", effectPercent: -15.0 },
+      { sector: "Banking/Finance", effectPercent: -10.0 }
+    ]),
+    notes: "Commercial property weakness increases non-performing loans for banks"
+  },
+
+  // --- HARD (Ambiguous, complex reasoning, opposite multi-sector moves) ---
+  {
+    headline: "Military conflict escalates near a vital energy strait, threatening international crude oil supply lines.",
+    sector: "Oil & Gas",
+    effectPercent: 20.0,
+    difficulty: "HARD",
+    stockEffects: JSON.stringify([
+      { sector: "Oil & Gas", effectPercent: 20.0 },
+      { sector: "Aviation", effectPercent: -18.0 }
+    ]),
+    notes: "Oil price surge benefits energy producers but crushes airline fuel margins"
+  },
+  {
+    headline: "The central bank unexpectedly raised cash reserve ratios by 75 basis points to curb overheating inflation.",
+    sector: "Banking/Finance",
+    effectPercent: -16.0,
+    difficulty: "HARD",
+    stockEffects: JSON.stringify([
+      { sector: "Banking/Finance", effectPercent: -16.0 },
+      { sector: "Precious Metals", effectPercent: 15.0 }
+    ]),
+    notes: "Tight monetary policy pressures bank liquidity while driving safe-haven gold demand"
+  },
+  {
+    headline: "Electric vehicle adoption rates surpassed 25% of monthly car sales, supported by state battery mandates.",
+    sector: "Automobile",
+    effectPercent: 16.0,
+    difficulty: "HARD",
+    stockEffects: JSON.stringify([
+      { sector: "Automobile", effectPercent: 16.0 },
+      { sector: "Oil & Gas", effectPercent: -14.0 }
+    ]),
+    notes: "EV surge boosts motor manufacturers while signaling long-term gasoline demand decline"
+  },
+  {
+    headline: "A prolonged heatwave drove record electricity grid demand, forcing peak-load emergency dispatching.",
+    sector: "Renewable Energy",
+    effectPercent: 18.0,
+    difficulty: "HARD",
+    stockEffects: JSON.stringify([
+      { sector: "Renewable Energy", effectPercent: 18.0 },
+      { sector: "Agriculture", effectPercent: -12.0 }
+    ]),
+    notes: "Peak power demand drives clean energy generation while drought hurts crop yields"
+  },
+  {
+    headline: "Domestic currency weakened 3.5% against the US Dollar amidst global trade balance adjustments.",
+    sector: "Technology",
+    effectPercent: 15.0,
+    difficulty: "HARD",
+    stockEffects: JSON.stringify([
+      { sector: "Technology", effectPercent: 15.0 },
+      { sector: "Shipping/Logistics", effectPercent: -12.0 }
+    ]),
+    notes: "Export-heavy IT services benefit from dollar realization while import logistics cost spikes"
+  },
+  {
+    headline: "Unseasonal unseasonal hailstorms damaged wheat and sugarcane belts across central agricultural states.",
+    sector: "Agriculture",
+    effectPercent: -16.0,
+    difficulty: "HARD",
+    stockEffects: JSON.stringify([
+      { sector: "Agriculture", effectPercent: -16.0 },
+      { sector: "Precious Metals", effectPercent: 10.0 }
+    ]),
+    notes: "Crop destruction hurts agro processors while rural hedging drives gold purchases"
+  },
+  {
+    headline: "A major streaming platform announced a joint venture with a leading national telecom operator for exclusive content.",
+    sector: "Media/Entertainment",
+    effectPercent: 17.0,
+    difficulty: "HARD",
+    stockEffects: JSON.stringify([
+      { sector: "Media/Entertainment", effectPercent: 17.0 },
+      { sector: "Telecom", effectPercent: 12.0 }
+    ]),
+    notes: "Content partnership drives subscriber monetization for both media and telecom"
+  },
+  {
+    headline: "Stringent new carbon emission compliance penalties were enacted across heavy industrial manufacturing sectors.",
+    sector: "Renewable Energy",
+    effectPercent: 16.0,
+    difficulty: "HARD",
+    stockEffects: JSON.stringify([
+      { sector: "Renewable Energy", effectPercent: 16.0 },
+      { sector: "Automobile", effectPercent: -10.0 }
+    ]),
+    notes: "Carbon penalties favor renewable energy offset providers while raising automaker compliance costs"
   }
 ];
 

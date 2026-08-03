@@ -57,6 +57,20 @@ function safeEmitSocket(eventName, data) {
   }
 }
 
+const usedTemplateIds = new Set();
+
+function getUsedTemplateIds() {
+  return Array.from(usedTemplateIds);
+}
+
+function markTemplateUsed(templateId) {
+  if (templateId) usedTemplateIds.add(templateId);
+}
+
+function resetUsedTemplates() {
+  usedTemplateIds.clear();
+}
+
 /**
  * Starts a new 3-hour session (Admin Action)
  * Prevents overlapping sessions by ending any active/liquidating sessions first.
@@ -64,6 +78,9 @@ function safeEmitSocket(eventName, data) {
 async function startNewSession(durationHours = 3) {
   const now = new Date();
   const endTime = new Date(now.getTime() + durationHours * 3600 * 1000);
+
+  // Clear used news template tracking for the fresh session
+  resetUsedTemplates();
 
   // End any previous active or liquidating sessions
   await prisma.session.updateMany({
@@ -229,5 +246,8 @@ module.exports = {
   getCurrentSession,
   startNewSession,
   triggerAutoLiquidation,
-  checkSessionTimers
+  checkSessionTimers,
+  getUsedTemplateIds,
+  markTemplateUsed,
+  resetUsedTemplates
 };

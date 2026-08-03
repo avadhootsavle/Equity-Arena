@@ -5,9 +5,10 @@ import { useTheme } from '../context/ThemeContext';
 import { apiFetch } from '../services/api';
 import { SessionCountdown } from '../components/SessionCountdown';
 import { AdminTraderDetailModal } from '../components/AdminTraderDetailModal';
+import { playNewsChime } from '../services/soundService';
 import { 
   TrendingUp, TrendingDown, Shield, LogOut, Radio, Send, 
-  Trophy, Search, RefreshCw, CheckCircle2, AlertCircle, Sparkles, SlidersHorizontal, Clock, Zap, Eye, Sun, Moon, RotateCcw
+  Trophy, Search, RefreshCw, CheckCircle2, AlertCircle, Sparkles, SlidersHorizontal, Clock, Zap, Eye, Sun, Moon, RotateCcw, Bell
 } from 'lucide-react';
 
 export function AdminDashboard() {
@@ -28,9 +29,14 @@ export function AdminDashboard() {
   const [recentNews, setRecentNews] = useState([]);
 
   const [templates, setTemplates] = useState([]);
+  const [usedTemplateIds, setUsedTemplateIds] = useState([]);
   const [pendingDelayedNews, setPendingDelayedNews] = useState([]);
-  const [delaySeconds, setDelaySeconds] = useState(60);
+  const [delaySeconds, setDelaySeconds] = useState(30);
   const [triggeringTemplateId, setTriggeringTemplateId] = useState(null);
+
+  // 20-minute recurring news reminder timer (1200 seconds)
+  const [reminderSeconds, setReminderSeconds] = useState(1200);
+  const [showReminderAlert, setShowReminderAlert] = useState(false);
 
   const [leaderboard, setLeaderboard] = useState([]);
   const [loadingLeaderboard, setLoadingLeaderboard] = useState(false);
@@ -41,12 +47,32 @@ export function AdminDashboard() {
 
   const [toast, setToast] = useState(null);
 
+  const resetNewsTimer = () => {
+    setReminderSeconds(1200);
+    setShowReminderAlert(false);
+  };
+
+  useEffect(() => {
+    const timer = setInterval(() => {
+      setReminderSeconds((prev) => {
+        if (prev <= 1) {
+          setShowReminderAlert(true);
+          playNewsChime();
+          return 1200; // Reset countdown
+        }
+        return prev - 1;
+      });
+    }, 1000);
+    return () => clearInterval(timer);
+  }, []);
+
   const handleStartNewSession = async () => {
     try {
       const data = await apiFetch('/admin/session/start', {
         method: 'POST',
         body: JSON.stringify({ durationHours: 3 })
       });
+      resetNewsTimer();
       showToast(data.message || 'New 3-hour trading session started!');
     } catch (err) {
       showToast(err.message || 'Failed to start session', 'error');
@@ -68,6 +94,7 @@ export function AdminDashboard() {
     try {
       const data = await apiFetch('/admin/news-templates');
       setTemplates(data.templates || []);
+      setUsedTemplateIds(data.usedTemplateIds || []);
       setPendingDelayedNews(data.pendingDelayedNews || []);
     } catch (err) {
       console.error('Failed to fetch news templates:', err);
@@ -143,6 +170,7 @@ export function AdminDashboard() {
         })
       });
 
+      resetNewsTimer();
       showToast('Custom news broadcasted to all connected traders!');
       setRecentNews((prev) => [data.news, ...(Array.isArray(prev) ? prev.slice(0, 9) : [])]);
       setNewsMessage('');
@@ -161,14 +189,13 @@ export function AdminDashboard() {
         method: 'POST',
         body: JSON.stringify({
           templateId,
-          delaySeconds: parseInt(delaySeconds, 10) || 60
+          delaySeconds: parseInt(delaySeconds, 10) || 30
         })
       });
 
+      resetNewsTimer();
       showToast(data.message);
-      if (data.pendingItem) {
-        setPendingDelayedNews((prev) => [data.pendingItem, ...prev]);
-      }
+      fetchNewsTemplates();
     } catch (err) {
       showToast(err.message || 'Failed to trigger template', 'error');
     } finally {
@@ -181,167 +208,184 @@ export function AdminDashboard() {
     setIsTraderModalOpen(true);
   };
 
-  const filteredStocks = stocks.filter(
-    (s) =>
-      s.symbol.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      s.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      s.sector.toLowerCase().includes(searchQuery.toLowerCase())
-  );
+  const showToast = (message, type = 'success') => {
+    setToast({ message, type });
+    setTimeout(() => setToast(null), 4000);
+  };
+
+  const filteredStocks = stocks.filter((stock) => {
+    const q = searchQuery.toLowerCase().trim();
+    if (!q) return true;
+    return (
+      stock.symbol.toLowerCase().includes(q) ||
+      stock.name.toLowerCase().includes(q) ||
+      stock.sector.toLowerCase().includes(q)
+    );
+  });
 
   return (
-    <div className="min-h-screen theme-bg-main theme-text-main flex flex-col transition-colors">
-      {/* Toast Notification */}
-      {toast && (
-        <div className={`fixed top-4 right-4 z-50 flex items-center gap-3 px-5 py-3 rounded-xl shadow-2xl border transition-all animate-bounce ${
-          toast.type === 'error'
-            ? 'bg-rose-950/90 border-rose-500/50 text-rose-200'
-            : 'bg-emerald-950/90 border-emerald-500/50 text-emerald-200'
-        }`}>
-          {toast.type === 'error' ? <AlertCircle className="w-5 h-5 text-rose-400" /> : <CheckCircle2 className="w-5 h-5 text-emerald-400" />}
-          <span className="text-sm font-semibold">{toast.message}</span>
-        </div>
-      )}
-
-      {/* Admin Trader Drill-Down Modal */}
-      <AdminTraderDetailModal
-        traderId={selectedTraderId}
-        isOpen={isTraderModalOpen}
-        onClose={() => setIsTraderModalOpen(false)}
-      />
-
-      <header className="border-b theme-border theme-bg-panel backdrop-blur-md sticky top-0 z-40">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3.5 flex items-center justify-between">
+    <div className="min-h-screen theme-bg-app transition-colors pb-12">
+      {/* Header */}
+      <header className="sticky top-0 z-40 border-b theme-border theme-bg-card/90 backdrop-blur-md transition-colors">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <div className="p-2.5 bg-indigo-500/10 border border-indigo-500/30 rounded-xl text-indigo-500">
+            <div className="p-2 bg-rose-500/10 border border-rose-500/30 rounded-xl text-rose-500">
               <Shield className="w-5 h-5" />
             </div>
             <div>
               <div className="flex items-center gap-2">
-                <h1 className="text-base font-extrabold theme-text-main font-mono tracking-tight">ADMIN HOST CONSOLE</h1>
-                <span className="px-2 py-0.5 text-[10px] font-extrabold uppercase rounded bg-indigo-500/20 text-indigo-500 border border-indigo-500/30">
-                  Game Host
+                <span className="text-base font-extrabold theme-text-main font-mono">EQUITY ARENA</span>
+                <span className="px-2 py-0.5 rounded-full text-[10px] font-extrabold bg-rose-500/15 text-rose-500 border border-rose-500/30 uppercase tracking-wider font-mono">
+                  ADMIN CONSOLE
                 </span>
               </div>
-              <p className="text-xs theme-text-muted">Equity Arena Pricing, Headlines & Sector Controls</p>
+              <p className="text-[11px] theme-text-muted">Live Indian Stock Exchange Control Desk</p>
             </div>
           </div>
 
-          <div className="flex items-center gap-3">
-            
+          <div className="flex items-center gap-4">
+            {/* Session Countdown */}
             <SessionCountdown />
 
-            <button
-              onClick={handleStartNewSession}
-              className="px-3.5 py-1.5 bg-[#D4A017] hover:bg-[#D4A017]/90 text-slate-950 font-heading font-extrabold text-xs rounded-[4px] shadow transition-all flex items-center gap-1.5 min-h-[34px] btn-terminal"
-            >
-              <RotateCcw className="w-3.5 h-3.5" />
-              <span>START NEW 3-HOUR SESSION</span>
-            </button>
-
-            <div className={`hidden sm:flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-semibold border ${
-              isConnected
-                ? 'bg-emerald-500/10 border-emerald-500/30 text-emerald-500'
-                : 'bg-rose-500/10 border-rose-500/30 text-rose-500'
-            }`}>
-              <Radio className={`w-3.5 h-3.5 ${isConnected ? 'animate-pulse' : ''}`} />
-              <span>{isConnected ? 'Stream Connected' : 'Offline'}</span>
+            {/* 20-Minute News Reminder Widget */}
+            <div className="hidden md:flex items-center gap-2 px-3 py-1.5 rounded-[4px] border theme-border theme-bg-card font-mono text-xs shadow-sm">
+              <Clock className="w-4 h-4 text-[#D4A017] animate-pulse" />
+              <div>
+                <span className="theme-text-dim text-[9px] block font-bold uppercase tracking-wider">NEWS DUE IN</span>
+                <span className={`font-bold font-mono ${reminderSeconds < 180 ? 'text-[#E8453C]' : 'theme-text-main'}`}>
+                  {Math.floor(reminderSeconds / 60).toString().padStart(2, '0')}:{(reminderSeconds % 60).toString().padStart(2, '0')}
+                </span>
+              </div>
             </div>
 
             <button
-              onClick={toggleTheme}
-              title={`Switch to ${theme === 'dark' ? 'Light' : 'Dark'} Mode`}
-              className="p-2.5 rounded-xl border theme-border theme-bg-card theme-bg-card-hover theme-text-main transition-all active:scale-95 shadow-sm"
+              onClick={handleStartNewSession}
+              className="px-3 py-1.5 bg-[#D4A017] hover:bg-[#D4A017]/90 text-slate-950 text-xs font-bold font-mono rounded-[4px] transition-all flex items-center gap-1.5 shadow-sm min-h-[36px] btn-terminal"
+              title="Start fresh 3-Hour Trading Session"
             >
-              {theme === 'dark' ? (
-                <Sun className="w-4 h-4 text-amber-400" />
-              ) : (
-                <Moon className="w-4 h-4 text-indigo-600" />
-              )}
+              <RotateCcw className="w-3.5 h-3.5" />
+              <span>NEW 3H SESSION</span>
             </button>
 
-            <div className="h-6 w-px theme-border hidden sm:block" />
+            <button
+              onClick={toggleTheme}
+              className="p-2 rounded-xl border theme-border theme-bg-panel theme-text-muted hover:theme-text-main transition-colors min-h-[40px] min-w-[40px] flex items-center justify-center"
+              title="Toggle Dark / Light Theme"
+            >
+              {theme === 'dark' ? <Sun className="w-4 h-4 text-amber-400" /> : <Moon className="w-4 h-4 text-indigo-400" />}
+            </button>
 
-            <div className="flex items-center gap-3">
-              <span className="text-xs font-semibold theme-text-muted hidden md:inline">{user?.email}</span>
+            <div className="flex items-center gap-2 border-l theme-border pl-4">
+              <div className="text-right hidden sm:block">
+                <div className="text-xs font-bold theme-text-main">{user?.name || 'Exchange Admin'}</div>
+                <div className="text-[10px] theme-text-muted font-mono">{user?.email}</div>
+              </div>
               <button
                 onClick={logout}
-                className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl border theme-border theme-bg-card theme-bg-card-hover theme-text-main text-xs font-bold transition-all shadow-sm min-h-[36px]"
+                className="p-2 text-rose-500 hover:bg-rose-500/10 rounded-xl transition-colors min-h-[40px] min-w-[40px] flex items-center justify-center"
+                title="Logout Admin"
               >
-                <LogOut className="w-3.5 h-3.5" />
-                <span>Logout</span>
+                <LogOut className="w-4 h-4" />
               </button>
             </div>
           </div>
         </div>
       </header>
 
-      <main className="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-6 space-y-8">
-        
-        {/* Prebuilt News Templates */}
-        <div className="theme-bg-card p-6 rounded-2xl border theme-border shadow-sm">
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
+      {/* Main Content */}
+      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-6 space-y-6">
+
+        {/* 20-Minute News Reminder Alert Banner */}
+        {showReminderAlert && (
+          <div className="p-4 bg-[#D4A017]/20 border border-[#D4A017]/50 rounded-[6px] text-[#D4A017] text-xs font-mono flex items-center justify-between animate-fadeIn shadow-lg">
             <div className="flex items-center gap-3">
-              <div className="p-2.5 bg-amber-500/10 border border-amber-500/30 rounded-xl text-amber-500">
-                <Zap className="w-5 h-5" />
-              </div>
+              <Bell className="w-5 h-5 text-[#D4A017] animate-bounce flex-shrink-0" />
               <div>
-                <h2 className="text-base font-bold theme-text-main uppercase tracking-wider flex items-center gap-2">
-                  Prebuilt News Templates (Delayed Impact)
-                  <Sparkles className="w-4 h-4 text-amber-500" />
-                </h2>
-                <p className="text-xs theme-text-muted">
-                  Broadcasting sends headline ONLY to traders. Price effect triggers automatically after selected delay.
-                </p>
+                <span className="font-extrabold text-sm block">⏰ NEWS BROADCAST REMINDER: 20 MINUTES ELAPSED!</span>
+                <span className="theme-text-muted">It's time to send the next market news headline or analyst template to keep trader momentum active.</span>
               </div>
             </div>
+            <button
+              onClick={resetNewsTimer}
+              className="px-3 py-1.5 bg-[#D4A017] hover:bg-[#D4A017]/90 text-slate-950 font-bold rounded-[4px] text-xs font-mono transition-all btn-terminal flex-shrink-0"
+            >
+              DISMISS & RESET TIMER
+            </button>
+          </div>
+        )}
 
-            <div className="flex items-center gap-2 theme-bg-panel px-3 py-1.5 rounded-xl border theme-border">
-              <Clock className="w-4 h-4 theme-text-dim" />
-              <span className="text-xs theme-text-muted font-semibold">Impact Delay:</span>
+        {/* Toast Alert */}
+        {toast && (
+          <div className={`p-3 rounded-xl text-xs font-semibold flex items-center gap-2 border transition-all animate-fadeIn ${
+            toast.type === 'error'
+              ? 'bg-rose-500/10 border-rose-500/30 text-rose-500'
+              : 'bg-emerald-500/10 border-emerald-500/30 text-emerald-500'
+          }`}>
+            {toast.type === 'error' ? <AlertCircle className="w-4 h-4 flex-shrink-0" /> : <CheckCircle2 className="w-4 h-4 flex-shrink-0" />}
+            <span>{toast.message}</span>
+          </div>
+        )}
+
+        {/* Section 1: Analyst News Templates (Steers Scheduled 15-Min Macro Moves) */}
+        <div className="theme-bg-card p-6 rounded-2xl border theme-border space-y-4 shadow-sm">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+            <div>
+              <h2 className="text-base font-bold theme-text-main flex items-center gap-2">
+                <Sparkles className="w-5 h-5 text-amber-500" />
+                Analyst News Templates (Steers Upcoming 15-Min Macro Moves)
+              </h2>
+              <p className="text-xs theme-text-muted">
+                Triggering a news template directly steers the target stock's next scheduled 15-minute macro move. Single & multi-stock impacts available across 3 difficulty levels.
+              </p>
+            </div>
+
+            <div className="flex items-center gap-3">
+              <label className="text-xs font-semibold theme-text-muted font-mono whitespace-nowrap">Steer Timing:</label>
               <select
                 value={delaySeconds}
-                onChange={(e) => setDelaySeconds(Number(e.target.value))}
-                className="theme-bg-card theme-text-main text-xs font-bold px-2.5 py-1 rounded border theme-border focus:outline-none"
+                onChange={(e) => setDelaySeconds(e.target.value)}
+                className="theme-bg-panel border theme-border rounded-xl px-3 py-1.5 text-xs font-mono theme-text-main focus:outline-none focus:border-amber-500 transition-all min-h-[36px]"
               >
-                <option value={15}>15 seconds</option>
-                <option value={30}>30 seconds</option>
-                <option value={60}>60 seconds (Default)</option>
-                <option value={90}>90 seconds</option>
-                <option value={120}>2 minutes</option>
+                <option value={15}>15 Seconds</option>
+                <option value={30}>30 Seconds</option>
+                <option value={60}>60 Seconds</option>
               </select>
             </div>
           </div>
 
-          {pendingDelayedNews.length > 0 && (
-            <div className="mb-6 p-3 bg-amber-500/10 border border-amber-500/30 rounded-xl text-xs space-y-1.5">
-              <div className="font-bold text-amber-500 flex items-center gap-1.5">
-                <Clock className="w-3.5 h-3.5 animate-spin" />
-                <span>Pending Delayed News Impact Timers ({pendingDelayedNews.length} active)</span>
-              </div>
-              {pendingDelayedNews.map((p) => (
-                <div key={p.id} className="flex justify-between items-center theme-text-muted text-[11px] theme-bg-panel p-2 rounded border theme-border">
-                  <span className="truncate max-w-md">"{p.headline}"</span>
-                  <span className="font-mono text-amber-500 font-bold">
-                    Target: {p.sector} ({p.effectPercent > 0 ? '+' : ''}{p.effectPercent}%) — Executes at {new Date(p.triggerAt).toLocaleTimeString()}
-                  </span>
-                </div>
-              ))}
-            </div>
-          )}
-
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
             {templates.map((tpl) => {
               const isPositive = tpl.effectPercent >= 0;
+              const isUsed = usedTemplateIds.includes(tpl.id);
+              const difficulty = tpl.difficulty || 'EASY';
+
+              let diffClass = 'bg-emerald-500/20 text-emerald-500 border-emerald-500/30';
+              if (difficulty === 'MEDIUM') diffClass = 'bg-[#D4A017]/20 text-[#D4A017] border-[#D4A017]/30';
+              if (difficulty === 'HARD') diffClass = 'bg-[#E8453C]/20 text-[#E8453C] border-[#E8453C]/30';
+
               return (
                 <div
                   key={tpl.id}
-                  className="theme-bg-panel p-4 rounded-xl border theme-border hover:border-amber-500/40 transition-all flex flex-col justify-between gap-3 shadow-sm"
+                  className={`theme-bg-panel p-4 rounded-xl border theme-border hover:border-amber-500/40 transition-all flex flex-col justify-between gap-3 shadow-sm ${
+                    isUsed ? 'opacity-70' : ''
+                  }`}
                 >
                   <div>
-                    <div className="flex items-center justify-between gap-2 mb-1.5">
-                      <span className="px-2 py-0.5 rounded text-[10px] font-bold theme-bg-card theme-text-muted border theme-border">
-                        {tpl.sector}
-                      </span>
+                    <div className="flex items-center justify-between gap-2 mb-2">
+                      <div className="flex items-center gap-1.5 flex-wrap">
+                        <span className="px-2 py-0.5 rounded text-[10px] font-bold theme-bg-card theme-text-muted border theme-border">
+                          {tpl.sector}
+                        </span>
+                        <span className={`px-2 py-0.5 rounded text-[10px] font-bold font-mono border ${diffClass}`}>
+                          {difficulty}
+                        </span>
+                        {isUsed && (
+                          <span className="px-2 py-0.5 rounded text-[9px] font-extrabold bg-slate-800 text-slate-400 border border-slate-700">
+                            USED THIS SESSION
+                          </span>
+                        )}
+                      </div>
+
                       <span className={`px-2 py-0.5 rounded text-[10px] font-mono font-bold ${
                         isPositive ? 'bg-emerald-500/20 text-emerald-500' : 'bg-rose-500/20 text-rose-500'
                       }`}>
@@ -360,10 +404,10 @@ export function AdminDashboard() {
                   <button
                     onClick={() => handleTriggerTemplate(tpl.id)}
                     disabled={triggeringTemplateId === tpl.id}
-                    className="w-full py-2 bg-amber-500/20 hover:bg-amber-500 text-amber-500 hover:text-slate-950 font-bold text-xs rounded-xl transition-all border border-amber-500/30 flex items-center justify-center gap-1.5 min-h-[36px]"
+                    className="w-full py-2 bg-amber-500/20 hover:bg-amber-500 text-amber-500 hover:text-slate-950 font-bold text-xs rounded-xl transition-all border border-amber-500/30 flex items-center justify-center gap-1.5 min-h-[36px] btn-terminal"
                   >
                     <Zap className="w-3.5 h-3.5" />
-                    <span>Broadcast ({delaySeconds}s Delay)</span>
+                    <span>Steer Macro Move ({delaySeconds}s)</span>
                   </button>
                 </div>
               );
@@ -371,7 +415,7 @@ export function AdminDashboard() {
           </div>
         </div>
 
-        {/* Middle Split: Custom News & Leaderboard */}
+        {/* Section 2: Custom News & Player Leaderboard */}
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
           
           <div className="lg:col-span-5 theme-bg-card p-6 rounded-2xl border theme-border flex flex-col justify-between shadow-sm">
@@ -382,31 +426,31 @@ export function AdminDashboard() {
                 </div>
                 <div>
                   <h2 className="text-sm font-bold theme-text-main uppercase tracking-wider">Custom News Broadcast</h2>
-                  <p className="text-xs theme-text-muted">Send manual non-templated market announcements</p>
+                  <p className="text-xs theme-text-muted font-mono">Send manual market headlines to exchange</p>
                 </div>
               </div>
 
               <form onSubmit={handleSendNews} className="space-y-4">
                 <div>
-                  <label className="block text-xs font-semibold theme-text-muted mb-1">Custom Headline</label>
+                  <label className="block text-xs font-semibold theme-text-muted mb-1 font-mono">Custom Headline</label>
                   <textarea
                     rows={3}
                     required
                     value={newsMessage}
                     onChange={(e) => setNewsMessage(e.target.value)}
-                    placeholder="Enter manual news announcement..."
-                    className="w-full theme-bg-panel border theme-border rounded-xl p-3 text-xs theme-text-main placeholder:theme-text-dim focus:outline-none focus:border-indigo-500 transition-all resize-none"
+                    placeholder="Enter manual news headline..."
+                    className="w-full theme-bg-panel border theme-border rounded-xl p-3 text-xs theme-text-main placeholder:theme-text-dim focus:outline-none focus:border-indigo-500 transition-all resize-none font-mono"
                   />
                 </div>
 
                 <div>
-                  <label className="block text-xs font-semibold theme-text-muted mb-1">Tag Stock (Optional)</label>
+                  <label className="block text-xs font-semibold theme-text-muted mb-1 font-mono">Tag Stock (Optional)</label>
                   <select
                     value={selectedStockId}
                     onChange={(e) => setSelectedStockId(e.target.value)}
-                    className="w-full theme-bg-panel border theme-border rounded-xl px-3 py-2.5 text-xs theme-text-main focus:outline-none focus:border-indigo-500 transition-all min-h-[40px]"
+                    className="w-full theme-bg-panel border theme-border rounded-xl px-3 py-2.5 text-xs theme-text-main focus:outline-none focus:border-indigo-500 transition-all min-h-[40px] font-mono"
                   >
-                    <option value="">-- General Announcement --</option>
+                    <option value="">-- General Market Headline --</option>
                     {stocks.map((s) => (
                       <option key={s.id} value={s.id}>
                         {s.symbol} — {s.name} ({s.currentPrice.toFixed(2)} IC)
@@ -418,7 +462,7 @@ export function AdminDashboard() {
                 <button
                   type="submit"
                   disabled={sendingNews || !newsMessage.trim()}
-                  className="w-full py-3 bg-indigo-600 hover:bg-indigo-500 text-white font-extrabold text-xs font-mono uppercase tracking-wider rounded-xl shadow-lg shadow-indigo-600/20 flex items-center justify-center gap-2 transition-all active:scale-[0.99] disabled:opacity-50 min-h-[44px]"
+                  className="w-full py-3 bg-indigo-600 hover:bg-indigo-500 text-white font-extrabold text-xs font-mono uppercase tracking-wider rounded-xl shadow-lg shadow-indigo-600/20 flex items-center justify-center gap-2 transition-all active:scale-[0.99] disabled:opacity-50 min-h-[44px] btn-terminal"
                 >
                   <Send className="w-3.5 h-3.5" />
                   <span>BROADCAST HEADLINE TO EXCHANGE</span>
@@ -435,7 +479,7 @@ export function AdminDashboard() {
                   <Trophy className="w-4 h-4" />
                 </div>
                 <div>
-                  <h2 className="text-sm font-bold theme-text-main uppercase tracking-wider">Live Player Leaderboard</h2>
+                  <h2 className="text-sm font-bold theme-text-main uppercase tracking-wider font-mono">Live Player Leaderboard</h2>
                   <p className="text-xs theme-text-muted">Click any trader row to monitor full holdings & transaction logs</p>
                 </div>
               </div>
@@ -443,20 +487,20 @@ export function AdminDashboard() {
               <button
                 onClick={fetchLeaderboard}
                 disabled={loadingLeaderboard}
-                className="flex items-center gap-1 px-3 py-1.5 theme-bg-panel hover:theme-bg-card-hover theme-text-main text-xs font-semibold rounded-xl transition-all border theme-border min-h-[36px]"
+                className="flex items-center gap-1 px-3 py-1.5 theme-bg-panel hover:theme-bg-card-hover theme-text-main text-xs font-semibold rounded-xl transition-all border theme-border min-h-[36px] btn-terminal font-mono"
               >
                 <RefreshCw className={`w-3.5 h-3.5 ${loadingLeaderboard ? 'animate-spin' : ''}`} />
                 Refresh
               </button>
             </div>
 
-            <div className="flex-1 overflow-x-auto overflow-y-auto max-h-64">
-              <table className="w-full text-left border-collapse text-xs">
+            <div className="overflow-x-auto">
+              <table className="w-full text-left text-xs font-mono">
                 <thead>
-                  <tr className="border-b theme-border theme-text-muted font-semibold uppercase tracking-wider">
+                  <tr className="border-b theme-border theme-text-muted font-bold">
                     <th className="py-2.5 px-3">Rank</th>
-                    <th className="py-2.5 px-3">Trader</th>
-                    <th className="py-2.5 px-3 text-right">Wallet</th>
+                    <th className="py-2.5 px-3">Trader Name</th>
+                    <th className="py-2.5 px-3 text-right">Wallet Cash</th>
                     <th className="py-2.5 px-3 text-right">Holdings Value</th>
                     <th className="py-2.5 px-3 text-right">Total Value</th>
                     <th className="py-2.5 px-3 text-center">Monitor</th>
@@ -500,7 +544,7 @@ export function AdminDashboard() {
                               e.stopPropagation();
                               handleOpenTraderDetail(trader.id);
                             }}
-                            className="p-1.5 bg-indigo-500/10 group-hover:bg-indigo-500 text-indigo-500 group-hover:text-white rounded-lg transition-all min-h-[32px] min-w-[32px]"
+                            className="p-1.5 bg-indigo-500/10 group-hover:bg-indigo-500 text-indigo-500 group-hover:text-white rounded-lg transition-all min-h-[32px] min-w-[32px] flex items-center justify-center"
                             title="Monitor Trader History"
                           >
                             <Eye className="w-4 h-4" />
@@ -516,15 +560,15 @@ export function AdminDashboard() {
 
         </div>
 
-        {/* 15 India Stock Controls */}
+        {/* Section 3: Live Stock Controls */}
         <div className="space-y-4">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 theme-bg-card p-4 rounded-2xl border theme-border shadow-sm">
             <div>
-              <h2 className="text-base font-bold theme-text-main flex items-center gap-2">
+              <h2 className="text-base font-bold theme-text-main flex items-center gap-2 font-mono">
                 <SlidersHorizontal className="w-5 h-5 text-indigo-500" />
                 Live Stock Controls (15 India Sector Stocks)
               </h2>
-              <p className="text-xs theme-text-muted">Prices starting between 5 and 15 Ignite Coins (IC)</p>
+              <p className="text-xs theme-text-muted font-mono">Spot prices seeded between 40.00 and 80.00 IC (Hard Ceiling: 99.00 IC)</p>
             </div>
 
             <div className="relative w-full sm:w-72">
@@ -534,13 +578,13 @@ export function AdminDashboard() {
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 placeholder="Search symbol, name, or sector..."
-                className="w-full theme-bg-panel border theme-border rounded-xl py-2 pl-9 pr-4 text-xs theme-text-main placeholder:theme-text-dim focus:outline-none focus:border-indigo-500 transition-all min-h-[40px]"
+                className="w-full theme-bg-panel border theme-border rounded-xl py-2 pl-9 pr-4 text-xs theme-text-main placeholder:theme-text-dim focus:outline-none focus:border-indigo-500 transition-all min-h-[40px] font-mono"
               />
             </div>
           </div>
 
           {loadingStocks ? (
-            <div className="py-16 text-center theme-text-dim text-sm">
+            <div className="py-16 text-center theme-text-dim text-sm font-mono">
               Loading 15 India sector stocks...
             </div>
           ) : (
@@ -580,66 +624,44 @@ export function AdminDashboard() {
                       </div>
                     </div>
 
-                    <div className="space-y-2 pt-2 border-t theme-border">
-                      <div className="grid grid-cols-4 gap-1.5">
-                        <button
-                          onClick={() => handleAdjustPrice(stock.id, 10)}
-                          disabled={adjustingStockId === stock.id}
-                          className="py-1.5 bg-emerald-600/20 hover:bg-emerald-600/40 text-emerald-500 border border-emerald-500/30 text-xs font-bold font-mono rounded-lg transition-all min-h-[32px]"
-                        >
-                          +10%
-                        </button>
-                        <button
-                          onClick={() => handleAdjustPrice(stock.id, 50)}
-                          disabled={adjustingStockId === stock.id}
-                          className="py-1.5 bg-emerald-600/30 hover:bg-emerald-600/50 text-emerald-500 border border-emerald-500/40 text-xs font-bold font-mono rounded-lg transition-all min-h-[32px]"
-                        >
-                          +50%
-                        </button>
-                        <button
-                          onClick={() => handleAdjustPrice(stock.id, -10)}
-                          disabled={adjustingStockId === stock.id}
-                          className="py-1.5 bg-rose-600/20 hover:bg-rose-600/40 text-rose-500 border border-rose-500/30 text-xs font-bold font-mono rounded-lg transition-all min-h-[32px]"
-                        >
-                          -10%
-                        </button>
-                        <button
-                          onClick={() => handleAdjustPrice(stock.id, -50)}
-                          disabled={adjustingStockId === stock.id}
-                          className="py-1.5 bg-rose-600/30 hover:bg-rose-600/50 text-rose-500 border border-rose-500/40 text-xs font-bold font-mono rounded-lg transition-all min-h-[32px]"
-                        >
-                          -50%
-                        </button>
-                      </div>
-
-                      <form
-                        onSubmit={(e) => {
-                          e.preventDefault();
-                          const val = parseFloat(customVal);
-                          if (!isNaN(val)) {
-                            handleAdjustPrice(stock.id, val);
-                          }
-                        }}
-                        className="flex gap-1.5"
+                    <div className="flex items-center gap-2 pt-2 border-t theme-border">
+                      <button
+                        onClick={() => handleAdjustPrice(stock.id, 5)}
+                        disabled={adjustingStockId === stock.id}
+                        className="flex-1 py-1.5 bg-emerald-500/10 hover:bg-emerald-500 text-emerald-500 hover:text-slate-950 font-bold text-xs rounded-lg transition-all border border-emerald-500/30 flex items-center justify-center gap-1 min-h-[36px] btn-terminal font-mono"
                       >
+                        <TrendingUp className="w-3.5 h-3.5" />
+                        <span>+5%</span>
+                      </button>
+
+                      <button
+                        onClick={() => handleAdjustPrice(stock.id, -5)}
+                        disabled={adjustingStockId === stock.id}
+                        className="flex-1 py-1.5 bg-rose-500/10 hover:bg-rose-500 text-rose-500 hover:text-white font-bold text-xs rounded-lg transition-all border border-rose-500/30 flex items-center justify-center gap-1 min-h-[36px] btn-terminal font-mono"
+                      >
+                        <TrendingDown className="w-3.5 h-3.5" />
+                        <span>-5%</span>
+                      </button>
+
+                      <div className="flex items-center gap-1">
                         <input
                           type="number"
-                          step="any"
+                          placeholder="±%"
                           value={customVal}
-                          onChange={(e) =>
-                            setCustomPercents((prev) => ({ ...prev, [stock.id]: e.target.value }))
-                          }
-                          placeholder="Custom % (e.g. +25, -15)"
-                          className="flex-1 theme-bg-panel border theme-border rounded-lg px-2.5 py-1 text-xs theme-text-main font-mono placeholder:theme-text-dim focus:outline-none focus:border-indigo-500 min-h-[32px]"
+                          onChange={(e) => setCustomPercents((prev) => ({ ...prev, [stock.id]: e.target.value }))}
+                          className="w-16 theme-bg-panel border theme-border rounded-lg py-1.5 px-2 text-xs font-mono theme-text-main text-center focus:outline-none focus:border-indigo-500 min-h-[36px]"
                         />
                         <button
-                          type="submit"
+                          onClick={() => {
+                            const val = parseFloat(customVal);
+                            if (!isNaN(val)) handleAdjustPrice(stock.id, val);
+                          }}
                           disabled={adjustingStockId === stock.id || !customVal}
-                          className="px-3 py-1 bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-bold rounded-lg transition-all disabled:opacity-40 min-h-[32px]"
+                          className="px-2.5 py-1.5 bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-xs rounded-lg transition-all disabled:opacity-40 min-h-[36px] btn-terminal font-mono"
                         >
-                          Apply
+                          GO
                         </button>
-                      </form>
+                      </div>
                     </div>
                   </div>
                 );
@@ -649,6 +671,13 @@ export function AdminDashboard() {
         </div>
 
       </main>
+
+      {/* Admin Trader Drill-Down Modal */}
+      <AdminTraderDetailModal
+        traderId={selectedTraderId}
+        isOpen={isTraderModalOpen}
+        onClose={() => setIsTraderModalOpen(false)}
+      />
     </div>
   );
 }

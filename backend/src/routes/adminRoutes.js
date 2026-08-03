@@ -3,7 +3,8 @@ const { PrismaClient } = require('@prisma/client');
 const { authenticateToken, requireAdmin } = require('../middleware/authMiddleware');
 const { emitStockUpdate, emitNewsBroadcast } = require('../socket');
 const { checkAndExecuteLimitOrders } = require('../services/orderService');
-const { applyNewsImpact } = require('../services/marketTicker');
+const { applyNewsImpact, steerMacroMoveForNews } = require('../services/marketTicker');
+const { getUsedTemplateIds, markTemplateUsed } = require('../services/sessionService');
 
 const router = express.Router();
 const prisma = new PrismaClient();
@@ -195,7 +196,8 @@ router.get('/news-templates', async (req, res) => {
     const templates = await prisma.newsTemplate.findMany({
       orderBy: { createdAt: 'asc' }
     });
-    return res.json({ templates, pendingDelayedNews });
+    const usedTemplateIds = getUsedTemplateIds();
+    return res.json({ templates, usedTemplateIds, pendingDelayedNews });
   } catch (err) {
     console.error('Get news templates error:', err);
     return res.status(500).json({ error: 'Internal server error' });
@@ -206,12 +208,15 @@ router.get('/news-templates', async (req, res) => {
 router.post('/news/trigger-template', async (req, res) => {
   try {
     const { templateId, delaySeconds } = req.body;
-    const delay = Math.max(0, parseInt(delaySeconds, 10) || 60);
+    const delay = Math.max(0, parseInt(delaySeconds, 10) || 30);
 
     const template = await prisma.newsTemplate.findUnique({ where: { id: templateId } });
     if (!template) {
       return res.status(404).json({ error: 'News template not found' });
     }
+
+    // Mark template as used in current session
+    markTemplateUsed(template.id);
 
     const news = await prisma.news.create({
       data: {
@@ -220,6 +225,7 @@ router.post('/news/trigger-template', async (req, res) => {
       }
     });
 
+    // Broadcast headline immediately (without revealing stock targets to traders!)
     emitNewsBroadcast({
       id: news.id,
       message: news.message,
@@ -228,129 +234,24 @@ router.post('/news/trigger-template', async (req, res) => {
       timestamp: news.timestamp
     });
 
-    const pendingItem = {
-      id: `pending_${Date.now()}`,
-      templateId: template.id,
-      headline: template.headline,
-      sector: template.sector,
-      effectPercent: template.effectPercent,
-      delaySeconds: delay,
-      triggerAt: new Date(Date.now() + delay * 1000)
-    };
-    pendingDelayedNews.push(pendingItem);
-
-    // Apply Quant news drift & volatility impact shift over duration window
-    applyNewsImpact(template.sector, template.effectPercent, delay + 30);
-
-    const totalPreMovePercent = template.effectPercent * 0.15;
-    const totalTicks = Math.max(1, Math.floor(delay / 6));
-    const preMovePerTickPercent = totalPreMovePercent / totalTicks;
-
-    const preMoveInterval = setInterval(async () => {
+    // Parse multi-stock or single-stock effects
+    let effects = [];
+    if (template.stockEffects) {
       try {
-        const targetSectors = template.sector.split(',').map((s) => s.trim());
-        const targetStocks = await prisma.stock.findMany({
-          where: { sector: { in: targetSectors } }
-        });
-
-        for (const stock of targetStocks) {
-          const rawNewPrice = stock.currentPrice * (1 + preMovePerTickPercent / 100);
-          const newPrice = Math.max(0.50, Math.round(rawNewPrice * 100) / 100);
-          const preMoveVolume = getRandomVolume(40000, 90000);
-
-          const [updatedStock, newHistory] = await prisma.$transaction([
-            prisma.stock.update({
-              where: { id: stock.id },
-              data: { currentPrice: newPrice }
-            }),
-            prisma.priceHistory.create({
-              data: {
-                stockId: stock.id,
-                price: newPrice,
-                volume: preMoveVolume
-              }
-            })
-          ]);
-
-          const percentChange = stock.basePrice > 0
-            ? Math.round((((newPrice - stock.basePrice) / stock.basePrice) * 100) * 100) / 100
-            : 0;
-
-          emitStockUpdate({
-            stockId: updatedStock.id,
-            symbol: updatedStock.symbol,
-            name: updatedStock.name,
-            newPrice: updatedStock.currentPrice,
-            volume: newHistory.volume,
-            percentChange,
-            timestamp: newHistory.timestamp
-          });
-
-          await checkAndExecuteLimitOrders(updatedStock.id, newPrice);
-        }
-      } catch (err) {
-        console.error('Pre-move drift tick error:', err);
+        effects = JSON.parse(template.stockEffects);
+      } catch (e) {
+        effects = [{ sector: template.sector, effectPercent: template.effectPercent }];
       }
-    }, 6000);
+    } else {
+      effects = [{ sector: template.sector, effectPercent: template.effectPercent }];
+    }
 
-    setTimeout(async () => {
-      clearInterval(preMoveInterval);
-
-      try {
-        const targetSectors = template.sector.split(',').map((s) => s.trim());
-        const targetStocks = await prisma.stock.findMany({
-          where: { sector: { in: targetSectors } }
-        });
-
-        const remainingEffectPercent = template.effectPercent * 0.85;
-
-        for (const stock of targetStocks) {
-          const rawNewPrice = stock.currentPrice * (1 + remainingEffectPercent / 100);
-          const newPrice = Math.max(0.50, Math.round(rawNewPrice * 100) / 100);
-          const spikeVolume = getRandomVolume(80000, 180000);
-
-          const [updatedStock, newHistory] = await prisma.$transaction([
-            prisma.stock.update({
-              where: { id: stock.id },
-              data: { currentPrice: newPrice }
-            }),
-            prisma.priceHistory.create({
-              data: {
-                stockId: stock.id,
-                price: newPrice,
-                volume: spikeVolume
-              }
-            })
-          ]);
-
-          const percentChange = stock.basePrice > 0
-            ? Math.round((((newPrice - stock.basePrice) / stock.basePrice) * 100) * 100) / 100
-            : 0;
-
-          emitStockUpdate({
-            stockId: updatedStock.id,
-            symbol: updatedStock.symbol,
-            name: updatedStock.name,
-            newPrice: updatedStock.currentPrice,
-            volume: newHistory.volume,
-            percentChange,
-            timestamp: newHistory.timestamp
-          });
-
-          await checkAndExecuteLimitOrders(updatedStock.id, newPrice);
-        }
-
-        const idx = pendingDelayedNews.findIndex((p) => p.id === pendingItem.id);
-        if (idx !== -1) pendingDelayedNews.splice(idx, 1);
-      } catch (err) {
-        console.error('Error executing delayed news price effect:', err);
-      }
-    }, delay * 1000);
+    // Phase 23: Steer targeted stock(s)' next scheduled 15-minute macro move directly!
+    await steerMacroMoveForNews(effects, delay);
 
     return res.json({
-      message: `Analyst news broadcasted! Pre-move drift active; full impact in ${delay}s.`,
-      news,
-      pendingItem
+      message: `Analyst news broadcasted! Macro move steered for target stocks in ~${delay}s.`,
+      news
     });
   } catch (err) {
     console.error('Trigger news template error:', err);

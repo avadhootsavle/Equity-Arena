@@ -34,6 +34,12 @@ enum SessionStatus {
   ENDED
 }
 
+enum Difficulty {
+  EASY
+  MEDIUM
+  HARD
+}
+
 model User {
   id            String        @id @default(uuid())
   name          String
@@ -130,12 +136,14 @@ model News {
 }
 
 model NewsTemplate {
-  id            String   @id @default(uuid())
+  id            String     @id @default(uuid())
   headline      String
   sector        String
   effectPercent Float
+  difficulty    Difficulty @default(EASY)
+  stockEffects  String?    // JSON string for multi-sector effects e.g. [{"sector":"Defense","effectPercent":20},{"sector":"Aviation","effectPercent":-15}]
   notes         String
-  createdAt     DateTime @default(now())
+  createdAt     DateTime   @default(now())
 }
 
 model AdminAuditLog {

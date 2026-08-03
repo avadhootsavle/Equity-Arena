@@ -8,7 +8,7 @@ const { randomNormal, combineSectorNoise, calculateGBMPrice, calculateMacroMoveT
 const prisma = new PrismaClient();
 let tickerInterval = null;
 
-// Persistent state per stock for drift, GARCH volatility, and Phase 20b 15-minute jittered macro moves
+// Persistent state per stock for drift, GARCH volatility, and Phase 20b/23 15-minute jittered macro moves
 const stockStates = new Map();
 
 /**
@@ -18,11 +18,9 @@ const stockStates = new Map();
 function getNextMacroIntervalMs() {
   const isShortCycle = Math.random() < 0.08;
   if (isShortCycle) {
-    // 6 to 9 minutes in ms
-    return Math.floor(360000 + Math.random() * 180000);
+    return Math.floor(360000 + Math.random() * 180000); // 6 to 9 mins
   }
-  // 12 to 18 minutes in ms
-  return Math.floor(720000 + Math.random() * 360000);
+  return Math.floor(720000 + Math.random() * 360000); // 12 to 18 mins
 }
 
 /**
@@ -32,7 +30,6 @@ function getStockState(stockId) {
   if (!stockStates.has(stockId)) {
     const baseDrift = (Math.random() - 0.5) * 0.03;
     const baseVol = 0.10 + Math.random() * 0.10;
-    // Staggered offset: each stock gets a random 0 to 15 minute initial cycle offset
     const offsetMs = Math.floor(Math.random() * 900000);
 
     stockStates.set(stockId, {
@@ -43,12 +40,12 @@ function getStockState(stockId) {
       newsDriftBonus: 0,
       newsVolBonus: 0,
       lastReturn: 0,
-      // Phase 20b: 15-Minute Jittered Macro Volatility Cycle State
       lastMacroTime: Date.now() - offsetMs,
       nextMacroIntervalMs: getNextMacroIntervalMs(),
+      pendingMacroSteer: null,
       macroRampActive: false,
       macroRampStep: 0,
-      macroTotalRampSteps: 5, // Smooth 5-tick ramp over 10-15s
+      macroTotalRampSteps: 5,
       macroStepIncrement: 0
     });
   }
@@ -56,23 +53,38 @@ function getStockState(stockId) {
 }
 
 /**
- * Apply temporary news impact parameters
+ * Phase 23: Steers upcoming macro moves for target stocks based on news broadcast effects
+ * @param {Array<{sector?: string, symbol?: string, effectPercent: number}>} stockEffects
+ * @param {number} delaySeconds
  */
-function applyNewsImpact(sectorList, effectPercent, durationSeconds = 60) {
-  const driftShift = (effectPercent / 100) * 0.5;
-  const volBoost = Math.min(0.25, Math.abs(effectPercent / 100) * 0.3);
+async function steerMacroMoveForNews(stockEffects, delaySeconds = 30) {
+  try {
+    const stocks = await prisma.stock.findMany();
+    const now = Date.now();
 
-  stockStates.forEach((state) => {
-    state.newsDriftBonus += driftShift;
-    state.newsVolBonus += volBoost;
-  });
+    for (const effect of stockEffects) {
+      const { sector, symbol, effectPercent } = effect;
+      const matchingStocks = stocks.filter((s) => 
+        (sector && s.sector.toLowerCase().trim() === sector.toLowerCase().trim()) ||
+        (symbol && s.symbol.toLowerCase().trim() === symbol.toLowerCase().trim())
+      );
 
-  setTimeout(() => {
-    stockStates.forEach((state) => {
-      state.newsDriftBonus = Math.max(0, state.newsDriftBonus - driftShift);
-      state.newsVolBonus = Math.max(0, state.newsVolBonus - volBoost);
-    });
-  }, durationSeconds * 1000);
+      for (const stock of matchingStocks) {
+        const state = getStockState(stock.id);
+        const targetPrice = Math.min(99.00, Math.max(1.00, Math.round(stock.currentPrice * (1 + effectPercent / 100) * 100) / 100));
+
+        state.pendingMacroSteer = {
+          targetPrice,
+          effectPercent
+        };
+
+        // Accelerate next macro move to trigger in delaySeconds
+        state.lastMacroTime = now - state.nextMacroIntervalMs + (delaySeconds * 1000);
+      }
+    }
+  } catch (err) {
+    console.error('Error steering macro move for news:', err);
+  }
 }
 
 /**
@@ -100,26 +112,32 @@ async function tickMarket() {
     for (const stock of stocks) {
       const state = getStockState(stock.id);
 
-      // Phase 20b Macro Move Trigger Check (Jittered 12-18 minute interval)
+      // Phase 20b/23 Macro Move Trigger Check
       const timeSinceLastMacro = now - state.lastMacroTime;
       if (timeSinceLastMacro >= state.nextMacroIntervalMs && !state.macroRampActive) {
         state.lastMacroTime = now;
         state.nextMacroIntervalMs = getNextMacroIntervalMs();
 
-        // 12% Skip chance: small probability that a cycle has no major move
-        const isSkippedCycle = Math.random() < 0.12;
+        let targetPrice;
+        if (state.pendingMacroSteer) {
+          targetPrice = state.pendingMacroSteer.targetPrice;
+          state.pendingMacroSteer = null; // Consume news steer
+        } else {
+          const isSkippedCycle = Math.random() < 0.12;
+          if (!isSkippedCycle) {
+            const macroMove = calculateMacroMoveTarget({
+              currentPrice: stock.currentPrice,
+              basePrice: stock.basePrice
+            });
+            targetPrice = macroMove.targetPrice;
+          }
+        }
 
-        if (!isSkippedCycle) {
-          const macroMove = calculateMacroMoveTarget({
-            currentPrice: stock.currentPrice,
-            basePrice: stock.basePrice
-          });
-
+        if (targetPrice !== undefined && targetPrice !== stock.currentPrice) {
           state.macroRampActive = true;
           state.macroRampStep = 0;
-          state.macroTotalRampSteps = 5; // 5 ticks ramp (~10-15 seconds)
-
-          const totalDelta = macroMove.targetPrice - stock.currentPrice;
+          state.macroTotalRampSteps = 5;
+          const totalDelta = targetPrice - stock.currentPrice;
           state.macroStepIncrement = totalDelta / state.macroTotalRampSteps;
         }
       }
@@ -227,6 +245,6 @@ module.exports = {
   startMarketTicker,
   stopMarketTicker,
   tickMarket,
-  applyNewsImpact,
+  steerMacroMoveForNews,
   getStockState
 };
