@@ -1,4 +1,5 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
+import { apiFetch } from '../services/api';
 
 const AuthContext = createContext(null);
 
@@ -21,15 +22,50 @@ export function AuthProvider({ children }) {
     }
   });
 
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(true);
 
-  // Keep state synchronized if token is missing but user exists
+  // Validate stored JWT token with backend on initial load / page refresh
   useEffect(() => {
-    if (!token && user) {
-      setUser(null);
-      localStorage.removeItem('ignite_user');
+    let isMounted = true;
+
+    async function validateAuthToken() {
+      const storedToken = localStorage.getItem('ignite_token');
+      if (!storedToken) {
+        if (isMounted) {
+          setToken(null);
+          setUser(null);
+          setLoading(false);
+        }
+        return;
+      }
+
+      try {
+        const data = await apiFetch('/auth/me');
+        if (isMounted && data?.user) {
+          setUser(data.user);
+          localStorage.setItem('ignite_user', JSON.stringify(data.user));
+        }
+      } catch (err) {
+        if (isMounted) {
+          console.warn('[AuthContext] Session token invalid or expired:', err.message);
+          setToken(null);
+          setUser(null);
+          localStorage.removeItem('ignite_token');
+          localStorage.removeItem('ignite_user');
+        }
+      } finally {
+        if (isMounted) {
+          setLoading(false);
+        }
+      }
     }
-  }, [token, user]);
+
+    validateAuthToken();
+
+    return () => {
+      isMounted = false;
+    };
+  }, []);
 
   const login = (newToken, newUser) => {
     setToken(newToken);

@@ -2,6 +2,7 @@ const express = require('express');
 const bcrypt = require('bcryptjs');
 const { PrismaClient } = require('@prisma/client');
 const { generateToken } = require('../utils/auth');
+const { authenticateToken } = require('../middleware/authMiddleware');
 const { adminLoginRateLimiter, recordAdminFailedAttempt, clearAdminRateLimit } = require('../middleware/rateLimiter');
 
 const router = express.Router();
@@ -161,6 +162,31 @@ router.post('/admin/login', adminLoginRateLimiter, async (req, res) => {
     });
   } catch (err) {
     console.error('Admin login error:', err);
+    return res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+// GET /auth/me — Validate token & return current user info on page reload
+router.get('/me', authenticateToken, async (req, res) => {
+  try {
+    const user = await prisma.user.findUnique({
+      where: { id: req.user.userId },
+      select: {
+        id: true,
+        name: true,
+        email: true,
+        role: true,
+        walletBalance: true
+      }
+    });
+
+    if (!user) {
+      return res.status(404).json({ error: 'User not found' });
+    }
+
+    return res.json({ user });
+  } catch (err) {
+    console.error('Get current user error:', err);
     return res.status(500).json({ error: 'Internal server error' });
   }
 });
