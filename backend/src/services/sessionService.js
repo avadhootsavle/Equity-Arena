@@ -50,7 +50,7 @@ function safeEmitSocket(eventName, data) {
   try {
     const io = getIo();
     if (io) {
-      io.to('traders').emit(eventName, data);
+      io.emit(eventName, data);
     }
   } catch (err) {
     // Silent fallback when running outside socket server context
@@ -203,6 +203,14 @@ async function triggerAutoLiquidation() {
       ]);
 
       console.log(`✅ Liquidated ${userHoldings.length} positions for trader ${userId} (+${totalProceeds.toFixed(2)} IC cash)`);
+      try {
+        const { getUserPortfolio } = require('./portfolioService');
+        const { emitPortfolioUpdate } = require('../socket');
+        const pData = await getUserPortfolio(userId);
+        if (pData) emitPortfolioUpdate(userId, pData);
+      } catch (e) {
+        // Safe guard
+      }
     }
   }
 

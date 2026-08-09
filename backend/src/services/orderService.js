@@ -255,17 +255,12 @@ async function checkAndExecuteLimitOrders(stockId, currentPrice) {
         }
       });
 
-      // Emit refreshed portfolio data for the order owner
+      // Emit full refreshed portfolio data for the order owner
       try {
-        const fullUser = await prisma.user.findUnique({
-          where: { id: order.userId },
-          include: { holdings: { include: { stock: true } }, transactions: { include: { stock: true } } }
-        });
-        if (fullUser) {
-          emitPortfolioUpdate(order.userId, {
-            walletBalance: fullUser.walletBalance,
-            holdings: fullUser.holdings
-          });
+        const { getUserPortfolio } = require('./portfolioService');
+        const portfolio = await getUserPortfolio(order.userId);
+        if (portfolio) {
+          emitPortfolioUpdate(order.userId, portfolio);
         }
       } catch (err) {
         // Safe guard

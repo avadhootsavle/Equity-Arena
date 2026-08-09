@@ -273,6 +273,12 @@ export function TraderDashboard() {
     return portfolio.holdings?.find((h) => h.stockId === stockId);
   };
 
+  const liveTotalHoldingsValue = (portfolio.holdings || []).reduce((sum, h) => {
+    const s = stocks.find((st) => st.id === h.stockId);
+    const price = s?.currentPrice || h.currentPrice || 0;
+    return sum + h.quantity * price;
+  }, 0);
+
   return (
     <div className="min-h-screen theme-bg-main theme-text-main flex flex-col pb-20 md:pb-8 transition-colors">
       
@@ -452,13 +458,20 @@ export function TraderDashboard() {
                         </tr>
                       ) : (
                         portfolio.holdings.map((h) => {
-                          const isPositive = h.unrealizedPL >= 0;
                           const matchedStock = stocks.find((s) => s.id === h.stockId) || {
                             id: h.stockId,
                             symbol: h.symbol,
                             name: h.name,
                             currentPrice: h.currentPrice
                           };
+                          const livePrice = matchedStock.currentPrice || h.currentPrice || 0;
+                          const liveTotalValue = Math.round(h.quantity * livePrice * 100) / 100;
+                          const totalCost = Math.round(h.quantity * h.avgBuyPrice * 100) / 100;
+                          const liveUnrealizedPL = Math.round((liveTotalValue - totalCost) * 100) / 100;
+                          const liveUnrealizedPLPercent = totalCost > 0
+                            ? Math.round(((liveUnrealizedPL / totalCost) * 100) * 100) / 100
+                            : 0;
+                          const isPositive = liveUnrealizedPL >= 0;
 
                           return (
                             <tr key={h.id} className="theme-bg-card-hover transition-colors">
@@ -478,15 +491,15 @@ export function TraderDashboard() {
                                 {(h.avgBuyPrice || 0).toFixed(2)} IC
                               </td>
                               <td className="py-2.5 px-3 text-right font-mono theme-text-main font-semibold">
-                                <AnimatedNumber value={h.currentPrice || 0} decimals={2} suffix=" IC" />
+                                <AnimatedNumber value={livePrice} decimals={2} suffix=" IC" />
                               </td>
                               <td className="py-2.5 px-3 text-right">
                                 <div className={`font-mono font-bold ${isPositive ? 'text-[#1DB954]' : 'text-[#E8453C]'}`}>
                                   {isPositive ? '+' : ''}
-                                  <AnimatedNumber value={h.unrealizedPL || 0} decimals={2} suffix=" IC" />
+                                  <AnimatedNumber value={liveUnrealizedPL} decimals={2} suffix=" IC" />
                                 </div>
                                 <div className={`text-[10px] font-mono ${isPositive ? 'text-[#1DB954]' : 'text-[#E8453C]'}`}>
-                                  ({isPositive ? '+' : ''}{(h.unrealizedPLPercent || 0).toFixed(2)}%)
+                                  ({isPositive ? '+' : ''}{liveUnrealizedPLPercent.toFixed(2)}%)
                                 </div>
                               </td>
                               <td className="py-2.5 px-3 text-center">
@@ -539,7 +552,7 @@ export function TraderDashboard() {
                   <div className="flex justify-between items-center text-[11px]">
                     <span className="theme-text-muted">Holdings Asset Value:</span>
                     <span className="theme-text-main">
-                      {(portfolio.totalHoldingsValue || 0).toFixed(2)} IC
+                      {liveTotalHoldingsValue.toFixed(2)} IC
                     </span>
                   </div>
                 </div>

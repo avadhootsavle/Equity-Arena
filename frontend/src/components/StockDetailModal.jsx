@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { apiFetch } from '../services/api';
+import { useSocket } from '../context/SocketContext';
 import { Sparkline, calculateSMA } from './Sparkline';
 import { AnimatedNumber } from './AnimatedNumber';
 import { 
@@ -8,6 +9,7 @@ import {
 } from 'lucide-react';
 
 export function StockDetailModal({ stock, userWallet, userHolding, isOpen, onClose, onSuccess }) {
+  const { socket } = useSocket();
   const [tradeCategory, setTradeCategory] = useState('INSTANT'); // 'INSTANT' or 'LIMIT'
   const [mode, setMode] = useState('BUY'); // 'BUY' or 'SELL'
   const [quantity, setQuantity] = useState(1);
@@ -21,6 +23,36 @@ export function StockDetailModal({ stock, userWallet, userHolding, isOpen, onClo
   const [cancellingOrderId, setCancellingOrderId] = useState(null);
   const [error, setError] = useState('');
 
+  // Sync balanceInfo whenever userWallet prop updates
+  useEffect(() => {
+    if (userWallet !== undefined) {
+      setBalanceInfo((prev) => ({
+        ...prev,
+        availableWalletBalance: userWallet
+      }));
+    }
+  }, [userWallet]);
+
+  // Real-time socket listener for portfolio & order updates inside modal
+  useEffect(() => {
+    if (!socket) return;
+    const handlePortfolioUpdate = (updatedPortfolio) => {
+      if (updatedPortfolio.availableWalletBalance !== undefined) {
+        setBalanceInfo({
+          availableWalletBalance: updatedPortfolio.availableWalletBalance,
+          lockedFunds: updatedPortfolio.lockedFunds || 0
+        });
+      }
+      if (updatedPortfolio.pendingOrders) {
+        setPendingOrders(updatedPortfolio.pendingOrders);
+      }
+    };
+    socket.on('portfolio:update', handlePortfolioUpdate);
+    return () => {
+      socket.off('portfolio:update', handlePortfolioUpdate);
+    };
+  }, [socket]);
+
   const fetchStockHistory = useCallback(async (stockId, range) => {
     setLoadingHistory(true);
     try {
@@ -32,7 +64,7 @@ export function StockDetailModal({ stock, userWallet, userHolding, isOpen, onClo
     } finally {
       setLoadingHistory(false);
     }
-  }, [stock]);
+  }, [stock?.id]);
 
   const fetchOrders = useCallback(async () => {
     try {
@@ -49,15 +81,22 @@ export function StockDetailModal({ stock, userWallet, userHolding, isOpen, onClo
     }
   }, []);
 
+  // Form initialization: ONLY runs when modal opens or stock ID changes (NOT on price ticks!)
   useEffect(() => {
     if (stock && isOpen) {
       setQuantity(1);
       setTargetPrice(stock.currentPrice.toFixed(2));
       setError('');
+    }
+  }, [stock?.id, isOpen]);
+
+  // History & Orders fetch
+  useEffect(() => {
+    if (stock && isOpen) {
       fetchStockHistory(stock.id, timeframe);
       fetchOrders();
     }
-  }, [stock, isOpen, timeframe, fetchStockHistory, fetchOrders]);
+  }, [stock?.id, isOpen, timeframe, fetchStockHistory, fetchOrders]);
 
   if (!isOpen || !stock) return null;
 

@@ -5,98 +5,10 @@ const { tradeRateLimiter } = require('../middleware/rateLimiter');
 const { emitPortfolioUpdate } = require('../socket');
 const { getUserAvailableBalance, getUserAvailableHolding } = require('../services/orderService');
 const { getCurrentSession } = require('../services/sessionService');
+const { getUserPortfolio } = require('../services/portfolioService');
 
 const router = express.Router();
 const prisma = new PrismaClient();
-
-/**
- * Helper to fetch complete portfolio data for a user, including available & locked balance math
- */
-async function getUserPortfolio(userId) {
-  const user = await prisma.user.findUnique({
-    where: { id: userId },
-    include: {
-      holdings: {
-        include: {
-          stock: true
-        }
-      }
-    }
-  });
-
-  if (!user) return null;
-
-  const { availableBalance: availableWalletBalance, lockedFunds } = await getUserAvailableBalance(userId);
-
-  let totalHoldingsValue = 0;
-  let totalHoldingsCost = 0;
-
-  const formattedHoldings = await Promise.all(
-    user.holdings.map(async (h) => {
-      const currentPrice = h.stock.currentPrice;
-      const totalValue = Math.round(h.quantity * currentPrice * 100) / 100;
-      const totalCost = Math.round(h.quantity * h.avgBuyPrice * 100) / 100;
-      const unrealizedPL = Math.round((totalValue - totalCost) * 100) / 100;
-      const unrealizedPLPercent = totalCost > 0
-        ? Math.round(((unrealizedPL / totalCost) * 100) * 100) / 100
-        : 0;
-
-      totalHoldingsValue += totalValue;
-      totalHoldingsCost += totalCost;
-
-      const { availableQuantity, lockedQuantity } = await getUserAvailableHolding(userId, h.stockId);
-
-      return {
-        id: h.id,
-        stockId: h.stockId,
-        symbol: h.stock.symbol,
-        name: h.stock.name,
-        quantity: h.quantity,
-        lockedQuantity,
-        availableQuantity,
-        avgBuyPrice: h.avgBuyPrice,
-        currentPrice: currentPrice,
-        totalValue,
-        unrealizedPL,
-        unrealizedPLPercent
-      };
-    })
-  );
-
-  const totalUnrealizedPL = Math.round((totalHoldingsValue - totalHoldingsCost) * 100) / 100;
-  const totalPortfolioValue = Math.round((user.walletBalance + totalHoldingsValue) * 100) / 100;
-
-  const transactions = await prisma.transaction.findMany({
-    where: { userId },
-    orderBy: { timestamp: 'desc' },
-    take: 50,
-    include: {
-      stock: {
-        select: { symbol: true, name: true }
-      }
-    }
-  });
-
-  const pendingOrders = await prisma.order.findMany({
-    where: { userId, status: 'PENDING' },
-    include: { stock: { select: { symbol: true, name: true } } },
-    orderBy: { createdAt: 'desc' }
-  });
-
-  return {
-    userId: user.id,
-    walletBalance: Math.round(user.walletBalance * 100) / 100,
-    availableWalletBalance: Math.round(availableWalletBalance * 100) / 100,
-    lockedFunds: Math.round(lockedFunds * 100) / 100,
-    totalHoldingsValue: Math.round(totalHoldingsValue * 100) / 100,
-    totalHoldingsCost: Math.round(totalHoldingsCost * 100) / 100,
-    totalUnrealizedPL,
-    totalPortfolioValue,
-    holdings: formattedHoldings,
-    transactions,
-    pendingOrders
-  };
-}
 
 // GET /portfolio
 router.get('/portfolio', authenticateToken, async (req, res) => {

@@ -48,16 +48,29 @@ export function SessionCountdown({ onSessionUpdate }) {
   useEffect(() => {
     if (!socket) return;
 
-    const handleSessionUpdate = () => fetchSession();
-    const handleSessionLiquidated = () => fetchSession();
-    const handleSessionEnded = () => fetchSession();
+    const handleSessionStarted = (data) => {
+      if (data && data.remainingSeconds !== undefined) {
+        setSession((prev) => ({ ...prev, ...data }));
+        setRemainingSeconds(data.remainingSeconds);
+      }
+      fetchSession();
+    };
 
-    socket.on('session:started', handleSessionUpdate);
+    const handleSessionLiquidated = () => {
+      fetchSession();
+    };
+
+    const handleSessionEnded = () => {
+      setRemainingSeconds(0);
+      fetchSession();
+    };
+
+    socket.on('session:started', handleSessionStarted);
     socket.on('session:liquidated', handleSessionLiquidated);
     socket.on('session:ended', handleSessionEnded);
 
     return () => {
-      socket.off('session:started', handleSessionUpdate);
+      socket.off('session:started', handleSessionStarted);
       socket.off('session:liquidated', handleSessionLiquidated);
       socket.off('session:ended', handleSessionEnded);
     };
