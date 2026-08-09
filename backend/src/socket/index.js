@@ -51,18 +51,26 @@ function initSocket(server) {
   });
 
   io.on('connection', (socket) => {
-    const { userId, role, name } = socket.user;
-    console.log(`[Socket] Client connected: ${name} (${userId}) [Role: ${role}]`);
+    try {
+      const { userId, role, name } = socket.user || {};
+      console.log(`[Socket] Client connected: ${name || 'User'} (${userId}) [Role: ${role}]`);
 
-    // All authenticated clients join the shared 'traders' room
-    socket.join('traders');
+      // All authenticated clients join the shared 'traders' room
+      socket.join('traders');
 
-    // Each user joins their private room 'user:{userId}'
-    socket.join(`user:${userId}`);
+      // Each user joins their private room 'user:{userId}'
+      if (userId) socket.join(`user:${userId}`);
 
-    socket.on('disconnect', () => {
-      console.log(`[Socket] Client disconnected: ${name} (${userId})`);
-    });
+      socket.on('error', (err) => {
+        console.warn(`[Socket Error] Client ${name || 'User'} (${userId}):`, err?.message || err);
+      });
+
+      socket.on('disconnect', (reason) => {
+        console.log(`[Socket] Client disconnected: ${name || 'User'} (${userId}) [Reason: ${reason}]`);
+      });
+    } catch (err) {
+      console.error('[Socket Connection Handler Error]:', err);
+    }
   });
 
   return io;
@@ -76,20 +84,26 @@ function getIo() {
 }
 
 function emitStockUpdate(data) {
-  if (io) {
-    io.to('traders').emit('stock:update', data);
+  try {
+    if (io) io.to('traders').emit('stock:update', data);
+  } catch (err) {
+    console.error('[Socket emitStockUpdate error]:', err.message);
   }
 }
 
 function emitNewsBroadcast(data) {
-  if (io) {
-    io.to('traders').emit('news:broadcast', data);
+  try {
+    if (io) io.to('traders').emit('news:broadcast', data);
+  } catch (err) {
+    console.error('[Socket emitNewsBroadcast error]:', err.message);
   }
 }
 
 function emitPortfolioUpdate(userId, portfolioData) {
-  if (io) {
-    io.to(`user:${userId}`).emit('portfolio:update', portfolioData);
+  try {
+    if (io && userId) io.to(`user:${userId}`).emit('portfolio:update', portfolioData);
+  } catch (err) {
+    console.error('[Socket emitPortfolioUpdate error]:', err.message);
   }
 }
 

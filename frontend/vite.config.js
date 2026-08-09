@@ -11,9 +11,19 @@ export default defineConfig({
       '/trade': 'http://localhost:5001',
       '/portfolio': 'http://localhost:5001',
       '/admin': 'http://localhost:5001',
+      '/session': 'http://localhost:5001',
       '/socket.io': {
         target: 'http://localhost:5001',
-        ws: true
+        ws: true,
+        configure: (proxy) => {
+          proxy.on('error', (err, _req, _res) => {
+            // Quietly swallow dev-server WS pipe disconnect errors during backend reloads
+            if (err.code === 'EPIPE' || err.code === 'ECONNRESET' || err.code === 'ECONNREFUSED') {
+              return;
+            }
+            console.warn('[Vite WS Proxy Error]:', err.message);
+          });
+        }
       }
     }
   }

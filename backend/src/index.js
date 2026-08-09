@@ -8,6 +8,15 @@ require('dotenv').config();
 const { initSocket } = require('./socket');
 const { startMarketTicker } = require('./services/marketTicker');
 
+// Top-level process safety nets to prevent backend crashes on stray errors
+process.on('uncaughtException', (err) => {
+  console.error('[CRITICAL UNCAUGHT EXCEPTION]:', err?.stack || err?.message || err);
+});
+
+process.on('unhandledRejection', (reason, promise) => {
+  console.error('[CRITICAL UNHANDLED REJECTION]:', reason);
+});
+
 const authRoutes = require('./routes/authRoutes');
 const stockRoutes = require('./routes/stockRoutes');
 const { router: tradeRoutes } = require('./routes/tradeRoutes');
