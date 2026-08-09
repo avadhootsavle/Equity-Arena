@@ -7,6 +7,7 @@ require('dotenv').config();
 
 const { initSocket } = require('./socket');
 const { startMarketTicker } = require('./services/marketTicker');
+const { ensureNewsTemplatesSeeded } = require('./services/newsService');
 
 // Top-level process safety nets to prevent backend crashes on stray errors
 process.on('uncaughtException', (err) => {
@@ -51,6 +52,9 @@ initSocket(server);
 
 // Start continuous background market drift ticker
 startMarketTicker();
+
+// Ensure analyst news templates are populated
+ensureNewsTemplatesSeeded();
 
 // API Routes
 app.use('/auth', authRoutes);

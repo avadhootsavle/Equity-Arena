@@ -1,28 +1,8 @@
 const { PrismaClient } = require('@prisma/client');
-const bcrypt = require('bcryptjs');
-
 const prisma = new PrismaClient();
 
-const INDIA_SECTOR_STOCKS = [
-  { symbol: 'BPTE', name: 'Bharat PetroEnergy', sector: 'Oil & Gas' },
-  { symbol: 'IDW', name: 'Indus Defence Works', sector: 'Defense' },
-  { symbol: 'NITI', name: 'Nimbus InfoTech India', sector: 'Technology' },
-  { symbol: 'ABAL', name: 'AirBharat Airlines', sector: 'Aviation' },
-  { symbol: 'ANAG', name: 'Annapurna Agro', sector: 'Agriculture' },
-  { symbol: 'RTB', name: 'Rashtriya Trust Bank', sector: 'Banking/Finance' },
-  { symbol: 'SANP', name: 'Sanjeevani Pharma', sector: 'Pharmaceuticals' },
-  { symbol: 'HTM', name: 'Hindustan TurboMotors', sector: 'Automobile' },
-  { symbol: 'GSL', name: 'Ganga Shipping Lines', sector: 'Shipping/Logistics' },
-  { symbol: 'SGM', name: 'Suvarna Gold Mining', sector: 'Precious Metals' },
-  { symbol: 'MRI', name: 'Meridian Realty India', sector: 'Real Estate' },
-  { symbol: 'BRM', name: 'Bazaar Retail Mart', sector: 'Retail' },
-  { symbol: 'BWT', name: 'BharatWave Telecom', sector: 'Telecom' },
-  { symbol: 'SWST', name: 'Swarna Studios', sector: 'Media/Entertainment' },
-  { symbol: 'SGE', name: 'Surya Green Energy', sector: 'Renewable Energy' }
-];
-
-const ANALYST_NEWS_TEMPLATES = [
-  // --- EASY (Obvious single-sector signals) ---
+const ALL_NEWS_TEMPLATES = [
+  // --- EASY ---
   {
     headline: "Bumper monsoon rainfall driven by favorable weather patterns has pushed crop yields to a 5-year high nationwide.",
     sector: "Agriculture",
@@ -88,7 +68,7 @@ const ANALYST_NEWS_TEMPLATES = [
     notes: "Freight delays spike operational costs for shipping lines"
   },
 
-  // --- MEDIUM (Requires sector knowledge & multi-sector connections) ---
+  // --- MEDIUM ---
   {
     headline: "The central bank cut its benchmark repo rate by 50 basis points to stimulate domestic credit expansion.",
     sector: "Banking/Finance",
@@ -178,7 +158,7 @@ const ANALYST_NEWS_TEMPLATES = [
     notes: "Commercial property weakness increases non-performing loans for banks"
   },
 
-  // --- HARD (Ambiguous, complex reasoning, opposite multi-sector moves) ---
+  // --- HARD ---
   {
     headline: "Military conflict escalates near a vital energy strait, threatening international crude oil supply lines.",
     sector: "Oil & Gas",
@@ -268,7 +248,7 @@ const ANALYST_NEWS_TEMPLATES = [
     notes: "Carbon penalties favor renewable energy offset providers while raising automaker compliance costs"
   },
 
-  // --- PHASE 23B: REALISTIC CROSS-SECTOR CAUSE-AND-EFFECT TEMPLATES ---
+  // --- PHASE 23B: REALISTIC CROSS-SECTOR TEMPLATES ---
   {
     headline: "A major digital banking platform reported a security incident affecting online transactions overnight. Technology providers linked to the platform's infrastructure are also facing scrutiny.",
     sector: "Banking/Finance",
@@ -381,130 +361,24 @@ const ANALYST_NEWS_TEMPLATES = [
   }
 ];
 
-function getRandomPrice40to80() {
-  const val = Math.random() * (80 - 40) + 40;
-  return Math.round(val * 100) / 100;
-}
-
-function getRandomVolume(min = 5000, max = 15000) {
-  return Math.floor(Math.random() * (max - min + 1)) + min;
-}
-
-async function main() {
-  console.log('🌱 Starting Phase 11 database seeding (Hardened Admin & Audit Logging)...');
-
-  await prisma.adminAuditLog.deleteMany();
-  await prisma.transaction.deleteMany();
-  await prisma.holding.deleteMany();
-  await prisma.priceHistory.deleteMany();
-  await prisma.news.deleteMany();
-  await prisma.newsTemplate.deleteMany();
-  await prisma.stock.deleteMany();
-  await prisma.user.deleteMany();
-
-  // Create Admin User with bcrypt cost factor 12
-  const adminPasswordHash = await bcrypt.hash('admin123', 12);
-  const adminUser = await prisma.user.create({
-    data: {
-      name: 'Admin User',
-      email: 'admin@test.com',
-      passwordHash: adminPasswordHash,
-      role: 'ADMIN',
-      walletBalance: 20000,
-      isTestAccount: true
-    }
-  });
-  console.log(`✅ Created Admin user (Bcrypt cost factor 12): ${adminUser.email}`);
-
-  // Create Seed Demo Trader
-  const testTraderPasswordHash = await bcrypt.hash('trader123', 10);
-  await prisma.user.create({
-    data: {
-      name: 'Seed Demo Trader',
-      email: 'seed_trader@test.com',
-      passwordHash: testTraderPasswordHash,
-      role: 'TRADER',
-      walletBalance: 20000,
-      isTestAccount: true
-    }
-  });
-  console.log(`✅ Created Seed Demo Trader (20,000 IC Wallet)`);
-
-  const now = Date.now();
-  const ONE_HOUR = 60 * 60 * 1000;
-  const ONE_DAY = 24 * ONE_HOUR;
-
-  for (let i = 0; i < INDIA_SECTOR_STOCKS.length; i++) {
-    const item = INDIA_SECTOR_STOCKS[i];
-    const basePrice = getRandomPrice40to80();
-
-    const histories = [];
-    let runningPrice = basePrice * 0.85;
-
-    for (let day = 30; day >= 8; day--) {
-      const dailyDrift = (Math.random() - 0.48) * 0.05;
-      runningPrice = Math.min(99.00, Math.max(1.0, Math.round(runningPrice * (1 + dailyDrift) * 100) / 100));
-
-      histories.push({
-        price: runningPrice,
-        volume: getRandomVolume(150000, 350000),
-        timestamp: new Date(now - day * ONE_DAY)
+async function ensureNewsTemplatesSeeded() {
+  try {
+    for (const tpl of ALL_NEWS_TEMPLATES) {
+      const existing = await prisma.newsTemplate.findFirst({
+        where: { headline: tpl.headline }
       });
-    }
-
-    for (let hour = 7 * 24; hour >= 24; hour -= 3) {
-      const hourlyDrift = (Math.random() - 0.49) * 0.02;
-      runningPrice = Math.min(99.00, Math.max(1.0, Math.round(runningPrice * (1 + hourlyDrift) * 100) / 100));
-
-      histories.push({
-        price: runningPrice,
-        volume: getRandomVolume(15000, 35000),
-        timestamp: new Date(now - hour * ONE_HOUR)
-      });
-    }
-
-    for (let min = 24 * 60; min >= 0; min -= 15) {
-      const tickDrift = (Math.random() - 0.49) * 0.01;
-      runningPrice = Math.min(99.00, Math.max(1.0, Math.round(runningPrice * (1 + tickDrift) * 100) / 100));
-      if (min === 0) runningPrice = basePrice;
-
-      histories.push({
-        price: runningPrice,
-        volume: getRandomVolume(5000, 15000),
-        timestamp: new Date(now - min * 60 * 1000)
-      });
-    }
-
-    const stock = await prisma.stock.create({
-      data: {
-        symbol: item.symbol,
-        name: item.name,
-        sector: item.sector,
-        basePrice: basePrice,
-        currentPrice: basePrice,
-        priceHistories: {
-          create: histories
-        }
+      if (!existing) {
+        await prisma.newsTemplate.create({ data: tpl });
       }
-    });
-    console.log(`   [${i + 1}/15] Stock: ${stock.symbol} (${stock.name}) [${stock.sector}] — ${stock.currentPrice.toFixed(2)} IC`);
+    }
+    const count = await prisma.newsTemplate.count();
+    console.log(`✅ Verified ${count} Analyst News Templates in database (34 total pool).`);
+  } catch (err) {
+    console.error('Error seeding news templates:', err.message);
   }
-
-  for (const template of ANALYST_NEWS_TEMPLATES) {
-    await prisma.newsTemplate.create({
-      data: template
-    });
-  }
-  console.log(`✅ Seeded ${ANALYST_NEWS_TEMPLATES.length} Analyst-Style News Templates.`);
-
-  console.log(`🎉 Phase 11 Database seeding completed successfully!`);
 }
 
-main()
-  .catch((e) => {
-    console.error('❌ Seeding failed:', e);
-    process.exit(1);
-  })
-  .finally(async () => {
-    await prisma.$disconnect();
-  });
+module.exports = {
+  ALL_NEWS_TEMPLATES,
+  ensureNewsTemplatesSeeded
+};
