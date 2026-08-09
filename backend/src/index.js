@@ -62,6 +62,7 @@ app.use('/stocks', stockRoutes);
 app.use('/admin', adminRoutes);
 app.use('/', tradeRoutes); // Mounts GET /portfolio, POST /trade/buy, POST /trade/sell
 app.use('/', orderRoutes); // Mounts POST /orders, DELETE /orders/:id, GET /orders
+app.use('/api', orderRoutes); // Dual mount for /api/orders prefix compatibility
 app.use('/', stockRoutes); // Mounts GET /news
 app.use('/', sessionRoutes); // Mounts GET /api/session, POST /api/admin/session/start
 

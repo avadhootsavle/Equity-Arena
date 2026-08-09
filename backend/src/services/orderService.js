@@ -28,11 +28,11 @@ async function getUserAvailableBalance(userId) {
     }
   });
 
-  const lockedFunds = pendingBuyOrders.reduce((sum, order) => {
+  const lockedFunds = Math.round(pendingBuyOrders.reduce((sum, order) => {
     return sum + (order.targetPrice * order.quantity);
-  }, 0);
+  }, 0) * 100) / 100;
 
-  const availableBalance = Math.max(0, user.walletBalance - lockedFunds);
+  const availableBalance = Math.max(0, Math.round((user.walletBalance - lockedFunds) * 100) / 100);
 
   return {
     walletBalance: user.walletBalance,

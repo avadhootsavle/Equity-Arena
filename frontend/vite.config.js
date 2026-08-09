@@ -10,8 +10,10 @@ export default defineConfig({
       '/stocks': 'http://localhost:5001',
       '/trade': 'http://localhost:5001',
       '/portfolio': 'http://localhost:5001',
+      '/orders': 'http://localhost:5001',
       '/admin': 'http://localhost:5001',
       '/session': 'http://localhost:5001',
+      '/api': 'http://localhost:5001',
       '/socket.io': {
         target: 'http://localhost:5001',
         ws: true,
