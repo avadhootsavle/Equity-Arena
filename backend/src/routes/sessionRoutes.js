@@ -15,13 +15,21 @@ router.get('/session', async (req, res) => {
   }
 });
 
-// POST /api/admin/session/start — Start new 3-hour session (Admin Only)
+// POST /api/admin/session/start — Start new configurable session (Admin Only)
 router.post('/admin/session/start', authenticateToken, requireAdmin, async (req, res) => {
   try {
-    const durationHours = parseInt(req.body.durationHours, 10) || 3;
-    const session = await startNewSession(durationHours);
+    const durationMinutes = parseInt(req.body.durationMinutes, 10) || 180;
+    const liquidationBufferMinutes = parseInt(req.body.liquidationBufferMinutes, 10) || 5;
+    const macroCycleIntervalMinutes = parseInt(req.body.macroCycleIntervalMinutes, 10) || 15;
+
+    const session = await startNewSession({
+      durationMinutes,
+      liquidationBufferMinutes,
+      macroCycleIntervalMinutes
+    });
+
     return res.json({
-      message: `Started new ${durationHours}-hour trading session successfully!`,
+      message: `Started new ${durationMinutes}-minute trading session (Liquidation buffer: ${liquidationBufferMinutes}m, Macro cycle: ${macroCycleIntervalMinutes}m)!`,
       session
     });
   } catch (err) {

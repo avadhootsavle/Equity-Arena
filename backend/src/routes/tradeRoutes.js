@@ -28,10 +28,11 @@ router.get('/portfolio', authenticateToken, async (req, res) => {
 router.post('/trade/buy', authenticateToken, tradeRateLimiter, async (req, res) => {
   try {
     const session = await getCurrentSession();
-    if (session.isTradingLocked) {
-      return res.status(400).json({
-        error: 'Trading is locked for this session (Session is in auto-liquidation or has ended).'
-      });
+    if (!session || session.status !== 'ACTIVE' || session.isTradingLocked) {
+      const msg = session?.status === 'NOT_STARTED'
+        ? "Trading hasn't started yet — waiting for admin to start session"
+        : 'Trading is locked for this session (Session is in auto-liquidation or has ended).';
+      return res.status(400).json({ error: msg });
     }
 
     const { stockId, quantity } = req.body;
@@ -128,10 +129,11 @@ router.post('/trade/buy', authenticateToken, tradeRateLimiter, async (req, res) 
 router.post('/trade/sell', authenticateToken, tradeRateLimiter, async (req, res) => {
   try {
     const session = await getCurrentSession();
-    if (session.isTradingLocked) {
-      return res.status(400).json({
-        error: 'Trading is locked for this session (Session is in auto-liquidation or has ended).'
-      });
+    if (!session || session.status !== 'ACTIVE' || session.isTradingLocked) {
+      const msg = session?.status === 'NOT_STARTED'
+        ? "Trading hasn't started yet — waiting for admin to start session"
+        : 'Trading is locked for this session (Session is in auto-liquidation or has ended).';
+      return res.status(400).json({ error: msg });
     }
 
     const { stockId, quantity } = req.body;

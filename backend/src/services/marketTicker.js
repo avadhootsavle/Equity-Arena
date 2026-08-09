@@ -11,16 +11,23 @@ let tickerInterval = null;
 // Persistent state per stock for drift, GARCH volatility, and Phase 20b/23 15-minute jittered macro moves
 const stockStates = new Map();
 
+let baseMacroIntervalMinutes = 15;
+
+function setBaseMacroIntervalMinutes(mins) {
+  if (mins && typeof mins === 'number' && mins > 0) {
+    baseMacroIntervalMinutes = mins;
+  }
+}
+
 /**
- * Generates a randomized next macro cycle duration in ms (12 to 18 minutes baseline)
- * With an 8% chance for a shorter 6-9 minute follow-up cycle
+ * Generates a randomized next macro cycle duration in ms based on baseMacroIntervalMinutes
+ * Randomizes within range [0.8 * base, 1.2 * base]
  */
 function getNextMacroIntervalMs() {
-  const isShortCycle = Math.random() < 0.08;
-  if (isShortCycle) {
-    return Math.floor(360000 + Math.random() * 180000); // 6 to 9 mins
-  }
-  return Math.floor(720000 + Math.random() * 360000); // 12 to 18 mins
+  const baseMs = baseMacroIntervalMinutes * 60 * 1000;
+  const minMs = Math.floor(baseMs * 0.8);
+  const maxMs = Math.floor(baseMs * 1.2);
+  return Math.floor(minMs + Math.random() * (maxMs - minMs));
 }
 
 /**
@@ -246,5 +253,6 @@ module.exports = {
   stopMarketTicker,
   tickMarket,
   steerMacroMoveForNews,
-  getStockState
+  getStockState,
+  setBaseMacroIntervalMinutes
 };

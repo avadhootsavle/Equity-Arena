@@ -8,7 +8,7 @@ import {
   TrendingUp, Radio, LogOut, Coins, LayoutDashboard, Newspaper, Sun, Moon, ShieldCheck, Volume2, VolumeX
 } from 'lucide-react';
 
-export function Navbar({ activeTab, setActiveTab, walletBalance, lockedFunds, newsCount }) {
+export function Navbar({ activeTab, setActiveTab, walletBalance, lockedFunds, newsCount, onSessionUpdate }) {
   const { user, logout } = useAuth();
   const { isConnected } = useSocket();
   const { theme, toggleTheme } = useTheme();
@@ -82,7 +82,7 @@ export function Navbar({ activeTab, setActiveTab, walletBalance, lockedFunds, ne
             <div className="flex items-center gap-3">
               
               {/* Server-Synced Session Countdown Timer */}
-              <SessionCountdown />
+              <SessionCountdown onSessionUpdate={onSessionUpdate} />
 
               {/* Market Stream Connectivity Pill */}
               <div className={`hidden lg:flex items-center gap-1.5 px-2.5 py-1 rounded-[4px] text-[11px] font-mono font-semibold border ${

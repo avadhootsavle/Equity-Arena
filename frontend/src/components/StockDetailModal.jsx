@@ -8,7 +8,7 @@ import {
   ShoppingBag, AlertTriangle, Calendar, BarChart2, Activity, Zap, Clock, Ban
 } from 'lucide-react';
 
-export function StockDetailModal({ stock, userWallet, userHolding, isOpen, onClose, onSuccess }) {
+export function StockDetailModal({ stock, userWallet, userHolding, isOpen, onClose, onSuccess, isTradingLocked }) {
   const { socket } = useSocket();
   const [tradeCategory, setTradeCategory] = useState('INSTANT'); // 'INSTANT' or 'LIMIT'
   const [mode, setMode] = useState('BUY'); // 'BUY' or 'SELL'
@@ -495,9 +495,16 @@ export function StockDetailModal({ stock, userWallet, userHolding, isOpen, onClo
               </div>
             </div>
 
+            {isTradingLocked && (
+              <p className="text-[11px] font-mono text-[#E8453C] font-bold text-center bg-[#E8453C]/10 p-2.5 rounded border border-[#E8453C]/30 flex items-center justify-center gap-1.5">
+                <Ban className="w-4 h-4 text-[#E8453C]" />
+                <span>Trading is currently locked — waiting for admin to start an active session.</span>
+              </p>
+            )}
+
             <button
               type="submit"
-              disabled={loadingTrade || (
+              disabled={isTradingLocked || loadingTrade || (
                 tradeCategory === 'INSTANT'
                   ? (mode === 'BUY' ? !canInstantBuy : !canInstantSell)
                   : (mode === 'BUY' ? !canLimitBuy : !canLimitSell)
@@ -508,7 +515,14 @@ export function StockDetailModal({ stock, userWallet, userHolding, isOpen, onClo
                   : 'bg-[#E8453C] hover:bg-[#E8453C]/90 text-white'
               } disabled:opacity-40 disabled:cursor-not-allowed`}
             >
-              {loadingTrade ? 'PROCESSING ORDER...' : (
+              {isTradingLocked ? (
+                <>
+                  <Ban className="w-4 h-4" />
+                  <span>TRADING LOCKED — WAITING FOR SESSION TO START</span>
+                </>
+              ) : loadingTrade ? (
+                'PROCESSING ORDER...'
+              ) : (
                 <>
                   {tradeCategory === 'INSTANT' ? <ShoppingBag className="w-4 h-4" /> : <Clock className="w-4 h-4" />}
                   <span>

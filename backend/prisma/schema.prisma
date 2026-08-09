@@ -156,9 +156,12 @@ model AdminAuditLog {
 }
 
 model Session {
-  id        String        @id @default(uuid())
-  startTime DateTime      @default(now())
-  endTime   DateTime
-  status    SessionStatus @default(ACTIVE)
-  createdAt DateTime      @default(now())
+  id                        String        @id @default(uuid())
+  startTime                 DateTime      @default(now())
+  endTime                   DateTime
+  durationMinutes           Int           @default(180)
+  liquidationBufferMinutes  Int           @default(5)
+  macroCycleIntervalMinutes Int           @default(15)
+  status                    SessionStatus @default(ACTIVE)
+  createdAt                 DateTime      @default(now())
 }

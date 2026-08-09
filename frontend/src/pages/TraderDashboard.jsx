@@ -107,6 +107,7 @@ export function TraderDashboard() {
   const [activeNewsToast, setActiveNewsToast] = useState(null);
   const [newsFeed, setNewsFeed] = useState([]);
   const [loadingNews, setLoadingNews] = useState(false);
+  const [sessionData, setSessionData] = useState(null);
 
   const showToast = (message, type = 'success') => {
     setToast({ message, type });
@@ -301,33 +302,57 @@ export function TraderDashboard() {
 
       <NewsToast news={activeNewsToast} onClose={() => setActiveNewsToast(null)} />
 
-      <Navbar
-        activeTab={activeTab}
-        setActiveTab={setActiveTab}
-        walletBalance={portfolio.availableWalletBalance !== undefined ? portfolio.availableWalletBalance : portfolio.walletBalance}
-        lockedFunds={portfolio.lockedFunds || 0}
-        newsCount={Array.isArray(newsFeed) ? newsFeed.length : 0}
-      />
-
-      <LiveTickerMarquee stocks={stocks} onSelectStock={handleOpenDetail} />
-
       {(() => {
+        const isTradingLocked = !sessionData || sessionData.status !== 'ACTIVE' || sessionData.isTradingLocked;
         const liveSelectedStock = selectedStock
           ? (stocks.find((s) => s.id === selectedStock.id) || selectedStock)
           : null;
         return (
-          <StockDetailModal
-            stock={liveSelectedStock}
-            userWallet={portfolio.walletBalance}
-            userHolding={liveSelectedStock ? getHoldingForStock(liveSelectedStock.id) : null}
-            isOpen={isDetailModalOpen}
-            onClose={() => setIsDetailModalOpen(false)}
-            onSuccess={handleTradeSuccess}
-          />
+          <>
+            <Navbar
+              activeTab={activeTab}
+              setActiveTab={setActiveTab}
+              walletBalance={portfolio.availableWalletBalance !== undefined ? portfolio.availableWalletBalance : portfolio.walletBalance}
+              lockedFunds={portfolio.lockedFunds || 0}
+              newsCount={Array.isArray(newsFeed) ? newsFeed.length : 0}
+              onSessionUpdate={setSessionData}
+            />
+
+            <LiveTickerMarquee stocks={stocks} onSelectStock={handleOpenDetail} />
+
+            <StockDetailModal
+              stock={liveSelectedStock}
+              userWallet={portfolio.walletBalance}
+              userHolding={liveSelectedStock ? getHoldingForStock(liveSelectedStock.id) : null}
+              isOpen={isDetailModalOpen}
+              onClose={() => setIsDetailModalOpen(false)}
+              onSuccess={handleTradeSuccess}
+              isTradingLocked={isTradingLocked}
+            />
+          </>
         );
       })()}
 
       <main className="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-6 space-y-6">
+
+        {/* TRADING LOCK BANNER */}
+        {(!sessionData || sessionData.status !== 'ACTIVE' || sessionData.isTradingLocked) && (
+          <div className="p-4 bg-amber-500/10 border border-amber-500/40 rounded-[6px] text-amber-400 text-xs font-mono flex items-center justify-between shadow-lg animate-fadeIn">
+            <div className="flex items-center gap-2 font-bold">
+              <Clock className="w-5 h-5 animate-pulse text-amber-400" />
+              <span>
+                {sessionData?.status === 'NOT_STARTED' || !sessionData?.status
+                  ? 'TRADING IS LOCKED — WAITING FOR ADMIN TO START SESSION'
+                  : sessionData?.status === 'LIQUIDATING'
+                  ? 'AUTO-LIQUIDATION SWEEP ACTIVE — POSITIONS CONVERTING TO CASH'
+                  : 'TRADING SESSION ENDED — FINAL RESULTS LOCKED'}
+              </span>
+            </div>
+            <span className="text-[10px] bg-amber-500/20 px-2.5 py-1 rounded font-mono font-extrabold uppercase border border-amber-500/30">
+              {sessionData?.status || 'LOCKED'}
+            </span>
+          </div>
+        )}
 
         {/* TAB 1: LIVE MARKET & ASYMMETRIC DASHBOARD */}
         {activeTab === 'MARKET' && (

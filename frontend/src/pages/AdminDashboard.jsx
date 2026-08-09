@@ -66,16 +66,29 @@ export function AdminDashboard() {
     return () => clearInterval(timer);
   }, []);
 
-  const handleStartNewSession = async () => {
+  const [sessionDurationMins, setSessionDurationMins] = useState(180);
+  const [liquidationBufferMins, setLiquidationBufferMins] = useState(5);
+  const [macroCycleMins, setMacroCycleMins] = useState(15);
+  const [isStartingSession, setIsStartingSession] = useState(false);
+
+  const handleStartNewSession = async (e) => {
+    if (e) e.preventDefault();
+    setIsStartingSession(true);
     try {
       const data = await apiFetch('/admin/session/start', {
         method: 'POST',
-        body: JSON.stringify({ durationHours: 3 })
+        body: JSON.stringify({
+          durationMinutes: parseInt(sessionDurationMins, 10) || 180,
+          liquidationBufferMinutes: parseInt(liquidationBufferMins, 10) || 5,
+          macroCycleIntervalMinutes: parseInt(macroCycleMins, 10) || 15
+        })
       });
       resetNewsTimer();
-      showToast(data.message || 'New 3-hour trading session started!');
+      showToast(data.message || 'New trading session started!');
     } catch (err) {
       showToast(err.message || 'Failed to start session', 'error');
+    } finally {
+      setIsStartingSession(false);
     }
   };
 
@@ -294,6 +307,82 @@ export function AdminDashboard() {
 
       {/* Main Content */}
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-6 space-y-6">
+
+        {/* SESSION TIMING & ALGORITHM CONTROLLER CARD */}
+        <div className="theme-bg-card border theme-border rounded-[6px] p-4 shadow-md space-y-3">
+          <div className="flex items-center justify-between border-b theme-border pb-2">
+            <div className="flex items-center gap-2">
+              <SlidersHorizontal className="w-4 h-4 text-[#D4A017]" />
+              <h3 className="text-xs font-bold uppercase tracking-wider font-heading theme-text-main">
+                SESSION TIMING & QUANT ALGORITHM CONTROLLER
+              </h3>
+            </div>
+            <span className="text-[10px] font-mono text-emerald-400 font-bold bg-emerald-500/10 px-2.5 py-0.5 rounded border border-emerald-500/20">
+              ADMIN CONFIGURABLE
+            </span>
+          </div>
+
+          <form onSubmit={handleStartNewSession} className="grid grid-cols-1 md:grid-cols-4 gap-4 items-end">
+            <div>
+              <label className="block text-[10px] font-mono uppercase theme-text-muted mb-1 font-bold">
+                Session Duration (Minutes)
+              </label>
+              <input
+                type="number"
+                min="1"
+                max="1440"
+                value={sessionDurationMins}
+                onChange={(e) => setSessionDurationMins(e.target.value)}
+                className="w-full px-3 py-2 rounded-[4px] border theme-border theme-bg-panel theme-text-main font-mono text-xs focus:outline-none focus:border-[#D4A017]"
+                placeholder="180"
+              />
+              <div className="text-[9px] theme-text-dim mt-1 font-mono">Default: 180 (3h). Test: 30 or 15</div>
+            </div>
+
+            <div>
+              <label className="block text-[10px] font-mono uppercase theme-text-muted mb-1 font-bold">
+                Auto-Liquidation Buffer (Mins)
+              </label>
+              <input
+                type="number"
+                min="1"
+                max="60"
+                value={liquidationBufferMins}
+                onChange={(e) => setLiquidationBufferMins(e.target.value)}
+                className="w-full px-3 py-2 rounded-[4px] border theme-border theme-bg-panel theme-text-main font-mono text-xs focus:outline-none focus:border-[#D4A017]"
+                placeholder="5"
+              />
+              <div className="text-[9px] theme-text-dim mt-1 font-mono">Default: 5m before end. Test: 2m</div>
+            </div>
+
+            <div>
+              <label className="block text-[10px] font-mono uppercase theme-text-muted mb-1 font-bold">
+                Macro Price Cycle Base (Mins)
+              </label>
+              <input
+                type="number"
+                min="1"
+                max="60"
+                value={macroCycleMins}
+                onChange={(e) => setMacroCycleMins(e.target.value)}
+                className="w-full px-3 py-2 rounded-[4px] border theme-border theme-bg-panel theme-text-main font-mono text-xs focus:outline-none focus:border-[#D4A017]"
+                placeholder="15"
+              />
+              <div className="text-[9px] theme-text-dim mt-1 font-mono">Default: 15m (prod). Test: 3m</div>
+            </div>
+
+            <div>
+              <button
+                type="submit"
+                disabled={isStartingSession}
+                className="w-full px-4 py-2 bg-[#D4A017] hover:bg-[#D4A017]/90 text-slate-950 text-xs font-black font-mono uppercase rounded-[4px] transition-all flex items-center justify-center gap-2 shadow-sm min-h-[38px] btn-terminal disabled:opacity-50"
+              >
+                <RotateCcw className="w-4 h-4" />
+                <span>{isStartingSession ? 'STARTING SESSION...' : 'START TRADING SESSION'}</span>
+              </button>
+            </div>
+          </form>
+        </div>
 
         {/* 20-Minute News Reminder Alert Banner */}
         {showReminderAlert && (
