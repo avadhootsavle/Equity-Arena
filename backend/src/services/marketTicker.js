@@ -78,7 +78,9 @@ async function steerMacroMoveForNews(stockEffects, delaySeconds = 30) {
 
       for (const stock of matchingStocks) {
         const state = getStockState(stock.id);
-        const targetPrice = Math.min(99.00, Math.max(1.00, Math.round(stock.currentPrice * (1 + effectPercent / 100) * 100) / 100));
+        const minPrice = Math.max(1.00, Math.round((stock.basePrice || stock.currentPrice) * 0.20 * 100) / 100);
+        const maxPrice = Math.round((stock.basePrice || stock.currentPrice) * 2.50 * 100) / 100;
+        const targetPrice = Math.min(maxPrice, Math.max(minPrice, Math.round(stock.currentPrice * (1 + effectPercent / 100) * 100) / 100));
 
         state.pendingMacroSteer = {
           targetPrice,
@@ -168,13 +170,18 @@ async function tickMarket() {
         state.volatility = state.volatility * 0.90 + targetVol * 0.10;
       }
 
+      const minPrice = Math.max(1.00, Math.round((stock.basePrice || stock.currentPrice) * 0.20 * 100) / 100);
+      const maxPrice = Math.round((stock.basePrice || stock.currentPrice) * 2.50 * 100) / 100;
+
       const dt = 0.008;
       let rawPrice = calculateGBMPrice({
         currentPrice: stock.currentPrice,
         drift: effectiveDrift,
         volatility: state.volatility,
         dt,
-        combinedNoise
+        combinedNoise,
+        minPrice,
+        maxPrice
       });
 
       // 3. Layer 2: Apply smooth macro ramp increment if active
@@ -186,8 +193,7 @@ async function tickMarket() {
         }
       }
 
-      // Hard ceiling clamp at 99.00 IC max and floor at 1.00 IC
-      const newPrice = Math.min(99.00, Math.max(1.00, Math.round(rawPrice * 100) / 100));
+      const newPrice = Math.min(maxPrice, Math.max(minPrice, Math.round(rawPrice * 100) / 100));
 
       if (newPrice === stock.currentPrice) continue;
 
@@ -236,7 +242,7 @@ async function tickMarket() {
 
 function startMarketTicker() {
   if (tickerInterval) return;
-  console.log(`📈 Dual-Layer Quant Market Ticker started (Continuous GBM + 15-Min Jittered Macro Swings [40-80 IC, Max 99 IC])`);
+  console.log(`📈 Dual-Layer Quant Market Ticker started (Continuous GBM + Multi-Tier Macro Swings [Low: 30-100 IC, Mid: 100-500 IC, High: 1,000-4,000 IC])`);
   tickerInterval = setInterval(tickMarket, config.TICKER_INTERVAL_MS || config.TICK_INTERVAL_MS);
 }
 

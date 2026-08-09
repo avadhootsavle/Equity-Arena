@@ -27,10 +27,10 @@ function combineSectorNoise(stockNoise, sectorNoise, rho = 0.50) {
 /**
  * Calculates next tick price using Geometric Brownian Motion (GBM) formula:
  * S_{t+dt} = S_t * exp((drift - 0.5 * volatility^2) * dt + volatility * sqrt(dt) * Z)
- * Calibrated for 40 to 80 IC starting range with a strict 99 IC ceiling.
+ * Calibrated per stock with dynamic minPrice (floor) and maxPrice (ceiling).
  */
-function calculateGBMPrice({ currentPrice, drift, volatility, dt = 0.008, combinedNoise }) {
-  if (isNaN(currentPrice) || currentPrice <= 0) return 60.0;
+function calculateGBMPrice({ currentPrice, drift, volatility, dt = 0.008, combinedNoise, minPrice, maxPrice }) {
+  if (isNaN(currentPrice) || currentPrice <= 0) return 100.0;
   
   const adjustedVolatility = Math.max(0.05, Math.min(0.50, volatility || 0.15));
   const safeDrift = isNaN(drift) ? 0 : Math.max(-0.10, Math.min(0.10, drift));
@@ -43,27 +43,32 @@ function calculateGBMPrice({ currentPrice, drift, volatility, dt = 0.008, combin
     return currentPrice;
   }
 
-  // Hard ceiling at 99.00 IC, floor at 1.00 IC
-  const clampedPrice = Math.min(99.00, Math.max(1.00, rawPrice));
+  const minP = minPrice !== undefined ? minPrice : 1.00;
+  const maxP = maxPrice !== undefined ? maxPrice : (currentPrice > 0 ? Math.round(currentPrice * 2.50 * 100) / 100 : 10000.0);
+
+  const clampedPrice = Math.min(maxP, Math.max(minP, rawPrice));
   return Math.round(clampedPrice * 100) / 100;
 }
 
 /**
- * Phase 20b: Calculates Macro Move target (10% to 30% directional move)
- * Direction is weighted by mean reversion pull relative to basePrice
- * Capped strictly at 99.00 IC max.
+ * Phase 25: Calculates Macro Move target (10% to 30% directional move)
+ * Direction is weighted by mean reversion pull relative to stock's own basePrice
+ * Clamped strictly within stock's per-stock floor and ceiling.
  */
 function calculateMacroMoveTarget({ currentPrice, basePrice }) {
-  const safeCurrent = Math.min(99.00, Math.max(1.00, currentPrice || 60.0));
-  const safeBase = Math.min(99.00, Math.max(1.00, basePrice || 60.0));
+  const bp = basePrice || currentPrice || 100.0;
+  const minP = Math.max(1.00, Math.round(bp * 0.20 * 100) / 100);
+  const maxP = Math.round(bp * 2.50 * 100) / 100;
 
-  const priceDeviation = (safeCurrent - safeBase) / safeBase;
+  const safeCurrent = Math.min(maxP, Math.max(minP, currentPrice || bp));
+
+  const priceDeviation = (safeCurrent - bp) / bp;
   const clampDev = Math.max(-1.0, Math.min(1.0, priceDeviation));
 
-  // Base probability of downward move is 50%, weighted up to 85% if stock has run up near ceiling (e.g. > 80 IC)
+  // Base probability of downward move is 50%, weighted up to 85% if stock has run up near ceiling
   let pDown = 0.50 + 0.35 * clampDev;
-  if (safeCurrent >= 85) {
-    pDown = 0.90; // Extremely high downward pull near 99 IC ceiling
+  if (safeCurrent >= bp * 2.1) {
+    pDown = 0.90; // High downward pull near stock ceiling
   }
 
   const isDown = Math.random() < pDown;
@@ -75,8 +80,8 @@ function calculateMacroMoveTarget({ currentPrice, basePrice }) {
     ? safeCurrent * (1 - magnitude)
     : safeCurrent * (1 + magnitude);
 
-  // Strict clamp at 99.00 IC max and 1.00 IC floor
-  rawTarget = Math.min(99.00, Math.max(1.00, rawTarget));
+  // Per-stock floor and ceiling bounds
+  rawTarget = Math.min(maxP, Math.max(minP, rawTarget));
   const targetPrice = Math.round(rawTarget * 100) / 100;
 
   return {

@@ -4,21 +4,26 @@ const bcrypt = require('bcryptjs');
 const prisma = new PrismaClient();
 
 const INDIA_SECTOR_STOCKS = [
-  { symbol: 'BPTE', name: 'Bharat PetroEnergy', sector: 'Oil & Gas' },
-  { symbol: 'IDW', name: 'Indus Defence Works', sector: 'Defense' },
-  { symbol: 'NITI', name: 'Nimbus InfoTech India', sector: 'Technology' },
-  { symbol: 'ABAL', name: 'AirBharat Airlines', sector: 'Aviation' },
-  { symbol: 'ANAG', name: 'Annapurna Agro', sector: 'Agriculture' },
-  { symbol: 'RTB', name: 'Rashtriya Trust Bank', sector: 'Banking/Finance' },
-  { symbol: 'SANP', name: 'Sanjeevani Pharma', sector: 'Pharmaceuticals' },
-  { symbol: 'HTM', name: 'Hindustan TurboMotors', sector: 'Automobile' },
-  { symbol: 'GSL', name: 'Ganga Shipping Lines', sector: 'Shipping/Logistics' },
-  { symbol: 'SGM', name: 'Suvarna Gold Mining', sector: 'Precious Metals' },
-  { symbol: 'MRI', name: 'Meridian Realty India', sector: 'Real Estate' },
-  { symbol: 'BRM', name: 'Bazaar Retail Mart', sector: 'Retail' },
-  { symbol: 'BWT', name: 'BharatWave Telecom', sector: 'Telecom' },
-  { symbol: 'SWST', name: 'Swarna Studios', sector: 'Media/Entertainment' },
-  { symbol: 'SGE', name: 'Surya Green Energy', sector: 'Renewable Energy' }
+  // --- LOW TIER (~30–100 IC) ---
+  { symbol: 'ANAG', name: 'Annapurna Agro', sector: 'Agriculture', basePrice: 42.50 },
+  { symbol: 'BRM', name: 'Bazaar Retail Mart', sector: 'Retail', basePrice: 58.00 },
+  { symbol: 'SWST', name: 'Swarna Studios', sector: 'Media/Entertainment', basePrice: 66.40 },
+  { symbol: 'SGE', name: 'Surya Green Energy', sector: 'Renewable Energy', basePrice: 78.20 },
+  { symbol: 'GSL', name: 'Ganga Shipping Lines', sector: 'Shipping/Logistics', basePrice: 89.50 },
+
+  // --- MID TIER (~100–500 IC) ---
+  { symbol: 'ABAL', name: 'AirBharat Airlines', sector: 'Aviation', basePrice: 145.00 },
+  { symbol: 'BWT', name: 'BharatWave Telecom', sector: 'Telecom', basePrice: 185.00 },
+  { symbol: 'HTM', name: 'Hindustan TurboMotors', sector: 'Automobile', basePrice: 260.00 },
+  { symbol: 'SANP', name: 'Sanjeevani Pharma', sector: 'Pharmaceuticals', basePrice: 340.00 },
+  { symbol: 'NITI', name: 'Nimbus InfoTech India', sector: 'Technology', basePrice: 420.00 },
+  { symbol: 'MRI', name: 'Meridian Realty India', sector: 'Real Estate', basePrice: 490.00 },
+
+  // --- HIGH TIER (~1,000–4,000 IC) ---
+  { symbol: 'BPTE', name: 'Bharat PetroEnergy', sector: 'Oil & Gas', basePrice: 1250.00 },
+  { symbol: 'IDW', name: 'Indus Defence Works', sector: 'Defense', basePrice: 1850.00 },
+  { symbol: 'RTB', name: 'Rashtriya Trust Bank', sector: 'Banking/Finance', basePrice: 2650.00 },
+  { symbol: 'SGM', name: 'Suvarna Gold Mining', sector: 'Precious Metals', basePrice: 3500.00 }
 ];
 
 const ANALYST_NEWS_TEMPLATES = [
@@ -436,14 +441,16 @@ async function main() {
 
   for (let i = 0; i < INDIA_SECTOR_STOCKS.length; i++) {
     const item = INDIA_SECTOR_STOCKS[i];
-    const basePrice = getRandomPrice40to80();
+    const basePrice = item.basePrice;
+    const minPrice = Math.max(1.00, Math.round(basePrice * 0.20 * 100) / 100);
+    const maxPrice = Math.round(basePrice * 2.50 * 100) / 100;
 
     const histories = [];
     let runningPrice = basePrice * 0.85;
 
     for (let day = 30; day >= 8; day--) {
-      const dailyDrift = (Math.random() - 0.48) * 0.05;
-      runningPrice = Math.min(99.00, Math.max(1.0, Math.round(runningPrice * (1 + dailyDrift) * 100) / 100));
+      const dailyDrift = (Math.random() - 0.50) * 0.03;
+      runningPrice = Math.min(maxPrice, Math.max(minPrice, Math.round(runningPrice * (1 + dailyDrift) * 100) / 100));
 
       histories.push({
         price: runningPrice,
@@ -453,8 +460,8 @@ async function main() {
     }
 
     for (let hour = 7 * 24; hour >= 24; hour -= 3) {
-      const hourlyDrift = (Math.random() - 0.49) * 0.02;
-      runningPrice = Math.min(99.00, Math.max(1.0, Math.round(runningPrice * (1 + hourlyDrift) * 100) / 100));
+      const hourlyDrift = (Math.random() - 0.50) * 0.015;
+      runningPrice = Math.min(maxPrice, Math.max(minPrice, Math.round(runningPrice * (1 + hourlyDrift) * 100) / 100));
 
       histories.push({
         price: runningPrice,
@@ -464,8 +471,8 @@ async function main() {
     }
 
     for (let min = 24 * 60; min >= 0; min -= 15) {
-      const tickDrift = (Math.random() - 0.49) * 0.01;
-      runningPrice = Math.min(99.00, Math.max(1.0, Math.round(runningPrice * (1 + tickDrift) * 100) / 100));
+      const tickDrift = (Math.random() - 0.50) * 0.008;
+      runningPrice = Math.min(maxPrice, Math.max(minPrice, Math.round(runningPrice * (1 + tickDrift) * 100) / 100));
       if (min === 0) runningPrice = basePrice;
 
       histories.push({

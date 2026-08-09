@@ -51,18 +51,22 @@ async function runFullRegressionCheck() {
     const pendingOrdersCount = await prisma.order.count({ where: { status: 'PENDING' } });
     recordResult('5. Limit Orders System', 'PASS', `Limit order engine active (${pendingOrdersCount} pending orders)`);
 
-    // 6. Price Engine (GBM + 15-Min Macro Cycles + 99 IC Ceiling)
+    // 6. Price Engine (GBM + Diverse Price Tiers & Per-Stock Bounds)
     let ceilingValid = true;
+    let failReason = '';
     for (const s of stocks) {
-      if (s.currentPrice > 99.00 || s.currentPrice < 1.00) {
+      const minPrice = Math.max(1.00, Math.round((s.basePrice || s.currentPrice) * 0.20 * 100) / 100);
+      const maxPrice = Math.round((s.basePrice || s.currentPrice) * 2.50 * 100) / 100;
+      if (s.currentPrice > maxPrice || s.currentPrice < minPrice) {
         ceilingValid = false;
+        failReason = `${s.symbol} price (${s.currentPrice}) out of bounds [${minPrice}, ${maxPrice}]`;
         break;
       }
     }
     if (ceilingValid) {
-      recordResult('6. Quant Price Engine', 'PASS', 'Continuous GBM + 15-min jittered macro cycles operating strictly within 1.00-99.00 IC');
+      recordResult('6. Quant Price Engine', 'PASS', 'Continuous GBM + Macro Cycles operating strictly within per-stock bounds across 3 price tiers');
     } else {
-      recordResult('6. Quant Price Engine', 'FAIL', 'Price bound violation detected!');
+      recordResult('6. Quant Price Engine', 'FAIL', `Price bound violation detected: ${failReason}`);
     }
 
     // 7. News System & Templates (24 Templates, 3 Difficulties)
