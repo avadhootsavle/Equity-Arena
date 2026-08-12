@@ -4,6 +4,7 @@ import { useSocket } from '../context/SocketContext';
 import { apiFetch } from '../services/api';
 import { Sparkline } from '../components/Sparkline';
 import { StockDetailModal } from '../components/StockDetailModal';
+import { OnboardingTour } from '../components/OnboardingTour';
 import { NewsToast } from '../components/NewsToast';
 import { Navbar } from '../components/Navbar';
 import { LiveTickerMarquee } from '../components/LiveTickerMarquee';
@@ -12,20 +13,91 @@ import { TradeFeedbackOverlay } from '../components/TradeFeedbackOverlay';
 import { StockCardSkeleton, NewsFeedSkeleton } from '../components/SkeletonLoader';
 import {
   TrendingUp, TrendingDown, PieChart, History, Search, ArrowUpRight, CheckCircle2, AlertCircle, ShoppingBag,
-  Newspaper, RefreshCw, Clock, Ban, Flame, Zap, Shield
+  Newspaper, RefreshCw, Clock, Ban, Flame, Zap, Shield, X, HelpCircle
 } from 'lucide-react';
 
-const StockCard = memo(({ stock, onOpenDetail, priceFlash }) => {
+const StockCard = memo(({
+  stock,
+  holding,
+  availableWallet,
+  onOpenDetail,
+  onQuickTrade,
+  priceFlash,
+  isTradingLocked
+}) => {
+  const [isQuickOpen, setIsQuickOpen] = useState(false);
+  const [quickMode, setQuickMode] = useState('BUY'); // 'BUY' or 'SELL'
+  const [quantity, setQuantity] = useState(1);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
   const percentChange = stock && stock.percentChange !== undefined && stock.percentChange !== null ? stock.percentChange : 0;
   const isPositive = percentChange >= 0;
   const flashClass = priceFlash === 'up' ? 'animate-flash-up' : priceFlash === 'down' ? 'animate-flash-down' : '';
 
+  const availHoldingQty = holding?.availableQuantity !== undefined ? holding.availableQuantity : (holding?.quantity || 0);
+  const availCash = availableWallet || 0;
+  const currentPrice = stock.currentPrice || 1;
+
+  // Max affordable / sellable quantities
+  const maxBuyQty = Math.max(0, Math.floor(availCash / currentPrice));
+  const maxSellQty = availHoldingQty;
+
+  const handleOpenQuick = (e, mode) => {
+    e.stopPropagation();
+    setQuickMode(mode);
+    setIsQuickOpen(true);
+    if (mode === 'BUY') {
+      setQuantity(maxBuyQty >= 1 ? 1 : 0);
+    } else {
+      setQuantity(maxSellQty >= 1 ? 1 : 0);
+    }
+  };
+
+  const handlePreset = (e, percent) => {
+    e.stopPropagation();
+    if (quickMode === 'BUY') {
+      const calculated = Math.floor((availCash * percent) / currentPrice);
+      setQuantity(Math.max(calculated > 0 ? calculated : (maxBuyQty >= 1 ? 1 : 0), 0));
+    } else {
+      const calculated = Math.floor(availHoldingQty * percent);
+      setQuantity(Math.max(calculated > 0 ? calculated : (availHoldingQty >= 1 ? 1 : 0), 0));
+    }
+  };
+
+  const handleQuantityChange = (val) => {
+    const parsed = parseInt(val, 10);
+    if (isNaN(parsed) || parsed < 0) {
+      setQuantity(0);
+    } else {
+      setQuantity(parsed);
+    }
+  };
+
+  const handleConfirmTrade = async (e) => {
+    e.stopPropagation();
+    if (quantity <= 0) return;
+    setIsSubmitting(true);
+    const success = await onQuickTrade(stock, quickMode, quantity);
+    setIsSubmitting(false);
+    if (success) {
+      setIsQuickOpen(false);
+    }
+  };
+
+  const estimatedTotal = Math.round(quantity * currentPrice * 100) / 100;
+  const canSubmit = !isTradingLocked && quantity > 0 && (
+    quickMode === 'BUY' ? estimatedTotal <= availCash : quantity <= availHoldingQty
+  );
+
   return (
     <div
-      onClick={() => onOpenDetail(stock)}
-      className={`theme-bg-card theme-border p-4 rounded-[6px] border hover:border-[#D4A017] transition-all cursor-pointer shadow-md group flex flex-col justify-between active:scale-[0.99] ${flashClass}`}
+      onClick={() => !isQuickOpen && onOpenDetail(stock)}
+      className={`theme-bg-card theme-border p-4 rounded-[8px] border hover:border-[#D4A017] transition-all shadow-md group flex flex-col justify-between ${
+        isQuickOpen ? 'border-[#D4A017] ring-1 ring-[#D4A017]/30' : 'cursor-pointer active:scale-[0.99]'
+      } ${flashClass}`}
     >
       <div>
+        {/* Top Header: Symbol, Sector, Holding Badge, Price & % Change */}
         <div className="flex items-start justify-between">
           <div>
             <div className="flex items-center gap-2">
@@ -35,6 +107,11 @@ const StockCard = memo(({ stock, onOpenDetail, priceFlash }) => {
               <span className="px-2 py-0.5 rounded-[3px] text-[10px] font-semibold theme-bg-panel theme-text-muted border theme-border font-mono">
                 {stock.sector}
               </span>
+              {availHoldingQty > 0 && (
+                <span className="px-1.5 py-0.5 rounded-[3px] text-[10px] font-mono font-bold bg-[#D4A017]/15 text-[#D4A017] border border-[#D4A017]/30">
+                  {availHoldingQty} Owned
+                </span>
+              )}
             </div>
             <div className="text-xs theme-text-muted truncate max-w-[180px] font-medium mt-0.5">{stock.name}</div>
           </div>
@@ -56,19 +133,180 @@ const StockCard = memo(({ stock, onOpenDetail, priceFlash }) => {
           </div>
         </div>
 
-        <div className="mt-3 py-1 flex items-center justify-between">
-          <Sparkline history={stock.priceHistories} width={130} height={36} />
-          <button
-            onClick={(e) => {
-              e.stopPropagation();
-              onOpenDetail(stock);
-            }}
-            className="px-3.5 py-1.5 bg-[#D4A017]/10 group-hover:bg-[#D4A017] text-[#D4A017] group-hover:text-slate-950 font-heading font-bold text-xs rounded-[4px] transition-all border border-[#D4A017]/30 flex items-center gap-1 min-h-[34px] btn-terminal"
-          >
-            <span>Trade</span>
-            <ArrowUpRight className="w-3.5 h-3.5" />
-          </button>
+        {/* Sparkline & Quick Action Controls */}
+        <div className="mt-3 py-1 flex items-center justify-between gap-2 border-t theme-border pt-3">
+          <Sparkline history={stock.priceHistories} width={100} height={32} />
+
+          <div className="flex items-center gap-1.5">
+            {/* Quick Buy Button */}
+            <button
+              type="button"
+              onClick={(e) => handleOpenQuick(e, 'BUY')}
+              disabled={isTradingLocked}
+              title={isTradingLocked ? 'Session locked' : 'Instant Quick Buy'}
+              className="px-3 py-1.5 bg-[#10B981]/15 hover:bg-[#10B981] text-[#10B981] hover:text-slate-950 text-xs font-heading font-bold rounded-[4px] border border-[#10B981]/40 transition-all flex items-center gap-1 min-h-[32px] active:scale-95 disabled:opacity-40 btn-terminal"
+            >
+              <Zap className="w-3 h-3" />
+              <span>Buy</span>
+            </button>
+
+            {/* Quick Sell Button */}
+            <button
+              type="button"
+              onClick={(e) => handleOpenQuick(e, 'SELL')}
+              disabled={isTradingLocked || availHoldingQty === 0}
+              title={availHoldingQty === 0 ? 'No shares owned' : 'Instant Quick Sell'}
+              className={`px-3 py-1.5 text-xs font-heading font-bold rounded-[4px] border transition-all flex items-center gap-1 min-h-[32px] active:scale-95 btn-terminal ${
+                availHoldingQty > 0 && !isTradingLocked
+                  ? 'bg-[#EF4444]/15 hover:bg-[#EF4444] text-[#EF4444] hover:text-white border-[#EF4444]/40'
+                  : 'opacity-40 bg-slate-800/30 text-slate-500 border-slate-700/40 cursor-not-allowed'
+              }`}
+            >
+              <span>Sell</span>
+            </button>
+
+            {/* Chart / Full Modal Trigger */}
+            <button
+              type="button"
+              onClick={(e) => {
+                e.stopPropagation();
+                onOpenDetail(stock);
+              }}
+              title="Open full chart, history and limit orders"
+              className="p-1.5 bg-[#D4A017]/10 hover:bg-[#D4A017]/25 text-[#D4A017] rounded-[4px] border border-[#D4A017]/30 transition-all min-h-[32px] min-w-[32px] flex items-center justify-center active:scale-95 btn-terminal"
+            >
+              <ArrowUpRight className="w-3.5 h-3.5" />
+            </button>
+          </div>
         </div>
+
+        {/* INLINE QUICK-TRADE EXPANSION DRAWER */}
+        {isQuickOpen && (
+          <div
+            onClick={(e) => e.stopPropagation()}
+            className="mt-3 pt-3 border-t theme-border bg-slate-950/40 dark:bg-black/30 p-3 rounded-[6px] space-y-3 animate-fadeIn"
+          >
+            {/* Mode Switcher & Close */}
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-1">
+                <button
+                  type="button"
+                  onClick={() => setQuickMode('BUY')}
+                  className={`px-2.5 py-1 rounded-[4px] text-[11px] font-heading font-bold transition-all ${
+                    quickMode === 'BUY'
+                      ? 'bg-[#10B981] text-slate-950 shadow-sm'
+                      : 'theme-bg-panel theme-text-muted hover:theme-text-main'
+                  }`}
+                >
+                  Quick Buy
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setQuickMode('SELL')}
+                  disabled={availHoldingQty === 0}
+                  className={`px-2.5 py-1 rounded-[4px] text-[11px] font-heading font-bold transition-all ${
+                    quickMode === 'SELL'
+                      ? 'bg-[#EF4444] text-white shadow-sm'
+                      : 'theme-bg-panel theme-text-muted hover:theme-text-main disabled:opacity-40'
+                  }`}
+                >
+                  Quick Sell {availHoldingQty > 0 ? `(${availHoldingQty})` : ''}
+                </button>
+              </div>
+
+              <button
+                type="button"
+                onClick={() => setIsQuickOpen(false)}
+                className="p-1 text-slate-400 hover:text-white rounded transition-colors"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+
+            {/* Live Context & One-Tap Percentage Presets */}
+            <div className="space-y-1.5">
+              <div className="flex justify-between items-center text-[11px] font-mono theme-text-muted">
+                <span>{quickMode === 'BUY' ? 'Available Cash:' : 'Available Shares:'}</span>
+                <span className="font-bold text-slate-200">
+                  {quickMode === 'BUY'
+                    ? `${availCash.toLocaleString('en-US', { minimumFractionDigits: 2 })} IC`
+                    : `${availHoldingQty} shares`}
+                </span>
+              </div>
+
+              {/* 1-Tap Percentage Presets (25%, 50%, 100%) */}
+              <div className="grid grid-cols-3 gap-1.5">
+                {[0.25, 0.50, 1.0].map((pct) => (
+                  <button
+                    key={pct}
+                    type="button"
+                    onClick={(e) => handlePreset(e, pct)}
+                    className="py-1 theme-bg-panel hover:bg-slate-800 border theme-border hover:border-[#D4A017]/60 rounded-[4px] text-[11px] font-mono font-bold theme-text-main transition-all active:scale-95"
+                  >
+                    {pct === 1.0 ? '100% (Max)' : `${pct * 100}%`}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* Stepper Quantity Input */}
+            <div className="flex items-center gap-2">
+              <button
+                type="button"
+                onClick={() => setQuantity((q) => Math.max(1, q - 1))}
+                className="w-9 h-9 theme-bg-panel border theme-border hover:border-[#D4A017] rounded-[4px] flex items-center justify-center font-bold text-sm theme-text-main active:scale-90"
+              >
+                -
+              </button>
+              <input
+                type="number"
+                min="1"
+                value={quantity || ''}
+                onChange={(e) => handleQuantityChange(e.target.value)}
+                className="flex-1 theme-bg-panel border theme-border rounded-[4px] py-1 px-2 text-center text-sm font-mono font-bold theme-text-main focus:outline-none focus:border-[#D4A017] min-h-[36px]"
+              />
+              <button
+                type="button"
+                onClick={() => setQuantity((q) => q + 1)}
+                className="w-9 h-9 theme-bg-panel border theme-border hover:border-[#D4A017] rounded-[4px] flex items-center justify-center font-bold text-sm theme-text-main active:scale-90"
+              >
+                +
+              </button>
+            </div>
+
+            {/* Est. Total & Confirm Button */}
+            <div className="space-y-2 pt-1 border-t theme-border">
+              <div className="flex justify-between items-center text-xs font-mono">
+                <span className="theme-text-muted">Est. Total:</span>
+                <span className="font-extrabold text-sm theme-text-main">
+                  {estimatedTotal.toLocaleString('en-US', { minimumFractionDigits: 2 })} IC
+                </span>
+              </div>
+
+              <button
+                type="button"
+                onClick={handleConfirmTrade}
+                disabled={!canSubmit || isSubmitting}
+                className={`w-full py-2 rounded-[4px] font-heading font-extrabold text-xs tracking-wide transition-all shadow-md active:scale-95 flex items-center justify-center gap-1.5 min-h-[38px] ${
+                  quickMode === 'BUY'
+                    ? 'bg-[#10B981] hover:bg-[#059669] text-slate-950 disabled:opacity-40'
+                    : 'bg-[#EF4444] hover:bg-[#DC2626] text-white disabled:opacity-40'
+                }`}
+              >
+                {isSubmitting ? (
+                  <RefreshCw className="w-4 h-4 animate-spin" />
+                ) : (
+                  <>
+                    <Zap className="w-3.5 h-3.5" />
+                    <span>
+                      {quickMode === 'BUY' ? `Confirm Buy (${estimatedTotal.toFixed(2)} IC)` : `Confirm Sell (+${estimatedTotal.toFixed(2)} IC)`}
+                    </span>
+                  </>
+                )}
+              </button>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );
@@ -239,6 +477,53 @@ export function TraderDashboard() {
     setIsDetailModalOpen(true);
   }, []);
 
+  const [isTourOpen, setIsTourOpen] = useState(() => {
+    try {
+      return localStorage.getItem('equity_arena_tour_completed') !== 'true';
+    } catch (e) {
+      return false;
+    }
+  });
+
+  const handleQuickTrade = async (stock, mode, quantity) => {
+    if (sessionData && (sessionData.status !== 'ACTIVE' || sessionData.isTradingLocked)) {
+      showToast("Trading hasn't started yet — waiting for admin to start session", 'error');
+      return false;
+    }
+
+    if (!quantity || quantity <= 0) {
+      showToast("Please enter a valid quantity", 'error');
+      return false;
+    }
+
+    const endpoint = mode === 'BUY' ? '/trade/buy' : '/trade/sell';
+    try {
+      const data = await apiFetch(endpoint, {
+        method: 'POST',
+        body: JSON.stringify({ stockId: stock.id, quantity })
+      });
+
+      const verb = mode === 'BUY' ? 'Bought' : 'Sold';
+      const execPrice = data.transaction?.price || stock.currentPrice;
+      const totalCost = data.transaction?.totalCost || Math.round(execPrice * quantity * 100) / 100;
+      
+      showToast(`⚡ ${verb} ${quantity} ${stock.symbol} @ ${execPrice.toFixed(2)} IC (Total: ${totalCost.toLocaleString('en-US', { minimumFractionDigits: 2 })} IC)`, 'success');
+
+      if (data.user) {
+        setPortfolio((prev) => ({
+          ...prev,
+          walletBalance: data.user.walletBalance,
+          availableWalletBalance: Math.max(0, data.user.walletBalance - (prev.lockedFunds || 0))
+        }));
+      }
+      fetchPortfolio();
+      return true;
+    } catch (err) {
+      showToast(err.message || `Failed to execute ${mode.toLowerCase()} order`, 'error');
+      return false;
+    }
+  };
+
   const handleTradeSuccess = (message, updatedPortfolio) => {
     triggerFeedbackOverlay('success', message);
     if (updatedPortfolio) {
@@ -316,9 +601,15 @@ export function TraderDashboard() {
               lockedFunds={portfolio.lockedFunds || 0}
               newsCount={Array.isArray(newsFeed) ? newsFeed.length : 0}
               onSessionUpdate={setSessionData}
+              onOpenTour={() => setIsTourOpen(true)}
             />
 
             <LiveTickerMarquee stocks={stocks} onSelectStock={handleOpenDetail} />
+
+            <OnboardingTour
+              isOpen={isTourOpen}
+              onClose={() => setIsTourOpen(false)}
+            />
 
             <StockDetailModal
               stock={liveSelectedStock}
@@ -442,8 +733,12 @@ export function TraderDashboard() {
                       <StockCard
                         key={stock.id}
                         stock={stock}
+                        holding={getHoldingForStock(stock.id)}
+                        availableWallet={portfolio.availableWalletBalance !== undefined ? portfolio.availableWalletBalance : portfolio.walletBalance}
                         onOpenDetail={handleOpenDetail}
+                        onQuickTrade={handleQuickTrade}
                         priceFlash={stockFlashes[stock.id]}
+                        isTradingLocked={isTradingLocked}
                       />
                     ))}
                   </div>

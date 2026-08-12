@@ -26,13 +26,13 @@ async function runPriceTiersVerification() {
     // -------------------------------------------------------------
     console.log('\n--- Test 1: Price Tier Distribution Verification ---');
 
-    const lowTier = stocks.filter((s) => s.currentPrice >= 20 && s.currentPrice <= 120);
-    const midTier = stocks.filter((s) => s.currentPrice > 120 && s.currentPrice <= 800);
-    const highTier = stocks.filter((s) => s.currentPrice > 800);
+    const lowTier = stocks.filter((s) => s.basePrice >= 20 && s.basePrice <= 120);
+    const midTier = stocks.filter((s) => s.basePrice > 120 && s.basePrice <= 800);
+    const highTier = stocks.filter((s) => s.basePrice > 800);
 
-    assert(lowTier.length === 5, `Low Tier (~30-100 IC): ${lowTier.length} stocks (${lowTier.map((s) => `${s.symbol}:${s.currentPrice.toFixed(2)}`).join(', ')})`);
-    assert(midTier.length === 6, `Mid Tier (~100-500 IC): ${midTier.length} stocks (${midTier.map((s) => `${s.symbol}:${s.currentPrice.toFixed(2)}`).join(', ')})`);
-    assert(highTier.length === 4, `High Tier (~1,000-4,000 IC): ${highTier.length} stocks (${highTier.map((s) => `${s.symbol}:${s.currentPrice.toFixed(2)}`).join(', ')})`);
+    assert(lowTier.length === 5, `Low Tier (~30-100 IC): ${lowTier.length} stocks (${lowTier.map((s) => `${s.symbol}: Base ${s.basePrice} IC`).join(', ')})`);
+    assert(midTier.length === 6, `Mid Tier (~100-500 IC): ${midTier.length} stocks (${midTier.map((s) => `${s.symbol}: Base ${s.basePrice} IC`).join(', ')})`);
+    assert(highTier.length === 4, `High Tier (~1,000-4,000 IC): ${highTier.length} stocks (${highTier.map((s) => `${s.symbol}: Base ${s.basePrice} IC`).join(', ')})`);
 
     // -------------------------------------------------------------
     // Test 2: Per-Stock Floor and Ceiling Clamps

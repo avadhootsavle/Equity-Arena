@@ -5,10 +5,10 @@ import { useTheme } from '../context/ThemeContext';
 import { SessionCountdown } from './SessionCountdown';
 import { isSoundMuted, toggleSoundMute } from '../services/soundService';
 import {
-  TrendingUp, Radio, LogOut, Coins, LayoutDashboard, Newspaper, Sun, Moon, ShieldCheck, Volume2, VolumeX
+  TrendingUp, Radio, LogOut, Coins, LayoutDashboard, Newspaper, Sun, Moon, ShieldCheck, Volume2, VolumeX, HelpCircle
 } from 'lucide-react';
 
-export function Navbar({ activeTab, setActiveTab, walletBalance, lockedFunds, newsCount, onSessionUpdate }) {
+export function Navbar({ activeTab, setActiveTab, walletBalance, lockedFunds, newsCount, onSessionUpdate, onOpenTour }) {
   const { user, logout } = useAuth();
   const { isConnected } = useSocket();
   const { theme, toggleTheme } = useTheme();
@@ -122,6 +122,18 @@ export function Navbar({ activeTab, setActiveTab, walletBalance, lockedFunds, ne
                   <Volume2 className="w-4 h-4 text-[#1DB954]" />
                 )}
               </button>
+
+              {/* Onboarding Guide / Tutorial Button */}
+              {onOpenTour && (
+                <button
+                  onClick={onOpenTour}
+                  title="Open Beginner Trading Guide / Tutorial"
+                  className="p-2 rounded-[4px] border border-[#D4A017]/40 bg-[#D4A017]/10 hover:bg-[#D4A017]/20 text-[#D4A017] transition-all flex items-center gap-1 text-xs font-heading font-bold btn-terminal"
+                >
+                  <HelpCircle className="w-4 h-4" />
+                  <span className="hidden xl:inline">Guide</span>
+                </button>
+              )}
 
               {/* Theme Toggle Button */}
               <button
