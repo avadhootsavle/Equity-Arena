@@ -565,6 +565,11 @@ export function TraderDashboard() {
     return sum + h.quantity * price;
   }, 0);
 
+  const isTradingLocked = !sessionData || sessionData.status !== 'ACTIVE' || sessionData.isTradingLocked;
+  const liveSelectedStock = selectedStock
+    ? (stocks.find((s) => s.id === selectedStock.id) || selectedStock)
+    : null;
+
   return (
     <div className="min-h-screen theme-bg-main theme-text-main flex flex-col pb-20 md:pb-8 transition-colors">
       
@@ -587,42 +592,32 @@ export function TraderDashboard() {
 
       <NewsToast news={activeNewsToast} onClose={() => setActiveNewsToast(null)} />
 
-      {(() => {
-        const isTradingLocked = !sessionData || sessionData.status !== 'ACTIVE' || sessionData.isTradingLocked;
-        const liveSelectedStock = selectedStock
-          ? (stocks.find((s) => s.id === selectedStock.id) || selectedStock)
-          : null;
-        return (
-          <>
-            <Navbar
-              activeTab={activeTab}
-              setActiveTab={setActiveTab}
-              walletBalance={portfolio.availableWalletBalance !== undefined ? portfolio.availableWalletBalance : portfolio.walletBalance}
-              lockedFunds={portfolio.lockedFunds || 0}
-              newsCount={Array.isArray(newsFeed) ? newsFeed.length : 0}
-              onSessionUpdate={setSessionData}
-              onOpenTour={() => setIsTourOpen(true)}
-            />
+      <Navbar
+        activeTab={activeTab}
+        setActiveTab={setActiveTab}
+        walletBalance={portfolio.availableWalletBalance !== undefined ? portfolio.availableWalletBalance : portfolio.walletBalance}
+        lockedFunds={portfolio.lockedFunds || 0}
+        newsCount={Array.isArray(newsFeed) ? newsFeed.length : 0}
+        onSessionUpdate={setSessionData}
+        onOpenTour={() => setIsTourOpen(true)}
+      />
 
-            <LiveTickerMarquee stocks={stocks} onSelectStock={handleOpenDetail} />
+      <LiveTickerMarquee stocks={stocks} onSelectStock={handleOpenDetail} />
 
-            <OnboardingTour
-              isOpen={isTourOpen}
-              onClose={() => setIsTourOpen(false)}
-            />
+      <OnboardingTour
+        isOpen={isTourOpen}
+        onClose={() => setIsTourOpen(false)}
+      />
 
-            <StockDetailModal
-              stock={liveSelectedStock}
-              userWallet={portfolio.walletBalance}
-              userHolding={liveSelectedStock ? getHoldingForStock(liveSelectedStock.id) : null}
-              isOpen={isDetailModalOpen}
-              onClose={() => setIsDetailModalOpen(false)}
-              onSuccess={handleTradeSuccess}
-              isTradingLocked={isTradingLocked}
-            />
-          </>
-        );
-      })()}
+      <StockDetailModal
+        stock={liveSelectedStock}
+        userWallet={portfolio.walletBalance}
+        userHolding={liveSelectedStock ? getHoldingForStock(liveSelectedStock.id) : null}
+        isOpen={isDetailModalOpen}
+        onClose={() => setIsDetailModalOpen(false)}
+        onSuccess={handleTradeSuccess}
+        isTradingLocked={isTradingLocked}
+      />
 
       <main className="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-6 space-y-6">
 
