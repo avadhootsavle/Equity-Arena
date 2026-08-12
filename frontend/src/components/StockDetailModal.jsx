@@ -231,7 +231,7 @@ export function StockDetailModal({ stock, userWallet, userHolding, isOpen, onClo
           <div className="flex items-center gap-3">
             <div className="flex items-baseline gap-3">
               <div>
-                <div className="text-[10px] uppercase font-mono font-bold theme-text-dim">Spot Price</div>
+                <div className="text-[10px] uppercase font-mono font-bold theme-text-dim">Current Price</div>
                 <div className="text-3xl font-extrabold font-mono theme-text-main">
                   <AnimatedNumber value={currentPrice} decimals={2} suffix=" IC" className={isPositive ? 'text-[#1DB954]' : 'text-[#E8453C]'} />
                 </div>
@@ -271,14 +271,14 @@ export function StockDetailModal({ stock, userWallet, userHolding, isOpen, onClo
           </div>
           <div className="theme-bg-panel p-3 rounded-[6px] border theme-border">
             <div className="text-[10px] uppercase font-mono font-bold theme-text-dim flex items-center gap-1">
-              <span>SMA-10 Trend</span>
+              <span>Moving Avg (10)</span>
               <Activity className="w-3 h-3 text-[#D4A017]" />
             </div>
             <div className="text-sm font-bold font-mono text-[#D4A017] mt-0.5">{latestSMA.toFixed(2)} IC</div>
           </div>
           <div className="theme-bg-panel p-3 rounded-[6px] border theme-border">
             <div className="text-[10px] uppercase font-mono font-bold theme-text-dim flex items-center gap-1">
-              <span>Volume</span>
+              <span>Trade Activity</span>
               <BarChart2 className="w-3 h-3 text-indigo-400" />
             </div>
             <div className="text-sm font-bold font-mono text-indigo-300 mt-0.5 flex items-center gap-1.5">
@@ -298,15 +298,15 @@ export function StockDetailModal({ stock, userWallet, userHolding, isOpen, onClo
             <div className="flex items-center gap-3 text-xs font-mono">
               <div className="flex items-center gap-1.5">
                 <span className="w-2.5 h-2.5 rounded-full bg-[#1DB954] inline-block" />
-                <span className="font-semibold theme-text-main">Spot Price</span>
+                <span className="font-semibold theme-text-main">Current Price</span>
               </div>
               <div className="flex items-center gap-1.5">
                 <span className="w-2.5 h-0.5 bg-[#D4A017] inline-block border-dashed" />
-                <span className="font-semibold text-[#D4A017]">SMA-10</span>
+                <span className="font-semibold text-[#D4A017]">Moving Avg (10)</span>
               </div>
               <div className="flex items-center gap-1.5">
                 <span className="w-2 h-2.5 bg-indigo-500/60 inline-block" />
-                <span className="font-semibold theme-text-muted">Volume</span>
+                <span className="font-semibold theme-text-muted">Activity</span>
               </div>
             </div>
 
@@ -352,7 +352,7 @@ export function StockDetailModal({ stock, userWallet, userHolding, isOpen, onClo
                 }`}
               >
                 <Zap className="w-3.5 h-3.5" />
-                Instant Trade
+                Instant Buy / Sell
               </button>
               <button
                 type="button"
@@ -364,18 +364,18 @@ export function StockDetailModal({ stock, userWallet, userHolding, isOpen, onClo
                 }`}
               >
                 <Clock className="w-3.5 h-3.5" />
-                Limit Order (Pre-Book)
+                Auto-Order (Target Price)
               </button>
             </div>
 
             {userHolding && (
               <div className="text-right text-xs font-mono">
                 <span className="text-[#1DB954] font-bold block">
-                  Owned: {ownedQty} shares (Avg: {userHolding.avgBuyPrice.toFixed(2)} IC)
+                  You Own: {ownedQty} shares (Avg Paid: {userHolding.avgBuyPrice.toFixed(2)} IC)
                 </span>
                 {lockedQty > 0 && (
                   <span className="text-[#D4A017] text-[10px] block">
-                    Available: {availableQty} | Locked in orders: {lockedQty}
+                    Available: {availableQty} | Reserved in orders: {lockedQty}
                   </span>
                 )}
               </div>
@@ -394,7 +394,7 @@ export function StockDetailModal({ stock, userWallet, userHolding, isOpen, onClo
               }`}
             >
               <ArrowUpRight className="w-4 h-4" />
-              {tradeCategory === 'INSTANT' ? 'BUY SHARES' : 'LIMIT BUY'}
+              {tradeCategory === 'INSTANT' ? 'BUY SHARES' : 'AUTO BUY'}
             </button>
             <button
               type="button"
@@ -406,7 +406,7 @@ export function StockDetailModal({ stock, userWallet, userHolding, isOpen, onClo
               }`}
             >
               <ArrowDownRight className="w-4 h-4" />
-              {tradeCategory === 'INSTANT' ? 'SELL SHARES' : 'LIMIT SELL'}
+              {tradeCategory === 'INSTANT' ? 'SELL SHARES' : 'AUTO SELL'}
             </button>
           </div>
 
@@ -424,10 +424,10 @@ export function StockDetailModal({ stock, userWallet, userHolding, isOpen, onClo
                 <div className="flex justify-between items-center mb-1">
                   <label className="text-xs font-semibold text-[#D4A017] flex items-center gap-1 font-mono">
                     <Clock className="w-3.5 h-3.5" />
-                    Target Trigger Price (IC)
+                    Target Price (Buys/sells automatically when price hits this)
                   </label>
                   <span className="text-[10px] theme-text-dim font-mono">
-                    Spot: {currentPrice.toFixed(2)} IC
+                    Current: {currentPrice.toFixed(2)} IC
                   </span>
                 </div>
                 <input
@@ -473,8 +473,8 @@ export function StockDetailModal({ stock, userWallet, userHolding, isOpen, onClo
               <div>
                 <span className="theme-text-muted font-mono">
                   {tradeCategory === 'INSTANT' 
-                    ? (mode === 'BUY' ? 'Total Cost:' : 'Total Proceeds:')
-                    : (mode === 'BUY' ? 'Target Reserved Funds:' : 'Target Proceeds:')
+                    ? (mode === 'BUY' ? 'Total to Pay:' : 'Money You Receive:')
+                    : (mode === 'BUY' ? 'Reserved Cash for Order:' : 'Expected Money Back:')
                   }
                 </span>
                 <div className="text-base font-extrabold font-mono theme-text-main mt-0.5">
@@ -484,12 +484,12 @@ export function StockDetailModal({ stock, userWallet, userHolding, isOpen, onClo
 
               <div className="text-right">
                 <span className="theme-text-muted font-mono">
-                  {mode === 'BUY' ? 'Available Wallet Balance:' : 'Available Shares:'}
+                  {mode === 'BUY' ? 'Available Cash to Spend:' : 'Available Shares:'}
                 </span>
                 <div className="text-xs font-bold font-mono theme-text-main mt-0.5">
                   {mode === 'BUY' 
-                    ? `${availWallet.toFixed(2)} IC ${balanceInfo.lockedFunds > 0 ? `(${balanceInfo.lockedFunds.toFixed(2)} IC locked)` : ''}` 
-                    : `${availableQty} shares ${lockedQty > 0 ? `(${lockedQty} locked)` : ''}`
+                    ? `${availWallet.toFixed(2)} IC ${balanceInfo.lockedFunds > 0 ? `(${balanceInfo.lockedFunds.toFixed(2)} IC reserved)` : ''}` 
+                    : `${availableQty} shares ${lockedQty > 0 ? `(${lockedQty} reserved)` : ''}`
                   }
                 </div>
               </div>
@@ -498,7 +498,7 @@ export function StockDetailModal({ stock, userWallet, userHolding, isOpen, onClo
             {isTradingLocked && (
               <p className="text-[11px] font-mono text-[#E8453C] font-bold text-center bg-[#E8453C]/10 p-2.5 rounded border border-[#E8453C]/30 flex items-center justify-center gap-1.5">
                 <Ban className="w-4 h-4 text-[#E8453C]" />
-                <span>Trading is currently locked — waiting for admin to start an active session.</span>
+                <span>Trading is paused — waiting for host/admin to start an active session.</span>
               </p>
             )}
 
@@ -518,7 +518,7 @@ export function StockDetailModal({ stock, userWallet, userHolding, isOpen, onClo
               {isTradingLocked ? (
                 <>
                   <Ban className="w-4 h-4" />
-                  <span>TRADING LOCKED — WAITING FOR SESSION TO START</span>
+                  <span>TRADING PAUSED — WAITING FOR ADMIN</span>
                 </>
               ) : loadingTrade ? (
                 'PROCESSING ORDER...'
@@ -527,8 +527,8 @@ export function StockDetailModal({ stock, userWallet, userHolding, isOpen, onClo
                   {tradeCategory === 'INSTANT' ? <ShoppingBag className="w-4 h-4" /> : <Clock className="w-4 h-4" />}
                   <span>
                     {tradeCategory === 'INSTANT'
-                      ? `EXECUTE ${mode} ORDER (${parsedQty} SHARES @ ${instantTotal.toFixed(2)} IC)`
-                      : `PLACE LIMIT ${mode} ORDER (${parsedQty} SHARES AT ${parsedTargetPrice.toFixed(2)} IC)`
+                      ? `${mode === 'BUY' ? 'CONFIRM BUY' : 'CONFIRM SELL'} (${parsedQty} SHARES FOR ${instantTotal.toFixed(2)} IC)`
+                      : `SET AUTO ${mode} (${parsedQty} SHARES @ ${parsedTargetPrice.toFixed(2)} IC)`
                     }
                   </span>
                 </>
@@ -542,7 +542,7 @@ export function StockDetailModal({ stock, userWallet, userHolding, isOpen, onClo
           <div className="theme-bg-panel p-4 rounded-[6px] border theme-border space-y-3">
             <div className="flex items-center gap-2 text-xs font-bold text-[#D4A017] uppercase tracking-wider font-mono">
               <Clock className="w-4 h-4" />
-              <span>Pending Limit Orders for {stock.symbol}</span>
+              <span>Active Auto-Orders for {stock.symbol}</span>
             </div>
 
             <div className="space-y-2 font-mono text-xs">
@@ -554,7 +554,7 @@ export function StockDetailModal({ stock, userWallet, userHolding, isOpen, onClo
                         ? 'bg-[#1DB954]/20 text-[#1DB954] border border-[#1DB954]/30'
                         : 'bg-[#E8453C]/20 text-[#E8453C] border border-[#E8453C]/30'
                     }`}>
-                      LIMIT {order.type}
+                      AUTO {order.type}
                     </span>
                     <div>
                       <span className="font-bold theme-text-main">{order.quantity} shares</span>

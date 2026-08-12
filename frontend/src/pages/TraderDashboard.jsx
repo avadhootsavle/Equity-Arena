@@ -628,14 +628,14 @@ export function TraderDashboard() {
               <Clock className="w-5 h-5 animate-pulse text-amber-400" />
               <span>
                 {sessionData?.status === 'NOT_STARTED' || !sessionData?.status
-                  ? 'TRADING IS LOCKED — WAITING FOR ADMIN TO START SESSION'
+                  ? 'MARKET CLOSED — WAITING FOR HOST/ADMIN TO START SESSION'
                   : sessionData?.status === 'LIQUIDATING'
-                  ? 'AUTO-LIQUIDATION SWEEP ACTIVE — POSITIONS CONVERTING TO CASH'
-                  : 'TRADING SESSION ENDED — FINAL RESULTS LOCKED'}
+                  ? 'GAME ENDING SOON — ALL STOCKS CONVERTING BACK TO CASH'
+                  : 'SESSION FINISHED — FINAL RANKINGS ARE LOCKED'}
               </span>
             </div>
             <span className="text-[10px] bg-amber-500/20 px-2.5 py-1 rounded font-mono font-extrabold uppercase border border-amber-500/30">
-              {sessionData?.status || 'LOCKED'}
+              {sessionData?.status || 'PAUSED'}
             </span>
           </div>
         )}
@@ -651,7 +651,7 @@ export function TraderDashboard() {
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                 <div className="theme-bg-card border theme-border p-4 rounded-[6px] flex items-center justify-between">
                   <div>
-                    <div className="text-[10px] theme-text-muted uppercase font-mono font-bold tracking-wider">Total Portfolio</div>
+                    <div className="text-[10px] theme-text-muted uppercase font-mono font-bold tracking-wider">Total Wealth</div>
                     <div className="text-xl font-extrabold theme-text-main mt-0.5 font-mono">
                       <AnimatedNumber value={portfolio.totalPortfolioValue} decimals={2} suffix=" IC" className="text-[#D4A017]" />
                     </div>
@@ -663,7 +663,7 @@ export function TraderDashboard() {
 
                 <div className="theme-bg-card border theme-border p-4 rounded-[6px] flex items-center justify-between">
                   <div>
-                    <div className="text-[10px] theme-text-muted uppercase font-mono font-bold tracking-wider">Holdings Value</div>
+                    <div className="text-[10px] theme-text-muted uppercase font-mono font-bold tracking-wider">Stock Value</div>
                     <div className="text-xl font-extrabold theme-text-main mt-0.5 font-mono">
                       <AnimatedNumber value={portfolio.totalHoldingsValue || 0} decimals={2} suffix=" IC" className="text-[#D4A017]" />
                     </div>
@@ -675,7 +675,7 @@ export function TraderDashboard() {
 
                 <div className="theme-bg-card border theme-border p-4 rounded-[6px] flex items-center justify-between">
                   <div>
-                    <div className="text-[10px] theme-text-muted uppercase font-mono font-bold tracking-wider">Unrealized P/L</div>
+                    <div className="text-[10px] theme-text-muted uppercase font-mono font-bold tracking-wider">Total Profit / Loss</div>
                     <div className={`text-xl font-extrabold mt-0.5 font-mono ${
                       (portfolio.totalUnrealizedPL || 0) >= 0 ? 'text-[#1DB954]' : 'text-[#E8453C]'
                     }`}>
@@ -699,9 +699,9 @@ export function TraderDashboard() {
                   <div>
                     <h2 className="text-base font-bold theme-text-main font-heading uppercase tracking-wide flex items-center gap-2">
                       <Flame className="w-4 h-4 text-[#D4A017] animate-pulse" />
-                      LIVE STOCK EXCHANGE (15 SECTORS)
+                      LIVE MARKET EXCHANGE (15 INDUSTRIES)
                     </h2>
-                    <p className="text-xs theme-text-muted font-medium">Geometric Brownian Motion quant tick engine & live order book</p>
+                    <p className="text-xs theme-text-muted font-medium">Live simulated market updating every second across 15 Indian industries</p>
                   </div>
 
                   <div className="relative w-full sm:w-64">
@@ -747,8 +747,8 @@ export function TraderDashboard() {
                     <PieChart className="w-4 h-4" />
                   </div>
                   <div>
-                    <h2 className="text-sm font-bold theme-text-main uppercase font-heading tracking-wider">Your Active Positions</h2>
-                    <p className="text-xs theme-text-muted">Live holdings, average buy cost, and unrealized return</p>
+                    <h2 className="text-sm font-bold theme-text-main uppercase font-heading tracking-wider">Your Stocks</h2>
+                    <p className="text-xs theme-text-muted">Your current stocks, purchase price, and profit/loss</p>
                   </div>
                 </div>
 
@@ -756,11 +756,11 @@ export function TraderDashboard() {
                   <table className="w-full text-left border-collapse text-xs">
                     <thead>
                       <tr className="border-b theme-border theme-text-muted font-mono uppercase tracking-wider text-[11px]">
-                        <th className="py-2.5 px-3">Asset</th>
-                        <th className="py-2.5 px-3 text-right">Qty</th>
-                        <th className="py-2.5 px-3 text-right">Avg Cost</th>
-                        <th className="py-2.5 px-3 text-right">Spot Price</th>
-                        <th className="py-2.5 px-3 text-right">P/L (IC)</th>
+                        <th className="py-2.5 px-3">Stock</th>
+                        <th className="py-2.5 px-3 text-right">Shares</th>
+                        <th className="py-2.5 px-3 text-right">Price Paid</th>
+                        <th className="py-2.5 px-3 text-right">Current Price</th>
+                        <th className="py-2.5 px-3 text-right">Profit / Loss</th>
                         <th className="py-2.5 px-3 text-center">Action</th>
                       </tr>
                     </thead>
@@ -836,36 +836,36 @@ export function TraderDashboard() {
 
             </div>
 
-            {/* PERSISTENT RIGHT COLUMN (col-span-12 lg:col-span-4): Liquidity, Limit Orders & News Wire */}
+            {/* PERSISTENT RIGHT COLUMN (col-span-12 lg:col-span-4): Money & Assets, Auto-Orders & News Wire */}
             <div className="col-span-12 lg:col-span-4 space-y-6">
               
-              {/* Account Liquidity Summary */}
+              {/* Money & Assets Summary */}
               <div className="theme-bg-card p-4 rounded-[6px] border theme-border space-y-3">
                 <div className="flex items-center justify-between border-b theme-border pb-2">
                   <span className="text-xs font-bold uppercase theme-text-main font-heading flex items-center gap-1.5">
                     <Shield className="w-4 h-4 text-[#D4A017]" />
-                    ACCOUNT LIQUIDITY
+                    MONEY & ASSETS
                   </span>
                   <span className="text-[10px] font-mono text-[#D4A017]">READY</span>
                 </div>
 
                 <div className="space-y-2 text-xs font-mono">
                   <div className="flex justify-between items-center">
-                    <span className="theme-text-muted">Available Liquidity:</span>
+                    <span className="theme-text-muted">Available Cash:</span>
                     <strong className="theme-text-main font-bold text-sm">
                       {(portfolio.availableWalletBalance !== undefined ? portfolio.availableWalletBalance : portfolio.walletBalance).toLocaleString('en-US', { minimumFractionDigits: 2 })} IC
                     </strong>
                   </div>
 
                   <div className="flex justify-between items-center text-[11px]">
-                    <span className="theme-text-muted">Locked in Pending Orders:</span>
+                    <span className="theme-text-muted">Reserved in Auto-Orders:</span>
                     <span className="text-[#D4A017]">
                       {(portfolio.lockedFunds || 0).toFixed(2)} IC
                     </span>
                   </div>
 
                   <div className="flex justify-between items-center text-[11px]">
-                    <span className="theme-text-muted">Holdings Asset Value:</span>
+                    <span className="theme-text-muted">Total Stock Value:</span>
                     <span className="theme-text-main">
                       {liveTotalHoldingsValue.toFixed(2)} IC
                     </span>
@@ -873,13 +873,13 @@ export function TraderDashboard() {
                 </div>
               </div>
 
-              {/* Pending Limit Orders Panel */}
+              {/* Pending Auto Orders Panel */}
               {portfolio.pendingOrders && portfolio.pendingOrders.length > 0 && (
                 <div className="theme-bg-card p-4 rounded-[6px] border border-[#D4A017]/40 space-y-3">
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-1.5 text-xs font-bold text-[#D4A017] uppercase tracking-wider font-heading">
                       <Clock className="w-4 h-4" />
-                      <span>Pending Orders ({portfolio.pendingOrders.length})</span>
+                      <span>Active Auto-Orders ({portfolio.pendingOrders.length})</span>
                     </div>
                   </div>
 

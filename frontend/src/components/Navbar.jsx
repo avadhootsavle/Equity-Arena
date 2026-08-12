@@ -98,12 +98,12 @@ export function Navbar({ activeTab, setActiveTab, walletBalance, lockedFunds, ne
               <div className="px-3 py-1.5 rounded-[6px] bg-[#D4A017]/10 border border-[#D4A017]/30 flex items-center gap-2">
                 <Coins className="w-4 h-4 text-[#D4A017] flex-shrink-0" />
                 <div>
-                  <div className="text-[9px] uppercase font-mono font-bold theme-text-muted tracking-wider">Available Wallet</div>
+                  <div className="text-[9px] uppercase font-mono font-bold theme-text-muted tracking-wider">Available Cash</div>
                   <div className="text-xs font-extrabold font-mono text-[#D4A017] whitespace-nowrap">
                     {(walletBalance || 20000).toLocaleString('en-US', { minimumFractionDigits: 2 })} <span className="text-[10px]">IC</span>
                     {lockedFunds > 0 && (
                       <span className="text-[9px] text-[#D4A017] font-normal ml-1 border-l theme-border pl-1">
-                        ({lockedFunds.toFixed(2)} locked)
+                        ({lockedFunds.toFixed(2)} reserved)
                       </span>
                     )}
                   </div>

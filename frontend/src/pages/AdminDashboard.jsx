@@ -657,7 +657,7 @@ export function AdminDashboard() {
                 <SlidersHorizontal className="w-5 h-5 text-indigo-500" />
                 Live Stock Controls (15 India Sector Stocks)
               </h2>
-              <p className="text-xs theme-text-muted font-mono">Spot prices seeded between 40.00 and 80.00 IC (Hard Ceiling: 99.00 IC)</p>
+              <p className="text-xs theme-text-muted font-mono">15 India sector stocks active across Low (~30-100 IC), Mid (~100-500 IC), and High (~1,000-4,000 IC) price tiers</p>
             </div>
 
             <div className="relative w-full sm:w-72">

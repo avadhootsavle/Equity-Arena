@@ -8,37 +8,37 @@ const TOUR_STEPS = [
     icon: TrendingUp,
     badge: "Step 1 of 4",
     badgeColor: "text-[#D4A017] bg-[#D4A017]/10 border-[#D4A017]/30",
-    title: "Live Stock Exchange",
-    headline: "Real-time Prices Across 15 Sectors",
-    description: "Every stock ticks live powered by real-time quantitative algorithms. Watch price swings, check sector trends, and spot emerging market opportunities.",
-    tip: "Tip: Stocks are divided into Low (~30-100 IC), Mid (~100-500 IC), and High (~1,000-4,000 IC) price tiers."
+    title: "Live Market Exchange",
+    headline: "Real-time Prices Across 15 Indian Industries",
+    description: "Watch stock prices change second by second. See which industries are rising, track company trends, and decide when to jump in.",
+    tip: "Tip: Stocks range from cheap starter stocks (~30-100 IC) to heavyweight blue chips (~1,000-4,000 IC)."
   },
   {
     icon: Zap,
     badge: "Step 2 of 4",
     badgeColor: "text-[#10B981] bg-[#10B981]/10 border-[#10B981]/30",
-    title: "Instant 2-Tap Quick Trade",
-    headline: "Fast Execution Direct from the Grid",
-    description: "No need to open slow popups. Tap 'Buy' or 'Sell' directly on any stock card, use 25%, 50%, or 100% presets to fill quantity in one tap, and execute immediately.",
-    tip: "Tip: Trades execute instantly at the live price with zero confirmation lag."
+    title: "Fast 2-Tap Trading",
+    headline: "Buy and Sell Directly on Any Stock Card",
+    description: "No slow popups. Tap 'Buy' or 'Sell' on any stock card, tap 25%, 50%, or 100% to fill the quantity, and confirm in one click.",
+    tip: "Tip: Trades happen immediately at the true current price so you never miss a market move."
   },
   {
     icon: BarChart2,
     badge: "Step 3 of 4",
     badgeColor: "text-[#3B82F6] bg-[#3B82F6]/10 border-[#3B82F6]/30",
-    title: "Deep Charts & Limit Orders",
-    headline: "Detailed Technical Analysis",
-    description: "Want to plan your moves? Click any stock card to open interactive 1D/1W/1M price charts, company profiles, and set automated limit buy/sell orders.",
-    tip: "Tip: Limit orders trigger automatically when the market hits your target price."
+    title: "Price Charts & Auto Orders",
+    headline: "Study Trends & Set Target Prices",
+    description: "Click any stock card to see historical price graphs (1 Day, 1 Week, 1 Month) and set automatic orders that buy or sell when the price hits your target.",
+    tip: "Tip: Automatic orders trigger while you watch other stocks, so you don't have to stare at one screen."
   },
   {
     icon: Trophy,
     badge: "Step 4 of 4",
     badgeColor: "text-[#F59E0B] bg-[#F59E0B]/10 border-[#F59E0B]/30",
-    title: "Portfolio & Leaderboard",
-    headline: "Compete & Climb the Rankings",
-    description: "Monitor your cash balance, active holdings, and unrealized returns live. Outperform other traders to reach Rank #1 on the real-time tournament leaderboard.",
-    tip: "Tip: Starting capital is 20,000 Ignite Coins (IC). Trade wisely to maximize profit!"
+    title: "Your Wealth & Leaderboard",
+    headline: "Track Your Profit & Compete",
+    description: "Check your available cash, the current value of your stocks, and whether you're up or down. Build the highest net worth to win Rank #1!",
+    tip: "Tip: You start with 20,000 Ignite Coins (IC). Grow your wealth by buying low and selling high!"
   }
 ];
 
