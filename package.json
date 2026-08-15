@@ -1,0 +1,10 @@
+{
+  "name": "equity-arena",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Equity Arena — Real-Time Indian Stock Exchange Terminal Game",
+  "scripts": {
+    "test": "npm --prefix backend test",
+    "build": "npm --prefix frontend run build"
+  }
+}

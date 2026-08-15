@@ -13,7 +13,7 @@ import {
 
 export function AdminDashboard() {
   const { user, logout } = useAuth();
-  const { isConnected } = useSocket();
+  const { socket, isConnected } = useSocket();
   const { theme, toggleTheme } = useTheme();
 
   const [stocks, setStocks] = useState([]);
@@ -137,6 +137,46 @@ export function AdminDashboard() {
     }, 5000);
     return () => clearInterval(interval);
   }, []);
+
+  // Real-time socket listener for live price synchronization
+  useEffect(() => {
+    if (!socket) return;
+
+    const handleConnect = () => {
+      fetchStocks();
+      fetchLeaderboard();
+      fetchNewsTemplates();
+    };
+
+    const handleStockUpdate = (diff) => {
+      setStocks((prevStocks) =>
+        prevStocks.map((s) => {
+          if (s.id === diff.stockId) {
+            const newHistory = [
+              ...(s.priceHistories || []),
+              { price: diff.newPrice, volume: diff.volume, timestamp: diff.timestamp }
+            ];
+
+            return {
+              ...s,
+              currentPrice: diff.newPrice,
+              percentChange: diff.percentChange,
+              priceHistories: newHistory
+            };
+          }
+          return s;
+        })
+      );
+    };
+
+    socket.on('connect', handleConnect);
+    socket.on('stock:update', handleStockUpdate);
+
+    return () => {
+      socket.off('connect', handleConnect);
+      socket.off('stock:update', handleStockUpdate);
+    };
+  }, [socket]);
 
   const handleAdjustPrice = async (stockId, percent) => {
     setAdjustingStockId(stockId);
