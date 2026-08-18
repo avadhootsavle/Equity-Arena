@@ -28,11 +28,18 @@ const sessionRoutes = require('./routes/sessionRoutes');
 const app = express();
 const server = http.createServer(app);
 
-// Environment & Dynamic CORS configuration (Supports local, Vercel & ngrok deployments)
+// Environment & Dynamic CORS configuration (Supports local LAN, Vercel & ngrok deployments)
+const allowedOrigins = process.env.CLIENT_URL
+  ? process.env.CLIENT_URL.split(',').map((u) => u.trim())
+  : ['*'];
+
 app.use(cors({
   origin: (origin, callback) => {
-    // Allow all incoming origins dynamically for seamless Vercel / ngrok / local deployment
-    callback(null, true);
+    if (!origin || allowedOrigins.includes('*') || allowedOrigins.includes(origin)) {
+      callback(null, true);
+    } else {
+      callback(null, true); // Permissive fallback for seamless local WiFi / LAN demo
+    }
   },
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS', 'PATCH'],
@@ -85,8 +92,8 @@ if (fs.existsSync(distPath)) {
 const PORT = process.env.PORT || 5001;
 
 if (require.main === module) {
-  server.listen(PORT, () => {
-    console.log(`Server running on port ${PORT}`);
+  server.listen(PORT, '0.0.0.0', () => {
+    console.log(`🚀 Equity Arena Server listening on http://0.0.0.0:${PORT} (Bound to all network interfaces)`);
   });
 }
 

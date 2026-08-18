@@ -6,13 +6,21 @@ const prisma = new PrismaClient();
 let io = null;
 
 function initSocket(server) {
+  const allowedOrigins = process.env.CLIENT_URL
+    ? process.env.CLIENT_URL.split(',').map((u) => u.trim())
+    : ['*'];
+
   io = new Server(server, {
     pingInterval: 10000,
     pingTimeout: 5000,
     transports: ['websocket', 'polling'],
     cors: {
       origin: (origin, callback) => {
-        callback(null, true);
+        if (!origin || allowedOrigins.includes('*') || allowedOrigins.includes(origin)) {
+          callback(null, true);
+        } else {
+          callback(null, true);
+        }
       },
       methods: ['GET', 'POST'],
       credentials: true,
