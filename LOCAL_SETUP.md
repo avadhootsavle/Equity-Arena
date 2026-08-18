@@ -23,6 +23,17 @@ npm --prefix frontend run preview
 
 ---
 
+## ⚡ Cache Control Strategy & Rebuild Workflow
+
+To prevent stale cached `index.html` files from requesting old missing JavaScript bundle hashes after a rebuild:
+
+1. **`index.html` Cache Prevention**: `index.html` is configured with `Cache-Control: no-cache, no-store, must-revalidate`. Browsers always fetch the newest `index.html` pointing to current build bundle filenames.
+2. **Immutable Asset Caching**: Hashed static assets under `/assets/` are cached aggressively with `Cache-Control: public, max-age=31536000, immutable`.
+3. **Explicit 404 for Missing Assets**: Missing asset requests return an explicit HTTP 404 text response rather than falling back to `index.html`.
+4. **Development Workflow Tip**: If you rebuild the app (`npm run build`) while testing in an open browser tab, perform a **Hard Refresh** (`Cmd+Shift+R` on Mac or `Ctrl+F5` on Windows) on the tab to clear transient in-memory browser tab caches.
+
+---
+
 ## 🛠️ Alternative: Manual Local PostgreSQL Installation
 
 If you prefer using a system-installed PostgreSQL instance (e.g. Homebrew or Postgres.app):
