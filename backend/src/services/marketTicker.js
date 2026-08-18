@@ -1,5 +1,5 @@
 const { PrismaClient } = require('@prisma/client');
-const { emitStockUpdate } = require('../socket');
+const { emitStockUpdate, emitStocksBatchUpdate } = require('../socket');
 const config = require('../config/marketConfig');
 const { checkAndExecuteLimitOrders } = require('./orderService');
 const { checkSessionTimers } = require('./sessionService');
@@ -110,6 +110,7 @@ async function tickMarket() {
     if (!stocks || stocks.length === 0) return;
 
     const now = Date.now();
+    const timestamp = new Date();
 
     // 1. Generate shared sector normal noise
     const uniqueSectors = [...new Set(stocks.map((s) => s.sector))];
@@ -117,6 +118,10 @@ async function tickMarket() {
     uniqueSectors.forEach((sector) => {
       sectorNoises[sector] = randomNormal(0, 1);
     });
+
+    const pendingStockUpdates = [];
+    const pendingHistories = [];
+    const batchSocketUpdates = [];
 
     for (const stock of stocks) {
       const state = getStockState(stock.id);
@@ -202,38 +207,50 @@ async function tickMarket() {
       const baseVol = Math.floor(5000 + Math.abs(state.lastReturn) * 120000 + state.volatility * 20000);
       const tickVolume = Math.min(120000, Math.max(3000, baseVol));
 
-      // Update Database
-      const [updatedStock, newHistory] = await prisma.$transaction([
-        prisma.stock.update({
-          where: { id: stock.id },
-          data: { currentPrice: newPrice }
-        }),
-        prisma.priceHistory.create({
-          data: {
-            stockId: stock.id,
-            price: newPrice,
-            volume: tickVolume
-          }
-        })
-      ]);
-
       const percentChange = stock.basePrice > 0
         ? Math.round((((newPrice - stock.basePrice) / stock.basePrice) * 100) * 100) / 100
         : 0;
 
-      // Broadcast live update
-      emitStockUpdate({
-        stockId: updatedStock.id,
-        symbol: updatedStock.symbol,
-        name: updatedStock.name,
-        newPrice: updatedStock.currentPrice,
-        volume: newHistory.volume,
-        percentChange,
-        timestamp: newHistory.timestamp
+      pendingStockUpdates.push(
+        prisma.stock.update({
+          where: { id: stock.id },
+          data: { currentPrice: newPrice }
+        })
+      );
+
+      pendingHistories.push({
+        stockId: stock.id,
+        price: newPrice,
+        volume: tickVolume,
+        timestamp
       });
 
-      // Hook: Check and execute limit orders
-      await checkAndExecuteLimitOrders(stock.id, newPrice);
+      batchSocketUpdates.push({
+        stockId: stock.id,
+        symbol: stock.symbol,
+        name: stock.name,
+        newPrice,
+        volume: tickVolume,
+        percentChange,
+        timestamp
+      });
+    }
+
+    if (batchSocketUpdates.length === 0) return;
+
+    // Batched Database Execution (Single Transaction Round-Trip)
+    await prisma.$transaction([
+      ...pendingStockUpdates,
+      prisma.priceHistory.createMany({ data: pendingHistories })
+    ]);
+
+    // Batched Socket Broadcast (Single WebSocket Message to Room)
+    emitStocksBatchUpdate(batchSocketUpdates);
+
+    // Also fire individual updates for legacy listeners and limit order execution
+    for (const update of batchSocketUpdates) {
+      emitStockUpdate(update);
+      await checkAndExecuteLimitOrders(update.stockId, update.newPrice);
     }
   } catch (err) {
     console.error('Market ticker error:', err.message);

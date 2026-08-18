@@ -440,6 +440,51 @@ export function TraderDashboard() {
       );
     };
 
+    const handleStocksBatchUpdate = (data) => {
+      const updates = data?.updates;
+      if (!Array.isArray(updates) || updates.length === 0) return;
+
+      const updatesMap = new Map(updates.map((u) => [u.stockId, u]));
+      const newFlashes = {};
+
+      setStocks((prevStocks) =>
+        prevStocks.map((s) => {
+          const diff = updatesMap.get(s.id);
+          if (!diff) return s;
+
+          const oldPrice = s.currentPrice;
+          const direction = diff.newPrice > oldPrice ? 'up' : diff.newPrice < oldPrice ? 'down' : null;
+
+          if (direction) {
+            newFlashes[s.id] = direction;
+          }
+
+          const newHistory = [
+            ...(s.priceHistories || []),
+            { price: diff.newPrice, volume: diff.volume, timestamp: diff.timestamp }
+          ];
+
+          return {
+            ...s,
+            currentPrice: diff.newPrice,
+            percentChange: diff.percentChange,
+            priceHistories: newHistory
+          };
+        })
+      );
+
+      if (Object.keys(newFlashes).length > 0) {
+        setStockFlashes((prev) => ({ ...prev, ...newFlashes }));
+        setTimeout(() => {
+          setStockFlashes((prev) => {
+            const copy = { ...prev };
+            Object.keys(newFlashes).forEach((id) => { copy[id] = null; });
+            return copy;
+          });
+        }, 650);
+      }
+    };
+
     const handleNewsBroadcast = (news) => {
       setActiveNewsToast(news);
       setNewsFeed((prev) => Array.isArray(prev) ? [news, ...prev] : [news]);
@@ -459,6 +504,7 @@ export function TraderDashboard() {
 
     socket.on('connect', handleConnect);
     socket.on('stock:update', handleStockUpdate);
+    socket.on('stocks:batch-update', handleStocksBatchUpdate);
     socket.on('news:broadcast', handleNewsBroadcast);
     socket.on('portfolio:update', handlePortfolioUpdate);
     socket.on('order:executed', handleOrderExecuted);
@@ -466,6 +512,7 @@ export function TraderDashboard() {
     return () => {
       socket.off('connect', handleConnect);
       socket.off('stock:update', handleStockUpdate);
+      socket.off('stocks:batch-update', handleStocksBatchUpdate);
       socket.off('news:broadcast', handleNewsBroadcast);
       socket.off('portfolio:update', handlePortfolioUpdate);
       socket.off('order:executed', handleOrderExecuted);

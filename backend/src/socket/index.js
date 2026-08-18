@@ -7,6 +7,9 @@ let io = null;
 
 function initSocket(server) {
   io = new Server(server, {
+    pingInterval: 10000,
+    pingTimeout: 5000,
+    transports: ['websocket', 'polling'],
     cors: {
       origin: (origin, callback) => {
         callback(null, true);
@@ -91,6 +94,19 @@ function emitStockUpdate(data) {
   }
 }
 
+function emitStocksBatchUpdate(batchData) {
+  try {
+    if (io && Array.isArray(batchData) && batchData.length > 0) {
+      io.to('traders').emit('stocks:batch-update', {
+        updates: batchData,
+        timestamp: Date.now()
+      });
+    }
+  } catch (err) {
+    console.error('[Socket emitStocksBatchUpdate error]:', err.message);
+  }
+}
+
 function emitNewsBroadcast(data) {
   try {
     if (io) io.to('traders').emit('news:broadcast', data);
@@ -111,6 +127,7 @@ module.exports = {
   initSocket,
   getIo,
   emitStockUpdate,
+  emitStocksBatchUpdate,
   emitNewsBroadcast,
   emitPortfolioUpdate
 };

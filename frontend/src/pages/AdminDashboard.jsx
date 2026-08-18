@@ -169,12 +169,40 @@ export function AdminDashboard() {
       );
     };
 
+    const handleStocksBatchUpdate = (data) => {
+      const updates = data?.updates;
+      if (!Array.isArray(updates) || updates.length === 0) return;
+
+      const updatesMap = new Map(updates.map((u) => [u.stockId, u]));
+
+      setStocks((prevStocks) =>
+        prevStocks.map((s) => {
+          const diff = updatesMap.get(s.id);
+          if (!diff) return s;
+
+          const newHistory = [
+            ...(s.priceHistories || []),
+            { price: diff.newPrice, volume: diff.volume, timestamp: diff.timestamp }
+          ];
+
+          return {
+            ...s,
+            currentPrice: diff.newPrice,
+            percentChange: diff.percentChange,
+            priceHistories: newHistory
+          };
+        })
+      );
+    };
+
     socket.on('connect', handleConnect);
     socket.on('stock:update', handleStockUpdate);
+    socket.on('stocks:batch-update', handleStocksBatchUpdate);
 
     return () => {
       socket.off('connect', handleConnect);
       socket.off('stock:update', handleStockUpdate);
+      socket.off('stocks:batch-update', handleStocksBatchUpdate);
     };
   }, [socket]);
 
