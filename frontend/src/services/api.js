@@ -26,9 +26,7 @@ export async function apiFetch(endpoint, options = {}) {
     if ((response.status === 401 || response.status === 403) && typeof window !== 'undefined') {
       localStorage.removeItem('ignite_token');
       localStorage.removeItem('ignite_user');
-      if (window.location.pathname !== '/login') {
-        window.location.href = '/login';
-      }
+      window.dispatchEvent(new Event('auth:unauthorized'));
     }
 
     const errorMsg = data.error || data.message || `Request failed with status ${response.status}`;

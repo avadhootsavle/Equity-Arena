@@ -62,8 +62,19 @@ export function AuthProvider({ children }) {
 
     validateAuthToken();
 
+    const handleUnauthorized = () => {
+      if (isMounted) {
+        setToken(null);
+        setUser(null);
+        setLoading(false);
+      }
+    };
+
+    window.addEventListener('auth:unauthorized', handleUnauthorized);
+
     return () => {
       isMounted = false;
+      window.removeEventListener('auth:unauthorized', handleUnauthorized);
     };
   }, []);
 
