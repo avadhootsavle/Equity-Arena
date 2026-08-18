@@ -70,11 +70,42 @@ export function AuthProvider({ children }) {
       }
     };
 
+    const handleStorageChange = (e) => {
+      if (e.key === 'ignite_token' || e.key === 'ignite_user') {
+        const freshToken = localStorage.getItem('ignite_token');
+        const freshUserRaw = localStorage.getItem('ignite_user');
+        if (!freshToken || !freshUserRaw) {
+          if (isMounted) {
+            setToken(null);
+            setUser(null);
+            setLoading(false);
+          }
+        } else {
+          try {
+            const freshUser = JSON.parse(freshUserRaw);
+            if (isMounted) {
+              setToken(freshToken);
+              setUser(freshUser);
+              setLoading(false);
+            }
+          } catch (err) {
+            if (isMounted) {
+              setToken(null);
+              setUser(null);
+              setLoading(false);
+            }
+          }
+        }
+      }
+    };
+
     window.addEventListener('auth:unauthorized', handleUnauthorized);
+    window.addEventListener('storage', handleStorageChange);
 
     return () => {
       isMounted = false;
       window.removeEventListener('auth:unauthorized', handleUnauthorized);
+      window.removeEventListener('storage', handleStorageChange);
     };
   }, []);
 

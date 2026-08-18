@@ -6,6 +6,7 @@ const { runNewsSystemTests } = require('./05-news-system.test');
 const { runSessionLockTests } = require('./06-session-lock.test');
 const { runSyncConsistencyTests } = require('./07-sync-consistency.test');
 const { runLeaderboardTests } = require('./08-leaderboard.test');
+const { runMultiTabSyncTest } = require('./09-multi-tab-sync.test');
 
 async function runFullTestSuite() {
   console.log('\n======================================================================');
@@ -24,7 +25,8 @@ async function runFullTestSuite() {
     { name: '5. Analyst News Engine & Privacy', fn: runNewsSystemTests },
     { name: '6. Admin Session & Trading Lock', fn: runSessionLockTests },
     { name: '7. Admin vs Trader Sync Consistency', fn: runSyncConsistencyTests },
-    { name: '8. Tournament Leaderboard & Filtering', fn: runLeaderboardTests }
+    { name: '8. Tournament Leaderboard & Filtering', fn: runLeaderboardTests },
+    { name: '9. Multi-Tab Real-Time Sync', fn: runMultiTabSyncTest }
   ];
 
   for (const suite of suites) {
