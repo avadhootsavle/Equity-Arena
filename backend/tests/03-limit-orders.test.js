@@ -38,7 +38,7 @@ async function runLimitOrdersTests() {
       }
     });
 
-    const stock = await prisma.stock.findFirst();
+    const stock = await prisma.stock.findFirst({ where: { currentPrice: { lte: 500 } } });
     assert(stock !== null, `Target stock for limit order: ${stock?.symbol} @ ${stock?.currentPrice.toFixed(2)} IC`);
 
     // 1. Place Buy Limit Order and verify funds locking

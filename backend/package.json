@@ -8,6 +8,7 @@
     "dev": "nodemon src/index.js",
     "start": "node src/index.js",
     "test": "node tests/run-all-tests.js",
+    "backup": "node scripts/backup-db.js",
     "build": "prisma generate",
     "postinstall": "prisma generate",
     "prisma:migrate": "prisma migrate dev",

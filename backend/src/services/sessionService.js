@@ -244,12 +244,23 @@ async function triggerAutoLiquidation() {
   });
 }
 
+let lastAutoBackupTime = 0;
+
 /**
  * Checks session timing on every market tick and server startup
  */
 async function checkSessionTimers() {
   const session = await getCurrentSession();
   if (session.status === 'NOT_STARTED') return session;
+
+  const now = Date.now();
+  if (session.status === 'ACTIVE' && (now - lastAutoBackupTime > 15 * 60 * 1000)) {
+    lastAutoBackupTime = now;
+    try {
+      const { runDatabaseBackup } = require('../../scripts/backup-db');
+      runDatabaseBackup().catch(() => {});
+    } catch (e) {}
+  }
 
   const remainingSeconds = session.remainingSeconds;
   const liquidationBufferSeconds = (session.liquidationBufferMinutes || 5) * 60;
@@ -269,6 +280,11 @@ async function checkSessionTimers() {
     }
 
     console.log('🏁 SESSION ENDED: Trading is completely locked.');
+
+    try {
+      const { runDatabaseBackup } = require('../../scripts/backup-db');
+      runDatabaseBackup().catch(() => {});
+    } catch (e) {}
 
     safeEmitSocket('session:ended', {
       sessionId: session.id,
