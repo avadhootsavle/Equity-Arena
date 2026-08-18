@@ -83,8 +83,11 @@ const distPath = path.join(__dirname, '../../frontend/dist');
 if (fs.existsSync(distPath)) {
   app.use(express.static(distPath));
 
-  // SPA Fallback: Serve index.html for non-API client routes (/trader, /admin, /login) on hard refresh
-  app.get(/^.*$/, (req, res) => {
+  // SPA Fallback: Serve index.html ONLY for non-asset client routes
+  app.get('*', (req, res, next) => {
+    if (path.extname(req.path) || req.path.startsWith('/assets/')) {
+      return next();
+    }
     res.sendFile(path.join(distPath, 'index.html'));
   });
 }
