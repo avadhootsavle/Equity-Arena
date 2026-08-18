@@ -2,6 +2,7 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { apiFetch } from '../services/api';
 import { useSocket } from '../context/SocketContext';
 import { Sparkline, calculateSMA } from './Sparkline';
+import { InteractiveChart } from './InteractiveChart';
 import { AnimatedNumber } from './AnimatedNumber';
 import { 
   X, ArrowUpRight, ArrowDownRight, TrendingUp, TrendingDown, 
@@ -328,8 +329,9 @@ export function StockDetailModal({ stock, userWallet, userHolding, isOpen, onClo
           </div>
 
           <div className="h-52 flex items-center justify-center pt-2">
-            <Sparkline
+            <InteractiveChart
               history={activeHistory}
+              timeframe={timeframe}
               width={650}
               height={190}
               showSMA={true}
