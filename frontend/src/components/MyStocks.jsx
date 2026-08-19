@@ -20,9 +20,16 @@ function badgeColour(key = '') {
 }
 
 /** Tiny price line for the row. */
-function RowSpark({ history = [], up = true, width = 64, height = 24 }) {
+function RowSpark({ history = [], stockPrice = 0, up = true, width = 64, height = 24 }) {
   const path = useMemo(() => {
-    const prices = (history || []).slice(-30).map((h) => Number(h?.price)).filter(isFinite);
+    const rawPrices = (history || [])
+      .map((h) => Number(h?.price))
+      .filter((p) => isFinite(p));
+
+    const prices = rawPrices.length >= 2 
+      ? rawPrices.slice(-30) 
+      : [stockPrice || 0, stockPrice || 0];
+
     if (prices.length < 2) return null;
     const lo = Math.min(...prices);
     const hi = Math.max(...prices);
@@ -34,12 +41,12 @@ function RowSpark({ history = [], up = true, width = 64, height = 24 }) {
         return `${i === 0 ? 'M' : 'L'}${x.toFixed(1)},${y.toFixed(1)}`;
       })
       .join(' ');
-  }, [history, width, height]);
+  }, [history, stockPrice, width, height]);
 
   if (!path) return <div style={{ width, height }} />;
 
   return (
-    <svg width={width} height={height} aria-hidden="true">
+    <svg width={width} height={height} viewBox={`0 0 ${width} ${height}`} className="block overflow-hidden" aria-hidden="true">
       <path
         d={path}
         fill="none"
@@ -230,7 +237,7 @@ export function MyStocks({ holdings = [], stocks = [], onSell, onShowChart }) {
                     </td>
 
                     <td className="px-2 py-3 hidden md:table-cell">
-                      <RowSpark history={r.stock?.priceHistories} up={up} />
+                      <RowSpark history={r.stock?.priceHistories} stockPrice={r.priceNow} up={up} />
                     </td>
 
                     <td className="px-4 py-3 text-right">

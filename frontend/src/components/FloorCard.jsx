@@ -36,16 +36,20 @@ const CardBackdrop = memo(({ accent, intensity, streakCount = 4 }) => (
 /* ------------------------------------------------------------------
    Mini sparkline that draws itself in on mount
    ------------------------------------------------------------------ */
-const MiniSpark = memo(({ history = [], width = 150, height = 40, up = true }) => {
+const MiniSpark = memo(({ history = [], fallbackPrice = 0, width = 200, height = 40, up = true }) => {
   // Unique per instance: a shared id made every card reuse the first gradient
-  const gid = `spark${useId()}`;
+  const gid = `spark${useId().replace(/:/g, '')}`;
   const pathRef = useRef(null);
   const [dashLength, setDashLength] = useState(600);
 
   const geometry = useMemo(() => {
-    const prices = (history || [])
+    const rawPrices = (history || [])
       .map((h) => Number(h?.price))
       .filter((p) => isFinite(p));
+
+    const prices = rawPrices.length >= 2 
+      ? rawPrices.slice(-50) 
+      : [fallbackPrice || 0, fallbackPrice || 0];
 
     if (prices.length < 2) return null;
 
@@ -70,7 +74,7 @@ const MiniSpark = memo(({ history = [], width = 150, height = 40, up = true }) =
       area: `${line} L${width},${height} L0,${height} Z`,
       lastPoint: coords[coords.length - 1]
     };
-  }, [history, width, height]);
+  }, [history, fallbackPrice, width, height]);
 
   useEffect(() => {
     if (pathRef.current) {
@@ -101,10 +105,11 @@ const MiniSpark = memo(({ history = [], width = 150, height = 40, up = true }) =
       preserveAspectRatio="none"
       style={{ width: '100%', height }}
       aria-hidden="true"
+      className="block overflow-hidden"
     >
       <defs>
         <linearGradient id={gid} x1="0" y1="0" x2="0" y2="1">
-          <stop offset="0%" stopColor={color} stopOpacity="0.30" />
+          <stop offset="0%" stopColor={color} stopOpacity="0.15" />
           <stop offset="100%" stopColor={color} stopOpacity="0" />
         </linearGradient>
       </defs>
@@ -164,8 +169,6 @@ export const FloorCard = memo(function FloorCard({
 
   const accent = isUp ? 'var(--gain-green)' : 'var(--loss-red)';
 
-  // Backdrop energy scales with the size of the move, capped so a runaway
-  // mover doesn't wash out the card content.
   const intensity = Math.min(1, Math.abs(percentChange) / 40).toFixed(3);
 
   const history = stock?.priceHistories || [];
@@ -230,8 +233,8 @@ export const FloorCard = memo(function FloorCard({
             {fmtMoney(stock.currentPrice, stock.currentPrice >= 1000 ? 1 : 2)}
           </span>
 
-          <span className="block h-6 mt-1">
-            <MiniSpark history={history} width={90} height={24} up={isUp} />
+          <span className="block h-6 mt-1 overflow-hidden relative rounded">
+            <MiniSpark history={history} fallbackPrice={stock.currentPrice} width={90} height={24} up={isUp} />
           </span>
 
           <span
@@ -340,7 +343,7 @@ export const FloorCard = memo(function FloorCard({
         </span>
 
         {/* Price + change */}
-        <span className="flex items-end justify-between gap-2 mt-2.5">
+        <span className="flex items-end justify-between gap-2 mt-2">
           <span
             className={`text-xl font-mono font-extrabold theme-text-main leading-none ${priceClass}`}
           >
@@ -363,13 +366,13 @@ export const FloorCard = memo(function FloorCard({
           </span>
         </span>
 
-        {/* Sparkline */}
-        <span className="block mt-2 -mx-1">
-          <MiniSpark history={history} width={200} height={40} up={isUp} />
-        </span>
+        {/* Sparkline in a dedicated, bounded, non-overlapping container */}
+        <div className="w-full h-10 my-2.5 overflow-hidden relative rounded bg-[color-mix(in_srgb,var(--bg-input)_30%,transparent)] border-y border-[color-mix(in_srgb,var(--border-card)_40%,transparent)]">
+          <MiniSpark history={history} fallbackPrice={stock.currentPrice} width={200} height={40} up={isUp} />
+        </div>
 
         {/* Footer stats */}
-        <span className="flex items-center justify-between mt-1.5 pt-1.5 border-t theme-border text-[9px] font-mono theme-text-dim">
+        <span className="flex items-center justify-between mt-1 pt-1.5 border-t theme-border text-[9px] font-mono theme-text-dim">
           <span className="uppercase tracking-wide truncate max-w-[70px]">
             {stock.sector}
           </span>
