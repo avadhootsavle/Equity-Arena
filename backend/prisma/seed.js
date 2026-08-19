@@ -407,27 +407,25 @@ async function main() {
   await prisma.stock.deleteMany();
   await prisma.user.deleteMany();
 
-  // Create Admin User with bcrypt cost factor 12
-  const adminPasswordHash = await bcrypt.hash('admin123', 12);
+  // Create Admin User
   const adminUser = await prisma.user.create({
     data: {
       name: 'Admin User',
       email: 'admin@test.com',
-      passwordHash: adminPasswordHash,
+      passwordHash: 'admin123',
       role: 'ADMIN',
       walletBalance: 20000,
       isTestAccount: true
     }
   });
-  console.log(`✅ Created Admin user (Bcrypt cost factor 12): ${adminUser.email}`);
+  console.log(`✅ Created Admin user (Plain Text Password): ${adminUser.email}`);
 
   // Create Seed Demo Trader
-  const testTraderPasswordHash = await bcrypt.hash('trader123', 10);
   await prisma.user.create({
     data: {
       name: 'Seed Demo Trader',
       email: 'seed_trader@test.com',
-      passwordHash: testTraderPasswordHash,
+      passwordHash: 'trader123',
       role: 'TRADER',
       walletBalance: 20000,
       isTestAccount: true
