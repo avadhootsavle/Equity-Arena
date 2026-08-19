@@ -645,44 +645,57 @@ export function AdminDashboard() {
                       </td>
                     </tr>
                   ) : (
-                    leaderboard.map((trader) => (
-                      <tr
-                        key={trader.id}
-                        onClick={() => handleOpenTraderDetail(trader.id)}
-                        className="theme-bg-card-hover cursor-pointer transition-colors group"
-                      >
-                        <td className="py-2.5 px-3 font-bold theme-text-muted">
-                          {`#${trader.rank}`}
-                        </td>
-                        <td className="py-2.5 px-3">
-                          <div className="font-semibold theme-text-main group-hover:text-indigo-500 transition-colors">
-                            {trader.name}
-                          </div>
-                          <div className="text-[10px] theme-text-muted">{trader.email}</div>
-                        </td>
-                        <td className="py-2.5 px-3 text-right font-mono theme-text-muted">
-                          {trader.walletBalance.toLocaleString('en-US', { minimumFractionDigits: 2 })} IC
-                        </td>
-                        <td className="py-2.5 px-3 text-right font-mono theme-text-muted">
-                          {trader.holdingsValue.toLocaleString('en-US', { minimumFractionDigits: 2 })} IC
-                        </td>
-                        <td className="py-2.5 px-3 text-right font-mono font-bold text-emerald-500">
-                          {trader.totalPortfolioValue.toLocaleString('en-US', { minimumFractionDigits: 2 })} IC
-                        </td>
-                        <td className="py-2.5 px-3 text-center">
-                          <button
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              handleOpenTraderDetail(trader.id);
-                            }}
-                            className="p-1.5 bg-indigo-500/10 group-hover:bg-indigo-500 text-indigo-500 group-hover:text-white rounded-lg transition-all min-h-[32px] min-w-[32px] flex items-center justify-center"
-                            title="Monitor Trader History"
-                          >
-                            <Eye className="w-4 h-4" />
-                          </button>
-                        </td>
-                      </tr>
-                    ))
+                    leaderboard.map((trader) => {
+                      const isTop3 = trader.rank <= 3;
+                      const podiumBg = trader.rank === 1 
+                        ? 'bg-[color-mix(in_srgb,var(--accent)_12%,transparent)]' 
+                        : trader.rank === 2 
+                        ? 'bg-[color-mix(in_srgb,var(--accent)_8%,transparent)]' 
+                        : trader.rank === 3 
+                        ? 'bg-[color-mix(in_srgb,var(--accent)_5%,transparent)]' 
+                        : '';
+
+                      return (
+                        <tr
+                          key={trader.id}
+                          onClick={() => handleOpenTraderDetail(trader.id)}
+                          className={`theme-bg-card-hover cursor-pointer transition-colors group ${podiumBg} ${
+                            isTop3 ? 'border-l-4 border-[var(--accent)]' : ''
+                          }`}
+                        >
+                          <td className="py-2.5 px-3 font-bold theme-text-muted">
+                            {trader.rank === 1 ? '🥇 #1' : trader.rank === 2 ? '🥈 #2' : trader.rank === 3 ? '🥉 #3' : `#${trader.rank}`}
+                          </td>
+                          <td className="py-2.5 px-3">
+                            <div className="font-semibold theme-text-main group-hover:text-[var(--accent)] transition-colors">
+                              {trader.name}
+                            </div>
+                            <div className="text-[10px] theme-text-muted">{trader.email}</div>
+                          </td>
+                          <td className="py-2.5 px-3 text-right font-mono theme-text-muted">
+                            {trader.walletBalance.toLocaleString('en-US', { minimumFractionDigits: 2 })} IC
+                          </td>
+                          <td className="py-2.5 px-3 text-right font-mono theme-text-muted">
+                            {trader.holdingsValue.toLocaleString('en-US', { minimumFractionDigits: 2 })} IC
+                          </td>
+                          <td className="py-2.5 px-3 text-right font-mono font-bold text-[var(--gain-green)]">
+                            {trader.totalPortfolioValue.toLocaleString('en-US', { minimumFractionDigits: 2 })} IC
+                          </td>
+                          <td className="py-2.5 px-3 text-center">
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleOpenTraderDetail(trader.id);
+                              }}
+                              className="p-1.5 bg-[color-mix(in_srgb,var(--accent)_15%,transparent)] group-hover:bg-[var(--accent)] text-[var(--accent)] group-hover:text-slate-950 rounded-lg transition-all min-h-[32px] min-w-[32px] flex items-center justify-center btn-terminal"
+                              title="Monitor Trader History"
+                            >
+                              <Eye className="w-4 h-4" />
+                            </button>
+                          </td>
+                        </tr>
+                      );
+                    })
                   )}
                 </tbody>
               </table>

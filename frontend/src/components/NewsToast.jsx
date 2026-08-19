@@ -31,7 +31,7 @@ export function NewsToast({ news, onClose }) {
   if (!news) return null;
 
   return (
-    <div className="fixed top-16 right-4 z-50 max-w-sm w-full animate-fadeIn pointer-events-auto shadow-2xl">
+    <div className="fixed top-16 right-4 z-50 max-w-sm w-full animate-slide-in-right pointer-events-auto shadow-2xl">
       <div className="theme-bg-card border border-[color-mix(in_srgb,var(--accent)_60%,transparent)] rounded-[6px] p-4 shadow-xl relative overflow-hidden transition-all">
         
         {/* Header */}

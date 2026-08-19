@@ -52,9 +52,13 @@ export function TradeModal({ stock, userWallet, userHolding, isOpen, onClose, on
     }
   };
 
+  const [isSuccess, setIsSuccess] = useState(false);
+
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 theme-bg-main/80 backdrop-blur-md animate-fadeIn">
-      <div className="w-full max-w-md theme-bg-card p-6 rounded-2xl border theme-border shadow-2xl relative">
+      <div className={`w-full max-w-md theme-bg-card p-6 rounded-2xl border theme-border shadow-2xl relative animate-pop-in ${
+        error ? 'animate-error-shake' : ''
+      }`}>
         <button
           onClick={onClose}
           className="absolute top-4 right-4 p-1.5 theme-bg-panel hover:theme-bg-card-hover theme-text-muted hover:theme-text-main rounded-lg transition-colors"

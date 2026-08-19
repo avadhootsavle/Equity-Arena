@@ -1,6 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { useTheme } from '../context/ThemeContext';
+import { AnimatedNumber } from './AnimatedNumber';
 import { isSoundMuted, toggleSoundMute } from '../services/soundService';
 import {
   Search,
@@ -167,7 +168,7 @@ export function TopBar({
 
         {/* Wallet */}
         <div
-          className="flex items-center gap-1.5 px-2.5 h-[32px] rounded-md border"
+          className="flex items-center gap-1.5 px-2.5 h-[32px] rounded-md border transition-all"
           style={{
             borderColor: 'color-mix(in srgb, var(--accent) 28%, transparent)',
             backgroundColor: 'color-mix(in srgb, var(--accent) 9%, transparent)'
@@ -179,7 +180,7 @@ export function TopBar({
             className="text-[11px] font-mono font-extrabold whitespace-nowrap"
             style={{ color: 'var(--accent)' }}
           >
-            {fmtMoney(walletBalance)} <span className="text-[9px]">IC</span>
+            <AnimatedNumber value={walletBalance} decimals={2} duration={500} suffix=" IC" />
           </span>
         </div>
 
