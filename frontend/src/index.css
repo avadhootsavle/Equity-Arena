@@ -3,99 +3,61 @@
 @tailwind utilities;
 
 :root {
-  /* Design System Tokens — Dark (default) */
-  --bg-main: #080B14;
-  --bg-rail: #0B0F1A;
-  --bg-card: #0F1523;
-  --bg-card-hover: #151C2C;
-  --bg-panel: #0C111C;
-  --bg-input: #0A0E18;
-  --bg-elevated: #161E2E;
-  --border-card: #1E2637;
-  --border-strong: #2C3648;
-  --border-hover: #3B82F6;
-  --text-main: #F1F5F9;
-  --text-muted: #94A3B8;
-  --text-dim: #64748B;
+  /* Stitch Design System Tokens — Dark Mode (Default) */
+  --bg-primary: #0D1117;
+  --bg-secondary: #161B22;
+  --bg-tertiary: #21262D;
+  --border: #30363D;
+  --border-strong: #484F58;
 
-  /* Primary accent */
-  --accent: #3B82F6;
-  --accent-strong: #2563EB;
-  --accent-fg: #FFFFFF;
+  --accent-gold: #F0B429;
+  --gain: #3FB950;
+  --loss: #F85149;
 
-  --gain-green: #22C55E;
-  --loss-red: #EF4444;
+  --text-primary: #F0F6FC;
+  --text-secondary: #8B949E;
+  --text-dim: #6E7681;
 
-  /* Categorical series — allocation slices, health meters, badges */
-  --cat-1: #EC4899;
-  --cat-2: #3B82F6;
-  --cat-3: #A3E635;
-  --cat-4: #F97316;
-  --cat-5: #2DD4BF;
-  --cat-6: #A78BFA;
-  --cat-7: #FBBF24;
-  --cat-8: #38BDF8;
-
-  --grid-line: rgba(255, 255, 255, 0.055);
-  --crosshair: rgba(241, 245, 249, 0.45);
-  --scrim: rgba(4, 6, 12, 0.78);
-  --card-shadow: 0 1px 2px rgba(0, 0, 0, 0.4), 0 12px 32px rgba(0, 0, 0, 0.35);
-  --glow-green: rgba(34, 197, 94, 0.28);
-  --glow-red: rgba(239, 68, 68, 0.28);
-  --glow-accent: rgba(59, 130, 246, 0.3);
+  --grid-line: rgba(48, 54, 61, 0.45);
+  --crosshair: rgba(240, 246, 252, 0.5);
+  --glow-gain: rgba(63, 185, 80, 0.25);
+  --glow-loss: rgba(248, 81, 73, 0.25);
+  --glow-gold: rgba(240, 180, 41, 0.3);
 }
 
 [data-theme="light"] {
-  /* Design System Tokens — Light */
-  --bg-main: #F1F5F9;
-  --bg-rail: #FFFFFF;
-  --bg-card: #FFFFFF;
-  --bg-card-hover: #F8FAFC;
-  --bg-panel: #F1F5F9;
-  --bg-input: #FFFFFF;
-  --bg-elevated: #FFFFFF;
-  --border-card: #E2E8F0;
-  --border-strong: #CBD5E1;
-  --border-hover: #2563EB;
-  --text-main: #0F172A;
-  --text-muted: #475569;
-  --text-dim: #7C8AA0;
+  /* Stitch Companion Design System Tokens — Light Mode */
+  --bg-primary: #F6F8FA;
+  --bg-secondary: #FFFFFF;
+  --bg-tertiary: #EAEEF2;
+  --border: #D0D7DE;
+  --border-strong: #AFB8C1;
 
-  --accent: #2563EB;
-  --accent-strong: #1D4ED8;
-  --accent-fg: #FFFFFF;
+  --accent-gold: #D4A017;
+  --gain: #1A7F37;
+  --loss: #CF222E;
 
-  --gain-green: #16A34A;
-  --loss-red: #DC2626;
+  --text-primary: #1F2328;
+  --text-secondary: #57606A;
+  --text-dim: #8C959F;
 
-  --cat-1: #DB2777;
-  --cat-2: #2563EB;
-  --cat-3: #65A30D;
-  --cat-4: #EA580C;
-  --cat-5: #0D9488;
-  --cat-6: #7C3AED;
-  --cat-7: #D97706;
-  --cat-8: #0284C7;
-
-  --grid-line: rgba(15, 23, 42, 0.08);
-  --crosshair: rgba(15, 23, 42, 0.42);
-  --scrim: rgba(15, 23, 42, 0.5);
-  --card-shadow: 0 1px 2px rgba(15, 23, 42, 0.05), 0 10px 26px rgba(15, 23, 42, 0.07);
-  --glow-green: rgba(22, 163, 74, 0.2);
-  --glow-red: rgba(220, 38, 38, 0.2);
-  --glow-accent: rgba(37, 99, 235, 0.22);
+  --grid-line: rgba(208, 215, 222, 0.5);
+  --crosshair: rgba(31, 35, 40, 0.5);
+  --glow-gain: rgba(26, 127, 55, 0.2);
+  --glow-loss: rgba(207, 34, 46, 0.2);
+  --glow-gold: rgba(212, 160, 23, 0.25);
 }
 
 @layer base {
   body {
-    font-family: 'IBM Plex Sans', system-ui, sans-serif;
-    background-color: var(--bg-main);
-    color: var(--text-main);
-    transition: background-color 0.2s ease, color 0.2s ease;
+    font-family: 'DM Sans', sans-serif;
+    background-color: var(--bg-primary);
+    color: var(--text-primary);
+    transition: background-color 0.15s ease, color 0.15s ease;
   }
 
-  h1, h2, h3, h4, h5, h6, .font-heading {
-    font-family: 'Space Grotesk', sans-serif;
+  h1, h2, h3, h4, .font-syne {
+    font-family: 'Syne', sans-serif;
     font-weight: 700;
   }
 
@@ -106,718 +68,88 @@
 
 /* Custom Scrollbar */
 ::-webkit-scrollbar {
-  width: 5px;
-  height: 5px;
+  width: 6px;
+  height: 6px;
 }
 ::-webkit-scrollbar-track {
-  background: var(--bg-main);
+  background: var(--bg-primary);
 }
 ::-webkit-scrollbar-thumb {
-  background: var(--border-card);
-  border-radius: 3px;
+  background: var(--border);
+  border-radius: 0px;
 }
 ::-webkit-scrollbar-thumb:hover {
-  background: var(--accent);
+  background: var(--accent-gold);
 }
 
 /* Design Tokens Utilities */
-.theme-bg-main {
-  background-color: var(--bg-main);
+.theme-bg-primary {
+  background-color: var(--bg-primary);
 }
-.theme-bg-card {
-  background-color: var(--bg-card);
-  box-shadow: var(--card-shadow);
-  border-radius: 6px;
+.theme-bg-secondary {
+  background-color: var(--bg-secondary);
 }
-.theme-bg-card-hover:hover {
-  background-color: var(--bg-card-hover);
-}
-.theme-bg-panel {
-  background-color: var(--bg-panel);
-  border-radius: 6px;
+.theme-bg-tertiary {
+  background-color: var(--bg-tertiary);
 }
 .theme-border {
-  border-color: var(--border-card);
-}
-.theme-text-main {
-  color: var(--text-main);
-}
-.theme-text-muted {
-  color: var(--text-muted);
-}
-.theme-text-dim {
-  color: var(--text-dim);
-}
-.theme-bg-rail {
-  background-color: var(--bg-rail);
-}
-.theme-bg-input {
-  background-color: var(--bg-input);
-}
-.theme-bg-elevated {
-  background-color: var(--bg-elevated);
+  border-color: var(--border);
 }
 .theme-border-strong {
   border-color: var(--border-strong);
 }
-
-/* Flat surface: card colour without the shadow/radius baked into .theme-bg-card */
-.surface {
-  background-color: var(--bg-card);
-  border: 1px solid var(--border-card);
-  border-radius: 10px;
+.theme-text-primary {
+  color: var(--text-primary);
 }
-.surface-panel {
-  background-color: var(--bg-panel);
-  border: 1px solid var(--border-card);
-  border-radius: 8px;
+.theme-text-secondary {
+  color: var(--text-secondary);
+}
+.theme-text-dim {
+  color: var(--text-dim);
 }
 
-/* Restrained Button & Card Radius Rules */
-.btn-terminal {
-  border-radius: 4px;
-  border: 1px solid rgba(0, 0, 0, 0.25);
-  font-family: 'Space Grotesk', sans-serif;
-  font-weight: 700;
-  transition: all 0.15s ease;
+/* Sharp Terminal Surface Cards (0px border radius) */
+.terminal-card {
+  background-color: var(--bg-secondary);
+  border: 1px solid var(--border);
+  border-radius: 0px;
 }
 
-.btn-terminal:active {
-  transform: translateY(1px);
-}
-
-/* Live Price Flash Micro-Animations */
-@keyframes flashGreen {
+/* Flash Animations on Tick Update */
+@keyframes flashGain {
   0% {
-    background-color: rgba(29, 185, 84, 0.35);
-    border-color: var(--gain-green);
+    background-color: rgba(63, 185, 80, 0.25);
+    border-color: var(--gain);
   }
   100% {
-    background-color: transparent;
+    background-color: var(--bg-secondary);
   }
 }
 
-@keyframes flashRed {
+@keyframes flashLoss {
   0% {
-    background-color: rgba(232, 69, 60, 0.35);
-    border-color: var(--loss-red);
+    background-color: rgba(248, 81, 73, 0.25);
+    border-color: var(--loss);
   }
   100% {
-    background-color: transparent;
-  }
-}
-
-.animate-flash-up {
-  animation: flashGreen 0.6s ease-out;
-}
-
-.animate-flash-down {
-  animation: flashRed 0.6s ease-out;
-}
-
-/* Trade Execution Success Burst */
-@keyframes successBurst {
-  0% {
-    transform: scale(0.92);
-    opacity: 0;
-  }
-  50% {
-    transform: scale(1.03);
-    opacity: 1;
-  }
-  100% {
-    transform: scale(1);
-    opacity: 1;
-  }
-}
-
-.animate-success-burst {
-  animation: successBurst 0.25s ease-out;
-}
-
-/* Trade Execution Error Shake */
-@keyframes errorShake {
-  0%, 100% { transform: translateX(0); }
-  20% { transform: translateX(-6px); }
-  40% { transform: translateX(6px); }
-  60% { transform: translateX(-3px); }
-  80% { transform: translateX(3px); }
-}
-
-.animate-error-shake {
-  animation: errorShake 0.3s ease-in-out;
-}
-
-/* Continuous Live Marquee */
-@keyframes marqueeScroll {
-  0% { transform: translateX(0%); }
-  100% { transform: translateX(-50%); }
-}
-
-.animate-marquee {
-  display: flex;
-  width: max-content;
-  animation: marqueeScroll 26s linear infinite;
-}
-.animate-marquee:hover {
-  animation-play-state: paused;
-}
-
-/* Breaking News Urgency Pulse Border */
-@keyframes newsPulseBorder {
-  0% {
-    border-color: rgba(212, 160, 23, 0.4);
-    box-shadow: 0 0 10px rgba(212, 160, 23, 0.2);
-  }
-  50% {
-    border-color: rgba(212, 160, 23, 1);
-    box-shadow: 0 0 18px rgba(212, 160, 23, 0.5);
-  }
-  100% {
-    border-color: rgba(212, 160, 23, 0.4);
-    box-shadow: 0 0 10px rgba(212, 160, 23, 0.2);
-  }
-}
-
-.animate-news-pulse {
-  animation: newsPulseBorder 1.5s infinite ease-in-out;
-}
-
-/* Phase 22b TV Broadcast News Intro Animation Enhancements */
-@keyframes broadcastGlobeFlyIn {
-  0% {
-    transform: scale3d(0.18, 0.18, 1) rotate(0deg);
-    opacity: 0.15;
-    filter: blur(8px) drop-shadow(0 0 0px rgba(212, 160, 23, 0));
-  }
-  60% {
-    transform: scale3d(1.8, 1.8, 1) rotate(220deg);
-    opacity: 0.9;
-    filter: blur(2px) drop-shadow(0 0 35px rgba(212, 160, 23, 0.8));
-  }
-  85% {
-    transform: scale3d(2.9, 2.9, 1) rotate(320deg);
-    opacity: 1;
-    filter: blur(0px) drop-shadow(0 0 60px rgba(255, 255, 255, 1));
-  }
-  100% {
-    transform: scale3d(3.4, 3.4, 1) rotate(360deg);
-    opacity: 0.95;
-    filter: blur(0px) drop-shadow(0 0 80px rgba(212, 160, 23, 1));
-  }
-}
-
-.animate-broadcast-flyin {
-  animation: broadcastGlobeFlyIn 0.8s cubic-bezier(0.7, 0, 0.15, 1) forwards;
-  will-change: transform, opacity, filter;
-}
-
-@keyframes lightRaySweep {
-  0% { transform: rotate(0deg) scale(0.6); opacity: 0.2; }
-  50% { transform: rotate(180deg) scale(2.0); opacity: 0.8; }
-  100% { transform: rotate(360deg) scale(3.2); opacity: 1; }
-}
-
-.animate-light-rays {
-  animation: lightRaySweep 0.8s cubic-bezier(0.7, 0, 0.15, 1) forwards;
-}
-
-@keyframes impactShake {
-  0%, 100% { transform: translate(0, 0); }
-  20% { transform: translate(-5px, 3px); }
-  40% { transform: translate(5px, -3px); }
-  60% { transform: translate(-3px, -2px); }
-  80% { transform: translate(3px, 2px); }
-}
-
-.animate-impact-shake {
-  animation: impactShake 0.15s ease-in-out;
-}
-
-@keyframes textZoomPunch {
-  0% { transform: scale(1.18); opacity: 0.4; }
-  100% { transform: scale(1.0); opacity: 1; }
-}
-
-.animate-text-zoom-punch {
-  animation: textZoomPunch 0.25s cubic-bezier(0.16, 1, 0.3, 1) forwards;
-}
-
-@keyframes newsFlashBurst {
-  0% {
-    opacity: 0;
-    background-color: rgba(212, 160, 23, 0);
-  }
-  50% {
-    opacity: 1;
-    background-color: rgba(255, 255, 255, 0.95);
-  }
-  100% {
-    opacity: 0;
-    background-color: rgba(212, 160, 23, 0);
-  }
-}
-
-.animate-flash-burst {
-  animation: newsFlashBurst 0.2s ease-out forwards;
-}
-
-@keyframes globeSpinSlow {
-  0% { transform: rotate(0deg); }
-  100% { transform: rotate(360deg); }
-}
-
-.animate-globe-spin {
-  animation: globeSpinSlow 4s linear infinite;
-}
-
-/* ============================================================
-   FLOOR CARD ANIMATIONS & EFFECTS
-   ============================================================ */
-
-/* Staggered entrance — each card fades + lifts into place */
-@keyframes cardRise {
-  0% {
-    opacity: 0;
-    transform: translateY(14px) scale(0.975);
-  }
-  100% {
-    opacity: 1;
-    transform: translateY(0) scale(1);
-  }
-}
-
-.animate-card-rise {
-  animation: cardRise 0.45s cubic-bezier(0.22, 1, 0.36, 1) both;
-}
-
-/* Hover lift + accent glow, direction-aware */
-.floor-card {
-  position: relative;
-  isolation: isolate;
-  transition:
-    transform 0.22s cubic-bezier(0.22, 1, 0.36, 1),
-    border-color 0.22s ease,
-    box-shadow 0.22s ease,
-    background-color 0.22s ease;
-  will-change: transform;
-}
-
-.floor-card::before {
-  content: '';
-  position: absolute;
-  inset: 0;
-  border-radius: inherit;
-  opacity: 0;
-  transition: opacity 0.25s ease;
-  pointer-events: none;
-  z-index: -1;
-}
-
-.floor-card.is-up::before {
-  background: radial-gradient(120% 100% at 50% 100%, var(--glow-green) 0%, transparent 70%);
-}
-.floor-card.is-down::before {
-  background: radial-gradient(120% 100% at 50% 100%, var(--glow-red) 0%, transparent 70%);
-}
-
-.floor-card:hover {
-  transform: translateY(-3px);
-}
-.floor-card:hover::before {
-  opacity: 1;
-}
-.floor-card.is-up:hover {
-  border-color: color-mix(in srgb, var(--gain-green) 55%, transparent);
-  box-shadow: 0 10px 30px -8px var(--glow-green);
-}
-.floor-card.is-down:hover {
-  border-color: color-mix(in srgb, var(--loss-red) 55%, transparent);
-  box-shadow: 0 10px 30px -8px var(--glow-red);
-}
-.floor-card:active {
-  transform: translateY(-1px) scale(0.992);
-}
-
-/* Sweep of light across the card on hover */
-.floor-card .card-sheen {
-  position: absolute;
-  inset: 0;
-  border-radius: inherit;
-  overflow: hidden;
-  pointer-events: none;
-  opacity: 0;
-  transition: opacity 0.2s ease;
-}
-.floor-card:hover .card-sheen {
-  opacity: 1;
-}
-.floor-card .card-sheen::after {
-  content: '';
-  position: absolute;
-  top: 0;
-  bottom: 0;
-  width: 42%;
-  left: -60%;
-  background: linear-gradient(
-    100deg,
-    transparent 0%,
-    rgba(255, 255, 255, 0.07) 50%,
-    transparent 100%
-  );
-  transform: skewX(-18deg);
-}
-.floor-card:hover .card-sheen::after {
-  animation: cardSheenSweep 0.85s cubic-bezier(0.4, 0, 0.2, 1);
-}
-
-@keyframes cardSheenSweep {
-  0% { left: -60%; }
-  100% { left: 130%; }
-}
-
-/* Tick flash — border + background pulse when a live price arrives */
-@keyframes tickUp {
-  0% {
-    background-color: color-mix(in srgb, var(--gain-green) 18%, transparent);
-    border-color: var(--gain-green);
-    box-shadow: 0 0 0 1px var(--gain-green), 0 0 22px -4px var(--glow-green);
-  }
-  100% {
-    background-color: var(--bg-card);
-    box-shadow: none;
-  }
-}
-
-@keyframes tickDown {
-  0% {
-    background-color: color-mix(in srgb, var(--loss-red) 18%, transparent);
-    border-color: var(--loss-red);
-    box-shadow: 0 0 0 1px var(--loss-red), 0 0 22px -4px var(--glow-red);
-  }
-  100% {
-    background-color: var(--bg-card);
-    box-shadow: none;
+    background-color: var(--bg-secondary);
   }
 }
 
 .animate-tick-up {
-  animation: tickUp 0.7s ease-out;
+  animation: flashGain 0.6s ease-out;
 }
+
 .animate-tick-down {
-  animation: tickDown 0.7s ease-out;
+  animation: flashLoss 0.6s ease-out;
 }
 
-/* Price digits nudge up/down on change */
-@keyframes priceNudgeUp {
-  0% { transform: translateY(5px); opacity: 0.45; }
-  100% { transform: translateY(0); opacity: 1; }
-}
-@keyframes priceNudgeDown {
-  0% { transform: translateY(-5px); opacity: 0.45; }
-  100% { transform: translateY(0); opacity: 1; }
-}
-.animate-price-up {
-  animation: priceNudgeUp 0.42s cubic-bezier(0.22, 1, 0.36, 1);
-}
-.animate-price-down {
-  animation: priceNudgeDown 0.42s cubic-bezier(0.22, 1, 0.36, 1);
+/* Urgent Countdown Pulse (<5 mins) */
+@keyframes urgentPulse {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50% { opacity: 0.75; transform: scale(1.02); }
 }
 
-/* Live pulse dot */
-@keyframes livePulse {
-  0% { box-shadow: 0 0 0 0 currentColor; opacity: 1; }
-  70% { box-shadow: 0 0 0 6px transparent; opacity: 0.85; }
-  100% { box-shadow: 0 0 0 0 transparent; opacity: 1; }
-}
-.animate-live-pulse {
-  animation: livePulse 1.9s ease-out infinite;
-}
-
-/* Sparkline draw-in */
-@keyframes drawLine {
-  from { stroke-dashoffset: var(--dash-len, 1000); }
-  to { stroke-dashoffset: 0; }
-}
-.animate-draw-line {
-  animation: drawLine 1.1s cubic-bezier(0.4, 0, 0.2, 1) forwards;
-}
-
-/* Generic fade / slide helpers */
-@keyframes fadeIn {
-  from { opacity: 0; }
-  to { opacity: 1; }
-}
-.animate-fadeIn {
-  animation: fadeIn 0.25s ease-out both;
-}
-
-@keyframes popIn {
-  0% { opacity: 0; transform: scale(0.94) translateY(8px); }
-  100% { opacity: 1; transform: scale(1) translateY(0); }
-}
-.animate-pop-in {
-  animation: popIn 0.2s cubic-bezier(0.22, 1, 0.36, 1) both;
-}
-
-@keyframes slideInRight {
-  0% { opacity: 0; transform: translateX(24px); }
-  100% { opacity: 1; transform: translateX(0); }
-}
-.animate-slide-in-right {
-  animation: slideInRight 0.3s cubic-bezier(0.22, 1, 0.36, 1) both;
-}
-
-/* Shimmer for loading skeletons */
-@keyframes shimmerSweep {
-  0% { background-position: -200% 0; }
-  100% { background-position: 200% 0; }
-}
-.animate-shimmer {
-  background: linear-gradient(
-    90deg,
-    var(--bg-panel) 25%,
-    var(--bg-card-hover) 50%,
-    var(--bg-panel) 75%
-  );
-  background-size: 200% 100%;
-  animation: shimmerSweep 1.4s ease-in-out infinite;
-}
-
-/* Chart crosshair readout */
-.chart-surface {
-  touch-action: none;
-  cursor: crosshair;
-}
-
-/* Respect reduced-motion preference */
-@media (prefers-reduced-motion: reduce) {
-  .animate-card-rise,
-  .animate-tick-up,
-  .animate-tick-down,
-  .animate-price-up,
-  .animate-price-down,
-  .animate-live-pulse,
-  .animate-draw-line,
-  .animate-shimmer,
-  .floor-card,
-  .floor-card .card-sheen::after {
-    animation: none !important;
-    transition: none !important;
-  }
-  .floor-card:hover {
-    transform: none;
-  }
-}
-
-/* ============================================================
-   LIVING CARD BACKDROP
-   Each floor card carries an animated aura tinted by direction.
-   Intensity is driven by --card-intensity (0..1) set per card
-   from the stock's move size, so big movers glow harder.
-   ============================================================ */
-
-.floor-card-bg {
-  position: absolute;
-  inset: 0;
-  border-radius: inherit;
-  overflow: hidden;
-  pointer-events: none;
-  z-index: 0;
-}
-
-/* Two slow-drifting radial blobs in the direction colour */
-.card-aura,
-.card-aura::before,
-.card-aura::after {
-  position: absolute;
-  content: '';
-  border-radius: 50%;
-}
-
-.card-aura {
-  inset: 0;
-  border-radius: inherit;
-  opacity: calc(0.3 + var(--card-intensity, 0.3) * 0.45);
-}
-
-.card-aura::before {
-  width: 78%;
-  padding-bottom: 78%;
-  left: -16%;
-  bottom: -34%;
-  background: radial-gradient(
-    circle at 50% 50%,
-    var(--card-accent) 0%,
-    transparent 68%
-  );
-  opacity: calc(0.10 + var(--card-intensity, 0.3) * 0.13);
-  filter: blur(10px);
-  animation: auraDriftA 11s ease-in-out infinite alternate;
-}
-
-.card-aura::after {
-  width: 62%;
-  padding-bottom: 62%;
-  right: -18%;
-  top: -28%;
-  background: radial-gradient(
-    circle at 50% 50%,
-    var(--card-accent) 0%,
-    transparent 70%
-  );
-  opacity: calc(0.07 + var(--card-intensity, 0.3) * 0.10);
-  filter: blur(12px);
-  animation: auraDriftB 14s ease-in-out infinite alternate;
-}
-
-@keyframes auraDriftA {
-  0%   { transform: translate3d(0, 0, 0) scale(1); }
-  50%  { transform: translate3d(14%, -8%, 0) scale(1.14); }
-  100% { transform: translate3d(4%, -16%, 0) scale(0.96); }
-}
-
-@keyframes auraDriftB {
-  0%   { transform: translate3d(0, 0, 0) scale(1.05); }
-  50%  { transform: translate3d(-12%, 10%, 0) scale(0.92); }
-  100% { transform: translate3d(-4%, 18%, 0) scale(1.12); }
-}
-
-/* Thin tape streaks: they climb on gainers, fall on losers */
-.card-streaks {
-  position: absolute;
-  inset: 0;
-  border-radius: inherit;
-  overflow: hidden;
-  opacity: calc(0.16 + var(--card-intensity, 0.3) * 0.30);
-}
-
-.card-streaks i {
-  position: absolute;
-  top: -30%;
-  width: 1px;
-  height: 34%;
-  background: linear-gradient(
-    to bottom,
-    transparent,
-    var(--card-accent),
-    transparent
-  );
-  animation: streakFall 6s linear infinite;
-}
-
-.is-up .card-streaks i {
-  animation-name: streakRise;
-}
-
-@keyframes streakRise {
-  0%   { transform: translateY(340%); opacity: 0; }
-  12%  { opacity: 0.75; }
-  88%  { opacity: 0.75; }
-  100% { transform: translateY(-40%); opacity: 0; }
-}
-
-@keyframes streakFall {
-  0%   { transform: translateY(-40%); opacity: 0; }
-  12%  { opacity: 0.75; }
-  88%  { opacity: 0.75; }
-  100% { transform: translateY(340%); opacity: 0; }
-}
-
-/* A soft pulse along the top edge, like a heartbeat on the tape */
-.card-pulse-bar {
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  height: 1.5px;
-  border-radius: inherit;
-  background: linear-gradient(
-    90deg,
-    transparent,
-    var(--card-accent),
-    transparent
-  );
-  opacity: calc(0.22 + var(--card-intensity, 0.3) * 0.45);
-  animation: pulseBarSweep 4.5s ease-in-out infinite;
-}
-
-@keyframes pulseBarSweep {
-  0%, 100% { transform: scaleX(0.25); opacity: 0.2; }
-  50%      { transform: scaleX(1); opacity: 0.85; }
-}
-
-/* Card content must sit above the backdrop */
-.floor-card > *:not(.floor-card-bg) {
-  position: relative;
-  z-index: 1;
-}
-
-/* The click target that opens the chart, sized to leave the action row free */
-.card-open {
-  display: block;
-  width: 100%;
-  text-align: left;
-  background: none;
-  border: 0;
-  padding: 0;
-  cursor: pointer;
-  color: inherit;
-}
-
-/* Buy / sell action buttons on the card */
-.card-action {
-  flex: 1;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 0.25rem;
-  height: 26px;
-  border-radius: 5px;
-  font-family: 'Space Grotesk', sans-serif;
-  font-weight: 700;
-  font-size: 10.5px;
-  letter-spacing: 0.02em;
-  border: 1px solid transparent;
-  transition: background-color 0.16s ease, color 0.16s ease,
-    border-color 0.16s ease, transform 0.12s ease;
-}
-.card-action:active:not(:disabled) {
-  transform: scale(0.95);
-}
-.card-action:disabled {
-  opacity: 0.35;
-  cursor: not-allowed;
-}
-
-.card-action-buy {
-  color: var(--gain-green);
-  border-color: color-mix(in srgb, var(--gain-green) 35%, transparent);
-  background-color: color-mix(in srgb, var(--gain-green) 12%, transparent);
-}
-.card-action-buy:hover:not(:disabled) {
-  background-color: var(--gain-green);
-  color: #fff;
-}
-
-.card-action-sell {
-  color: var(--loss-red);
-  border-color: color-mix(in srgb, var(--loss-red) 35%, transparent);
-  background-color: color-mix(in srgb, var(--loss-red) 12%, transparent);
-}
-.card-action-sell:hover:not(:disabled) {
-  background-color: var(--loss-red);
-  color: #fff;
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .card-aura::before,
-  .card-aura::after,
-  .card-streaks i,
-  .card-pulse-bar {
-    animation: none !important;
-  }
-  .card-streaks {
-    display: none;
-  }
+.animate-urgent-pulse {
+  animation: urgentPulse 1.2s ease-in-out infinite;
 }

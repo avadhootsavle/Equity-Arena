@@ -577,6 +577,8 @@ export function TraderDashboard() {
 
       <div className="lg:pl-[208px]">
         <TopBar
+          activeTab={activeTab}
+          setActiveTab={setActiveTab}
           searchQuery={searchQuery}
           setSearchQuery={setSearchQuery}
           walletBalance={availableCash}

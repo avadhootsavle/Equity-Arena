@@ -1,5 +1,5 @@
 import React, { memo, useMemo, useRef, useEffect, useState, useId } from 'react';
-import { TrendingUp, TrendingDown, Check, Zap } from 'lucide-react';
+import { TrendingUp, TrendingDown, Check } from 'lucide-react';
 
 const fmtMoney = (n, d = 2) =>
   Number(n || 0).toLocaleString('en-US', {
@@ -8,39 +8,11 @@ const fmtMoney = (n, d = 2) =>
   });
 
 /* ------------------------------------------------------------------
-   Animated backdrop — drifting aura, tape streaks, edge pulse
+   Mini Sparkline Component
    ------------------------------------------------------------------ */
-const CardBackdrop = memo(({ accent, intensity, streakCount = 4 }) => (
-  <span
-    className="floor-card-bg"
-    aria-hidden="true"
-    style={{ '--card-accent': accent, '--card-intensity': intensity }}
-  >
-    <span className="card-pulse-bar" />
-    <span className="card-aura" />
-    <span className="card-streaks">
-      {Array.from({ length: streakCount }, (_, i) => (
-        <i
-          key={i}
-          style={{
-            left: `${12 + i * (76 / Math.max(1, streakCount - 1))}%`,
-            animationDelay: `${(i * 1.35) % 6}s`,
-            animationDuration: `${5.2 + (i % 3) * 1.1}s`
-          }}
-        />
-      ))}
-    </span>
-  </span>
-));
-
-/* ------------------------------------------------------------------
-   Mini sparkline that draws itself in on mount
-   ------------------------------------------------------------------ */
-const MiniSpark = memo(({ history = [], width = 150, height = 40, up = true }) => {
-  // Unique per instance: a shared id made every card reuse the first gradient
-  const gid = `spark${useId()}`;
+const MiniSpark = memo(({ history = [], width = 110, height = 32, up = true }) => {
+  const gid = `spark${useId().replace(/:/g, '')}`;
   const pathRef = useRef(null);
-  const [dashLength, setDashLength] = useState(600);
 
   const geometry = useMemo(() => {
     const prices = (history || [])
@@ -52,7 +24,7 @@ const MiniSpark = memo(({ history = [], width = 150, height = 40, up = true }) =
     const lo = Math.min(...prices);
     const hi = Math.max(...prices);
     const range = hi - lo || Math.max(hi * 0.005, 0.01);
-    const pad = 4;
+    const pad = 3;
     const usableH = height - pad * 2;
 
     const coords = prices.map((p, i) => {
@@ -72,65 +44,32 @@ const MiniSpark = memo(({ history = [], width = 150, height = 40, up = true }) =
     };
   }, [history, width, height]);
 
-  useEffect(() => {
-    if (pathRef.current) {
-      try {
-        setDashLength(Math.ceil(pathRef.current.getTotalLength()) || 600);
-      } catch {
-        setDashLength(600);
-      }
-    }
-  }, [geometry]);
-
   if (!geometry) {
     return (
-      <div
-        className="flex items-center justify-center text-[9px] font-mono theme-text-dim"
-        style={{ width: '100%', height }}
-      >
-        no tape
+      <div className="flex items-center justify-center text-[9px] font-mono text-[var(--text-dim)]" style={{ width, height }}>
+        --
       </div>
     );
   }
 
-  const color = up ? 'var(--gain-green)' : 'var(--loss-red)';
+  const color = up ? 'var(--gain)' : 'var(--loss)';
 
   return (
-    <svg
-      viewBox={`0 0 ${width} ${height}`}
-      preserveAspectRatio="none"
-      style={{ width: '100%', height }}
-      aria-hidden="true"
-    >
+    <svg viewBox={`0 0 ${width} ${height}`} preserveAspectRatio="none" style={{ width: '100%', height }} aria-hidden="true">
       <defs>
         <linearGradient id={gid} x1="0" y1="0" x2="0" y2="1">
-          <stop offset="0%" stopColor={color} stopOpacity="0.30" />
+          <stop offset="0%" stopColor={color} stopOpacity="0.25" />
           <stop offset="100%" stopColor={color} stopOpacity="0" />
         </linearGradient>
       </defs>
-
       <path d={geometry.area} fill={`url(#${gid})`} />
       <path
         ref={pathRef}
         d={geometry.line}
         fill="none"
         stroke={color}
-        strokeWidth="1.6"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-        vectorEffect="non-scaling-stroke"
-        className="animate-draw-line"
-        style={{
-          '--dash-len': dashLength,
-          strokeDasharray: dashLength,
-          strokeDashoffset: dashLength
-        }}
-      />
-      <circle
-        cx={geometry.lastPoint[0]}
-        cy={geometry.lastPoint[1]}
-        r="2"
-        fill={color}
+        strokeWidth="1.5"
+        strokeLinecap="square"
         vectorEffect="non-scaling-stroke"
       />
     </svg>
@@ -138,14 +77,48 @@ const MiniSpark = memo(({ history = [], width = 150, height = 40, up = true }) =
 });
 
 /* ------------------------------------------------------------------
-   Floor card
+   Signature Element: Session Range Tape
+   ------------------------------------------------------------------ */
+const SessionRangeTape = memo(({ currentPrice, low, high }) => {
+  const minP = Number(low) || 0;
+  const maxP = Number(high) || 0;
+  const currP = Number(currentPrice) || 0;
+
+  const range = maxP - minP;
+  const rawPct = range > 0 ? ((currP - minP) / range) * 100 : 50;
+  const fillPct = Math.min(100, Math.max(0, rawPct));
+
+  return (
+    <div className="w-full mt-2.5 pt-2 border-t border-[var(--border)]">
+      <div className="flex items-center justify-between text-[9px] font-mono text-[var(--text-secondary)] mb-1">
+        <span>L ₹{fmtMoney(minP, minP >= 1000 ? 0 : 2)}</span>
+        <span className="uppercase tracking-wider font-sans font-semibold text-[8.5px] text-[var(--text-dim)]">
+          Session Range
+        </span>
+        <span>H ₹{fmtMoney(maxP, maxP >= 1000 ? 0 : 2)}</span>
+      </div>
+      <div className="relative w-full h-[5px] bg-[var(--bg-tertiary)] overflow-hidden rounded-none border border-[var(--border)]">
+        <div
+          className="h-full transition-all duration-300 ease-out"
+          style={{
+            width: `${fillPct}%`,
+            background: 'linear-gradient(90deg, var(--accent-gold), #FFD700)'
+          }}
+        />
+      </div>
+    </div>
+  );
+});
+
+/* ------------------------------------------------------------------
+   FloorCard — Rebuilt with Sharp Corners & Signature Tape
    ------------------------------------------------------------------ */
 export const FloorCard = memo(function FloorCard({
   stock,
   holding,
   index = 0,
   flash,
-  variant = 'grid', // 'grid' | 'compact'
+  variant = 'grid',
   isActive = false,
   isTradingLocked = false,
   onSelect,
@@ -154,20 +127,9 @@ export const FloorCard = memo(function FloorCard({
   const percentChange = Number(stock?.percentChange) || 0;
   const isUp = percentChange >= 0;
   const owned = holding?.quantity || 0;
-  const availableToSell =
-    holding?.availableQuantity !== undefined ? holding.availableQuantity : owned;
+  const availableToSell = holding?.availableQuantity !== undefined ? holding.availableQuantity : owned;
 
-  const flashClass =
-    flash === 'up' ? 'animate-tick-up' : flash === 'down' ? 'animate-tick-down' : '';
-  const priceClass =
-    flash === 'up' ? 'animate-price-up' : flash === 'down' ? 'animate-price-down' : '';
-
-  const accent = isUp ? 'var(--gain-green)' : 'var(--loss-red)';
-
-  // Backdrop energy scales with the size of the move, capped so a runaway
-  // mover doesn't wash out the card content.
-  const intensity = Math.min(1, Math.abs(percentChange) / 40).toFixed(3);
-
+  const flashClass = flash === 'up' ? 'animate-tick-up' : flash === 'down' ? 'animate-tick-down' : '';
   const history = stock?.priceHistories || [];
 
   const { dayLow, dayHigh } = useMemo(() => {
@@ -186,231 +148,82 @@ export const FloorCard = memo(function FloorCard({
 
   const canSell = availableToSell > 0 && !isTradingLocked;
 
-  /* ---------------- Compact variant ---------------- */
-  if (variant === 'compact') {
-    return (
-      <div
-        style={{
-          animationDelay: `${Math.min(index * 28, 420)}ms`,
-          ...(isActive
-            ? { borderColor: 'color-mix(in srgb, var(--accent) 55%, transparent)' }
-            : null)
-        }}
-        className={`floor-card animate-card-rise surface px-2 py-1.5 ${
-          isUp ? 'is-up' : 'is-down'
-        } ${flashClass}`}
+  return (
+    <div
+      style={{ animationDelay: `${Math.min(index * 30, 400)}ms` }}
+      className={`relative rounded-none border transition-colors duration-150 p-3 bg-[var(--bg-secondary)] ${
+        isActive ? 'border-[var(--accent-gold)]' : 'border-[var(--border)] hover:border-[var(--border-strong)]'
+      } ${flashClass}`}
+    >
+      <button
+        type="button"
+        className="w-full text-left bg-transparent border-0 p-0 cursor-pointer text-inherit"
+        onClick={() => onSelect?.(stock)}
       >
-        <CardBackdrop accent={accent} intensity={intensity} streakCount={3} />
-        <span className="card-sheen" />
-
-        <button
-          type="button"
-          className="card-open"
-          onClick={() => onSelect?.(stock)}
-          aria-label={`Open ${stock.symbol} chart, ${fmtMoney(stock.currentPrice)} IC, ${
-            isUp ? 'up' : 'down'
-          } ${Math.abs(percentChange).toFixed(2)} percent`}
-        >
-          <span className="flex items-center justify-between gap-1">
-            <span className="text-[10px] font-mono font-bold theme-text-muted truncate">
+        {/* Row 1: Symbol (Syne Bold) + Sector Label (DM Sans small caps) */}
+        <div className="flex items-center justify-between gap-2">
+          <div className="flex items-center gap-1.5 min-w-0">
+            <span className="font-syne font-extrabold text-base tracking-tight text-[var(--text-primary)]">
               {stock.symbol}
             </span>
             {owned > 0 && (
-              <span
-                className="w-1.5 h-1.5 rounded-full flex-shrink-0"
-                style={{ backgroundColor: 'var(--accent)' }}
-                title={`${owned} owned`}
-              />
-            )}
-          </span>
-
-          <span
-            className={`block text-sm font-mono font-extrabold theme-text-main mt-0.5 ${priceClass}`}
-          >
-            {fmtMoney(stock.currentPrice, stock.currentPrice >= 1000 ? 1 : 2)}
-          </span>
-
-          <span className="block h-6 mt-1">
-            <MiniSpark history={history} width={90} height={24} up={isUp} />
-          </span>
-
-          <span
-            className="block mt-1 text-[9px] font-mono font-bold px-1 py-0.5 rounded text-center"
-            style={{
-              color: accent,
-              backgroundColor: `color-mix(in srgb, ${accent} 13%, transparent)`
-            }}
-          >
-            {isUp ? '+' : ''}
-            {percentChange.toFixed(2)}%
-          </span>
-        </button>
-
-        <div className="flex items-center gap-1 mt-1.5">
-          <button
-            type="button"
-            onClick={(e) => handleTrade(e, 'BUY')}
-            disabled={isTradingLocked}
-            title={isTradingLocked ? 'Trading locked' : `Buy ${stock.symbol}`}
-            className="card-action card-action-buy"
-            style={{ height: '22px', fontSize: '9.5px' }}
-          >
-            Buy
-          </button>
-          <button
-            type="button"
-            onClick={(e) => handleTrade(e, 'SELL')}
-            disabled={!canSell}
-            title={
-              isTradingLocked
-                ? 'Trading locked'
-                : availableToSell === 0
-                ? `No ${stock.symbol} shares to sell`
-                : `Sell ${stock.symbol}`
-            }
-            className="card-action card-action-sell"
-            style={{ height: '22px', fontSize: '9.5px' }}
-          >
-            Sell
-          </button>
-        </div>
-      </div>
-    );
-  }
-
-  /* ---------------- Full grid variant ---------------- */
-  return (
-    <div
-      style={{
-        animationDelay: `${Math.min(index * 40, 520)}ms`,
-        ...(isActive
-          ? { borderColor: 'color-mix(in srgb, var(--accent) 55%, transparent)' }
-          : null)
-      }}
-      className={`floor-card animate-card-rise surface p-3 ${
-        isUp ? 'is-up' : 'is-down'
-      } ${flashClass}`}
-    >
-      <CardBackdrop accent={accent} intensity={intensity} />
-      <span className="card-sheen" />
-
-      <button
-        type="button"
-        className="card-open"
-        onClick={() => onSelect?.(stock)}
-        aria-label={`Open ${stock.symbol} ${stock.name} chart, ${fmtMoney(
-          stock.currentPrice
-        )} IC, ${isUp ? 'up' : 'down'} ${Math.abs(percentChange).toFixed(2)} percent`}
-      >
-        {/* Top strip: ticker badge + name + owned pill */}
-        <span className="flex items-start justify-between gap-2">
-          <span className="flex items-center gap-2 min-w-0">
-            <span
-              className="w-5 h-5 rounded flex items-center justify-center text-[9px] font-mono font-extrabold flex-shrink-0"
-              style={{
-                backgroundColor: `color-mix(in srgb, ${accent} 18%, transparent)`,
-                color: accent
-              }}
-            >
-              {stock.symbol?.slice(0, 2)}
-            </span>
-            <span className="min-w-0 block">
-              <span className="block text-[11.5px] font-semibold theme-text-main leading-tight truncate max-w-[120px]">
-                {stock.name || stock.symbol}
+              <span className="inline-flex items-center gap-0.5 px-1 py-0.2 bg-[var(--accent-gold)]/15 text-[var(--accent-gold)] text-[9px] font-mono font-bold">
+                <Check className="w-2.5 h-2.5" /> {owned}
               </span>
-              <span className="block text-[9.5px] font-mono theme-text-dim leading-tight">
-                {stock.symbol}
-              </span>
-            </span>
-          </span>
-
-          {owned > 0 && (
-            <span
-              className="px-1.5 py-0.5 rounded text-[9px] font-mono font-bold flex items-center gap-0.5 flex-shrink-0"
-              style={{
-                backgroundColor:
-                  'color-mix(in srgb, var(--accent) 15%, transparent)',
-                color: 'var(--accent)'
-              }}
-            >
-              <Check className="w-2.5 h-2.5" />
-              {owned}
-            </span>
-          )}
-        </span>
-
-        {/* Price + change */}
-        <span className="flex items-end justify-between gap-2 mt-2.5">
-          <span
-            className={`text-xl font-mono font-extrabold theme-text-main leading-none ${priceClass}`}
-          >
-            {fmtMoney(stock.currentPrice)}
-          </span>
-          <span
-            className="flex items-center gap-0.5 px-1.5 py-0.5 rounded text-[10px] font-mono font-extrabold"
-            style={{
-              color: accent,
-              backgroundColor: `color-mix(in srgb, ${accent} 15%, transparent)`
-            }}
-          >
-            {isUp ? (
-              <TrendingUp className="w-2.5 h-2.5" />
-            ) : (
-              <TrendingDown className="w-2.5 h-2.5" />
             )}
-            {isUp ? '+' : ''}
-            {percentChange.toFixed(2)}%
-          </span>
-        </span>
-
-        {/* Sparkline */}
-        <span className="block mt-2 -mx-1">
-          <MiniSpark history={history} width={200} height={40} up={isUp} />
-        </span>
-
-        {/* Footer stats */}
-        <span className="flex items-center justify-between mt-1.5 pt-1.5 border-t theme-border text-[9px] font-mono theme-text-dim">
-          <span className="uppercase tracking-wide truncate max-w-[70px]">
+          </div>
+          <span className="font-sans text-[10px] uppercase tracking-wider font-semibold text-[var(--text-secondary)] truncate">
             {stock.sector}
           </span>
-          <span>
-            Range {fmtMoney(dayLow, dayLow >= 1000 ? 0 : 2)}–
-            {fmtMoney(dayHigh, dayHigh >= 1000 ? 0 : 2)}
-          </span>
-        </span>
-      </button>
+        </div>
 
-      {/* Trade actions */}
-      <div className="flex items-center gap-1.5 mt-2">
-        <button
-          type="button"
-          onClick={(e) => handleTrade(e, 'BUY')}
-          disabled={isTradingLocked}
-          title={isTradingLocked ? 'Trading locked' : `Buy ${stock.symbol}`}
-          className="card-action card-action-buy"
-        >
-          <Zap className="w-3 h-3" />
-          Buy
-        </button>
-        <button
-          type="button"
-          onClick={(e) => handleTrade(e, 'SELL')}
-          disabled={!canSell}
-          title={
-            isTradingLocked
-              ? 'Trading locked'
-              : availableToSell === 0
-              ? `No ${stock.symbol} shares to sell`
-              : `Sell ${availableToSell} available`
-          }
-          className="card-action card-action-sell"
-        >
-          Sell
-          {availableToSell > 0 && (
-            <span className="opacity-70">({availableToSell})</span>
-          )}
-        </button>
-      </div>
+        {/* Row 2: Price (JetBrains Mono) + % Change Badge */}
+        <div className="flex items-end justify-between gap-2 mt-2">
+          <div className="font-mono text-xl font-extrabold text-[var(--text-primary)]">
+            ₹ {fmtMoney(stock.currentPrice)}
+          </div>
+          <div
+            className="inline-flex items-center gap-0.5 px-1.5 py-0.5 text-[10.5px] font-mono font-bold text-white"
+            style={{ backgroundColor: isUp ? 'var(--gain)' : 'var(--loss)' }}
+          >
+            {isUp ? <TrendingUp className="w-3 h-3" /> : <TrendingDown className="w-3 h-3" />}
+            {isUp ? '+' : ''}{percentChange.toFixed(2)}%
+          </div>
+        </div>
+
+        {/* Row 3: Sparkline + Action Buttons */}
+        <div className="flex items-center justify-between gap-2 mt-3">
+          <div className="w-[110px] flex-shrink-0">
+            <MiniSpark history={history} width={110} height={30} up={isUp} />
+          </div>
+
+          <div className="flex items-center gap-1.5 flex-1 justify-end">
+            <button
+              type="button"
+              onClick={(e) => handleTrade(e, 'BUY')}
+              disabled={isTradingLocked}
+              title={isTradingLocked ? 'Trading locked' : `Buy ${stock.symbol}`}
+              className="px-2.5 py-1 text-[11px] font-sans font-bold text-white rounded-none border-0 transition-opacity hover:opacity-90 active:scale-95 disabled:opacity-30 disabled:cursor-not-allowed"
+              style={{ backgroundColor: 'var(--gain)' }}
+            >
+              BUY
+            </button>
+            <button
+              type="button"
+              onClick={(e) => handleTrade(e, 'SELL')}
+              disabled={!canSell}
+              title={isTradingLocked ? 'Trading locked' : !canSell ? 'No shares to sell' : `Sell ${stock.symbol}`}
+              className="px-2.5 py-1 text-[11px] font-sans font-bold text-white rounded-none border-0 transition-opacity hover:opacity-90 active:scale-95 disabled:opacity-30 disabled:cursor-not-allowed"
+              style={{ backgroundColor: 'var(--loss)' }}
+            >
+              SELL
+            </button>
+          </div>
+        </div>
+
+        {/* Row 4: Signature Session Range Tape */}
+        <SessionRangeTape currentPrice={stock.currentPrice} low={dayLow} high={dayHigh} />
+      </button>
     </div>
   );
 });

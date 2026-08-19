@@ -6,12 +6,17 @@ export default {
   ],
   theme: {
     extend: {
+      fontFamily: {
+        syne: ['Syne', 'sans-serif'],
+        mono: ['JetBrains Mono', 'monospace'],
+        sans: ['DM Sans', 'sans-serif']
+      },
       colors: {
         dark: {
-          900: '#090d16',
-          800: '#0f172a',
-          700: '#1e293b',
-          600: '#334155'
+          900: '#0D1117',
+          800: '#161B22',
+          700: '#21262D',
+          600: '#30363D'
         }
       }
     },
