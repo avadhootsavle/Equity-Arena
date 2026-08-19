@@ -4,6 +4,7 @@ import { useSocket } from '../context/SocketContext';
 import { apiFetch } from '../services/api';
 import { useSession } from '../hooks/useSession';
 
+import { Sidebar, MobileNav } from '../components/Sidebar';
 import { TopBar } from '../components/TopBar';
 import { LiveTickerMarquee } from '../components/LiveTickerMarquee';
 import { GameTimerHero } from '../components/GameTimerHero';
@@ -571,16 +572,18 @@ export function TraderDashboard() {
      --------------------------------------------------------------- */
   return (
     <div className="min-h-screen theme-bg-main theme-text-main">
-      <TopBar
-        activeTab={activeTab}
-        setActiveTab={setActiveTab}
-        searchQuery={searchQuery}
-        setSearchQuery={setSearchQuery}
-        walletBalance={availableCash}
-        lockedFunds={portfolio.lockedFunds || 0}
-        sessionStatus={sessionData?.status}
-        onOpenTour={() => setIsTourOpen(true)}
-      />
+      <Sidebar activeTab={activeTab} setActiveTab={setActiveTab} counts={navCounts} />
+      <MobileNav activeTab={activeTab} setActiveTab={setActiveTab} counts={navCounts} />
+
+      <div className="lg:pl-[208px]">
+        <TopBar
+          searchQuery={searchQuery}
+          setSearchQuery={setSearchQuery}
+          walletBalance={availableCash}
+          lockedFunds={portfolio.lockedFunds || 0}
+          sessionStatus={sessionData?.status}
+          onOpenTour={() => setIsTourOpen(true)}
+        />
 
         <LiveTickerMarquee stocks={stocks} onSelectStock={handleSelectFromFloor} />
 
@@ -876,6 +879,8 @@ export function TraderDashboard() {
             <NewsTab news={newsFeed} loading={loadingNews} onRefresh={fetchNewsFeed} />
           )}
         </main>
+      </div>
+
       {/* ---------------- Overlays ---------------- */}
       <BackToTopButton />
 

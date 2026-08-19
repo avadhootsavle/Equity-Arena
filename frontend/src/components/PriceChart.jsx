@@ -306,8 +306,8 @@ export function PriceChart({
     );
   }
 
-  const upColor = 'var(--gain)';
-  const downColor = 'var(--loss)';
+  const upColor = 'var(--gain-green)';
+  const downColor = 'var(--loss-red)';
   const lineColor = model.isUp ? upColor : downColor;
   const gradientId = `chartFill-${uid}-${model.isUp ? 'up' : 'down'}`;
 

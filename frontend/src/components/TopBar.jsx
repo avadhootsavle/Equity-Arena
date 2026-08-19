@@ -1,20 +1,18 @@
-import React, { useState } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { useTheme } from '../context/ThemeContext';
 import { isSoundMuted, toggleSoundMute } from '../services/soundService';
-import { useSession } from '../hooks/useSession';
 import {
+  Search,
   Wallet,
   Volume2,
   VolumeX,
+  HelpCircle,
   LogOut,
   Sun,
   Moon,
-  Clock,
-  LayoutGrid,
-  PieChart,
-  Newspaper,
-  List
+  ShieldCheck,
+  X
 } from 'lucide-react';
 
 const fmtMoney = (n) =>
@@ -23,120 +21,214 @@ const fmtMoney = (n) =>
     maximumFractionDigits: 2
   });
 
+/* ------------------------------------------------------------------
+   Segmented light / dark switch
+   ------------------------------------------------------------------ */
 export function ThemeToggle() {
   const { theme, toggleTheme } = useTheme();
   const isDark = theme === 'dark';
 
   return (
-    <button
-      type="button"
-      onClick={toggleTheme}
-      title={isDark ? 'Switch to Light theme' : 'Switch to Dark theme'}
-      className="w-8 h-8 flex items-center justify-center border border-[var(--border)] bg-[var(--bg-tertiary)] text-[var(--text-secondary)] hover:text-[var(--text-primary)] rounded-none"
+    <div
+      className="relative flex items-center rounded-md p-0.5 border theme-border"
+      style={{ backgroundColor: 'var(--bg-input)' }}
+      role="group"
+      aria-label="Colour theme"
     >
-      {isDark ? <Sun className="w-3.5 h-3.5" /> : <Moon className="w-3.5 h-3.5" />}
-    </button>
+      {/* Sliding thumb */}
+      <span
+        className="absolute top-0.5 bottom-0.5 w-[26px] rounded transition-transform duration-250 ease-out"
+        style={{
+          backgroundColor: 'color-mix(in srgb, var(--accent) 20%, transparent)',
+          border: '1px solid color-mix(in srgb, var(--accent) 40%, transparent)',
+          transform: isDark ? 'translateX(26px)' : 'translateX(0)',
+          left: '2px'
+        }}
+      />
+
+      <button
+        type="button"
+        onClick={() => isDark && toggleTheme()}
+        aria-pressed={!isDark}
+        title="Light theme"
+        className="relative z-10 w-[26px] h-[24px] flex items-center justify-center rounded transition-colors"
+        style={{ color: !isDark ? 'var(--accent)' : 'var(--text-dim)' }}
+      >
+        <Sun className="w-3.5 h-3.5" />
+      </button>
+
+      <button
+        type="button"
+        onClick={() => !isDark && toggleTheme()}
+        aria-pressed={isDark}
+        title="Dark theme"
+        className="relative z-10 w-[26px] h-[24px] flex items-center justify-center rounded transition-colors"
+        style={{ color: isDark ? 'var(--accent)' : 'var(--text-dim)' }}
+      >
+        <Moon className="w-3.5 h-3.5" />
+      </button>
+    </div>
   );
 }
 
+/* ------------------------------------------------------------------
+   Top bar
+   ------------------------------------------------------------------ */
 export function TopBar({
-  activeTab = 'DASHBOARD',
-  setActiveTab,
-  walletBalance = 0
+  searchQuery,
+  setSearchQuery,
+  walletBalance = 0,
+  lockedFunds = 0,
+  sessionStatus,
+  onOpenTour
 }) {
   const { user, logout } = useAuth();
   const [muted, setMuted] = useState(isSoundMuted());
-  const session = useSession();
-  const formattedTime = session?.formattedTime || '00:00:00';
-  const sessionStatus = session?.status || 'NOT_STARTED';
+  const searchRef = useRef(null);
 
-  const isUrgent = formattedTime !== '00:00:00' && (
-    formattedTime.startsWith('00:04') ||
-    formattedTime.startsWith('00:03') ||
-    formattedTime.startsWith('00:02') ||
-    formattedTime.startsWith('00:01')
-  );
+  // "/" focuses search, Esc clears it
+  useEffect(() => {
+    const onKeyDown = (e) => {
+      const typingElsewhere =
+        e.target instanceof HTMLElement &&
+        ['INPUT', 'TEXTAREA', 'SELECT'].includes(e.target.tagName);
 
-  const navItems = [
-    { id: 'DASHBOARD', label: 'MARKETS', icon: LayoutGrid },
-    { id: 'NEWS', label: 'NEWS', icon: Newspaper },
-    { id: 'ORDERS', label: 'ORDERS', icon: List }
-  ];
+      if (e.key === '/' && !typingElsewhere) {
+        e.preventDefault();
+        searchRef.current?.focus();
+      }
+      if (e.key === 'Escape' && document.activeElement === searchRef.current) {
+        setSearchQuery('');
+        searchRef.current?.blur();
+      }
+    };
+
+    window.addEventListener('keydown', onKeyDown);
+    return () => window.removeEventListener('keydown', onKeyDown);
+  }, [setSearchQuery]);
+
+  const marketOpen = sessionStatus === 'ACTIVE';
 
   return (
-    <header className="sticky top-0 z-40 bg-[var(--bg-primary)] border-b border-[var(--border)]">
-      <div className="flex items-center justify-between px-4 h-14">
-        {/* Left: Event Branding */}
-        <div className="flex items-center gap-2.5">
-          <span className="font-syne font-extrabold text-lg tracking-tight text-[var(--text-primary)]">
-            EQUITY ARENA
-          </span>
-          <span className="px-1.5 py-0.5 text-[9.5px] font-mono font-bold uppercase bg-[var(--accent-gold)]/15 text-[var(--accent-gold)] border border-[var(--accent-gold)]/30 rounded-none">
-            IGNITE 8.0
+    <header className="sticky top-0 z-30 border-b theme-border theme-bg-rail">
+      <div className="flex items-center gap-3 px-3 sm:px-5 h-[54px]">
+        {/* Search */}
+        <div className="relative flex-1 max-w-[320px]">
+          <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 theme-text-dim pointer-events-none" />
+          <input
+            ref={searchRef}
+            type="text"
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            placeholder="Search stocks, sectors…"
+            aria-label="Search stocks and sectors"
+            className="w-full h-[32px] rounded-md border theme-border theme-bg-input pl-8 pr-14 text-[12px] theme-text-main placeholder:theme-text-dim focus:outline-none transition-colors"
+            style={{ caretColor: 'var(--accent)' }}
+            onFocus={(e) => (e.target.style.borderColor = 'var(--accent)')}
+            onBlur={(e) => (e.target.style.borderColor = 'var(--border-card)')}
+          />
+          {searchQuery ? (
+            <button
+              type="button"
+              onClick={() => setSearchQuery('')}
+              aria-label="Clear search"
+              className="absolute right-2 top-1/2 -translate-y-1/2 p-0.5 rounded theme-text-dim hover:theme-text-main"
+            >
+              <X className="w-3.5 h-3.5" />
+            </button>
+          ) : (
+            <kbd className="absolute right-2 top-1/2 -translate-y-1/2 px-1.5 py-0.5 rounded text-[9px] font-mono theme-text-dim border theme-border hidden sm:block">
+              /
+            </kbd>
+          )}
+        </div>
+
+        <div className="flex-1" />
+
+        {/* Market open / closed */}
+        <div
+          className="hidden md:flex items-center gap-1.5 px-2 py-1 rounded-md border text-[10px] font-mono font-bold"
+          style={{
+            borderColor: `color-mix(in srgb, ${
+              marketOpen ? 'var(--gain-green)' : 'var(--loss-red)'
+            } 30%, transparent)`,
+            backgroundColor: `color-mix(in srgb, ${
+              marketOpen ? 'var(--gain-green)' : 'var(--loss-red)'
+            } 10%, transparent)`,
+            color: marketOpen ? 'var(--gain-green)' : 'var(--loss-red)'
+          }}
+        >
+          <span
+            className={`w-1.5 h-1.5 rounded-full ${marketOpen ? 'animate-live-pulse' : ''}`}
+            style={{ backgroundColor: 'currentColor', color: 'currentColor' }}
+          />
+          {marketOpen ? 'Market open' : 'Market closed'}
+        </div>
+
+        {/* Wallet */}
+        <div
+          className="flex items-center gap-1.5 px-2.5 h-[32px] rounded-md border"
+          style={{
+            borderColor: 'color-mix(in srgb, var(--accent) 28%, transparent)',
+            backgroundColor: 'color-mix(in srgb, var(--accent) 9%, transparent)'
+          }}
+          title={lockedFunds > 0 ? `${fmtMoney(lockedFunds)} IC reserved in open orders` : 'Available cash'}
+        >
+          <Wallet className="w-3.5 h-3.5 flex-shrink-0" style={{ color: 'var(--accent)' }} />
+          <span
+            className="text-[11px] font-mono font-extrabold whitespace-nowrap"
+            style={{ color: 'var(--accent)' }}
+          >
+            {fmtMoney(walletBalance)} <span className="text-[9px]">IC</span>
           </span>
         </div>
 
-        {/* Center: Tab Navigation (Active tab gets gold bottom border underline) */}
-        {setActiveTab && (
-          <nav className="flex items-center gap-1 h-full">
-            {navItems.map((item) => {
-              const Icon = item.icon;
-              const isActive = activeTab === item.id;
-              return (
-                <button
-                  key={item.id}
-                  type="button"
-                  onClick={() => setActiveTab(item.id)}
-                  className={`h-full px-3.5 flex items-center gap-1.5 font-sans font-bold text-xs uppercase tracking-wider transition-colors rounded-none relative ${
-                    isActive ? 'text-[var(--accent-gold)]' : 'text-[var(--text-secondary)] hover:text-[var(--text-primary)]'
-                  }`}
-                >
-                  <Icon className="w-3.5 h-3.5" />
-                  {item.label}
-                  {isActive && (
-                    <span className="absolute bottom-0 left-0 right-0 h-[2px] bg-[var(--accent-gold)]" />
-                  )}
-                </button>
-              );
-            })}
-          </nav>
-        )}
+        {/* Sound */}
+        <button
+          type="button"
+          onClick={() => setMuted(toggleSoundMute())}
+          title={muted ? 'Unmute news audio' : 'Mute news audio'}
+          aria-label={muted ? 'Unmute news audio' : 'Mute news audio'}
+          className="hidden sm:flex w-[32px] h-[32px] rounded-md border theme-border theme-bg-input items-center justify-center theme-text-muted hover:theme-text-main transition-colors"
+        >
+          {muted ? <VolumeX className="w-3.5 h-3.5" /> : <Volume2 className="w-3.5 h-3.5" />}
+        </button>
 
-        {/* Right: Wallet + Timer + Sound + Theme + Logout */}
-        <div className="flex items-center gap-3">
-          {/* Session Timer Pill */}
-          <div className={`hidden sm:flex items-center gap-1.5 px-2.5 py-1 border text-xs font-mono font-bold rounded-none ${
-            isUrgent ? 'border-[var(--loss)] text-[var(--loss)] animate-urgent-pulse bg-[var(--loss)]/10' : 'border-[var(--border)] text-[var(--accent-gold)] bg-[var(--bg-secondary)]'
-          }`}>
-            <Clock className="w-3.5 h-3.5" />
-            <span>{sessionStatus === 'NOT_STARTED' ? 'Waiting for session' : formattedTime}</span>
-          </div>
-
-          {/* Wallet Balance */}
-          <div className="flex items-center gap-1.5 px-2.5 py-1 border border-[var(--border)] bg-[var(--bg-secondary)] text-[var(--accent-gold)] font-mono text-xs font-bold rounded-none">
-            <Wallet className="w-3.5 h-3.5" />
-            <span>₹ {fmtMoney(walletBalance)}</span>
-          </div>
-
-          {/* Sound Toggle */}
+        {/* Guide */}
+        {onOpenTour && (
           <button
             type="button"
-            onClick={() => setMuted(toggleSoundMute())}
-            title={muted ? 'Unmute audio' : 'Mute audio'}
-            className="w-8 h-8 flex items-center justify-center border border-[var(--border)] bg-[var(--bg-tertiary)] text-[var(--text-secondary)] hover:text-[var(--text-primary)] rounded-none"
+            onClick={onOpenTour}
+            title="Open the beginner trading guide"
+            aria-label="Open the beginner trading guide"
+            className="hidden sm:flex w-[32px] h-[32px] rounded-md border theme-border theme-bg-input items-center justify-center theme-text-muted hover:theme-text-main transition-colors"
           >
-            {muted ? <VolumeX className="w-3.5 h-3.5" /> : <Volume2 className="w-3.5 h-3.5" />}
+            <HelpCircle className="w-3.5 h-3.5" />
           </button>
+        )}
 
-          {/* Theme Toggle */}
-          <ThemeToggle />
+        {/* Theme */}
+        <ThemeToggle />
 
-          {/* Logout */}
+        {/* User */}
+        <div className="flex items-center gap-2 pl-2.5 ml-0.5 border-l theme-border">
+          <div className="hidden sm:block text-right">
+            <div className="text-[11px] font-medium theme-text-main leading-tight max-w-[110px] truncate">
+              {user?.name || user?.email?.split('@')[0] || 'Trader'}
+            </div>
+            <div className="text-[9px] theme-text-dim font-mono leading-tight flex items-center gap-0.5 justify-end">
+              {user?.role === 'ADMIN' && <ShieldCheck className="w-2.5 h-2.5" />}
+              {user?.role === 'ADMIN' ? 'Admin' : 'Trader'}
+            </div>
+          </div>
+
           <button
             type="button"
             onClick={logout}
             title="Log out"
-            className="w-8 h-8 flex items-center justify-center border border-[var(--border)] bg-[var(--bg-tertiary)] text-[var(--loss)] hover:bg-[var(--loss)] hover:text-white rounded-none transition-colors"
+            aria-label="Log out"
+            className="w-[32px] h-[32px] rounded-md border theme-border theme-bg-input flex items-center justify-center transition-colors hover:brightness-110"
+            style={{ color: 'var(--loss-red)' }}
           >
             <LogOut className="w-3.5 h-3.5" />
           </button>

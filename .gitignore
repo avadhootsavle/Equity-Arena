@@ -12,6 +12,8 @@ node_modules/
 .pgdata/
 *.sqlite
 *.db
+backend/backups/
+friends version/
 
 # Build Outputs & Logs
 dist/
