@@ -13,8 +13,14 @@ export function LiveTickerMarquee({ stocks, onSelectStock }) {
       <div className="absolute right-0 top-0 bottom-0 w-12 bg-gradient-to-l from-[var(--bg-card)] to-transparent z-10 pointer-events-none" />
 
       <div className="flex items-center">
-        <div className="flex-shrink-0 px-3 py-1 bg-amber-500/20 text-amber-400 font-extrabold text-[10px] uppercase font-mono tracking-wider flex items-center gap-1 border-r theme-border z-20">
-          <Flame className="w-3.5 h-3.5 animate-pulse text-amber-400" />
+        <div
+          className="flex-shrink-0 px-3 py-1 font-extrabold text-[10px] uppercase font-mono tracking-wider flex items-center gap-1 border-r theme-border z-20"
+          style={{
+            backgroundColor: 'color-mix(in srgb, var(--accent) 15%, transparent)',
+            color: 'var(--accent)'
+          }}
+        >
+          <Flame className="w-3.5 h-3.5 animate-pulse" />
           <span>TAPE LIVE</span>
         </div>
 
@@ -29,10 +35,16 @@ export function LiveTickerMarquee({ stocks, onSelectStock }) {
                   className="inline-flex items-center gap-2 cursor-pointer hover:opacity-80 transition-opacity text-xs select-none"
                 >
                   <span className="font-bold font-mono theme-text-main">{s.symbol}</span>
-                  <span className="font-mono text-slate-300 font-medium">{s.currentPrice.toFixed(2)} IC</span>
-                  <span className={`inline-flex items-center text-[10px] font-extrabold font-mono px-1.5 py-0.2 rounded ${
-                    isPositive ? 'bg-emerald-500/20 text-emerald-400' : 'bg-rose-500/20 text-rose-400'
-                  }`}>
+                  <span className="font-mono theme-text-muted font-medium">{s.currentPrice.toFixed(2)} IC</span>
+                  <span
+                    className="inline-flex items-center text-[10px] font-extrabold font-mono px-1.5 py-0.2 rounded"
+                    style={{
+                      color: isPositive ? 'var(--gain-green)' : 'var(--loss-red)',
+                      backgroundColor: `color-mix(in srgb, ${
+                        isPositive ? 'var(--gain-green)' : 'var(--loss-red)'
+                      } 14%, transparent)`
+                    }}
+                  >
                     {isPositive ? <TrendingUp className="w-3 h-3 mr-0.5" /> : <TrendingDown className="w-3 h-3 mr-0.5" />}
                     {isPositive ? '+' : ''}{s.percentChange.toFixed(2)}%
                   </span>

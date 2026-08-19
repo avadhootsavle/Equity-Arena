@@ -22,8 +22,17 @@ export async function apiFetch(endpoint, options = {}) {
   const data = await response.json().catch(() => ({}));
 
   if (!response.ok) {
-    // If token is invalid or expired (401 / 403), auto-clean stale auth & redirect to login
-    if ((response.status === 401 || response.status === 403) && typeof window !== 'undefined') {
+    /* Only a real auth failure should end the session. This used to fire on
+       ANY 403, so an ordinary rejected action could dump the player back to
+       the login screen mid-game and look like their order had vanished. */
+    const authFailed =
+      response.status === 401 ||
+      (response.status === 403 &&
+        /token|unauthor|forbidden|expired|signature/i.test(
+          String(data.error || data.message || '')
+        ));
+
+    if (authFailed && typeof window !== 'undefined') {
       localStorage.removeItem('ignite_token');
       localStorage.removeItem('ignite_user');
       window.dispatchEvent(new Event('auth:unauthorized'));

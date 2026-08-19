@@ -109,7 +109,7 @@ export const Sparkline = memo(({ history = [], width = 120, height = 36, showVol
       {showSMA && smaPoints.length > 1 && (
         <polyline
           fill="none"
-          stroke="#f59e0b" // amber-500
+          stroke="var(--accent)"
           strokeWidth="1.5"
           strokeDasharray="3 3"
           points={smaPoints.join(' ')}

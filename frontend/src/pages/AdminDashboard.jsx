@@ -3,7 +3,8 @@ import { useAuth } from '../context/AuthContext';
 import { useSocket } from '../context/SocketContext';
 import { useTheme } from '../context/ThemeContext';
 import { apiFetch } from '../services/api';
-import { SessionCountdown } from '../components/SessionCountdown';
+import { GameClock } from '../components/GameClock';
+import { useSession } from '../hooks/useSession';
 import { AdminTraderDetailModal } from '../components/AdminTraderDetailModal';
 import { playNewsChime } from '../services/soundService';
 import { 
@@ -12,6 +13,7 @@ import {
 } from 'lucide-react';
 
 export function AdminDashboard() {
+  const adminSession = useSession();
   const { user, logout } = useAuth();
   const { socket, isConnected } = useSocket();
   const { theme, toggleTheme } = useTheme();
@@ -169,40 +171,12 @@ export function AdminDashboard() {
       );
     };
 
-    const handleStocksBatchUpdate = (data) => {
-      const updates = data?.updates;
-      if (!Array.isArray(updates) || updates.length === 0) return;
-
-      const updatesMap = new Map(updates.map((u) => [u.stockId, u]));
-
-      setStocks((prevStocks) =>
-        prevStocks.map((s) => {
-          const diff = updatesMap.get(s.id);
-          if (!diff) return s;
-
-          const newHistory = [
-            ...(s.priceHistories || []),
-            { price: diff.newPrice, volume: diff.volume, timestamp: diff.timestamp }
-          ];
-
-          return {
-            ...s,
-            currentPrice: diff.newPrice,
-            percentChange: diff.percentChange,
-            priceHistories: newHistory
-          };
-        })
-      );
-    };
-
     socket.on('connect', handleConnect);
     socket.on('stock:update', handleStockUpdate);
-    socket.on('stocks:batch-update', handleStocksBatchUpdate);
 
     return () => {
       socket.off('connect', handleConnect);
       socket.off('stock:update', handleStockUpdate);
-      socket.off('stocks:batch-update', handleStocksBatchUpdate);
     };
   }, [socket]);
 
@@ -326,14 +300,14 @@ export function AdminDashboard() {
 
           <div className="flex items-center gap-4">
             {/* Session Countdown */}
-            <SessionCountdown />
+            <GameClock sessionData={adminSession} title="TIME REMAINING" />
 
             {/* 20-Minute News Reminder Widget */}
             <div className="hidden md:flex items-center gap-2 px-3 py-1.5 rounded-[4px] border theme-border theme-bg-card font-mono text-xs shadow-sm">
-              <Clock className="w-4 h-4 text-[#D4A017] animate-pulse" />
+              <Clock className="w-4 h-4 text-[var(--accent)] animate-pulse" />
               <div>
                 <span className="theme-text-dim text-[9px] block font-bold uppercase tracking-wider">NEWS DUE IN</span>
-                <span className={`font-bold font-mono ${reminderSeconds < 180 ? 'text-[#E8453C]' : 'theme-text-main'}`}>
+                <span className={`font-bold font-mono ${reminderSeconds < 180 ? 'text-[var(--loss-red)]' : 'theme-text-main'}`}>
                   {Math.floor(reminderSeconds / 60).toString().padStart(2, '0')}:{(reminderSeconds % 60).toString().padStart(2, '0')}
                 </span>
               </div>
@@ -341,7 +315,7 @@ export function AdminDashboard() {
 
             <button
               onClick={handleStartNewSession}
-              className="px-3 py-1.5 bg-[#D4A017] hover:bg-[#D4A017]/90 text-slate-950 text-xs font-bold font-mono rounded-[4px] transition-all flex items-center gap-1.5 shadow-sm min-h-[36px] btn-terminal"
+              className="px-3 py-1.5 bg-[var(--accent)] hover:bg-[color-mix(in_srgb,var(--accent)_90%,transparent)] text-slate-950 text-xs font-bold font-mono rounded-[4px] transition-all flex items-center gap-1.5 shadow-sm min-h-[36px] btn-terminal"
               title="Start fresh 3-Hour Trading Session"
             >
               <RotateCcw className="w-3.5 h-3.5" />
@@ -353,7 +327,7 @@ export function AdminDashboard() {
               className="p-2 rounded-xl border theme-border theme-bg-panel theme-text-muted hover:theme-text-main transition-colors min-h-[40px] min-w-[40px] flex items-center justify-center"
               title="Toggle Dark / Light Theme"
             >
-              {theme === 'dark' ? <Sun className="w-4 h-4 text-amber-400" /> : <Moon className="w-4 h-4 text-indigo-400" />}
+              {theme === 'dark' ? <Sun className="w-4 h-4" style={{ color: 'var(--accent)' }} /> : <Moon className="w-4 h-4" style={{ color: 'var(--accent)' }} />}
             </button>
 
             <div className="flex items-center gap-2 border-l theme-border pl-4">
@@ -380,7 +354,7 @@ export function AdminDashboard() {
         <div className="theme-bg-card border theme-border rounded-[6px] p-4 shadow-md space-y-3">
           <div className="flex items-center justify-between border-b theme-border pb-2">
             <div className="flex items-center gap-2">
-              <SlidersHorizontal className="w-4 h-4 text-[#D4A017]" />
+              <SlidersHorizontal className="w-4 h-4 text-[var(--accent)]" />
               <h3 className="text-xs font-bold uppercase tracking-wider font-heading theme-text-main">
                 SESSION TIMING & QUANT ALGORITHM CONTROLLER
               </h3>
@@ -401,7 +375,7 @@ export function AdminDashboard() {
                 max="1440"
                 value={sessionDurationMins}
                 onChange={(e) => setSessionDurationMins(e.target.value)}
-                className="w-full px-3 py-2 rounded-[4px] border theme-border theme-bg-panel theme-text-main font-mono text-xs focus:outline-none focus:border-[#D4A017]"
+                className="w-full px-3 py-2 rounded-[4px] border theme-border theme-bg-panel theme-text-main font-mono text-xs focus:outline-none focus:border-[var(--accent)]"
                 placeholder="180"
               />
               <div className="text-[9px] theme-text-dim mt-1 font-mono">Default: 180 (3h). Test: 30 or 15</div>
@@ -417,7 +391,7 @@ export function AdminDashboard() {
                 max="60"
                 value={liquidationBufferMins}
                 onChange={(e) => setLiquidationBufferMins(e.target.value)}
-                className="w-full px-3 py-2 rounded-[4px] border theme-border theme-bg-panel theme-text-main font-mono text-xs focus:outline-none focus:border-[#D4A017]"
+                className="w-full px-3 py-2 rounded-[4px] border theme-border theme-bg-panel theme-text-main font-mono text-xs focus:outline-none focus:border-[var(--accent)]"
                 placeholder="5"
               />
               <div className="text-[9px] theme-text-dim mt-1 font-mono">Default: 5m before end. Test: 2m</div>
@@ -433,7 +407,7 @@ export function AdminDashboard() {
                 max="60"
                 value={macroCycleMins}
                 onChange={(e) => setMacroCycleMins(e.target.value)}
-                className="w-full px-3 py-2 rounded-[4px] border theme-border theme-bg-panel theme-text-main font-mono text-xs focus:outline-none focus:border-[#D4A017]"
+                className="w-full px-3 py-2 rounded-[4px] border theme-border theme-bg-panel theme-text-main font-mono text-xs focus:outline-none focus:border-[var(--accent)]"
                 placeholder="15"
               />
               <div className="text-[9px] theme-text-dim mt-1 font-mono">Default: 15m (prod). Test: 3m</div>
@@ -443,7 +417,7 @@ export function AdminDashboard() {
               <button
                 type="submit"
                 disabled={isStartingSession}
-                className="w-full px-4 py-2 bg-[#D4A017] hover:bg-[#D4A017]/90 text-slate-950 text-xs font-black font-mono uppercase rounded-[4px] transition-all flex items-center justify-center gap-2 shadow-sm min-h-[38px] btn-terminal disabled:opacity-50"
+                className="w-full px-4 py-2 bg-[var(--accent)] hover:bg-[color-mix(in_srgb,var(--accent)_90%,transparent)] text-slate-950 text-xs font-black font-mono uppercase rounded-[4px] transition-all flex items-center justify-center gap-2 shadow-sm min-h-[38px] btn-terminal disabled:opacity-50"
               >
                 <RotateCcw className="w-4 h-4" />
                 <span>{isStartingSession ? 'STARTING SESSION...' : 'START TRADING SESSION'}</span>
@@ -454,9 +428,9 @@ export function AdminDashboard() {
 
         {/* 20-Minute News Reminder Alert Banner */}
         {showReminderAlert && (
-          <div className="p-4 bg-[#D4A017]/20 border border-[#D4A017]/50 rounded-[6px] text-[#D4A017] text-xs font-mono flex items-center justify-between animate-fadeIn shadow-lg">
+          <div className="p-4 bg-[color-mix(in_srgb,var(--accent)_20%,transparent)] border border-[color-mix(in_srgb,var(--accent)_50%,transparent)] rounded-[6px] text-[var(--accent)] text-xs font-mono flex items-center justify-between animate-fadeIn shadow-lg">
             <div className="flex items-center gap-3">
-              <Bell className="w-5 h-5 text-[#D4A017] animate-bounce flex-shrink-0" />
+              <Bell className="w-5 h-5 text-[var(--accent)] animate-bounce flex-shrink-0" />
               <div>
                 <span className="font-extrabold text-sm block">⏰ NEWS BROADCAST REMINDER: 20 MINUTES ELAPSED!</span>
                 <span className="theme-text-muted">It's time to send the next market news headline or analyst template to keep trader momentum active.</span>
@@ -464,7 +438,7 @@ export function AdminDashboard() {
             </div>
             <button
               onClick={resetNewsTimer}
-              className="px-3 py-1.5 bg-[#D4A017] hover:bg-[#D4A017]/90 text-slate-950 font-bold rounded-[4px] text-xs font-mono transition-all btn-terminal flex-shrink-0"
+              className="px-3 py-1.5 bg-[var(--accent)] hover:bg-[color-mix(in_srgb,var(--accent)_90%,transparent)] text-slate-950 font-bold rounded-[4px] text-xs font-mono transition-all btn-terminal flex-shrink-0"
             >
               DISMISS & RESET TIMER
             </button>
@@ -488,7 +462,7 @@ export function AdminDashboard() {
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
             <div>
               <h2 className="text-base font-bold theme-text-main flex items-center gap-2">
-                <Sparkles className="w-5 h-5 text-amber-500" />
+                <Sparkles className="w-5 h-5" style={{ color: 'var(--accent)' }} />
                 Analyst News Templates (Steers Upcoming 15-Min Macro Moves)
               </h2>
               <p className="text-xs theme-text-muted">
@@ -501,7 +475,7 @@ export function AdminDashboard() {
               <select
                 value={delaySeconds}
                 onChange={(e) => setDelaySeconds(e.target.value)}
-                className="theme-bg-panel border theme-border rounded-xl px-3 py-1.5 text-xs font-mono theme-text-main focus:outline-none focus:border-amber-500 transition-all min-h-[36px]"
+                className="theme-bg-panel border theme-border rounded-xl px-3 py-1.5 text-xs font-mono theme-text-main focus:outline-none focus:border-[var(--accent)] transition-all min-h-[36px]"
               >
                 <option value={15}>15 Seconds</option>
                 <option value={30}>30 Seconds</option>
@@ -517,13 +491,13 @@ export function AdminDashboard() {
               const difficulty = tpl.difficulty || 'EASY';
 
               let diffClass = 'bg-emerald-500/20 text-emerald-500 border-emerald-500/30';
-              if (difficulty === 'MEDIUM') diffClass = 'bg-[#D4A017]/20 text-[#D4A017] border-[#D4A017]/30';
-              if (difficulty === 'HARD') diffClass = 'bg-[#E8453C]/20 text-[#E8453C] border-[#E8453C]/30';
+              if (difficulty === 'MEDIUM') diffClass = 'bg-[color-mix(in_srgb,var(--accent)_20%,transparent)] text-[var(--accent)] border-[color-mix(in_srgb,var(--accent)_30%,transparent)]';
+              if (difficulty === 'HARD') diffClass = 'bg-[color-mix(in_srgb,var(--loss-red)_20%,transparent)] text-[var(--loss-red)] border-[color-mix(in_srgb,var(--loss-red)_30%,transparent)]';
 
               return (
                 <div
                   key={tpl.id}
-                  className={`theme-bg-panel p-4 rounded-xl border theme-border hover:border-amber-500/40 transition-all flex flex-col justify-between gap-3 shadow-sm ${
+                  className={`theme-bg-panel p-4 rounded-xl border theme-border hover:border-[color-mix(in_srgb,var(--accent)_40%,transparent)] transition-all flex flex-col justify-between gap-3 shadow-sm ${
                     isUsed ? 'opacity-70' : ''
                   }`}
                 >
@@ -561,7 +535,7 @@ export function AdminDashboard() {
                   <button
                     onClick={() => handleTriggerTemplate(tpl.id)}
                     disabled={triggeringTemplateId === tpl.id}
-                    className="w-full py-2 bg-amber-500/20 hover:bg-amber-500 text-amber-500 hover:text-slate-950 font-bold text-xs rounded-xl transition-all border border-amber-500/30 flex items-center justify-center gap-1.5 min-h-[36px] btn-terminal"
+                    className="w-full py-2 bg-[color-mix(in_srgb,var(--accent)_18%,transparent)] hover:bg-[var(--accent)] text-[var(--accent)] hover:text-white font-bold text-xs rounded-xl transition-all border border-[color-mix(in_srgb,var(--accent)_35%,transparent)] flex items-center justify-center gap-1.5 min-h-[36px] btn-terminal"
                   >
                     <Zap className="w-3.5 h-3.5" />
                     <span>Steer Macro Move ({delaySeconds}s)</span>

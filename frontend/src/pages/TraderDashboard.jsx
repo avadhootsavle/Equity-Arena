@@ -1,382 +1,151 @@
-import React, { useState, useEffect, memo, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { useSocket } from '../context/SocketContext';
 import { apiFetch } from '../services/api';
-import { Sparkline } from '../components/Sparkline';
+import { useSession } from '../hooks/useSession';
+
+import { Sidebar, MobileNav } from '../components/Sidebar';
+import { TopBar } from '../components/TopBar';
+import { LiveTickerMarquee } from '../components/LiveTickerMarquee';
+import { GameTimerHero } from '../components/GameTimerHero';
+import { StatTile } from '../components/StatTile';
+import { ChartPanel, TIMEFRAMES } from '../components/ChartPanel';
+import { FloorCard } from '../components/FloorCard';
+import { MyStocks } from '../components/MyStocks';
+import { MyTrades } from '../components/MyTrades';
+import { EditOrderDialog } from '../components/EditOrderDialog';
+import { Reveal, ScrollProgressBar, BackToTopButton } from '../components/Reveal';
+import { ToastStack } from '../components/ToastStack';
 import { StockDetailModal } from '../components/StockDetailModal';
 import { OnboardingTour } from '../components/OnboardingTour';
 import { NewsToast } from '../components/NewsToast';
-import { Navbar } from '../components/Navbar';
-import { LiveTickerMarquee } from '../components/LiveTickerMarquee';
-import { AnimatedNumber } from '../components/AnimatedNumber';
 import { TradeFeedbackOverlay } from '../components/TradeFeedbackOverlay';
-import { StockCardSkeleton, NewsFeedSkeleton } from '../components/SkeletonLoader';
+
 import {
-  TrendingUp, TrendingDown, PieChart, History, Search, ArrowUpRight, CheckCircle2, AlertCircle, ShoppingBag,
-  Newspaper, RefreshCw, Clock, Ban, Flame, Zap, Shield, X, HelpCircle
+  Wallet,
+  PieChart,
+  TrendingUp,
+  TrendingDown,
+  Layers,
+  Newspaper,
+  RefreshCw,
+  LayoutGrid,
+  List,
+  Clock,
+  Ban,
+  History,
+  Pencil,
+  ArrowUpRight,
+  AlertTriangle
 } from 'lucide-react';
 
-const StockCard = memo(({
-  stock,
-  holding,
-  availableWallet,
-  onOpenDetail,
-  onQuickTrade,
-  priceFlash,
-  isTradingLocked
-}) => {
-  const [isQuickOpen, setIsQuickOpen] = useState(false);
-  const [quickMode, setQuickMode] = useState('BUY'); // 'BUY' or 'SELL'
-  const [quantity, setQuantity] = useState(1);
-  const [isSubmitting, setIsSubmitting] = useState(false);
+const fmtMoney = (n, d = 2) =>
+  Number(n || 0).toLocaleString('en-US', {
+    minimumFractionDigits: d,
+    maximumFractionDigits: d
+  });
 
-  const percentChange = stock && stock.percentChange !== undefined && stock.percentChange !== null ? stock.percentChange : 0;
-  const isPositive = percentChange >= 0;
-  const flashClass = priceFlash === 'up' ? 'animate-flash-up' : priceFlash === 'down' ? 'animate-flash-down' : '';
-
-  const availHoldingQty = holding?.availableQuantity !== undefined ? holding.availableQuantity : (holding?.quantity || 0);
-  const availCash = availableWallet || 0;
-  const currentPrice = stock.currentPrice || 1;
-
-  // Max affordable / sellable quantities
-  const maxBuyQty = Math.max(0, Math.floor(availCash / currentPrice));
-  const maxSellQty = availHoldingQty;
-
-  const handleOpenQuick = (e, mode) => {
-    e.stopPropagation();
-    setQuickMode(mode);
-    setIsQuickOpen(true);
-    if (mode === 'BUY') {
-      setQuantity(maxBuyQty >= 1 ? 1 : 0);
-    } else {
-      setQuantity(maxSellQty >= 1 ? 1 : 0);
-    }
-  };
-
-  const handlePreset = (e, percent) => {
-    e.stopPropagation();
-    if (quickMode === 'BUY') {
-      const calculated = Math.floor((availCash * percent) / currentPrice);
-      setQuantity(Math.max(calculated > 0 ? calculated : (maxBuyQty >= 1 ? 1 : 0), 0));
-    } else {
-      const calculated = Math.floor(availHoldingQty * percent);
-      setQuantity(Math.max(calculated > 0 ? calculated : (availHoldingQty >= 1 ? 1 : 0), 0));
-    }
-  };
-
-  const handleQuantityChange = (val) => {
-    const parsed = parseInt(val, 10);
-    if (isNaN(parsed) || parsed < 0) {
-      setQuantity(0);
-    } else {
-      setQuantity(parsed);
-    }
-  };
-
-  const handleConfirmTrade = async (e) => {
-    e.stopPropagation();
-    if (quantity <= 0) return;
-    setIsSubmitting(true);
-    const success = await onQuickTrade(stock, quickMode, quantity);
-    setIsSubmitting(false);
-    if (success) {
-      setIsQuickOpen(false);
-    }
-  };
-
-  const estimatedTotal = Math.round(quantity * currentPrice * 100) / 100;
-  const canSubmit = !isTradingLocked && quantity > 0 && (
-    quickMode === 'BUY' ? estimatedTotal <= availCash : quantity <= availHoldingQty
-  );
-
-  return (
-    <div
-      onClick={() => !isQuickOpen && onOpenDetail(stock)}
-      className={`theme-bg-card theme-border p-4 rounded-[8px] border hover:border-[#D4A017] transition-all shadow-md group flex flex-col justify-between ${
-        isQuickOpen ? 'border-[#D4A017] ring-1 ring-[#D4A017]/30' : 'cursor-pointer active:scale-[0.99]'
-      } ${flashClass}`}
-    >
-      <div>
-        {/* Top Header: Symbol, Sector, Holding Badge, Price & % Change */}
-        <div className="flex items-start justify-between">
-          <div>
-            <div className="flex items-center gap-2">
-              <span className="text-base font-bold theme-text-main font-mono tracking-tight group-hover:text-[#D4A017] transition-colors">
-                {stock.symbol}
-              </span>
-              <span className="px-2 py-0.5 rounded-[3px] text-[10px] font-semibold theme-bg-panel theme-text-muted border theme-border font-mono">
-                {stock.sector}
-              </span>
-              {availHoldingQty > 0 && (
-                <span className="px-1.5 py-0.5 rounded-[3px] text-[10px] font-mono font-bold bg-[#D4A017]/15 text-[#D4A017] border border-[#D4A017]/30">
-                  {availHoldingQty} Owned
-                </span>
-              )}
-            </div>
-            <div className="text-xs theme-text-muted truncate max-w-[180px] font-medium mt-0.5">{stock.name}</div>
-          </div>
-
-          <div className="text-right">
-            <div className="text-base font-extrabold theme-text-main font-mono">
-              <AnimatedNumber value={stock.currentPrice || 0} decimals={2} suffix=" IC" className={isPositive ? 'text-[#1DB954]' : 'text-[#E8453C]'} />
-            </div>
-            <div
-              className={`inline-flex items-center gap-0.5 px-2 py-0.5 rounded-[3px] text-[11px] font-mono font-bold border ${
-                isPositive
-                  ? 'bg-[#1DB954]/10 text-[#1DB954] border-[#1DB954]/30'
-                  : 'bg-[#E8453C]/10 text-[#E8453C] border-[#E8453C]/30'
-              }`}
-            >
-              {isPositive ? <TrendingUp className="w-3 h-3" /> : <TrendingDown className="w-3 h-3" />}
-              <span>{isPositive ? '+' : ''}{percentChange.toFixed(2)}%</span>
-            </div>
-          </div>
-        </div>
-
-        {/* Sparkline & Quick Action Controls */}
-        <div className="mt-3 py-1 flex items-center justify-between gap-2 border-t theme-border pt-3">
-          <Sparkline history={stock.priceHistories} width={100} height={32} />
-
-          <div className="flex items-center gap-1.5">
-            {/* Quick Buy Button */}
-            <button
-              type="button"
-              onClick={(e) => handleOpenQuick(e, 'BUY')}
-              disabled={isTradingLocked}
-              title={isTradingLocked ? 'Session locked' : 'Instant Quick Buy'}
-              className="px-3 py-1.5 bg-[#10B981]/15 hover:bg-[#10B981] text-[#10B981] hover:text-slate-950 text-xs font-heading font-bold rounded-[4px] border border-[#10B981]/40 transition-all flex items-center gap-1 min-h-[32px] active:scale-95 disabled:opacity-40 btn-terminal"
-            >
-              <Zap className="w-3 h-3" />
-              <span>Buy</span>
-            </button>
-
-            {/* Quick Sell Button */}
-            <button
-              type="button"
-              onClick={(e) => handleOpenQuick(e, 'SELL')}
-              disabled={isTradingLocked || availHoldingQty === 0}
-              title={availHoldingQty === 0 ? 'No shares owned' : 'Instant Quick Sell'}
-              className={`px-3 py-1.5 text-xs font-heading font-bold rounded-[4px] border transition-all flex items-center gap-1 min-h-[32px] active:scale-95 btn-terminal ${
-                availHoldingQty > 0 && !isTradingLocked
-                  ? 'bg-[#EF4444]/15 hover:bg-[#EF4444] text-[#EF4444] hover:text-white border-[#EF4444]/40'
-                  : 'opacity-40 bg-slate-800/30 text-slate-500 border-slate-700/40 cursor-not-allowed'
-              }`}
-            >
-              <span>Sell</span>
-            </button>
-
-            {/* Chart / Full Modal Trigger */}
-            <button
-              type="button"
-              onClick={(e) => {
-                e.stopPropagation();
-                onOpenDetail(stock);
-              }}
-              title="Open full chart, history and limit orders"
-              className="p-1.5 bg-[#D4A017]/10 hover:bg-[#D4A017]/25 text-[#D4A017] rounded-[4px] border border-[#D4A017]/30 transition-all min-h-[32px] min-w-[32px] flex items-center justify-center active:scale-95 btn-terminal"
-            >
-              <ArrowUpRight className="w-3.5 h-3.5" />
-            </button>
-          </div>
-        </div>
-
-        {/* INLINE QUICK-TRADE EXPANSION DRAWER */}
-        {isQuickOpen && (
-          <div
-            onClick={(e) => e.stopPropagation()}
-            className="mt-3 pt-3 border-t theme-border bg-slate-950/40 dark:bg-black/30 p-3 rounded-[6px] space-y-3 animate-fadeIn"
-          >
-            {/* Mode Switcher & Close */}
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-1">
-                <button
-                  type="button"
-                  onClick={() => setQuickMode('BUY')}
-                  className={`px-2.5 py-1 rounded-[4px] text-[11px] font-heading font-bold transition-all ${
-                    quickMode === 'BUY'
-                      ? 'bg-[#10B981] text-slate-950 shadow-sm'
-                      : 'theme-bg-panel theme-text-muted hover:theme-text-main'
-                  }`}
-                >
-                  Quick Buy
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setQuickMode('SELL')}
-                  disabled={availHoldingQty === 0}
-                  className={`px-2.5 py-1 rounded-[4px] text-[11px] font-heading font-bold transition-all ${
-                    quickMode === 'SELL'
-                      ? 'bg-[#EF4444] text-white shadow-sm'
-                      : 'theme-bg-panel theme-text-muted hover:theme-text-main disabled:opacity-40'
-                  }`}
-                >
-                  Quick Sell {availHoldingQty > 0 ? `(${availHoldingQty})` : ''}
-                </button>
-              </div>
-
-              <button
-                type="button"
-                onClick={() => setIsQuickOpen(false)}
-                className="p-1 text-slate-400 hover:text-white rounded transition-colors"
-              >
-                <X className="w-4 h-4" />
-              </button>
-            </div>
-
-            {/* Live Context & One-Tap Percentage Presets */}
-            <div className="space-y-1.5">
-              <div className="flex justify-between items-center text-[11px] font-mono theme-text-muted">
-                <span>{quickMode === 'BUY' ? 'Available Cash:' : 'Available Shares:'}</span>
-                <span className="font-bold text-slate-200">
-                  {quickMode === 'BUY'
-                    ? `${availCash.toLocaleString('en-US', { minimumFractionDigits: 2 })} IC`
-                    : `${availHoldingQty} shares`}
-                </span>
-              </div>
-
-              {/* 1-Tap Percentage Presets (25%, 50%, 100%) */}
-              <div className="grid grid-cols-3 gap-1.5">
-                {[0.25, 0.50, 1.0].map((pct) => (
-                  <button
-                    key={pct}
-                    type="button"
-                    onClick={(e) => handlePreset(e, pct)}
-                    className="py-1 theme-bg-panel hover:bg-slate-800 border theme-border hover:border-[#D4A017]/60 rounded-[4px] text-[11px] font-mono font-bold theme-text-main transition-all active:scale-95"
-                  >
-                    {pct === 1.0 ? '100% (Max)' : `${pct * 100}%`}
-                  </button>
-                ))}
-              </div>
-            </div>
-
-            {/* Stepper Quantity Input */}
-            <div className="flex items-center gap-2">
-              <button
-                type="button"
-                onClick={() => setQuantity((q) => Math.max(1, q - 1))}
-                className="w-9 h-9 theme-bg-panel border theme-border hover:border-[#D4A017] rounded-[4px] flex items-center justify-center font-bold text-sm theme-text-main active:scale-90"
-              >
-                -
-              </button>
-              <input
-                type="number"
-                min="1"
-                value={quantity || ''}
-                onChange={(e) => handleQuantityChange(e.target.value)}
-                className="flex-1 theme-bg-panel border theme-border rounded-[4px] py-1 px-2 text-center text-sm font-mono font-bold theme-text-main focus:outline-none focus:border-[#D4A017] min-h-[36px]"
-              />
-              <button
-                type="button"
-                onClick={() => setQuantity((q) => q + 1)}
-                className="w-9 h-9 theme-bg-panel border theme-border hover:border-[#D4A017] rounded-[4px] flex items-center justify-center font-bold text-sm theme-text-main active:scale-90"
-              >
-                +
-              </button>
-            </div>
-
-            {/* Est. Total & Confirm Button */}
-            <div className="space-y-2 pt-1 border-t theme-border">
-              <div className="flex justify-between items-center text-xs font-mono">
-                <span className="theme-text-muted">Est. Total:</span>
-                <span className="font-extrabold text-sm theme-text-main">
-                  {estimatedTotal.toLocaleString('en-US', { minimumFractionDigits: 2 })} IC
-                </span>
-              </div>
-
-              <button
-                type="button"
-                onClick={handleConfirmTrade}
-                disabled={!canSubmit || isSubmitting}
-                className={`w-full py-2 rounded-[4px] font-heading font-extrabold text-xs tracking-wide transition-all shadow-md active:scale-95 flex items-center justify-center gap-1.5 min-h-[38px] ${
-                  quickMode === 'BUY'
-                    ? 'bg-[#10B981] hover:bg-[#059669] text-slate-950 disabled:opacity-40'
-                    : 'bg-[#EF4444] hover:bg-[#DC2626] text-white disabled:opacity-40'
-                }`}
-              >
-                {isSubmitting ? (
-                  <RefreshCw className="w-4 h-4 animate-spin" />
-                ) : (
-                  <>
-                    <Zap className="w-3.5 h-3.5" />
-                    <span>
-                      {quickMode === 'BUY' ? `Confirm Buy (${estimatedTotal.toFixed(2)} IC)` : `Confirm Sell (+${estimatedTotal.toFixed(2)} IC)`}
-                    </span>
-                  </>
-                )}
-              </button>
-            </div>
-          </div>
-        )}
-      </div>
-    </div>
-  );
-});
+const PAGE_SIZES = [10, 15, 25, 50];
 
 export function TraderDashboard() {
   const { user } = useAuth();
   const { socket } = useSocket();
 
-  const [activeTab, setActiveTab] = useState('MARKET'); // 'MARKET' or 'NEWS'
+  /* ---------------------------------------------------------------
+     Core state
+     --------------------------------------------------------------- */
+  const [activeTab, setActiveTab] = useState('DASHBOARD');
+  const [searchQuery, setSearchQuery] = useState('');
 
   const [stocks, setStocks] = useState([]);
   const [loadingStocks, setLoadingStocks] = useState(true);
-  const [searchQuery, setSearchQuery] = useState('');
   const [stockFlashes, setStockFlashes] = useState({});
 
   const [portfolio, setPortfolio] = useState({
-    walletBalance: user?.walletBalance || 20000,
-    availableWalletBalance: user?.walletBalance || 20000,
+    walletBalance: user?.walletBalance || 0,
+    availableWalletBalance: user?.walletBalance || 0,
     lockedFunds: 0,
     totalHoldingsValue: 0,
     totalUnrealizedPL: 0,
-    totalPortfolioValue: user?.walletBalance || 20000,
+    totalPortfolioValue: user?.walletBalance || 0,
     holdings: [],
     transactions: [],
     pendingOrders: []
   });
 
-  const [selectedStock, setSelectedStock] = useState(null);
-  const [isDetailModalOpen, setIsDetailModalOpen] = useState(false);
-  const [feedbackOverlay, setFeedbackOverlay] = useState(null);
-  const [toast, setToast] = useState(null);
-  const [cancellingOrderId, setCancellingOrderId] = useState(null);
-
-  // Dedicated News tab state
-  const [activeNewsToast, setActiveNewsToast] = useState(null);
   const [newsFeed, setNewsFeed] = useState([]);
   const [loadingNews, setLoadingNews] = useState(false);
-  const [sessionData, setSessionData] = useState(null);
+  const [activeNewsToast, setActiveNewsToast] = useState(null);
 
-  const showToast = (message, type = 'success') => {
-    setToast({ message, type });
-    setTimeout(() => setToast(null), 3500);
-  };
+  // One shared session source feeds the clock, the banner and the lock state
+  const sessionData = useSession();
 
-  const triggerFeedbackOverlay = (status, message) => {
-    setFeedbackOverlay({ status, message });
-  };
+  const [toasts, setToasts] = useState([]);
+  const [feedbackOverlay, setFeedbackOverlay] = useState(null);
 
+  /* Floor display controls */
+  const [floorView, setFloorView] = useState('grid'); // 'grid' | 'compact'
+  const [pageSize, setPageSize] = useState(10);
+  const [lastRefresh, setLastRefresh] = useState(Date.now());
+
+  /* Chart */
+  const [chartStockId, setChartStockId] = useState(null);
+  const [timeframe, setTimeframe] = useState('15M');
+  const [chartRaw, setChartRaw] = useState([]);
+  const [loadingHistory, setLoadingHistory] = useState(false);
+
+  /* Detail modal + quick trade */
+  const [detailStock, setDetailStock] = useState(null);
+  const [isDetailOpen, setIsDetailOpen] = useState(false);
+  const [detailSide, setDetailSide] = useState('BUY');
+  const [cancellingOrderId, setCancellingOrderId] = useState(null);
+  const [editingOrder, setEditingOrder] = useState(null);
+
+  const [quickSubmitting, setQuickSubmitting] = useState(false);
+
+  const [isTourOpen, setIsTourOpen] = useState(() => {
+    try {
+      return localStorage.getItem('equity_arena_tour_completed') !== 'true';
+    } catch {
+      return false;
+    }
+  });
+
+  /* ---------------------------------------------------------------
+     Toasts
+     --------------------------------------------------------------- */
+  const toastIdRef = useRef(0);
+
+  const pushToast = useCallback((message, type = 'success', title) => {
+    const id = ++toastIdRef.current;
+    setToasts((prev) => [...prev.slice(-3), { id, message, type, title }]);
+  }, []);
+
+  const dismissToast = useCallback((id) => {
+    setToasts((prev) => prev.filter((t) => t.id !== id));
+  }, []);
+
+  /* ---------------------------------------------------------------
+     Data fetching
+     --------------------------------------------------------------- */
   const fetchStocks = useCallback(async () => {
     try {
       const data = await apiFetch('/stocks');
-      setStocks(data);
+      setStocks(Array.isArray(data) ? data : []);
+      setLastRefresh(Date.now());
     } catch (err) {
-      showToast(err.message || 'Failed to fetch stocks', 'error');
+      pushToast(err.message || 'Failed to load the market', 'error', 'Market feed');
     } finally {
       setLoadingStocks(false);
     }
-  }, []);
-
-  const [loadingPortfolio, setLoadingPortfolio] = useState(true);
+  }, [pushToast]);
 
   const fetchPortfolio = useCallback(async () => {
     try {
       const data = await apiFetch('/portfolio');
-      setPortfolio(data);
+      setPortfolio((prev) => ({ ...prev, ...data }));
     } catch (err) {
       console.error('Fetch portfolio error:', err);
-    } finally {
-      setLoadingPortfolio(false);
     }
   }, []);
 
@@ -386,7 +155,7 @@ export function TraderDashboard() {
       const data = await apiFetch('/news');
       setNewsFeed(Array.isArray(data) ? data : []);
     } catch (err) {
-      console.error('Fetch news history error:', err);
+      console.error('Fetch news error:', err);
       setNewsFeed([]);
     } finally {
       setLoadingNews(false);
@@ -399,9 +168,84 @@ export function TraderDashboard() {
     fetchNewsFeed();
   }, [fetchStocks, fetchPortfolio, fetchNewsFeed]);
 
-  // Real-time Socket Handlers
+  /* ---------------------------------------------------------------
+     Chart selection + history
+     --------------------------------------------------------------- */
+  const chartStock = useMemo(
+    () => stocks.find((s) => s.id === chartStockId) || stocks[0] || null,
+    [stocks, chartStockId]
+  );
+
+  // Default the chart to the day's strongest mover once stocks land
+  useEffect(() => {
+    if (chartStockId || stocks.length === 0) return;
+    const leader = [...stocks].sort(
+      (a, b) => Math.abs(b.percentChange || 0) - Math.abs(a.percentChange || 0)
+    )[0];
+    setChartStockId(leader?.id || stocks[0].id);
+  }, [stocks, chartStockId]);
+
+  const fetchChartHistory = useCallback(async (stockId, tf) => {
+    if (!stockId) return;
+    setLoadingHistory(true);
+    try {
+      // 5M/15M/1H all live inside the last day — fetch raw once and window it
+      // client-side so switching timeframes never costs a round trip.
+      const range = tf === 'ALL' ? 'ALL' : '1D';
+      const data = await apiFetch(`/stocks/${stockId}/history?range=${range}`);
+      setChartRaw(Array.isArray(data) ? data : []);
+    } catch (err) {
+      console.error('Fetch chart history error:', err);
+      setChartRaw([]);
+    } finally {
+      setLoadingHistory(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    if (!chartStock?.id) return;
+    fetchChartHistory(chartStock.id, timeframe === 'ALL' ? 'ALL' : '1D');
+  }, [chartStock?.id, timeframe === 'ALL', fetchChartHistory]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  const chartHistory = useMemo(() => {
+    const source = chartRaw.length > 1 ? chartRaw : chartStock?.priceHistories || [];
+    const tf = TIMEFRAMES.find((t) => t.key === timeframe);
+
+    if (!tf || !isFinite(tf.minutes)) {
+      /* "All" means the whole game, not the seeded backstory. The raw feed
+         reaches a month back with multi-hour gaps, which drew a flat line
+         across the middle and squeezed the real session into a sliver. */
+      const sessionStart = sessionData?.startTime
+        ? new Date(sessionData.startTime).getTime()
+        : null;
+      if (!sessionStart) return source;
+      const sinceStart = source.filter(
+        (h) => new Date(h.timestamp).getTime() >= sessionStart
+      );
+      return sinceStart.length >= 2 ? sinceStart : source.slice(-240);
+    }
+
+    const cutoff = Date.now() - tf.minutes * 60_000;
+    const windowed = source.filter(
+      (h) => new Date(h.timestamp).getTime() >= cutoff
+    );
+
+    // If the session is younger than the window, show whatever tape exists
+    return windowed.length >= 2 ? windowed : source.slice(-60);
+  }, [chartRaw, chartStock, timeframe, sessionData?.startTime]);
+
+  /* ---------------------------------------------------------------
+     Real-time socket wiring
+     --------------------------------------------------------------- */
+  const chartStockIdRef = useRef(null);
+  useEffect(() => {
+    chartStockIdRef.current = chartStock?.id || null;
+  }, [chartStock?.id]);
+
   useEffect(() => {
     if (!socket) return;
+
+    const flashTimers = new Map();
 
     const handleConnect = () => {
       fetchStocks();
@@ -410,709 +254,946 @@ export function TraderDashboard() {
     };
 
     const handleStockUpdate = (diff) => {
-      setStocks((prevStocks) =>
-        prevStocks.map((s) => {
-          if (s.id === diff.stockId) {
-            const oldPrice = s.currentPrice;
-            const direction = diff.newPrice > oldPrice ? 'up' : diff.newPrice < oldPrice ? 'down' : null;
+      setStocks((prev) =>
+        prev.map((s) => {
+          if (s.id !== diff.stockId) return s;
 
-            if (direction) {
-              setStockFlashes((prev) => ({ ...prev, [diff.stockId]: direction }));
-              setTimeout(() => {
-                setStockFlashes((prev) => ({ ...prev, [diff.stockId]: null }));
-              }, 650);
-            }
-
-            const newHistory = [
-              ...(s.priceHistories || []),
-              { price: diff.newPrice, volume: diff.volume, timestamp: diff.timestamp }
-            ];
-
-            return {
-              ...s,
-              currentPrice: diff.newPrice,
-              percentChange: diff.percentChange,
-              priceHistories: newHistory
-            };
-          }
-          return s;
-        })
-      );
-    };
-
-    const handleStocksBatchUpdate = (data) => {
-      const updates = data?.updates;
-      if (!Array.isArray(updates) || updates.length === 0) return;
-
-      const updatesMap = new Map(updates.map((u) => [u.stockId, u]));
-      const newFlashes = {};
-
-      setStocks((prevStocks) =>
-        prevStocks.map((s) => {
-          const diff = updatesMap.get(s.id);
-          if (!diff) return s;
-
-          const oldPrice = s.currentPrice;
-          const direction = diff.newPrice > oldPrice ? 'up' : diff.newPrice < oldPrice ? 'down' : null;
+          const direction =
+            diff.newPrice > s.currentPrice
+              ? 'up'
+              : diff.newPrice < s.currentPrice
+              ? 'down'
+              : null;
 
           if (direction) {
-            newFlashes[s.id] = direction;
+            setStockFlashes((f) => ({ ...f, [diff.stockId]: direction }));
+            clearTimeout(flashTimers.get(diff.stockId));
+            flashTimers.set(
+              diff.stockId,
+              setTimeout(() => {
+                setStockFlashes((f) => ({ ...f, [diff.stockId]: null }));
+              }, 720)
+            );
           }
-
-          const newHistory = [
-            ...(s.priceHistories || []),
-            { price: diff.newPrice, volume: diff.volume, timestamp: diff.timestamp }
-          ];
 
           return {
             ...s,
             currentPrice: diff.newPrice,
             percentChange: diff.percentChange,
-            priceHistories: newHistory
+            priceHistories: [
+              ...(s.priceHistories || []),
+              {
+                price: diff.newPrice,
+                volume: diff.volume,
+                timestamp: diff.timestamp
+              }
+            ].slice(-120)
           };
         })
       );
 
-      if (Object.keys(newFlashes).length > 0) {
-        setStockFlashes((prev) => ({ ...prev, ...newFlashes }));
-        setTimeout(() => {
-          setStockFlashes((prev) => {
-            const copy = { ...prev };
-            Object.keys(newFlashes).forEach((id) => { copy[id] = null; });
-            return copy;
-          });
-        }, 650);
+      // Append the tick to the open chart so the line extends live
+      if (diff.stockId === chartStockIdRef.current) {
+        setChartRaw((prev) => {
+          const next = [
+            ...prev,
+            {
+              price: diff.newPrice,
+              volume: diff.volume,
+              timestamp: diff.timestamp
+            }
+          ];
+          return next.length > 4000 ? next.slice(-4000) : next;
+        });
       }
     };
 
-    const handleNewsBroadcast = (news) => {
+    const handleNews = (news) => {
       setActiveNewsToast(news);
-      setNewsFeed((prev) => Array.isArray(prev) ? [news, ...prev] : [news]);
+      setNewsFeed((prev) => (Array.isArray(prev) ? [news, ...prev] : [news]));
     };
 
-    const handlePortfolioUpdate = (updatedPortfolio) => {
-      setPortfolio((prev) => ({
-        ...prev,
-        ...updatedPortfolio
-      }));
+    const handlePortfolioUpdate = (updated) => {
+      setPortfolio((prev) => ({ ...prev, ...updated }));
     };
 
     const handleOrderExecuted = (alert) => {
-      triggerFeedbackOverlay('success', alert.message || 'Limit order executed!');
+      setFeedbackOverlay({
+        status: 'success',
+        message: alert?.message || 'Limit order executed'
+      });
+      pushToast(alert?.message || 'Limit order executed', 'success', 'Order filled');
       fetchPortfolio();
     };
 
     socket.on('connect', handleConnect);
     socket.on('stock:update', handleStockUpdate);
-    socket.on('stocks:batch-update', handleStocksBatchUpdate);
-    socket.on('news:broadcast', handleNewsBroadcast);
+    socket.on('news:broadcast', handleNews);
     socket.on('portfolio:update', handlePortfolioUpdate);
     socket.on('order:executed', handleOrderExecuted);
 
     return () => {
       socket.off('connect', handleConnect);
       socket.off('stock:update', handleStockUpdate);
-      socket.off('stocks:batch-update', handleStocksBatchUpdate);
-      socket.off('news:broadcast', handleNewsBroadcast);
+      socket.off('news:broadcast', handleNews);
       socket.off('portfolio:update', handlePortfolioUpdate);
       socket.off('order:executed', handleOrderExecuted);
+      flashTimers.forEach((t) => clearTimeout(t));
     };
-  }, [socket, fetchStocks, fetchPortfolio, fetchNewsFeed]);
+  }, [socket, fetchStocks, fetchPortfolio, fetchNewsFeed, pushToast]);
 
-  const handleOpenDetail = useCallback((stock) => {
-    setSelectedStock(stock);
-    setIsDetailModalOpen(true);
-  }, []);
+  /* ---------------------------------------------------------------
+     Derived values
+     --------------------------------------------------------------- */
+  const isTradingLocked =
+    !sessionData || sessionData.status !== 'ACTIVE' || sessionData.isTradingLocked;
 
-  const [isTourOpen, setIsTourOpen] = useState(() => {
-    try {
-      return localStorage.getItem('equity_arena_tour_completed') !== 'true';
-    } catch (e) {
-      return false;
-    }
-  });
+  const availableCash =
+    portfolio.availableWalletBalance !== undefined
+      ? portfolio.availableWalletBalance
+      : portfolio.walletBalance;
 
-  const handleQuickTrade = async (stock, mode, quantity) => {
-    if (sessionData && (sessionData.status !== 'ACTIVE' || sessionData.isTradingLocked)) {
-      showToast("Trading hasn't started yet — waiting for admin to start session", 'error');
-      return false;
-    }
-
-    if (!quantity || quantity <= 0) {
-      showToast("Please enter a valid quantity", 'error');
-      return false;
-    }
-
-    const endpoint = mode === 'BUY' ? '/trade/buy' : '/trade/sell';
-    try {
-      const data = await apiFetch(endpoint, {
-        method: 'POST',
-        body: JSON.stringify({ stockId: stock.id, quantity })
-      });
-
-      const verb = mode === 'BUY' ? 'Bought' : 'Sold';
-      const execPrice = data.transaction?.price || stock.currentPrice;
-      const totalCost = data.transaction?.totalCost || Math.round(execPrice * quantity * 100) / 100;
-      
-      showToast(`⚡ ${verb} ${quantity} ${stock.symbol} @ ${execPrice.toFixed(2)} IC (Total: ${totalCost.toLocaleString('en-US', { minimumFractionDigits: 2 })} IC)`, 'success');
-
-      if (data.user) {
-        setPortfolio((prev) => ({
-          ...prev,
-          walletBalance: data.user.walletBalance,
-          availableWalletBalance: Math.max(0, data.user.walletBalance - (prev.lockedFunds || 0))
-        }));
-      }
-      fetchPortfolio();
-      return true;
-    } catch (err) {
-      showToast(err.message || `Failed to execute ${mode.toLowerCase()} order`, 'error');
-      return false;
-    }
-  };
-
-  const handleTradeSuccess = (message, updatedPortfolio) => {
-    triggerFeedbackOverlay('success', message);
-    if (updatedPortfolio) {
-      setPortfolio((prev) => ({ ...prev, ...updatedPortfolio }));
-    } else {
-      fetchPortfolio();
-    }
-  };
-
-  const handleCancelOrder = async (orderId) => {
-    setCancellingOrderId(orderId);
-    try {
-      const data = await apiFetch(`/orders/${orderId}`, {
-        method: 'DELETE'
-      });
-      triggerFeedbackOverlay('success', data.message);
-      fetchPortfolio();
-    } catch (err) {
-      triggerFeedbackOverlay('error', err.message || 'Failed to cancel limit order');
-    } finally {
-      setCancellingOrderId(null);
-    }
-  };
-
-  const filteredStocks = stocks.filter(
-    (s) =>
-      s.symbol.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      s.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      s.sector.toLowerCase().includes(searchQuery.toLowerCase())
+  const holdingFor = useCallback(
+    (stockId) => portfolio.holdings?.find((h) => h.stockId === stockId),
+    [portfolio.holdings]
   );
 
-  const getHoldingForStock = (stockId) => {
-    return portfolio.holdings?.find((h) => h.stockId === stockId);
-  };
+  const chartHolding = chartStock ? holdingFor(chartStock.id) : null;
+  const chartOwnedQty = chartHolding
+    ? chartHolding.availableQuantity ?? chartHolding.quantity ?? 0
+    : 0;
 
-  const liveTotalHoldingsValue = (portfolio.holdings || []).reduce((sum, h) => {
-    const s = stocks.find((st) => st.id === h.stockId);
-    const price = s?.currentPrice || h.currentPrice || 0;
-    return sum + h.quantity * price;
-  }, 0);
+  const filteredStocks = useMemo(() => {
+    const q = searchQuery.trim().toLowerCase();
+    if (!q) return stocks;
+    return stocks.filter(
+      (s) =>
+        s.symbol?.toLowerCase().includes(q) ||
+        s.name?.toLowerCase().includes(q) ||
+        s.sector?.toLowerCase().includes(q)
+    );
+  }, [stocks, searchQuery]);
 
-  const isTradingLocked = !sessionData || sessionData.status !== 'ACTIVE' || sessionData.isTradingLocked;
-  const liveSelectedStock = selectedStock
-    ? (stocks.find((s) => s.id === selectedStock.id) || selectedStock)
+  const visibleStocks = useMemo(
+    () => filteredStocks.slice(0, pageSize),
+    [filteredStocks, pageSize]
+  );
+
+  const liveHoldingsValue = useMemo(
+    () =>
+      (portfolio.holdings || []).reduce((sum, h) => {
+        const s = stocks.find((st) => st.id === h.stockId);
+        return sum + h.quantity * (s?.currentPrice || h.currentPrice || 0);
+      }, 0),
+    [portfolio.holdings, stocks]
+  );
+
+  const netWorth = availableCash + liveHoldingsValue + (portfolio.lockedFunds || 0);
+
+  /* Real overall result: money already banked from selling PLUS what open
+     positions are worth right now.
+
+     The backend also returns a totalProfit, but that is a snapshot taken at
+     the last /portfolio fetch, while stock prices keep ticking over the
+     socket. Reading it directly left this figure frozen at an old price while
+     every other tile moved, so the dashboard contradicted itself. realizedPL
+     is historical and therefore safe to take from the snapshot; the unrealised
+     half is recomputed from live prices. */
+  const startingBalance = portfolio.startingBalance ?? 0;
+
+  const holdingsCost = useMemo(
+    () =>
+      (portfolio.holdings || []).reduce(
+        (sum, h) => sum + h.quantity * (h.avgBuyPrice || 0),
+        0
+      ),
+    [portfolio.holdings]
+  );
+
+  const liveUnrealizedPL = liveHoldingsValue - holdingsCost;
+  const totalProfit = (portfolio.realizedPL ?? 0) + liveUnrealizedPL;
+  const totalProfitPercent =
+    startingBalance > 0 ? (totalProfit / startingBalance) * 100 : 0;
+
+
+
+  /* ---------------------------------------------------------------
+     Quick trade — 1 share, fires straight away.
+     No confirmation step: the toast is the confirmation.
+     --------------------------------------------------------------- */
+  const runQuickTrade = useCallback(
+    async (side) => {
+      if (!chartStock || quickSubmitting) return;
+
+      if (isTradingLocked) {
+        pushToast(
+          'Trading is locked — the market session is not running yet.',
+          'error',
+          'Market closed'
+        );
+        return;
+      }
+
+      const quantity = 1;
+      const endpoint = side === 'BUY' ? '/trade/buy' : '/trade/sell';
+      setQuickSubmitting(true);
+
+      try {
+        const data = await apiFetch(endpoint, {
+          method: 'POST',
+          body: JSON.stringify({ stockId: chartStock.id, quantity })
+        });
+
+        const execPrice = data.transaction?.price ?? chartStock.currentPrice;
+        const total =
+          data.transaction?.totalCost ??
+          Math.round(execPrice * quantity * 100) / 100;
+
+        setFeedbackOverlay({
+          status: 'success',
+          message: `${side === 'BUY' ? 'Bought' : 'Sold'} ${quantity} ${chartStock.symbol}`
+        });
+        pushToast(
+          `${side === 'BUY' ? 'Bought' : 'Sold'} ${quantity} ${chartStock.symbol} @ ${fmtMoney(
+            execPrice
+          )} IC · ${side === 'BUY' ? 'Paid' : 'Received'} ${fmtMoney(total)} IC`,
+          'success',
+          `Quick ${side.toLowerCase()} filled`
+        );
+
+        if (data.user) {
+          setPortfolio((prev) => ({
+            ...prev,
+            walletBalance: data.user.walletBalance,
+            availableWalletBalance: Math.max(
+              0,
+              data.user.walletBalance - (prev.lockedFunds || 0)
+            )
+          }));
+        }
+        fetchPortfolio();
+      } catch (err) {
+        pushToast(
+          err.message || `Quick ${side.toLowerCase()} failed`,
+          'error',
+          'Order rejected'
+        );
+      } finally {
+        setQuickSubmitting(false);
+      }
+    },
+    [chartStock, quickSubmitting, isTradingLocked, fetchPortfolio, pushToast]
+  );
+
+  /* ---------------------------------------------------------------
+     Other handlers
+     --------------------------------------------------------------- */
+  const handleSelectFromFloor = useCallback((stock) => {
+    setChartStockId(stock.id);
+    // Must match the tab key below — 'MARKET' matched no block, so clicking a
+    // card blanked the whole page instead of loading the chart.
+    setActiveTab('DASHBOARD');
+    // Bring the chart into view when picking from a long floor list
+    requestAnimationFrame(() => {
+      document
+        .getElementById('main-chart')
+        ?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    });
+  }, []);
+
+  const handleOpenDetail = useCallback((stock, side = 'BUY') => {
+    setDetailStock(stock);
+    setDetailSide(side);
+    setIsDetailOpen(true);
+  }, []);
+
+  // Buy / Sell straight from a floor card opens the trade window on that side
+  const handleCardTrade = useCallback(
+    (stock, side) => {
+      if (isTradingLocked) {
+        pushToast(
+          'Trading is locked — the market session is not running yet.',
+          'error',
+          'Market closed'
+        );
+        return;
+      }
+      handleOpenDetail(stock, side);
+    },
+    [isTradingLocked, pushToast, handleOpenDetail]
+  );
+
+  const handleCancelOrder = useCallback(
+    async (orderId) => {
+      setCancellingOrderId(orderId);
+      try {
+        const data = await apiFetch(`/orders/${orderId}`, { method: 'DELETE' });
+        pushToast(data.message || 'Order cancelled', 'success', 'Order cancelled');
+        fetchPortfolio();
+      } catch (err) {
+        pushToast(err.message || 'Failed to cancel order', 'error');
+      } finally {
+        setCancellingOrderId(null);
+      }
+    },
+    [fetchPortfolio, pushToast]
+  );
+
+  const handleEditOrder = useCallback(
+    async (orderId, changes) => {
+      try {
+        const data = await apiFetch(`/orders/${orderId}`, {
+          method: 'PATCH',
+          body: JSON.stringify(changes)
+        });
+        setEditingOrder(null);
+        pushToast(data.message || 'Order updated', 'success', 'Order changed');
+        fetchPortfolio();
+        return { ok: true };
+      } catch (err) {
+        // Returned rather than thrown so the dialog can show it inline
+        return { error: err.message || 'Could not update the order' };
+      }
+    },
+    [fetchPortfolio, pushToast]
+  );
+
+  const liveDetailStock = detailStock
+    ? stocks.find((s) => s.id === detailStock.id) || detailStock
     : null;
 
+  const navCounts = {
+    ORDERS: portfolio.pendingOrders?.length || 0,
+    NEWS: newsFeed.length
+  };
+
+  /* ---------------------------------------------------------------
+     Render
+     --------------------------------------------------------------- */
   return (
-    <div className="min-h-screen theme-bg-main theme-text-main flex flex-col pb-20 md:pb-8 transition-colors">
-      
+    <div className="min-h-screen theme-bg-main theme-text-main">
+      <Sidebar activeTab={activeTab} setActiveTab={setActiveTab} counts={navCounts} />
+      <MobileNav activeTab={activeTab} setActiveTab={setActiveTab} counts={navCounts} />
+
+      <div className="lg:pl-[208px]">
+        <TopBar
+          searchQuery={searchQuery}
+          setSearchQuery={setSearchQuery}
+          walletBalance={availableCash}
+          lockedFunds={portfolio.lockedFunds || 0}
+          sessionStatus={sessionData?.status}
+          onOpenTour={() => setIsTourOpen(true)}
+        />
+
+        <LiveTickerMarquee stocks={stocks} onSelectStock={handleSelectFromFloor} />
+
+        <main className="max-w-[1440px] mx-auto px-4 sm:px-6 py-5 pb-24 lg:pb-10 space-y-5">
+          {/* ---------------- Greeting ---------------- */}
+          <div>
+            <h2 className="text-[19px] font-heading font-extrabold theme-text-main leading-tight">
+              Welcome back, {user?.name || user?.email?.split('@')[0] || 'trader'}
+            </h2>
+            <p className="text-[11.5px] theme-text-muted mt-0.5">
+              {stocks.length} stocks to trade. Buy low, sell high, grow your cash.
+            </p>
+
+            {/* One plain sentence so the score is obvious at a glance */}
+            {startingBalance > 0 && (
+              <p className="text-[12.5px] theme-text-main mt-2">
+                You started with{' '}
+                <strong className="font-mono">{fmtMoney(startingBalance)} IC</strong> and now
+                have <strong className="font-mono">{fmtMoney(netWorth)} IC</strong> —{' '}
+                <strong
+                  style={{
+                    color: totalProfit >= 0 ? 'var(--gain-green)' : 'var(--loss-red)'
+                  }}
+                >
+                  {totalProfit >= 0 ? 'up' : 'down'} {fmtMoney(Math.abs(totalProfit))} IC
+                  {' '}({Math.abs(totalProfitPercent).toFixed(1)}%)
+                </strong>
+                .
+              </p>
+            )}
+          </div>
+
+          {/* ---------------- Session lock banner ---------------- */}
+          {isTradingLocked && (
+            <div
+              className="flex items-center justify-between gap-3 px-3.5 py-2.5 rounded-lg border animate-fadeIn"
+              style={{
+                borderColor: 'color-mix(in srgb, var(--accent) 38%, transparent)',
+                backgroundColor: 'color-mix(in srgb, var(--accent) 9%, transparent)',
+                color: 'var(--accent)'
+              }}
+            >
+              <div className="flex items-center gap-2 text-[11px] font-mono font-bold">
+                <AlertTriangle className="w-4 h-4 flex-shrink-0 animate-pulse" />
+                <span>
+                  {!sessionData?.status || sessionData.status === 'NOT_STARTED'
+                    ? "The game hasn't started yet — your host will open the market"
+                    : sessionData.status === 'LIQUIDATING'
+                    ? 'Game is wrapping up — your stocks are turning back into cash'
+                    : 'Game over — trading is closed'}
+                </span>
+              </div>
+              <span className="text-[9px] font-mono font-extrabold uppercase tracking-widest px-2 py-1 rounded border theme-border flex-shrink-0">
+                {sessionData?.status || 'PAUSED'}
+              </span>
+            </div>
+          )}
+
+          {/* =============== DASHBOARD =============== */}
+          {activeTab === 'DASHBOARD' && (
+            <>
+              <Reveal>
+                <GameTimerHero sessionData={sessionData} />
+              </Reveal>
+
+              {/* ---------------- Money tiles ---------------- */}
+              <Reveal className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4" delay={0.05}>
+                <StatTile
+                  label="Total worth"
+                  value={netWorth}
+                  suffix=" IC"
+                  tone="gold"
+                  Icon={Wallet}
+                  hint={
+                    (portfolio.lockedFunds || 0) > 0
+                      ? `cash + stocks (incl. ${fmtMoney(portfolio.lockedFunds)} IC held for orders)`
+                      : 'your cash plus your stocks'
+                  }
+                />
+                <StatTile
+                  label={totalProfit >= 0 ? 'Total profit' : 'Total loss'}
+                  value={Math.abs(totalProfit)}
+                  prefix={totalProfit >= 0 ? '+' : '-'}
+                  suffix=" IC"
+                  tone={totalProfit >= 0 ? 'up' : 'down'}
+                  Icon={totalProfit >= 0 ? TrendingUp : TrendingDown}
+                  hint={`you started with ${fmtMoney(startingBalance)} IC`}
+                  delta={totalProfitPercent}
+                />
+                <StatTile
+                  label="Money in stocks"
+                  value={liveHoldingsValue}
+                  suffix=" IC"
+                  tone="neutral"
+                  Icon={Layers}
+                  hint={`across ${portfolio.holdings?.length || 0} ${
+                    (portfolio.holdings?.length || 0) === 1 ? 'stock' : 'stocks'
+                  }`}
+                />
+                <StatTile
+                  label="Cash to spend"
+                  value={availableCash}
+                  suffix=" IC"
+                  tone="neutral"
+                  Icon={PieChart}
+                  hint={
+                    portfolio.lockedFunds > 0
+                      ? `${fmtMoney(portfolio.lockedFunds)} IC held for your waiting orders`
+                      : 'ready to buy'
+                  }
+                />
+              </Reveal>
+
+              {/* ---------------- Chart + news ---------------- */}
+              <Reveal className="grid grid-cols-1 lg:grid-cols-[minmax(0,2.1fr)_minmax(0,1fr)] gap-4">
+                <div id="main-chart">
+                  <ChartPanel
+                    stocks={stocks}
+                    selected={chartStock}
+                    onSelectStock={(s) => setChartStockId(s.id)}
+                    history={chartHistory}
+                    timeframe={timeframe}
+                    onTimeframeChange={setTimeframe}
+                    loadingHistory={loadingHistory}
+                    onQuickTrade={runQuickTrade}
+                    ownedQuantity={chartOwnedQty}
+                    isTradingLocked={isTradingLocked}
+                  />
+                </div>
+
+                <NewsPanel
+                  news={newsFeed}
+                  loading={loadingNews}
+                  onRefresh={fetchNewsFeed}
+                  onViewAll={() => setActiveTab('NEWS')}
+                />
+              </Reveal>
+
+              {/* ---------------- All stocks ---------------- */}
+              <Reveal as="section" className="space-y-3">
+                <div className="flex flex-wrap items-end justify-between gap-3">
+                  <div>
+                    <h3 className="text-[15px] font-heading font-extrabold theme-text-main flex items-center gap-2">
+                      All Stocks
+                      <span className="text-[11px] font-normal theme-text-dim">
+                        showing {visibleStocks.length} of {filteredStocks.length}
+                      </span>
+                    </h3>
+                    <p className="text-[11px] theme-text-muted mt-0.5">
+                      Tap any stock to see its chart, or use Buy and Sell right on the card
+                      {searchQuery && ` · searching “${searchQuery}”`}
+                    </p>
+                  </div>
+
+                  <div className="flex items-center gap-2">
+                    <select
+                      value={pageSize}
+                      onChange={(e) => setPageSize(Number(e.target.value))}
+                      aria-label="How many stocks to show"
+                      className="h-[28px] rounded-md border theme-border theme-bg-input px-2 text-[11px] font-mono theme-text-main focus:outline-none"
+                    >
+                      {PAGE_SIZES.map((n) => (
+                        <option key={n} value={n}>
+                          {n}
+                        </option>
+                      ))}
+                    </select>
+
+                    <div
+                      className="inline-flex items-center gap-0.5 p-0.5 rounded-md border theme-border"
+                      style={{ backgroundColor: 'var(--bg-input)' }}
+                      role="group"
+                      aria-label="Card size"
+                    >
+                      {[
+                        { key: 'compact', Icon: List, label: 'Small cards' },
+                        { key: 'grid', Icon: LayoutGrid, label: 'Big cards' }
+                      ].map(({ key, Icon, label }) => (
+                        <button
+                          key={key}
+                          type="button"
+                          onClick={() => setFloorView(key)}
+                          title={label}
+                          aria-label={label}
+                          aria-pressed={floorView === key}
+                          className="w-[26px] h-[24px] rounded flex items-center justify-center transition-colors"
+                          style={
+                            floorView === key
+                              ? {
+                                  backgroundColor:
+                                    'color-mix(in srgb, var(--accent) 18%, transparent)',
+                                  color: 'var(--accent)'
+                                }
+                              : { color: 'var(--text-dim)' }
+                          }
+                        >
+                          <Icon className="w-3.5 h-3.5" />
+                        </button>
+                      ))}
+                    </div>
+
+                    <button
+                      type="button"
+                      onClick={fetchStocks}
+                      aria-label="Refresh prices"
+                      className="w-[28px] h-[28px] rounded-md border theme-border theme-bg-input flex items-center justify-center theme-text-muted hover:theme-text-main transition-colors"
+                    >
+                      <RefreshCw
+                        className={`w-3.5 h-3.5 ${loadingStocks ? 'animate-spin' : ''}`}
+                      />
+                    </button>
+                  </div>
+                </div>
+
+                {loadingStocks ? (
+                  <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-3">
+                    {[...Array(8)].map((_, i) => (
+                      <div key={i} className="h-[148px] rounded-lg animate-shimmer" />
+                    ))}
+                  </div>
+                ) : filteredStocks.length === 0 ? (
+                  <div className="surface py-12 text-center text-[11px] font-mono theme-text-dim">
+                    No stock matches “{searchQuery}”. Try a different name.
+                  </div>
+                ) : (
+                  <div
+                    className={
+                      floorView === 'grid'
+                        ? 'grid grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-3'
+                        : 'grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 xl:grid-cols-8 gap-2'
+                    }
+                  >
+                    {visibleStocks.map((stock, i) => (
+                      <FloorCard
+                        key={stock.id}
+                        stock={stock}
+                        holding={holdingFor(stock.id)}
+                        index={i}
+                        flash={stockFlashes[stock.id]}
+                        variant={floorView === 'grid' ? 'grid' : 'compact'}
+                        isActive={stock.id === chartStock?.id}
+                        isTradingLocked={isTradingLocked}
+                        onSelect={handleSelectFromFloor}
+                        onTrade={handleCardTrade}
+                      />
+                    ))}
+                  </div>
+                )}
+
+                {filteredStocks.length > pageSize && (
+                  <button
+                    type="button"
+                    onClick={() =>
+                      setPageSize((n) => Math.min(n + 15, filteredStocks.length))
+                    }
+                    className="w-full py-2 rounded-lg border border-dashed theme-border text-[11px] font-mono theme-text-muted hover:theme-text-main hover:theme-bg-card-hover transition-colors"
+                  >
+                    Show {Math.min(15, filteredStocks.length - pageSize)} more stocks
+                  </button>
+                )}
+              </Reveal>
+
+              {/* ---------------- What I own ---------------- */}
+              <Reveal>
+              <MyStocks
+                holdings={portfolio.holdings || []}
+                stocks={stocks}
+                onSell={handleOpenDetail}
+                onShowChart={handleSelectFromFloor}
+              />
+              </Reveal>
+
+              {/* ---------------- What I've traded ---------------- */}
+              <Reveal>
+                <MyTrades transactions={portfolio.transactions || []} limit={6} />
+              </Reveal>
+
+            </>
+          )}
+
+          {/* =============== ORDERS TAB =============== */}
+          {activeTab === 'ORDERS' && (
+            <OrdersTab
+              portfolio={portfolio}
+              cancellingOrderId={cancellingOrderId}
+              onCancel={handleCancelOrder}
+              onEdit={setEditingOrder}
+            />
+          )}
+
+          {/* =============== NEWS TAB =============== */}
+          {activeTab === 'NEWS' && (
+            <NewsTab news={newsFeed} loading={loadingNews} onRefresh={fetchNewsFeed} />
+          )}
+        </main>
+      </div>
+
+      {/* ---------------- Overlays ---------------- */}
+      <ScrollProgressBar />
+      <BackToTopButton />
+
+      <ToastStack toasts={toasts} onDismiss={dismissToast} />
+
       <TradeFeedbackOverlay
         status={feedbackOverlay?.status}
         message={feedbackOverlay?.message}
         onClose={() => setFeedbackOverlay(null)}
       />
 
-      {toast && (
-        <div className={`fixed top-4 right-4 z-50 flex items-center gap-3 px-4 py-3 rounded-[6px] shadow-2xl border transition-all animate-bounce ${
-          toast.type === 'error'
-            ? 'bg-[#E8453C]/90 border-[#E8453C] text-white font-mono text-xs font-bold'
-            : 'bg-[#1DB954]/90 border-[#1DB954] text-slate-950 font-mono text-xs font-bold'
-        }`}>
-          {toast.type === 'error' ? <AlertCircle className="w-5 h-5 text-white" /> : <CheckCircle2 className="w-5 h-5 text-slate-950" />}
-          <span>{toast.message}</span>
-        </div>
-      )}
-
       <NewsToast news={activeNewsToast} onClose={() => setActiveNewsToast(null)} />
 
-      <Navbar
-        activeTab={activeTab}
-        setActiveTab={setActiveTab}
-        walletBalance={portfolio.availableWalletBalance !== undefined ? portfolio.availableWalletBalance : portfolio.walletBalance}
-        lockedFunds={portfolio.lockedFunds || 0}
-        newsCount={Array.isArray(newsFeed) ? newsFeed.length : 0}
-        onSessionUpdate={setSessionData}
-        onOpenTour={() => setIsTourOpen(true)}
-      />
-
-      <LiveTickerMarquee stocks={stocks} onSelectStock={handleOpenDetail} />
-
-      <OnboardingTour
-        isOpen={isTourOpen}
-        onClose={() => setIsTourOpen(false)}
-      />
-
       <StockDetailModal
-        stock={liveSelectedStock}
+        stock={liveDetailStock}
         userWallet={portfolio.walletBalance}
-        userHolding={liveSelectedStock ? getHoldingForStock(liveSelectedStock.id) : null}
-        isOpen={isDetailModalOpen}
-        onClose={() => setIsDetailModalOpen(false)}
-        onSuccess={handleTradeSuccess}
+        userHolding={liveDetailStock ? holdingFor(liveDetailStock.id) : null}
+        isOpen={isDetailOpen}
+        initialMode={detailSide}
+        onClose={() => setIsDetailOpen(false)}
+        onSuccess={(message, updated) => {
+          pushToast(message, 'success', 'Order confirmed');
+          if (updated) setPortfolio((prev) => ({ ...prev, ...updated }));
+          else fetchPortfolio();
+        }}
         isTradingLocked={isTradingLocked}
       />
 
-      <main className="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-6 space-y-6">
+      <EditOrderDialog
+        open={!!editingOrder}
+        order={editingOrder}
+        livePrice={
+          editingOrder
+            ? stocks.find((st) => st.id === editingOrder.stockId)?.currentPrice
+            : undefined
+        }
+        onSave={handleEditOrder}
+        onCancel={() => setEditingOrder(null)}
+      />
 
-        {/* TRADING LOCK BANNER */}
-        {(!sessionData || sessionData.status !== 'ACTIVE' || sessionData.isTradingLocked) && (
-          <div className="p-4 bg-amber-500/10 border border-amber-500/40 rounded-[6px] text-amber-400 text-xs font-mono flex items-center justify-between shadow-lg animate-fadeIn">
-            <div className="flex items-center gap-2 font-bold">
-              <Clock className="w-5 h-5 animate-pulse text-amber-400" />
-              <span>
-                {sessionData?.status === 'NOT_STARTED' || !sessionData?.status
-                  ? 'MARKET CLOSED — WAITING FOR HOST/ADMIN TO START SESSION'
-                  : sessionData?.status === 'LIQUIDATING'
-                  ? 'GAME ENDING SOON — ALL STOCKS CONVERTING BACK TO CASH'
-                  : 'SESSION FINISHED — FINAL RANKINGS ARE LOCKED'}
-              </span>
-            </div>
-            <span className="text-[10px] bg-amber-500/20 px-2.5 py-1 rounded font-mono font-extrabold uppercase border border-amber-500/30">
-              {sessionData?.status || 'PAUSED'}
-            </span>
+      <OnboardingTour isOpen={isTourOpen} onClose={() => setIsTourOpen(false)} />
+    </div>
+  );
+}
+
+/* ==================================================================
+   News side panel
+   ================================================================== */
+function NewsPanel({ news, loading, onRefresh, onViewAll }) {
+  return (
+    <div className="surface flex flex-col" style={{ boxShadow: 'var(--card-shadow)' }}>
+      <div className="flex items-center justify-between px-3.5 py-3 border-b theme-border">
+        <h3 className="text-[12px] font-heading font-bold theme-text-main flex items-center gap-1.5">
+          <Newspaper className="w-3.5 h-3.5" style={{ color: 'var(--accent)' }} />
+          Market news
+        </h3>
+        <div className="flex items-center gap-1.5">
+          <button
+            type="button"
+            onClick={onRefresh}
+            aria-label="Refresh news"
+            className="p-1 rounded theme-text-dim hover:theme-text-main transition-colors"
+          >
+            <RefreshCw className={`w-3 h-3 ${loading ? 'animate-spin' : ''}`} />
+          </button>
+          <button
+            type="button"
+            onClick={onViewAll}
+            className="text-[10px] font-mono transition-colors hover:underline"
+            style={{ color: 'var(--accent)' }}
+          >
+            View all
+          </button>
+        </div>
+      </div>
+
+      <div className="flex-1 p-2.5 space-y-2 max-h-[380px] overflow-y-auto">
+        {news.length === 0 ? (
+          <div className="h-full min-h-[120px] flex items-center justify-center text-center px-4">
+            <p className="text-[10.5px] theme-text-dim leading-relaxed">
+              Nothing on the wire yet. When the desk breaks a story, prices move
+              within seconds.
+            </p>
           </div>
+        ) : (
+          news.slice(0, 12).map((item, i) => (
+            <article
+              key={item.id || i}
+              className="surface-panel px-2.5 py-2 space-y-1 animate-card-rise"
+              style={{ animationDelay: `${Math.min(i * 35, 300)}ms` }}
+            >
+              <div className="flex items-center justify-between text-[9px] font-mono">
+                <span
+                  className="font-bold uppercase tracking-widest"
+                  style={{ color: 'var(--accent)' }}
+                >
+                  ● Analyst wire
+                </span>
+                <span className="theme-text-dim">
+                  {new Date(item.timestamp || Date.now()).toLocaleTimeString('en-IN', {
+                    hour12: false
+                  })}
+                </span>
+              </div>
+              <p className="text-[11px] theme-text-main leading-snug">{item.message}</p>
+            </article>
+          ))
         )}
+      </div>
+    </div>
+  );
+}
 
-        {/* TAB 1: LIVE MARKET & ASYMMETRIC DASHBOARD */}
-        {activeTab === 'MARKET' && (
-          <div className="grid grid-cols-12 gap-6">
-            
-            {/* DOMINANT LEFT COLUMN (col-span-12 lg:col-span-8): Main Exchange & Holdings */}
-            <div className="col-span-12 lg:col-span-8 space-y-6">
-              
-              {/* Summary Metrics Cards */}
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                <div className="theme-bg-card border theme-border p-4 rounded-[6px] flex items-center justify-between">
-                  <div>
-                    <div className="text-[10px] theme-text-muted uppercase font-mono font-bold tracking-wider">Total Wealth</div>
-                    <div className="text-xl font-extrabold theme-text-main mt-0.5 font-mono">
-                      <AnimatedNumber value={portfolio.totalPortfolioValue} decimals={2} suffix=" IC" className="text-[#D4A017]" />
-                    </div>
-                  </div>
-                  <div className="p-2.5 bg-[#D4A017]/10 border border-[#D4A017]/30 rounded-[4px] text-[#D4A017]">
-                    <PieChart className="w-5 h-5" />
-                  </div>
-                </div>
+/* ==================================================================
+   Orders tab
+   ================================================================== */
+function OrdersTab({ portfolio, cancellingOrderId, onCancel, onEdit }) {
+  const orders = portfolio.pendingOrders || [];
 
-                <div className="theme-bg-card border theme-border p-4 rounded-[6px] flex items-center justify-between">
-                  <div>
-                    <div className="text-[10px] theme-text-muted uppercase font-mono font-bold tracking-wider">Stock Value</div>
-                    <div className="text-xl font-extrabold theme-text-main mt-0.5 font-mono">
-                      <AnimatedNumber value={portfolio.totalHoldingsValue || 0} decimals={2} suffix=" IC" className="text-[#D4A017]" />
-                    </div>
-                  </div>
-                  <div className="p-2.5 bg-[#1DB954]/10 border border-[#1DB954]/30 rounded-[4px] text-[#1DB954]">
-                    <ShoppingBag className="w-5 h-5" />
-                  </div>
-                </div>
-
-                <div className="theme-bg-card border theme-border p-4 rounded-[6px] flex items-center justify-between">
-                  <div>
-                    <div className="text-[10px] theme-text-muted uppercase font-mono font-bold tracking-wider">Total Profit / Loss</div>
-                    <div className={`text-xl font-extrabold mt-0.5 font-mono ${
-                      (portfolio.totalUnrealizedPL || 0) >= 0 ? 'text-[#1DB954]' : 'text-[#E8453C]'
-                    }`}>
-                      {(portfolio.totalUnrealizedPL || 0) >= 0 ? '+' : ''}
-                      <AnimatedNumber value={portfolio.totalUnrealizedPL || 0} decimals={2} suffix=" IC" />
-                    </div>
-                  </div>
-                  <div className={`p-2.5 rounded-[4px] border ${
-                    (portfolio.totalUnrealizedPL || 0) >= 0
-                      ? 'bg-[#1DB954]/10 border-[#1DB954]/30 text-[#1DB954]'
-                      : 'bg-[#E8453C]/10 border-[#E8453C]/30 text-[#E8453C]'
-                  }`}>
-                    {(portfolio.totalUnrealizedPL || 0) >= 0 ? <TrendingUp className="w-5 h-5" /> : <TrendingDown className="w-5 h-5" />}
-                  </div>
-                </div>
-              </div>
-
-              {/* 15 India Stock Exchange Grid with Top Gainer Featured Card */}
-              <div className="space-y-4">
-                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 theme-bg-card p-4 rounded-[6px] border theme-border">
-                  <div>
-                    <h2 className="text-base font-bold theme-text-main font-heading uppercase tracking-wide flex items-center gap-2">
-                      <Flame className="w-4 h-4 text-[#D4A017] animate-pulse" />
-                      LIVE MARKET EXCHANGE (15 INDUSTRIES)
-                    </h2>
-                    <p className="text-xs theme-text-muted font-medium">Live simulated market updating every second across 15 Indian industries</p>
-                  </div>
-
-                  <div className="relative w-full sm:w-64">
-                    <Search className="absolute left-3 top-2.5 w-4 h-4 theme-text-dim" />
-                    <input
-                      type="text"
-                      value={searchQuery}
-                      onChange={(e) => setSearchQuery(e.target.value)}
-                      placeholder="Filter symbol or sector..."
-                      className="w-full theme-bg-panel border theme-border rounded-[4px] py-1.5 pl-9 pr-3 text-xs theme-text-main placeholder:theme-text-dim focus:outline-none focus:border-[#D4A017] transition-all min-h-[36px] font-mono"
-                    />
-                  </div>
-                </div>
-
-                {loadingStocks ? (
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                    {[...Array(6)].map((_, i) => (
-                      <StockCardSkeleton key={i} />
-                    ))}
-                  </div>
-                ) : (
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                    {filteredStocks.map((stock) => (
-                      <StockCard
-                        key={stock.id}
-                        stock={stock}
-                        holding={getHoldingForStock(stock.id)}
-                        availableWallet={portfolio.availableWalletBalance !== undefined ? portfolio.availableWalletBalance : portfolio.walletBalance}
-                        onOpenDetail={handleOpenDetail}
-                        onQuickTrade={handleQuickTrade}
-                        priceFlash={stockFlashes[stock.id]}
-                        isTradingLocked={isTradingLocked}
-                      />
-                    ))}
-                  </div>
-                )}
-              </div>
-
-              {/* Holdings Portfolio Table */}
-              <div className="theme-bg-card p-5 rounded-[6px] border theme-border space-y-4">
-                <div className="flex items-center gap-2">
-                  <div className="p-2 bg-[#D4A017]/10 border border-[#D4A017]/30 rounded-[4px] text-[#D4A017]">
-                    <PieChart className="w-4 h-4" />
-                  </div>
-                  <div>
-                    <h2 className="text-sm font-bold theme-text-main uppercase font-heading tracking-wider">Your Stocks</h2>
-                    <p className="text-xs theme-text-muted">Your current stocks, purchase price, and profit/loss</p>
-                  </div>
-                </div>
-
-                <div className="overflow-x-auto">
-                  <table className="w-full text-left border-collapse text-xs">
-                    <thead>
-                      <tr className="border-b theme-border theme-text-muted font-mono uppercase tracking-wider text-[11px]">
-                        <th className="py-2.5 px-3">Stock</th>
-                        <th className="py-2.5 px-3 text-right">Shares</th>
-                        <th className="py-2.5 px-3 text-right">Price Paid</th>
-                        <th className="py-2.5 px-3 text-right">Current Price</th>
-                        <th className="py-2.5 px-3 text-right">Profit / Loss</th>
-                        <th className="py-2.5 px-3 text-center">Action</th>
-                      </tr>
-                    </thead>
-                    <tbody className="divide-y theme-border">
-                      {(!portfolio.holdings || portfolio.holdings.length === 0) ? (
-                        <tr>
-                          <td colSpan={6} className="py-8 text-center theme-text-dim font-mono text-xs">
-                            No active positions. Select any stock above to place a trade!
-                          </td>
-                        </tr>
-                      ) : (
-                        portfolio.holdings.map((h) => {
-                          const matchedStock = stocks.find((s) => s.id === h.stockId) || {
-                            id: h.stockId,
-                            symbol: h.symbol,
-                            name: h.name,
-                            currentPrice: h.currentPrice
-                          };
-                          const livePrice = matchedStock.currentPrice || h.currentPrice || 0;
-                          const liveTotalValue = Math.round(h.quantity * livePrice * 100) / 100;
-                          const totalCost = Math.round(h.quantity * h.avgBuyPrice * 100) / 100;
-                          const liveUnrealizedPL = Math.round((liveTotalValue - totalCost) * 100) / 100;
-                          const liveUnrealizedPLPercent = totalCost > 0
-                            ? Math.round(((liveUnrealizedPL / totalCost) * 100) * 100) / 100
-                            : 0;
-                          const isPositive = liveUnrealizedPL >= 0;
-
-                          return (
-                            <tr key={h.id} className="theme-bg-card-hover transition-colors">
-                              <td className="py-2.5 px-3">
-                                <span className="font-bold theme-text-main font-mono">{h.symbol}</span>
-                                <div className="text-[10px] theme-text-muted">{h.name}</div>
-                              </td>
-                              <td className="py-2.5 px-3 text-right font-mono theme-text-main font-semibold">
-                                <div>{h.quantity}</div>
-                                {h.lockedQuantity > 0 && (
-                                  <div className="text-[10px] text-[#D4A017] font-normal">
-                                    ({h.availableQuantity} avail / {h.lockedQuantity} locked)
-                                  </div>
-                                )}
-                              </td>
-                              <td className="py-2.5 px-3 text-right font-mono theme-text-muted">
-                                {(h.avgBuyPrice || 0).toFixed(2)} IC
-                              </td>
-                              <td className="py-2.5 px-3 text-right font-mono theme-text-main font-semibold">
-                                <AnimatedNumber value={livePrice} decimals={2} suffix=" IC" />
-                              </td>
-                              <td className="py-2.5 px-3 text-right">
-                                <div className={`font-mono font-bold ${isPositive ? 'text-[#1DB954]' : 'text-[#E8453C]'}`}>
-                                  {isPositive ? '+' : ''}
-                                  <AnimatedNumber value={liveUnrealizedPL} decimals={2} suffix=" IC" />
-                                </div>
-                                <div className={`text-[10px] font-mono ${isPositive ? 'text-[#1DB954]' : 'text-[#E8453C]'}`}>
-                                  ({isPositive ? '+' : ''}{liveUnrealizedPLPercent.toFixed(2)}%)
-                                </div>
-                              </td>
-                              <td className="py-2.5 px-3 text-center">
-                                <button
-                                  onClick={() => handleOpenDetail(matchedStock)}
-                                  className="px-2.5 py-1 bg-[#E8453C]/10 hover:bg-[#E8453C]/20 text-[#E8453C] border border-[#E8453C]/30 text-[11px] font-bold font-heading rounded-[4px] transition-all min-h-[30px] btn-terminal"
-                                >
-                                  Trade / Sell
-                                </button>
-                              </td>
-                            </tr>
-                          );
-                        })
-                      )}
-                    </tbody>
-                  </table>
-                </div>
-              </div>
-
-            </div>
-
-            {/* PERSISTENT RIGHT COLUMN (col-span-12 lg:col-span-4): Money & Assets, Auto-Orders & News Wire */}
-            <div className="col-span-12 lg:col-span-4 space-y-6">
-              
-              {/* Money & Assets Summary */}
-              <div className="theme-bg-card p-4 rounded-[6px] border theme-border space-y-3">
-                <div className="flex items-center justify-between border-b theme-border pb-2">
-                  <span className="text-xs font-bold uppercase theme-text-main font-heading flex items-center gap-1.5">
-                    <Shield className="w-4 h-4 text-[#D4A017]" />
-                    MONEY & ASSETS
-                  </span>
-                  <span className="text-[10px] font-mono text-[#D4A017]">READY</span>
-                </div>
-
-                <div className="space-y-2 text-xs font-mono">
-                  <div className="flex justify-between items-center">
-                    <span className="theme-text-muted">Available Cash:</span>
-                    <strong className="theme-text-main font-bold text-sm">
-                      {(portfolio.availableWalletBalance !== undefined ? portfolio.availableWalletBalance : portfolio.walletBalance).toLocaleString('en-US', { minimumFractionDigits: 2 })} IC
-                    </strong>
-                  </div>
-
-                  <div className="flex justify-between items-center text-[11px]">
-                    <span className="theme-text-muted">Reserved in Auto-Orders:</span>
-                    <span className="text-[#D4A017]">
-                      {(portfolio.lockedFunds || 0).toFixed(2)} IC
-                    </span>
-                  </div>
-
-                  <div className="flex justify-between items-center text-[11px]">
-                    <span className="theme-text-muted">Total Stock Value:</span>
-                    <span className="theme-text-main">
-                      {liveTotalHoldingsValue.toFixed(2)} IC
-                    </span>
-                  </div>
-                </div>
-              </div>
-
-              {/* Pending Auto Orders Panel */}
-              {portfolio.pendingOrders && portfolio.pendingOrders.length > 0 && (
-                <div className="theme-bg-card p-4 rounded-[6px] border border-[#D4A017]/40 space-y-3">
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-1.5 text-xs font-bold text-[#D4A017] uppercase tracking-wider font-heading">
-                      <Clock className="w-4 h-4" />
-                      <span>Active Auto-Orders ({portfolio.pendingOrders.length})</span>
-                    </div>
-                  </div>
-
-                  <div className="space-y-2">
-                    {portfolio.pendingOrders.map((order) => (
-                      <div key={order.id} className="p-2.5 theme-bg-panel rounded-[4px] border theme-border flex items-center justify-between text-xs font-mono">
-                        <div>
-                          <div className="flex items-center gap-1.5">
-                            <span className={`px-1.5 py-0.2 rounded-[2px] text-[9px] font-extrabold ${
-                              order.type === 'BUY'
-                                ? 'bg-[#1DB954]/20 text-[#1DB954] border border-[#1DB954]/30'
-                                : 'bg-[#E8453C]/20 text-[#E8453C] border border-[#E8453C]/30'
-                            }`}>
-                              LIMIT {order.type}
-                            </span>
-                            <span className="font-bold theme-text-main">{order.stock?.symbol || 'STOCK'}</span>
-                          </div>
-                          <div className="text-[10px] theme-text-muted mt-1">
-                            {order.quantity} shrs @ <strong className="text-[#D4A017]">{order.targetPrice.toFixed(2)} IC</strong>
-                          </div>
-                        </div>
-
-                        <button
-                          onClick={() => handleCancelOrder(order.id)}
-                          disabled={cancellingOrderId === order.id}
-                          className="px-2.5 py-1 bg-[#E8453C]/10 hover:bg-[#E8453C]/20 text-[#E8453C] border border-[#E8453C]/30 text-[10px] font-bold rounded-[3px] flex items-center gap-1 transition-all btn-terminal"
-                        >
-                          <Ban className="w-3 h-3" />
-                          {cancellingOrderId === order.id ? '...' : 'Cancel'}
-                        </button>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              )}
-
-              {/* Persistent Live Analyst News Wire Widget */}
-              <div className="theme-bg-card p-4 rounded-[6px] border theme-border space-y-3">
-                <div className="flex items-center justify-between border-b theme-border pb-2">
-                  <span className="text-xs font-bold uppercase theme-text-main font-heading flex items-center gap-1.5">
-                    <Newspaper className="w-4 h-4 text-[#D4A017]" />
-                    ANALYST WIRE LOG
-                  </span>
-                  <button
-                    onClick={fetchNewsFeed}
-                    className="text-[10px] font-mono text-[#D4A017] hover:underline flex items-center gap-1"
-                  >
-                    <RefreshCw className={`w-3 h-3 ${loadingNews ? 'animate-spin' : ''}`} />
-                    Refresh
-                  </button>
-                </div>
-
-                <div className="space-y-2.5 max-h-80 overflow-y-auto pr-1">
-                  {(!Array.isArray(newsFeed) || newsFeed.length === 0) ? (
-                    <div className="text-center py-6 theme-text-dim text-xs font-mono italic">
-                      No analyst broadcasts recorded yet.
-                    </div>
-                  ) : (
-                    newsFeed.slice(0, 8).map((newsItem, index) => (
-                      <div key={newsItem.id || index} className="p-2.5 theme-bg-panel rounded-[4px] border theme-border text-xs space-y-1">
-                        <div className="flex items-center justify-between text-[10px] font-mono">
-                          <span className="text-[#D4A017] font-bold">● ANALYST WIRE</span>
-                          <span className="theme-text-dim">{new Date(newsItem.timestamp || Date.now()).toLocaleTimeString()}</span>
-                        </div>
-                        <p className="theme-text-main text-[11px] font-medium leading-tight">
-                          "{newsItem.message}"
-                        </p>
-                      </div>
-                    ))
-                  )}
-                </div>
-              </div>
-
-              {/* Recent Trade Audit Log */}
-              <div className="theme-bg-card p-4 rounded-[6px] border theme-border space-y-3">
-                <div className="flex items-center gap-1.5 border-b theme-border pb-2">
-                  <History className="w-4 h-4 text-[#D4A017]" />
-                  <h3 className="text-xs font-bold theme-text-main uppercase font-heading">Recent Executions</h3>
-                </div>
-
-                <div className="space-y-2 max-h-56 overflow-y-auto pr-1 text-xs font-mono">
-                  {(!portfolio.transactions || portfolio.transactions.length === 0) ? (
-                    <div className="text-center py-4 theme-text-dim italic text-[11px]">
-                      No transactions recorded.
-                    </div>
-                  ) : (
-                    portfolio.transactions.slice(0, 6).map((tx) => {
-                      const isBuy = tx.type === 'BUY';
-                      const safePrice = tx.price || 0;
-                      const safeQty = tx.quantity || 0;
-                      return (
-                        <div key={tx.id || Math.random()} className="p-2 theme-bg-panel rounded-[4px] border theme-border flex items-center justify-between">
-                          <div className="flex items-center gap-1.5">
-                            <span className={`px-1.5 py-0.2 rounded-[2px] text-[9px] font-extrabold ${
-                              isBuy ? 'bg-[#1DB954]/20 text-[#1DB954]' : 'bg-[#E8453C]/20 text-[#E8453C]'
-                            }`}>
-                              {tx.type}
-                            </span>
-                            <span className="font-bold theme-text-main">{tx.stock?.symbol || 'STOCK'}</span>
-                            <span className="theme-text-muted text-[10px]">({safeQty} @ {safePrice.toFixed(2)})</span>
-                          </div>
-                          <span className="font-bold theme-text-main text-[11px]">
-                            {(safeQty * safePrice).toFixed(2)} IC
-                          </span>
-                        </div>
-                      );
-                    })
-                  )}
-                </div>
-              </div>
-
-            </div>
-
+  return (
+    <div className="space-y-4">
+      <Reveal as="section" className="surface" style={{ boxShadow: 'var(--card-shadow)' }}>
+        <div className="flex flex-wrap items-center justify-between gap-2 px-4 py-3.5 border-b theme-border">
+          <div>
+            <h3 className="text-[15px] font-heading font-bold theme-text-main flex items-center gap-2">
+              <Clock className="w-4 h-4" style={{ color: 'var(--accent)' }} />
+              Waiting Orders
+            </h3>
+            <p className="text-[11px] theme-text-muted mt-0.5">
+              These buy or sell on their own as soon as the stock hits your price
+            </p>
           </div>
-        )}
+          <span
+            className="px-2.5 py-1 rounded text-[11px] font-semibold flex-shrink-0"
+            style={{
+              backgroundColor: 'color-mix(in srgb, var(--accent) 13%, transparent)',
+              color: 'var(--accent)'
+            }}
+          >
+            {orders.length} waiting
+          </span>
+        </div>
 
-        {/* TAB 2: DEDICATED FULL NEWS FEED TAB */}
-        {activeTab === 'NEWS' && (
-          <div className="theme-bg-card p-6 rounded-[6px] border theme-border space-y-6">
-            <div className="flex items-center justify-between border-b theme-border pb-4">
-              <div className="flex items-center gap-3">
-                <div className="p-2.5 bg-[#D4A017]/10 border border-[#D4A017]/30 rounded-[4px] text-[#D4A017]">
-                  <Newspaper className="w-5 h-5" />
-                </div>
-                <div>
-                  <h2 className="text-base font-bold theme-text-main font-heading uppercase">
-                    Official Exchange Analyst Wire Feed
-                  </h2>
-                  <p className="text-xs theme-text-muted">
-                    Historical and live market headlines. Sector announcements trigger automated price movements.
-                  </p>
-                </div>
+        <div className="p-3 space-y-2">
+          {orders.length === 0 ? (
+            <div className="py-12 text-center">
+              <Clock
+                className="w-7 h-7 mx-auto mb-2.5"
+                style={{ color: 'var(--text-dim)' }}
+              />
+              <div className="text-[13px] theme-text-main font-semibold">
+                No waiting orders
               </div>
-
-              <button
-                onClick={fetchNewsFeed}
-                disabled={loadingNews}
-                className="flex items-center gap-1.5 px-3 py-1.5 theme-bg-panel hover:theme-bg-card-hover theme-text-main text-xs font-heading font-bold rounded-[4px] transition-all border theme-border min-h-[34px] btn-terminal"
-              >
-                <RefreshCw className={`w-3.5 h-3.5 ${loadingNews ? 'animate-spin' : ''}`} />
-                Refresh Wire
-              </button>
+              <div className="text-[11.5px] theme-text-muted mt-1 max-w-[340px] mx-auto">
+                Open any stock, switch to <strong>Limit Order</strong>, and pick the price
+                you want. We'll buy or sell for you when it gets there.
+              </div>
             </div>
+          ) : (
+            orders.map((order, i) => {
+              const isBuy = order.type === 'BUY';
+              const color = isBuy ? 'var(--gain-green)' : 'var(--loss-red)';
 
-            {loadingNews ? (
-              <div className="space-y-3">
-                {[...Array(3)].map((_, i) => (
-                  <NewsFeedSkeleton key={i} />
-                ))}
-              </div>
-            ) : (!Array.isArray(newsFeed) || newsFeed.length === 0) ? (
-              <div className="py-16 text-center theme-text-dim text-xs font-mono italic">
-                No market news broadcasts recorded yet.
-              </div>
-            ) : (
-              <div className="space-y-3">
-                {newsFeed.map((newsItem, index) => (
-                  <div
-                    key={newsItem.id || index}
-                    className="theme-bg-panel p-4 rounded-[6px] border theme-border hover:border-[#D4A017]/40 transition-all flex flex-col gap-2"
-                  >
-                    <div className="flex items-center justify-between text-xs font-mono">
-                      <div className="flex items-center gap-2">
-                        <span className="px-2 py-0.5 rounded-[3px] text-[10px] font-extrabold uppercase bg-[#D4A017]/20 text-[#D4A017] border border-[#D4A017]/30">
-                          FINANCIAL WIRE
-                        </span>
-                        <span className="theme-text-muted font-medium text-[11px]">
-                          {new Date(newsItem.timestamp || Date.now()).toLocaleString()}
+              return (
+                <div
+                  key={order.id}
+                  className="surface-panel px-3.5 py-3 flex flex-wrap items-center justify-between gap-3 animate-card-rise"
+                  style={{ animationDelay: `${Math.min(i * 40, 320)}ms` }}
+                >
+                  <div className="flex items-center gap-3 min-w-0">
+                    <span
+                      className="px-2 py-0.5 rounded text-[10.5px] font-bold flex-shrink-0"
+                      style={{
+                        backgroundColor: `color-mix(in srgb, ${color} 15%, transparent)`,
+                        color
+                      }}
+                    >
+                      {isBuy ? 'Will buy' : 'Will sell'}
+                    </span>
+                    <div className="min-w-0">
+                      <div className="text-[13px] font-semibold theme-text-main">
+                        {order.stock?.symbol || 'Stock'}
+                        <span className="theme-text-dim font-normal text-[11px] ml-1.5">
+                          {order.stock?.name || ''}
                         </span>
                       </div>
-                      <span className="text-[10px] theme-text-dim">
-                        Broadcast #{newsFeed.length - index}
-                      </span>
+                      <div className="text-[11px] theme-text-muted mt-0.5">
+                        {order.quantity} {order.quantity === 1 ? 'share' : 'shares'} when the
+                        price reaches{' '}
+                        <strong className="font-mono" style={{ color: 'var(--accent)' }}>
+                          {fmtMoney(order.targetPrice)} IC
+                        </strong>
+                      </div>
                     </div>
-
-                    <p className="text-sm font-semibold theme-text-main leading-relaxed">
-                      "{newsItem.message}"
-                    </p>
                   </div>
-                ))}
-              </div>
-            )}
-          </div>
-        )}
 
-      </main>
+                  <div className="flex items-center gap-2 flex-shrink-0">
+                    <button
+                      type="button"
+                      onClick={() => onEdit(order)}
+                      disabled={cancellingOrderId === order.id}
+                      className="flex items-center gap-1.5 px-3 py-1.5 rounded-md text-[11.5px] font-semibold transition-colors disabled:opacity-50"
+                      style={{
+                        backgroundColor:
+                          'color-mix(in srgb, var(--accent) 12%, transparent)',
+                        color: 'var(--accent)'
+                      }}
+                    >
+                      <Pencil className="w-3.5 h-3.5" />
+                      Change
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={() => onCancel(order.id)}
+                      disabled={cancellingOrderId === order.id}
+                      className="flex items-center gap-1.5 px-3 py-1.5 rounded-md text-[11.5px] font-semibold transition-colors disabled:opacity-50"
+                      style={{
+                        backgroundColor:
+                          'color-mix(in srgb, var(--loss-red) 12%, transparent)',
+                        color: 'var(--loss-red)'
+                      }}
+                    >
+                      <Ban className="w-3.5 h-3.5" />
+                      {cancellingOrderId === order.id ? 'Cancelling…' : 'Cancel'}
+                    </button>
+                  </div>
+                </div>
+              );
+            })
+          )}
+        </div>
+      </Reveal>
+
+      <Reveal delay={0.06}>
+        <MyTrades
+          transactions={portfolio.transactions || []}
+          limit={20}
+          title="Past Trades"
+        />
+      </Reveal>
+    </div>
+  );
+}
+
+/* ==================================================================
+   News tab
+   ================================================================== */
+function NewsTab({ news, loading, onRefresh }) {
+  return (
+    <div className="surface" style={{ boxShadow: 'var(--card-shadow)' }}>
+      <div className="flex items-center justify-between px-4 py-3.5 border-b theme-border">
+        <div>
+          <h3 className="text-[13px] font-heading font-bold theme-text-main flex items-center gap-1.5">
+            <Newspaper className="w-4 h-4" style={{ color: 'var(--accent)' }} />
+            Analyst wire
+          </h3>
+          <p className="text-[10px] theme-text-dim mt-0.5">
+            Every broadcast this session — sector headlines move prices within seconds
+          </p>
+        </div>
+
+        <button
+          type="button"
+          onClick={onRefresh}
+          disabled={loading}
+          className="flex items-center gap-1.5 px-2.5 h-[30px] rounded-md border theme-border theme-bg-input text-[11px] font-heading font-bold theme-text-muted hover:theme-text-main transition-colors disabled:opacity-50"
+        >
+          <RefreshCw className={`w-3 h-3 ${loading ? 'animate-spin' : ''}`} />
+          Refresh
+        </button>
+      </div>
+
+      <div className="p-3 space-y-2">
+        {news.length === 0 ? (
+          <div className="py-16 text-center text-[11px] font-mono theme-text-dim">
+            No broadcasts recorded yet.
+          </div>
+        ) : (
+          news.map((item, i) => (
+            <article
+              key={item.id || i}
+              className="surface-panel px-3.5 py-3 space-y-1.5 animate-card-rise transition-colors hover:theme-bg-card-hover"
+              style={{ animationDelay: `${Math.min(i * 30, 400)}ms` }}
+            >
+              <div className="flex items-center justify-between gap-2 text-[9px] font-mono">
+                <span
+                  className="px-1.5 py-0.5 rounded font-extrabold uppercase tracking-widest"
+                  style={{
+                    backgroundColor:
+                      'color-mix(in srgb, var(--accent) 14%, transparent)',
+                    color: 'var(--accent)'
+                  }}
+                >
+                  Financial wire
+                </span>
+                <span className="theme-text-dim">
+                  {new Date(item.timestamp || Date.now()).toLocaleString('en-IN', {
+                    hour12: false
+                  })}
+                </span>
+              </div>
+              <p className="text-[12px] theme-text-main leading-relaxed">
+                {item.message}
+              </p>
+              <div className="text-[9px] font-mono theme-text-dim">
+                Broadcast #{news.length - i}
+              </div>
+            </article>
+          ))
+        )}
+      </div>
     </div>
   );
 }

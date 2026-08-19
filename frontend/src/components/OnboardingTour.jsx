@@ -7,7 +7,7 @@ const TOUR_STEPS = [
   {
     icon: TrendingUp,
     badge: "Step 1 of 4",
-    badgeColor: "text-[#D4A017] bg-[#D4A017]/10 border-[#D4A017]/30",
+    badgeColor: "text-[var(--accent)] bg-[color-mix(in_srgb,var(--accent)_10%,transparent)] border-[color-mix(in_srgb,var(--accent)_30%,transparent)]",
     title: "Live Market Exchange",
     headline: "Real-time Prices Across 15 Indian Industries",
     description: "Watch stock prices change second by second. See which industries are rising, track company trends, and decide when to jump in.",
@@ -72,10 +72,10 @@ export function OnboardingTour({ isOpen, onClose }) {
 
   return (
     <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/80 backdrop-blur-md animate-fadeIn">
-      <div className="relative w-full max-w-lg theme-bg-card border border-[#D4A017]/40 rounded-[12px] shadow-2xl p-6 sm:p-8 space-y-6 overflow-hidden">
+      <div className="relative w-full max-w-lg theme-bg-card border border-[color-mix(in_srgb,var(--accent)_40%,transparent)] rounded-[12px] shadow-2xl p-6 sm:p-8 space-y-6 overflow-hidden">
         
         {/* Glow effect behind modal */}
-        <div className="absolute -top-24 -left-24 w-48 h-48 bg-[#D4A017]/15 rounded-full blur-3xl pointer-events-none" />
+        <div className="absolute -top-24 -left-24 w-48 h-48 bg-[color-mix(in_srgb,var(--accent)_15%,transparent)] rounded-full blur-3xl pointer-events-none" />
         <div className="absolute -bottom-24 -right-24 w-48 h-48 bg-[#10B981]/15 rounded-full blur-3xl pointer-events-none" />
 
         {/* Top Header */}
@@ -99,14 +99,14 @@ export function OnboardingTour({ isOpen, onClose }) {
         {/* Icon & Title */}
         <div className="space-y-3 relative z-10">
           <div className="flex items-center gap-3">
-            <div className="p-3.5 bg-[#D4A017]/10 border border-[#D4A017]/30 rounded-[8px] text-[#D4A017] shadow-inner">
+            <div className="p-3.5 bg-[color-mix(in_srgb,var(--accent)_10%,transparent)] border border-[color-mix(in_srgb,var(--accent)_30%,transparent)] rounded-[8px] text-[var(--accent)] shadow-inner">
               <StepIcon className="w-6 h-6 animate-pulse" />
             </div>
             <div>
               <h2 className="text-lg sm:text-xl font-bold theme-text-main font-heading tracking-tight">
                 {step.title}
               </h2>
-              <div className="text-xs font-mono text-[#D4A017] font-semibold">
+              <div className="text-xs font-mono text-[var(--accent)] font-semibold">
                 {step.headline}
               </div>
             </div>
@@ -118,7 +118,7 @@ export function OnboardingTour({ isOpen, onClose }) {
 
           {/* Callout Tip */}
           <div className="p-3 rounded-[6px] theme-bg-panel border theme-border flex items-start gap-2.5 text-xs text-slate-300 font-mono">
-            <Sparkles className="w-4 h-4 text-[#D4A017] shrink-0 mt-0.5" />
+            <Sparkles className="w-4 h-4 text-[var(--accent)] shrink-0 mt-0.5" />
             <span className="leading-snug">{step.tip}</span>
           </div>
         </div>
@@ -132,7 +132,7 @@ export function OnboardingTour({ isOpen, onClose }) {
                 onClick={() => setCurrentStep(idx)}
                 className={`h-2 rounded-full transition-all duration-300 ${
                   idx === currentStep
-                    ? 'w-6 bg-[#D4A017]'
+                    ? 'w-6 bg-[var(--accent)]'
                     : idx < currentStep
                     ? 'w-2 bg-[#10B981]'
                     : 'w-2 bg-slate-700'
@@ -156,7 +156,7 @@ export function OnboardingTour({ isOpen, onClose }) {
 
             <button
               onClick={handleNext}
-              className="px-4 py-2 bg-[#D4A017] hover:bg-[#E5B020] text-slate-950 text-xs font-heading font-bold rounded-[6px] transition-all shadow-md active:scale-95 flex items-center gap-1.5 min-h-[38px] btn-terminal"
+              className="px-4 py-2 bg-[var(--accent)] hover:bg-[#E5B020] text-slate-950 text-xs font-heading font-bold rounded-[6px] transition-all shadow-md active:scale-95 flex items-center gap-1.5 min-h-[38px] btn-terminal"
             >
               <span>{isLast ? 'Start Trading!' : 'Next'}</span>
               {isLast ? <CheckCircle2 className="w-3.5 h-3.5" /> : <ArrowRight className="w-3.5 h-3.5" />}

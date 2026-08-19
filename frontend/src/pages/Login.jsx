@@ -95,7 +95,7 @@ export function Login() {
         >
           {theme === 'dark' ? (
             <>
-              <Sun className="w-4 h-4 text-[#D4A017]" />
+              <Sun className="w-4 h-4 text-[var(--accent)]" />
               <span>Light</span>
             </>
           ) : (
@@ -113,10 +113,10 @@ export function Login() {
           <button
             type="button"
             onClick={handleSecretTriggerClick}
-            className="inline-flex items-center gap-2.5 px-4 py-1.5 rounded-[4px] theme-bg-card border border-[#D4A017]/40 text-[#D4A017] text-xs font-mono font-bold mb-4 shadow-sm select-none active:scale-95 transition-all cursor-pointer"
+            className="inline-flex items-center gap-2.5 px-4 py-1.5 rounded-[4px] theme-bg-card border border-[color-mix(in_srgb,var(--accent)_40%,transparent)] text-[var(--accent)] text-xs font-mono font-bold mb-4 shadow-sm select-none active:scale-95 transition-all cursor-pointer"
             title="Ignite Coins Exchange"
           >
-            <Coins className="w-4 h-4 text-[#D4A017]" />
+            <Coins className="w-4 h-4 text-[var(--accent)]" />
             <span>EQUITY ARENA (IC) EXCHANGE</span>
           </button>
 
@@ -135,7 +135,7 @@ export function Login() {
               type="button"
               onClick={() => { setActiveTab('TRADER_SIGNIN'); setError(''); }}
               className={`flex-1 py-2 text-xs font-bold font-heading uppercase rounded-[3px] transition-all min-h-[38px] ${
-                activeTab === 'TRADER_SIGNIN' ? 'bg-[#D4A017] text-slate-950 shadow-sm' : 'theme-text-muted hover:theme-text-main'
+                activeTab === 'TRADER_SIGNIN' ? 'bg-[var(--accent)] text-slate-950 shadow-sm' : 'theme-text-muted hover:theme-text-main'
               }`}
             >
               Sign In
@@ -144,7 +144,7 @@ export function Login() {
               type="button"
               onClick={() => { setActiveTab('TRADER_REGISTER'); setError(''); }}
               className={`flex-1 py-2 text-xs font-bold font-heading uppercase rounded-[3px] transition-all min-h-[38px] ${
-                activeTab === 'TRADER_REGISTER' ? 'bg-[#D4A017] text-slate-950 shadow-sm' : 'theme-text-muted hover:theme-text-main'
+                activeTab === 'TRADER_REGISTER' ? 'bg-[var(--accent)] text-slate-950 shadow-sm' : 'theme-text-muted hover:theme-text-main'
               }`}
             >
               Create Account
@@ -165,7 +165,7 @@ export function Login() {
           </div>
 
           {error && (
-            <div className="mb-4 p-3 bg-[#E8453C]/10 border border-[#E8453C]/30 rounded-[4px] text-[#E8453C] text-xs font-mono">
+            <div className="mb-4 p-3 bg-[color-mix(in_srgb,var(--loss-red)_10%,transparent)] border border-[color-mix(in_srgb,var(--loss-red)_30%,transparent)] rounded-[4px] text-[var(--loss-red)] text-xs font-mono">
               {error}
             </div>
           )}
@@ -183,7 +183,7 @@ export function Login() {
                       value={name}
                       onChange={(e) => setName(e.target.value)}
                       placeholder="Trader Name"
-                      className="w-full theme-bg-panel border theme-border rounded-[4px] py-2 pl-10 pr-4 text-sm theme-text-main focus:outline-none focus:border-[#D4A017] transition-all placeholder:theme-text-dim min-h-[40px] font-mono"
+                      className="w-full theme-bg-panel border theme-border rounded-[4px] py-2 pl-10 pr-4 text-sm theme-text-main focus:outline-none focus:border-[var(--accent)] transition-all placeholder:theme-text-dim min-h-[40px] font-mono"
                     />
                   </div>
                 </div>
@@ -199,7 +199,7 @@ export function Login() {
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
                     placeholder="trader@example.com"
-                    className="w-full theme-bg-panel border theme-border rounded-[4px] py-2 pl-10 pr-4 text-sm theme-text-main focus:outline-none focus:border-[#D4A017] transition-all placeholder:theme-text-dim min-h-[40px] font-mono"
+                    className="w-full theme-bg-panel border theme-border rounded-[4px] py-2 pl-10 pr-4 text-sm theme-text-main focus:outline-none focus:border-[var(--accent)] transition-all placeholder:theme-text-dim min-h-[40px] font-mono"
                   />
                 </div>
               </div>
@@ -214,7 +214,7 @@ export function Login() {
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
                     placeholder="••••••••"
-                    className="w-full theme-bg-panel border theme-border rounded-[4px] py-2 pl-10 pr-4 text-sm theme-text-main focus:outline-none focus:border-[#D4A017] transition-all placeholder:theme-text-dim min-h-[40px] font-mono"
+                    className="w-full theme-bg-panel border theme-border rounded-[4px] py-2 pl-10 pr-4 text-sm theme-text-main focus:outline-none focus:border-[var(--accent)] transition-all placeholder:theme-text-dim min-h-[40px] font-mono"
                   />
                 </div>
               </div>
@@ -222,7 +222,7 @@ export function Login() {
               <button
                 type="submit"
                 disabled={loading}
-                className="w-full py-3 bg-[#D4A017] hover:bg-[#D4A017]/90 text-slate-950 font-extrabold text-xs font-mono uppercase tracking-wider rounded-[4px] shadow flex items-center justify-center gap-2 transition-all active:scale-[0.99] disabled:opacity-50 mt-6 min-h-[44px] btn-terminal"
+                className="w-full py-3 bg-[var(--accent)] hover:bg-[color-mix(in_srgb,var(--accent)_90%,transparent)] text-slate-950 font-extrabold text-xs font-mono uppercase tracking-wider rounded-[4px] shadow flex items-center justify-center gap-2 transition-all active:scale-[0.99] disabled:opacity-50 mt-6 min-h-[44px] btn-terminal"
               >
                 {loading ? 'AUTHENTICATING SESSION...' : (
                   <>

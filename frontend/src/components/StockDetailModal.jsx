@@ -1,71 +1,102 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { apiFetch } from '../services/api';
 import { useSocket } from '../context/SocketContext';
-import { Sparkline, calculateSMA } from './Sparkline';
-import { InteractiveChart } from './InteractiveChart';
-import { AnimatedNumber } from './AnimatedNumber';
-import { 
-  X, ArrowUpRight, ArrowDownRight, TrendingUp, TrendingDown, 
-  ShoppingBag, AlertTriangle, Calendar, BarChart2, Activity, Zap, Clock, Ban
+import { useSession } from '../hooks/useSession';
+import { PriceChart } from './PriceChart';
+import {
+  X,
+  ArrowUpRight,
+  ArrowDownRight,
+  TrendingUp,
+  TrendingDown,
+  ShoppingBag,
+  AlertTriangle,
+  BarChart2,
+  Zap,
+  Clock,
+  Ban,
+  RefreshCw,
+  CheckCircle2
 } from 'lucide-react';
 
-export function StockDetailModal({ stock, userWallet, userHolding, isOpen, onClose, onSuccess, isTradingLocked }) {
+const fmtMoney = (n, d = 2) =>
+  Number(n || 0).toLocaleString('en-US', {
+    minimumFractionDigits: d,
+    maximumFractionDigits: d
+  });
+
+const fmtCompact = (n) => {
+  const v = Number(n) || 0;
+  if (v >= 1e7) return `${(v / 1e7).toFixed(2)}Cr`;
+  if (v >= 1e5) return `${(v / 1e5).toFixed(2)}L`;
+  if (v >= 1e3) return `${(v / 1e3).toFixed(2)}K`;
+  return String(Math.round(v));
+};
+
+const TIMEFRAMES = [
+  { key: '5M', label: '5M', minutes: 5 },
+  { key: '15M', label: '15M', minutes: 15 },
+  { key: '30M', label: '30M', minutes: 30 },
+  { key: '1H', label: '1H', minutes: 60 },
+  { key: 'ALL', label: 'ALL', minutes: Infinity }
+];
+
+const QUANTITY_PRESETS = [1, 5, 10, 50, 100];
+
+export function StockDetailModal({
+  stock,
+  userWallet,
+  userHolding,
+  isOpen,
+  onClose,
+  onSuccess,
+  isTradingLocked,
+  initialMode = 'BUY'
+}) {
   const { socket } = useSocket();
-  const [tradeCategory, setTradeCategory] = useState('INSTANT'); // 'INSTANT' or 'LIMIT'
-  const [mode, setMode] = useState('BUY'); // 'BUY' or 'SELL'
-  const [quantity, setQuantity] = useState(1);
-  const [targetPrice, setTargetPrice] = useState(stock ? stock.currentPrice.toFixed(2) : '10.00');
-  const [timeframe, setTimeframe] = useState('1D');
-  const [historyData, setHistoryData] = useState([]);
-  const [pendingOrders, setPendingOrders] = useState([]);
-  const [balanceInfo, setBalanceInfo] = useState({ availableWalletBalance: userWallet, lockedFunds: 0 });
+  const session = useSession();
+
+  const [tradeCategory, setTradeCategory] = useState('INSTANT'); // INSTANT | LIMIT
+  const [mode, setMode] = useState(initialMode); // BUY | SELL
+  const [quantity, setQuantity] = useState('1');
+  const [targetPrice, setTargetPrice] = useState('');
+
+  const [timeframe, setTimeframe] = useState('15M');
+  const [rawHistory, setRawHistory] = useState([]);
   const [loadingHistory, setLoadingHistory] = useState(false);
+
+  const [pendingOrders, setPendingOrders] = useState([]);
+  const [balanceInfo, setBalanceInfo] = useState({
+    availableWalletBalance: userWallet,
+    lockedFunds: 0
+  });
+
   const [loadingTrade, setLoadingTrade] = useState(false);
   const [cancellingOrderId, setCancellingOrderId] = useState(null);
   const [error, setError] = useState('');
+  const [notice, setNotice] = useState('');
 
-  // Sync balanceInfo whenever userWallet prop updates
-  useEffect(() => {
-    if (userWallet !== undefined) {
-      setBalanceInfo((prev) => ({
-        ...prev,
-        availableWalletBalance: userWallet
-      }));
-    }
-  }, [userWallet]);
+  const stockIdRef = useRef(null);
 
-  // Real-time socket listener for portfolio & order updates inside modal
-  useEffect(() => {
-    if (!socket) return;
-    const handlePortfolioUpdate = (updatedPortfolio) => {
-      if (updatedPortfolio.availableWalletBalance !== undefined) {
-        setBalanceInfo({
-          availableWalletBalance: updatedPortfolio.availableWalletBalance,
-          lockedFunds: updatedPortfolio.lockedFunds || 0
-        });
-      }
-      if (updatedPortfolio.pendingOrders) {
-        setPendingOrders(updatedPortfolio.pendingOrders);
-      }
-    };
-    socket.on('portfolio:update', handlePortfolioUpdate);
-    return () => {
-      socket.off('portfolio:update', handlePortfolioUpdate);
-    };
-  }, [socket]);
-
-  const fetchStockHistory = useCallback(async (stockId, range) => {
+  /* ---------------------------------------------------------------
+     Data loading
+     --------------------------------------------------------------- */
+  const fetchHistory = useCallback(async (stockId, tf) => {
+    if (!stockId) return;
     setLoadingHistory(true);
     try {
-      const history = await apiFetch(`/stocks/${stockId}/history?range=${range}`);
-      setHistoryData(history);
+      // Everything below a day lives inside the 1D window; fetch raw once
+      // and slice client-side so switching timeframes is instant.
+      const range = tf === 'ALL' ? 'ALL' : '1D';
+      const data = await apiFetch(`/stocks/${stockId}/history?range=${range}`);
+      setRawHistory(Array.isArray(data) ? data : []);
     } catch (err) {
-      console.error('Failed to fetch stock detail history:', err);
-      setHistoryData(stock?.priceHistories || []);
+      console.error('Failed to fetch stock history:', err);
+      setRawHistory([]);
     } finally {
       setLoadingHistory(false);
     }
-  }, [stock?.id]);
+  }, []);
 
   const fetchOrders = useCallback(async () => {
     try {
@@ -74,94 +105,235 @@ export function StockDetailModal({ stock, userWallet, userHolding, isOpen, onClo
       if (data.availableBalance !== undefined) {
         setBalanceInfo({
           availableWalletBalance: data.availableBalance,
-          lockedFunds: data.lockedFunds
+          lockedFunds: data.lockedFunds || 0
         });
       }
     } catch (err) {
-      console.error('Failed to fetch pending orders:', err);
+      console.error('Failed to fetch orders:', err);
     }
   }, []);
 
-  // Form initialization: ONLY runs when modal opens or stock ID changes (NOT on price ticks!)
+  // Reset the form whenever a different stock is opened
   useEffect(() => {
-    if (stock && isOpen) {
-      setQuantity(1);
-      setTargetPrice(stock.currentPrice.toFixed(2));
-      setError('');
-    }
-  }, [stock?.id, isOpen]);
+    if (!isOpen || !stock) return;
 
-  // History & Orders fetch
-  useEffect(() => {
-    if (stock && isOpen) {
-      fetchStockHistory(stock.id, timeframe);
-      fetchOrders();
+    if (stockIdRef.current !== stock.id) {
+      stockIdRef.current = stock.id;
+      setQuantity('1');
+      setTargetPrice(stock.currentPrice.toFixed(2));
+      setTradeCategory('INSTANT');
+      setTimeframe('15M');
+      setRawHistory([]);
     }
-  }, [stock?.id, isOpen, timeframe, fetchStockHistory, fetchOrders]);
+    setError('');
+    setNotice('');
+    setMode(initialMode);
+  }, [stock?.id, isOpen, initialMode]);
+
+  useEffect(() => {
+    if (!isOpen || !stock?.id) return;
+    fetchHistory(stock.id, timeframe === 'ALL' ? 'ALL' : '1D');
+    fetchOrders();
+  }, [stock?.id, isOpen, timeframe === 'ALL', fetchHistory, fetchOrders]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  useEffect(() => {
+    if (userWallet !== undefined) {
+      setBalanceInfo((prev) => ({ ...prev, availableWalletBalance: userWallet }));
+    }
+  }, [userWallet]);
+
+  // Esc to close
+  useEffect(() => {
+    if (!isOpen) return;
+    const onKeyDown = (e) => {
+      if (e.key === 'Escape' && !loadingTrade) onClose();
+    };
+    window.addEventListener('keydown', onKeyDown);
+    return () => window.removeEventListener('keydown', onKeyDown);
+  }, [isOpen, loadingTrade, onClose]);
+
+  /* ---------------------------------------------------------------
+     Live updates
+     --------------------------------------------------------------- */
+  useEffect(() => {
+    if (!socket || !isOpen) return;
+
+    const handlePortfolioUpdate = (updated) => {
+      if (updated.availableWalletBalance !== undefined) {
+        setBalanceInfo({
+          availableWalletBalance: updated.availableWalletBalance,
+          lockedFunds: updated.lockedFunds || 0
+        });
+      }
+      if (updated.pendingOrders) setPendingOrders(updated.pendingOrders);
+    };
+
+    const handleStockUpdate = (diff) => {
+      if (diff.stockId !== stockIdRef.current) return;
+      setRawHistory((prev) => {
+        const next = [
+          ...prev,
+          { price: diff.newPrice, volume: diff.volume, timestamp: diff.timestamp }
+        ];
+        return next.length > 4000 ? next.slice(-4000) : next;
+      });
+    };
+
+    // A resting order filling while the window is open should update it live
+    const handleOrderExecuted = () => fetchOrders();
+
+    socket.on('portfolio:update', handlePortfolioUpdate);
+    socket.on('stock:update', handleStockUpdate);
+    socket.on('order:executed', handleOrderExecuted);
+
+    return () => {
+      socket.off('portfolio:update', handlePortfolioUpdate);
+      socket.off('stock:update', handleStockUpdate);
+      socket.off('order:executed', handleOrderExecuted);
+    };
+  }, [socket, isOpen, fetchOrders]);
+
+  /* ---------------------------------------------------------------
+     Derived values (hooks must run before the early return)
+     --------------------------------------------------------------- */
+  const windowHistory = useMemo(() => {
+    const source = rawHistory.length > 1 ? rawHistory : stock?.priceHistories || [];
+    const tf = TIMEFRAMES.find((t) => t.key === timeframe);
+
+    if (!tf || !isFinite(tf.minutes)) {
+      // "ALL" = this game session. The raw feed reaches a month back with
+      // multi-hour gaps, which flattens the part that actually matters.
+      const sessionStart = session?.startTime
+        ? new Date(session.startTime).getTime()
+        : null;
+      if (!sessionStart) return source;
+      const sinceStart = source.filter(
+        (h) => new Date(h.timestamp).getTime() >= sessionStart
+      );
+      return sinceStart.length >= 2 ? sinceStart : source.slice(-240);
+    }
+
+    const cutoff = Date.now() - tf.minutes * 60_000;
+    const windowed = source.filter((h) => new Date(h.timestamp).getTime() >= cutoff);
+    return windowed.length >= 2 ? windowed : source.slice(-60);
+  }, [rawHistory, stock, timeframe, session?.startTime]);
+
+  const stats = useMemo(() => {
+    const prices = windowHistory.map((h) => Number(h.price)).filter(isFinite);
+    if (prices.length === 0) {
+      const p = stock?.currentPrice || 0;
+      return {
+        high: p,
+        low: p,
+        open: p,
+        close: p,
+        volume: 0,
+        prints: 0,
+        windowMove: 0
+      };
+    }
+
+    const open = prices[0];
+    const close = prices[prices.length - 1];
+
+    return {
+      high: Math.max(...prices),
+      low: Math.min(...prices),
+      open,
+      close,
+      volume: windowHistory.reduce((sum, h) => sum + (Number(h.volume) || 0), 0),
+      prints: prices.length,
+      windowMove: open ? ((close - open) / open) * 100 : 0
+    };
+  }, [windowHistory, stock?.currentPrice]);
 
   if (!isOpen || !stock) return null;
 
   const currentPrice = stock.currentPrice;
-  const isPositive = stock.percentChange >= 0;
-  const parsedQty = Math.max(1, parseInt(quantity, 10) || 1);
+  const isPositive = (stock.percentChange || 0) >= 0;
+  const accent = isPositive ? 'var(--gain-green)' : 'var(--loss-red)';
+
+  const parsedQty = Math.max(0, parseInt(quantity, 10) || 0);
   const parsedTargetPrice = Math.max(0.01, parseFloat(targetPrice) || currentPrice);
-  
-  const instantTotal = Math.round(parsedQty * currentPrice * 100) / 100;
-  const limitTotal = Math.round(parsedQty * parsedTargetPrice * 100) / 100;
 
-  const activeHistory = historyData.length > 0 ? historyData : stock.priceHistories || [];
-  const prices = activeHistory.map((h) => h.price);
-  const volumes = activeHistory.map((h) => h.volume || 10000);
+  const ownedQty = userHolding?.quantity || 0;
+  const availableQty =
+    userHolding?.availableQuantity !== undefined
+      ? userHolding.availableQuantity
+      : ownedQty;
+  const lockedQty = userHolding?.lockedQuantity || 0;
 
-  const high24h = prices.length > 0 ? Math.max(...prices) : currentPrice;
-  const low24h = prices.length > 0 ? Math.min(...prices) : currentPrice;
-  const latestVolume = volumes.length > 0 ? volumes[volumes.length - 1] : 10000;
-  const isHighVolume = latestVolume > 35000;
+  const availWallet =
+    balanceInfo.availableWalletBalance !== undefined
+      ? balanceInfo.availableWalletBalance
+      : userWallet || 0;
 
-  const smaArray = calculateSMA(activeHistory, 10);
-  const latestSMA = smaArray.length > 0 && smaArray[smaArray.length - 1] !== null
-    ? smaArray[smaArray.length - 1]
-    : currentPrice;
+  const isLimit = tradeCategory === 'LIMIT';
+  const isBuy = mode === 'BUY';
+  const unitPrice = isLimit ? parsedTargetPrice : currentPrice;
+  const orderTotal = Math.round(parsedQty * unitPrice * 100) / 100;
 
-  const ownedQty = userHolding ? userHolding.quantity : 0;
-  const availableQty = userHolding && userHolding.availableQuantity !== undefined
-    ? userHolding.availableQuantity
-    : ownedQty;
-  const lockedQty = userHolding && userHolding.lockedQuantity !== undefined
-    ? userHolding.lockedQuantity
-    : 0;
-
-  const availWallet = balanceInfo.availableWalletBalance !== undefined
-    ? balanceInfo.availableWalletBalance
-    : userWallet;
-
-  const canInstantBuy = availWallet >= instantTotal;
-  const canInstantSell = availableQty >= parsedQty;
-
-  const canLimitBuy = availWallet >= limitTotal;
-  const canLimitSell = availableQty >= parsedQty;
+  // Max the trader could transact given cash / available shares
+  const maxQty = isBuy
+    ? Math.floor(availWallet / (unitPrice || 1))
+    : availableQty;
 
   const stockPendingOrders = pendingOrders.filter((o) => o.stockId === stock.id);
 
-  const handleTradeSubmit = async (e) => {
+  /* Validation — surfaced inline so the trader knows before submitting */
+  let blockReason = '';
+  if (isTradingLocked) {
+    blockReason = 'Trading is paused — waiting for the host to start a session.';
+  } else if (parsedQty <= 0) {
+    blockReason = 'Enter a quantity of at least 1 share.';
+  } else if (isBuy && orderTotal > availWallet) {
+    blockReason = `Needs ${fmtMoney(orderTotal - availWallet)} IC more than your available cash.`;
+  } else if (!isBuy && parsedQty > availableQty) {
+    blockReason =
+      availableQty === 0
+        ? `You have no ${stock.symbol} shares available to sell.`
+        : `Only ${availableQty} ${stock.symbol} share${
+            availableQty === 1 ? '' : 's'
+          } available${lockedQty > 0 ? ` (${lockedQty} reserved in orders)` : ''}.`;
+  } else if (isLimit && !(parsedTargetPrice > 0)) {
+    blockReason = 'Enter a target price above zero.';
+  }
+
+  const canSubmit = !blockReason && !loadingTrade;
+
+  /* How a resting order will behave relative to the live price */
+  const limitHint = isBuy
+    ? parsedTargetPrice >= currentPrice
+      ? 'Target is at or above the live price — this fills immediately.'
+      : `Waits for ${stock.symbol} to fall to ${fmtMoney(parsedTargetPrice)} IC.`
+    : parsedTargetPrice <= currentPrice
+    ? 'Target is at or below the live price — this fills immediately.'
+    : `Waits for ${stock.symbol} to rise to ${fmtMoney(parsedTargetPrice)} IC.`;
+
+  /* ---------------------------------------------------------------
+     Actions
+     --------------------------------------------------------------- */
+  const handleSubmit = async (e) => {
     e.preventDefault();
+    if (!canSubmit) return;
+
     setError('');
+    setNotice('');
     setLoadingTrade(true);
 
     try {
-      if (tradeCategory === 'INSTANT') {
-        const endpoint = mode === 'BUY' ? '/trade/buy' : '/trade/sell';
+      if (!isLimit) {
+        const endpoint = isBuy ? '/trade/buy' : '/trade/sell';
         const data = await apiFetch(endpoint, {
           method: 'POST',
-          body: JSON.stringify({
-            stockId: stock.id,
-            quantity: parsedQty
-          })
+          body: JSON.stringify({ stockId: stock.id, quantity: parsedQty })
         });
 
-        if (onSuccess) {
-          onSuccess(data.message, data.portfolio);
-        }
+        onSuccess?.(
+          data.message ||
+            `${isBuy ? 'Bought' : 'Sold'} ${parsedQty} ${stock.symbol}`,
+          data.portfolio
+        );
         fetchOrders();
         onClose();
       } else {
@@ -175,13 +347,14 @@ export function StockDetailModal({ stock, userWallet, userHolding, isOpen, onClo
           })
         });
 
-        if (onSuccess) {
-          onSuccess(data.message);
-        }
-        fetchOrders();
+        // Limit orders stay open, so keep the window up and refresh the book
+        setNotice(data.message || 'Limit order placed.');
+        setQuantity('1');
+        await fetchOrders();
+        onSuccess?.(data.message || 'Limit order placed.');
       }
     } catch (err) {
-      setError(err.message || 'Order placement failed');
+      setError(err.message || 'Order failed');
     } finally {
       setLoadingTrade(false);
     }
@@ -189,399 +362,670 @@ export function StockDetailModal({ stock, userWallet, userHolding, isOpen, onClo
 
   const handleCancelOrder = async (orderId) => {
     setCancellingOrderId(orderId);
+    setError('');
     try {
-      const data = await apiFetch(`/orders/${orderId}`, {
-        method: 'DELETE'
-      });
-      if (onSuccess) {
-        onSuccess(data.message);
-      }
-      fetchOrders();
+      const data = await apiFetch(`/orders/${orderId}`, { method: 'DELETE' });
+      setNotice(data.message || 'Order cancelled.');
+      await fetchOrders();
+      onSuccess?.(data.message || 'Order cancelled.');
     } catch (err) {
-      setError(err.message || 'Failed to cancel limit order');
+      setError(err.message || 'Failed to cancel order');
     } finally {
       setCancellingOrderId(null);
     }
   };
 
+  /* ---------------------------------------------------------------
+     Render
+     --------------------------------------------------------------- */
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-md animate-fadeIn">
-      <div className="w-full max-w-3xl max-h-[90vh] theme-bg-card rounded-[6px] border theme-border shadow-2xl relative flex flex-col overflow-hidden transition-colors">
-
-        {/* Header */}
-        <div className="flex-shrink-0 flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b theme-border px-6 pt-5 pb-4">
-          <div className="flex items-start justify-between gap-3 sm:block">
-            <div>
-              <div className="flex items-center gap-2.5">
-                <span className="text-2xl font-bold theme-text-main font-mono">{stock.symbol}</span>
-                <span className="px-2 py-0.5 rounded-[3px] text-xs font-bold theme-bg-panel theme-text-muted border theme-border font-mono">
+    <div
+      className="fixed inset-0 z-[65] flex items-center justify-center p-3 sm:p-5 animate-fadeIn"
+      style={{ backgroundColor: 'var(--scrim)', backdropFilter: 'blur(4px)' }}
+      onClick={() => !loadingTrade && onClose()}
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="trade-window-title"
+    >
+      <div
+        onClick={(e) => e.stopPropagation()}
+        className="w-full max-w-5xl max-h-[92vh] surface flex flex-col overflow-hidden animate-pop-in"
+        style={{ boxShadow: 'var(--card-shadow)' }}
+      >
+        {/* ================= HEADER ================= */}
+        <div className="flex-shrink-0 flex items-center justify-between gap-3 px-4 sm:px-5 py-3 border-b theme-border">
+          <div className="flex items-center gap-2.5 min-w-0">
+            <span
+              className="w-9 h-9 rounded-lg flex items-center justify-center text-[11px] font-mono font-extrabold flex-shrink-0"
+              style={{
+                backgroundColor: `color-mix(in srgb, ${accent} 16%, transparent)`,
+                color: accent
+              }}
+            >
+              {stock.symbol?.slice(0, 2)}
+            </span>
+            <div className="min-w-0">
+              <div className="flex items-center gap-2">
+                <h2
+                  id="trade-window-title"
+                  className="text-lg font-heading font-extrabold theme-text-main leading-none"
+                >
+                  {stock.symbol}
+                </h2>
+                <span className="px-1.5 py-0.5 rounded text-[9px] font-mono uppercase tracking-wider surface-panel theme-text-muted">
                   {stock.sector}
                 </span>
               </div>
-              <h2 className="text-xs font-bold theme-text-muted mt-0.5">{stock.name}</h2>
+              <p className="text-[10.5px] theme-text-dim truncate mt-0.5">
+                {stock.name}
+              </p>
             </div>
-
-            <button
-              onClick={onClose}
-              className="sm:hidden flex-shrink-0 p-2 rounded-[4px] border theme-border theme-bg-panel theme-text-muted hover:theme-text-main transition-colors min-h-[40px] min-w-[40px] flex items-center justify-center btn-terminal"
-            >
-              <X className="w-5 h-5" />
-            </button>
           </div>
 
           <div className="flex items-center gap-3">
-            <div className="flex items-baseline gap-3">
-              <div>
-                <div className="text-[10px] uppercase font-mono font-bold theme-text-dim">Current Price</div>
-                <div className="text-3xl font-extrabold font-mono theme-text-main">
-                  <AnimatedNumber value={currentPrice} decimals={2} suffix=" IC" className={isPositive ? 'text-[#1DB954]' : 'text-[#E8453C]'} />
-                </div>
+            <div className="text-right">
+              <div className="text-[9px] font-mono uppercase tracking-widest theme-text-dim">
+                Spot price
               </div>
-
-              <div className={`px-2.5 py-1 rounded-[3px] text-xs font-bold font-mono border flex items-center gap-1 ${
-                isPositive
-                  ? 'bg-[#1DB954]/10 text-[#1DB954] border-[#1DB954]/30'
-                  : 'bg-[#E8453C]/10 text-[#E8453C] border-[#E8453C]/30'
-              }`}>
-                {isPositive ? <TrendingUp className="w-3.5 h-3.5" /> : <TrendingDown className="w-3.5 h-3.5" />}
-                <span>{isPositive ? '+' : ''}{stock.percentChange.toFixed(2)}%</span>
+              {/* Spot price stays neutral — the % badge beside it carries
+                  the direction colour. */}
+              <div className="text-xl font-mono font-extrabold leading-none mt-0.5 theme-text-main">
+                {fmtMoney(currentPrice)} <span className="text-[11px]">IC</span>
               </div>
             </div>
 
-            <button
-              onClick={onClose}
-              className="hidden sm:inline-flex flex-shrink-0 p-2 rounded-[4px] border theme-border theme-bg-panel theme-text-muted hover:theme-text-main transition-colors min-h-[40px] min-w-[40px] flex items-center justify-center btn-terminal"
+            <span
+              className="flex items-center gap-1 px-1.5 py-1 rounded text-[11px] font-mono font-extrabold flex-shrink-0"
+              style={{
+                color: accent,
+                backgroundColor: `color-mix(in srgb, ${accent} 14%, transparent)`
+              }}
             >
-              <X className="w-5 h-5" />
-            </button>
-          </div>
-        </div>
-
-        {/* Scrollable Body */}
-        <div className="overflow-y-auto px-6 py-6 space-y-6">
-
-        {/* Technical Data Badges */}
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-          <div className="theme-bg-panel p-3 rounded-[6px] border theme-border">
-            <div className="text-[10px] uppercase font-mono font-bold theme-text-dim">24h High</div>
-            <div className="text-sm font-bold font-mono theme-text-main mt-0.5">{high24h.toFixed(2)} IC</div>
-          </div>
-          <div className="theme-bg-panel p-3 rounded-[6px] border theme-border">
-            <div className="text-[10px] uppercase font-mono font-bold theme-text-dim">24h Low</div>
-            <div className="text-sm font-bold font-mono theme-text-main mt-0.5">{low24h.toFixed(2)} IC</div>
-          </div>
-          <div className="theme-bg-panel p-3 rounded-[6px] border theme-border">
-            <div className="text-[10px] uppercase font-mono font-bold theme-text-dim flex items-center gap-1">
-              <span>Moving Avg (10)</span>
-              <Activity className="w-3 h-3 text-[#D4A017]" />
-            </div>
-            <div className="text-sm font-bold font-mono text-[#D4A017] mt-0.5">{latestSMA.toFixed(2)} IC</div>
-          </div>
-          <div className="theme-bg-panel p-3 rounded-[6px] border theme-border">
-            <div className="text-[10px] uppercase font-mono font-bold theme-text-dim flex items-center gap-1">
-              <span>Trade Activity</span>
-              <BarChart2 className="w-3 h-3 text-indigo-400" />
-            </div>
-            <div className="text-sm font-bold font-mono text-indigo-300 mt-0.5 flex items-center gap-1.5">
-              <span>{latestVolume.toLocaleString()} shrs</span>
-              {isHighVolume && (
-                <span className="px-1.5 py-0.2 bg-[#D4A017]/20 text-[#D4A017] text-[9px] font-extrabold rounded-[2px] border border-[#D4A017]/40">
-                  HIGH
-                </span>
-              )}
-            </div>
-          </div>
-        </div>
-
-        {/* Interactive Chart */}
-        <div className="theme-bg-panel p-4 rounded-[6px] border theme-border space-y-3">
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
-            <div className="flex items-center gap-3 text-xs font-mono">
-              <div className="flex items-center gap-1.5">
-                <span className="w-2.5 h-2.5 rounded-full bg-[#1DB954] inline-block" />
-                <span className="font-semibold theme-text-main">Current Price</span>
-              </div>
-              <div className="flex items-center gap-1.5">
-                <span className="w-2.5 h-0.5 bg-[#D4A017] inline-block border-dashed" />
-                <span className="font-semibold text-[#D4A017]">Moving Avg (10)</span>
-              </div>
-              <div className="flex items-center gap-1.5">
-                <span className="w-2 h-2.5 bg-indigo-500/60 inline-block" />
-                <span className="font-semibold theme-text-muted">Activity</span>
-              </div>
-            </div>
-
-            <div className="flex theme-bg-card p-1 rounded-[4px] border theme-border self-start sm:self-auto">
-              {['1D', '1W', '1M'].map((tf) => (
-                <button
-                  key={tf}
-                  onClick={() => setTimeframe(tf)}
-                  className={`px-3 py-1 text-xs font-bold font-mono rounded-[3px] transition-all min-h-[30px] ${
-                    timeframe === tf
-                      ? 'bg-[#D4A017] text-slate-950 shadow-sm'
-                      : 'theme-text-muted hover:theme-text-main'
-                  }`}
-                >
-                  {tf}
-                </button>
-              ))}
-            </div>
-          </div>
-
-          <div className="h-52 flex items-center justify-center pt-2">
-            <InteractiveChart
-              history={activeHistory}
-              timeframe={timeframe}
-              width={650}
-              height={190}
-              showSMA={true}
-              showVolume={true}
-            />
-          </div>
-        </div>
-
-        {/* Trade Order Panel */}
-        <div className="theme-bg-panel p-5 rounded-[6px] border theme-border space-y-4">
-          <div className="flex items-center justify-between">
-            <div className="flex theme-bg-card p-1 rounded-[4px] border theme-border">
-              <button
-                type="button"
-                onClick={() => setTradeCategory('INSTANT')}
-                className={`px-4 py-1.5 text-xs font-bold font-heading rounded-[3px] flex items-center gap-1.5 transition-all min-h-[34px] ${
-                  tradeCategory === 'INSTANT'
-                    ? 'bg-[#D4A017] text-slate-950 shadow-sm'
-                    : 'theme-text-muted hover:theme-text-main'
-                }`}
-              >
-                <Zap className="w-3.5 h-3.5" />
-                Instant Buy / Sell
-              </button>
-              <button
-                type="button"
-                onClick={() => setTradeCategory('LIMIT')}
-                className={`px-4 py-1.5 text-xs font-bold font-heading rounded-[3px] flex items-center gap-1.5 transition-all min-h-[34px] ${
-                  tradeCategory === 'LIMIT'
-                    ? 'bg-[#D4A017] text-slate-950 shadow-sm'
-                    : 'theme-text-muted hover:theme-text-main'
-                }`}
-              >
-                <Clock className="w-3.5 h-3.5" />
-                Auto-Order (Target Price)
-              </button>
-            </div>
-
-            {userHolding && (
-              <div className="text-right text-xs font-mono">
-                <span className="text-[#1DB954] font-bold block">
-                  You Own: {ownedQty} shares (Avg Paid: {userHolding.avgBuyPrice.toFixed(2)} IC)
-                </span>
-                {lockedQty > 0 && (
-                  <span className="text-[#D4A017] text-[10px] block">
-                    Available: {availableQty} | Reserved in orders: {lockedQty}
-                  </span>
-                )}
-              </div>
-            )}
-          </div>
-
-          {/* BUY / SELL Toggle Buttons */}
-          <div className="flex theme-bg-card p-1 rounded-[4px] border theme-border">
-            <button
-              type="button"
-              onClick={() => setMode('BUY')}
-              className={`flex-1 py-2 text-xs font-bold font-heading rounded-[3px] flex items-center justify-center gap-1.5 transition-all min-h-[40px] ${
-                mode === 'BUY'
-                  ? 'bg-[#1DB954] text-slate-950 shadow'
-                  : 'theme-text-muted hover:theme-text-main'
-              }`}
-            >
-              <ArrowUpRight className="w-4 h-4" />
-              {tradeCategory === 'INSTANT' ? 'BUY SHARES' : 'AUTO BUY'}
-            </button>
-            <button
-              type="button"
-              onClick={() => setMode('SELL')}
-              className={`flex-1 py-2 text-xs font-bold font-heading rounded-[3px] flex items-center justify-center gap-1.5 transition-all min-h-[40px] ${
-                mode === 'SELL'
-                  ? 'bg-[#E8453C] text-white shadow'
-                  : 'theme-text-muted hover:theme-text-main'
-              }`}
-            >
-              <ArrowDownRight className="w-4 h-4" />
-              {tradeCategory === 'INSTANT' ? 'SELL SHARES' : 'AUTO SELL'}
-            </button>
-          </div>
-
-          {error && (
-            <div className="p-3 bg-[#E8453C]/10 border border-[#E8453C]/30 rounded-[4px] text-[#E8453C] text-xs font-mono flex items-center gap-2">
-              <AlertTriangle className="w-4 h-4 flex-shrink-0" />
-              <span>{error}</span>
-            </div>
-          )}
-
-          <form onSubmit={handleTradeSubmit} className="space-y-4">
-            
-            {tradeCategory === 'LIMIT' && (
-              <div>
-                <div className="flex justify-between items-center mb-1">
-                  <label className="text-xs font-semibold text-[#D4A017] flex items-center gap-1 font-mono">
-                    <Clock className="w-3.5 h-3.5" />
-                    Target Price (Buys/sells automatically when price hits this)
-                  </label>
-                  <span className="text-[10px] theme-text-dim font-mono">
-                    Current: {currentPrice.toFixed(2)} IC
-                  </span>
-                </div>
-                <input
-                  type="number"
-                  step="0.01"
-                  min="0.01"
-                  required
-                  value={targetPrice}
-                  onChange={(e) => setTargetPrice(e.target.value)}
-                  className="w-full theme-bg-card border border-[#D4A017]/40 rounded-[4px] py-2 px-3 text-sm theme-text-main font-mono focus:outline-none focus:border-[#D4A017]"
-                />
-              </div>
-            )}
-
-            <div>
-              <div className="flex justify-between items-center mb-1">
-                <label className="text-xs font-semibold theme-text-muted font-heading">Quantity (Shares)</label>
-                <div className="flex gap-1">
-                  {[1, 5, 10, 50, 100].map((num) => (
-                    <button
-                      key={num}
-                      type="button"
-                      onClick={() => setQuantity(num)}
-                      className="px-2.5 py-1 theme-bg-card theme-bg-card-hover theme-text-main text-[10px] font-mono rounded-[3px] border theme-border min-h-[30px] btn-terminal"
-                    >
-                      {num}
-                    </button>
-                  ))}
-                </div>
-              </div>
-              <input
-                type="number"
-                min="1"
-                step="1"
-                required
-                value={quantity}
-                onChange={(e) => setQuantity(e.target.value)}
-                className="w-full theme-bg-card border theme-border rounded-[4px] py-2 px-3 text-sm theme-text-main font-mono focus:outline-none focus:border-[#D4A017]"
-              />
-            </div>
-
-            <div className="p-3 theme-bg-card rounded-[4px] border theme-border flex justify-between items-center text-xs">
-              <div>
-                <span className="theme-text-muted font-mono">
-                  {tradeCategory === 'INSTANT' 
-                    ? (mode === 'BUY' ? 'Total to Pay:' : 'Money You Receive:')
-                    : (mode === 'BUY' ? 'Reserved Cash for Order:' : 'Expected Money Back:')
-                  }
-                </span>
-                <div className="text-base font-extrabold font-mono theme-text-main mt-0.5">
-                  {(tradeCategory === 'INSTANT' ? instantTotal : limitTotal).toFixed(2)} <span className="text-[#D4A017]">IC</span>
-                </div>
-              </div>
-
-              <div className="text-right">
-                <span className="theme-text-muted font-mono">
-                  {mode === 'BUY' ? 'Available Cash to Spend:' : 'Available Shares:'}
-                </span>
-                <div className="text-xs font-bold font-mono theme-text-main mt-0.5">
-                  {mode === 'BUY' 
-                    ? `${availWallet.toFixed(2)} IC ${balanceInfo.lockedFunds > 0 ? `(${balanceInfo.lockedFunds.toFixed(2)} IC reserved)` : ''}` 
-                    : `${availableQty} shares ${lockedQty > 0 ? `(${lockedQty} reserved)` : ''}`
-                  }
-                </div>
-              </div>
-            </div>
-
-            {isTradingLocked && (
-              <p className="text-[11px] font-mono text-[#E8453C] font-bold text-center bg-[#E8453C]/10 p-2.5 rounded border border-[#E8453C]/30 flex items-center justify-center gap-1.5">
-                <Ban className="w-4 h-4 text-[#E8453C]" />
-                <span>Trading is paused — waiting for host/admin to start an active session.</span>
-              </p>
-            )}
-
-            <button
-              type="submit"
-              disabled={isTradingLocked || loadingTrade || (
-                tradeCategory === 'INSTANT'
-                  ? (mode === 'BUY' ? !canInstantBuy : !canInstantSell)
-                  : (mode === 'BUY' ? !canLimitBuy : !canLimitSell)
-              )}
-              className={`w-full py-3 font-bold text-xs font-mono uppercase rounded-[4px] shadow flex items-center justify-center gap-2 transition-all min-h-[44px] btn-terminal ${
-                mode === 'BUY'
-                  ? (tradeCategory === 'INSTANT' ? 'bg-[#1DB954] hover:bg-[#1DB954]/90 text-slate-950' : 'bg-[#D4A017] hover:bg-[#D4A017]/90 text-slate-950')
-                  : 'bg-[#E8453C] hover:bg-[#E8453C]/90 text-white'
-              } disabled:opacity-40 disabled:cursor-not-allowed`}
-            >
-              {isTradingLocked ? (
-                <>
-                  <Ban className="w-4 h-4" />
-                  <span>TRADING PAUSED — WAITING FOR ADMIN</span>
-                </>
-              ) : loadingTrade ? (
-                'PROCESSING ORDER...'
+              {isPositive ? (
+                <TrendingUp className="w-3 h-3" />
               ) : (
-                <>
-                  {tradeCategory === 'INSTANT' ? <ShoppingBag className="w-4 h-4" /> : <Clock className="w-4 h-4" />}
-                  <span>
-                    {tradeCategory === 'INSTANT'
-                      ? `${mode === 'BUY' ? 'CONFIRM BUY' : 'CONFIRM SELL'} (${parsedQty} SHARES FOR ${instantTotal.toFixed(2)} IC)`
-                      : `SET AUTO ${mode} (${parsedQty} SHARES @ ${parsedTargetPrice.toFixed(2)} IC)`
-                    }
-                  </span>
-                </>
+                <TrendingDown className="w-3 h-3" />
               )}
+              {isPositive ? '+' : ''}
+              {(stock.percentChange || 0).toFixed(2)}%
+            </span>
+
+            <button
+              type="button"
+              onClick={onClose}
+              aria-label="Close trade window"
+              className="w-8 h-8 rounded-md border theme-border theme-bg-input flex items-center justify-center theme-text-muted hover:theme-text-main transition-colors flex-shrink-0"
+            >
+              <X className="w-4 h-4" />
             </button>
-          </form>
+          </div>
         </div>
 
-        {/* Active Pending Limit Orders */}
-        {stockPendingOrders.length > 0 && (
-          <div className="theme-bg-panel p-4 rounded-[6px] border theme-border space-y-3">
-            <div className="flex items-center gap-2 text-xs font-bold text-[#D4A017] uppercase tracking-wider font-mono">
-              <Clock className="w-4 h-4" />
-              <span>Active Auto-Orders for {stock.symbol}</span>
+        {/* ================= BODY ================= */}
+        <div className="overflow-y-auto p-4 sm:p-5">
+          <div className="grid grid-cols-1 lg:grid-cols-[minmax(0,1.55fr)_minmax(0,1fr)] gap-4">
+            {/* ---------------- CHART ---------------- */}
+            <div className="space-y-3">
+              <div className="surface-panel p-3">
+                <div className="flex flex-wrap items-center justify-between gap-2 mb-2">
+                  <div className="flex items-center gap-3 text-[10px] font-mono">
+                    <span className="flex items-center gap-1.5 theme-text-main font-bold">
+                      {/* Matches the plotted line, which is coloured by the
+                          window move rather than the whole-day change. */}
+                      <span
+                        className="w-2 h-2 rounded-full"
+                        style={{
+                          backgroundColor:
+                            stats.windowMove >= 0
+                              ? 'var(--gain-green)'
+                              : 'var(--loss-red)'
+                        }}
+                      />
+                      Spot Price
+                    </span>
+                  </div>
+
+                  <div
+                    className="inline-flex items-center gap-0.5 p-0.5 rounded-md border theme-border"
+                    style={{ backgroundColor: 'var(--bg-input)' }}
+                    role="group"
+                    aria-label="Chart timeframe"
+                  >
+                    {TIMEFRAMES.map((tf) => {
+                      const active = tf.key === timeframe;
+                      return (
+                        <button
+                          key={tf.key}
+                          type="button"
+                          onClick={() => setTimeframe(tf.key)}
+                          aria-pressed={active}
+                          className="px-2 h-[22px] rounded text-[10px] font-mono font-bold transition-colors"
+                          style={
+                            active
+                              ? {
+                                  backgroundColor:
+                                    'color-mix(in srgb, var(--accent) 20%, transparent)',
+                                  color: 'var(--accent)'
+                                }
+                              : { color: 'var(--text-dim)' }
+                          }
+                        >
+                          {tf.label}
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+
+                <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-[10px] font-mono mb-1">
+                  <span className="theme-text-dim">
+                    Price{' '}
+                    <strong className="theme-text-main">{fmtMoney(stats.close)}</strong>
+                  </span>
+                  <span className="theme-text-dim">
+                    High{' '}
+                    <strong style={{ color: 'var(--gain-green)' }}>
+                      {fmtMoney(stats.high)}
+                    </strong>
+                  </span>
+                  <span className="theme-text-dim">
+                    Low{' '}
+                    <strong style={{ color: 'var(--loss-red)' }}>
+                      {fmtMoney(stats.low)}
+                    </strong>
+                  </span>
+                </div>
+
+                {loadingHistory && windowHistory.length === 0 ? (
+                  <div className="h-[300px] rounded-lg animate-shimmer" />
+                ) : (
+                  <PriceChart
+                    history={windowHistory}
+                    currentPrice={currentPrice}
+                    height={300}
+                    showFooter={false}
+                    spanLabel={timeframe}
+                  />
+                )}
+
+                <div className="flex items-center justify-between mt-2 text-[10px] font-mono">
+                  <span className="theme-text-dim">
+                    {stats.prints.toLocaleString()} prints in view
+                  </span>
+                  <span className="theme-text-dim">
+                    Window move{' '}
+                    <strong
+                      style={{
+                        color:
+                          stats.windowMove >= 0
+                            ? 'var(--gain-green)'
+                            : 'var(--loss-red)'
+                      }}
+                    >
+                      {stats.windowMove >= 0 ? '+' : ''}
+                      {stats.windowMove.toFixed(2)}%
+                    </strong>
+                  </span>
+                </div>
+              </div>
+
+              {/* Stat tiles */}
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+                {[
+                  {
+                    label: `${timeframe} high`,
+                    value: `${fmtMoney(stats.high)} IC`,
+                    color: 'var(--gain-green)',
+                    Icon: TrendingUp
+                  },
+                  {
+                    label: `${timeframe} low`,
+                    value: `${fmtMoney(stats.low)} IC`,
+                    color: 'var(--loss-red)',
+                    Icon: TrendingDown
+                  },
+                  {
+                    label: `${timeframe} volume`,
+                    value: `${fmtCompact(stats.volume)} shrs`,
+                    color: 'var(--text-main)',
+                    Icon: BarChart2
+                  }
+                ].map(({ label, value, color, Icon }) => (
+                  <div key={label} className="surface-panel px-2.5 py-2">
+                    <div className="flex items-center gap-1 text-[9px] font-mono uppercase tracking-widest theme-text-dim">
+                      <Icon className="w-2.5 h-2.5" style={{ color }} />
+                      {label}
+                    </div>
+                    <div
+                      className="text-[12px] font-mono font-bold mt-1"
+                      style={{ color }}
+                    >
+                      {value}
+                    </div>
+                  </div>
+                ))}
+              </div>
             </div>
 
-            <div className="space-y-2 font-mono text-xs">
-              {stockPendingOrders.map((order) => (
-                <div key={order.id} className="p-3 theme-bg-card rounded-[4px] border theme-border flex items-center justify-between">
-                  <div className="flex items-center gap-2">
-                    <span className={`px-1.5 py-0.2 rounded-[2px] text-[10px] font-extrabold ${
-                      order.type === 'BUY'
-                        ? 'bg-[#1DB954]/20 text-[#1DB954] border border-[#1DB954]/30'
-                        : 'bg-[#E8453C]/20 text-[#E8453C] border border-[#E8453C]/30'
-                    }`}>
-                      AUTO {order.type}
-                    </span>
-                    <div>
-                      <span className="font-bold theme-text-main">{order.quantity} shares</span>
-                      <span className="theme-text-muted ml-2">@ Target: <strong className="text-[#D4A017]">{order.targetPrice.toFixed(2)} IC</strong></span>
+            {/* ---------------- TRADE PANEL ---------------- */}
+            <div className="space-y-3">
+              {/* Instant vs Limit */}
+              <div
+                className="grid grid-cols-2 gap-0.5 p-0.5 rounded-md border theme-border"
+                style={{ backgroundColor: 'var(--bg-input)' }}
+                role="group"
+                aria-label="Order type"
+              >
+                {[
+                  { key: 'INSTANT', label: 'Instant Trade', Icon: Zap },
+                  { key: 'LIMIT', label: 'Limit Order', Icon: Clock }
+                ].map(({ key, label, Icon }) => {
+                  const active = tradeCategory === key;
+                  return (
+                    <button
+                      key={key}
+                      type="button"
+                      onClick={() => {
+                        setTradeCategory(key);
+                        setError('');
+                        setNotice('');
+                        if (key === 'LIMIT' && !targetPrice) {
+                          setTargetPrice(currentPrice.toFixed(2));
+                        }
+                      }}
+                      aria-pressed={active}
+                      className="flex items-center justify-center gap-1.5 h-[32px] rounded text-[11px] font-heading font-bold transition-colors"
+                      style={
+                        active
+                          ? {
+                              backgroundColor: 'var(--accent)',
+                              color: '#0B0E14'
+                            }
+                          : { color: 'var(--text-muted)' }
+                      }
+                    >
+                      <Icon className="w-3.5 h-3.5" />
+                      {label}
+                    </button>
+                  );
+                })}
+              </div>
+
+              <p className="text-[10px] theme-text-dim font-mono leading-snug">
+                {isLimit
+                  ? 'Pre-books an order that fills automatically when your target price prints. Cash or shares stay reserved until then.'
+                  : 'Fills right now at the live market price.'}
+              </p>
+
+              {/* Buy vs Sell */}
+              <div
+                className="grid grid-cols-2 gap-0.5 p-0.5 rounded-md border theme-border"
+                style={{ backgroundColor: 'var(--bg-input)' }}
+                role="group"
+                aria-label="Order side"
+              >
+                <button
+                  type="button"
+                  onClick={() => {
+                    setMode('BUY');
+                    setError('');
+                  }}
+                  aria-pressed={isBuy}
+                  className="flex items-center justify-center gap-1.5 h-[36px] rounded text-[11.5px] font-heading font-extrabold transition-colors"
+                  style={
+                    isBuy
+                      ? { backgroundColor: 'var(--gain-green)', color: '#fff' }
+                      : { color: 'var(--text-muted)' }
+                  }
+                >
+                  <ArrowUpRight className="w-3.5 h-3.5" />
+                  BUY SHARES
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setMode('SELL');
+                    setError('');
+                  }}
+                  aria-pressed={!isBuy}
+                  className="flex items-center justify-center gap-1.5 h-[36px] rounded text-[11.5px] font-heading font-extrabold transition-colors"
+                  style={
+                    !isBuy
+                      ? { backgroundColor: 'var(--loss-red)', color: '#fff' }
+                      : { color: 'var(--text-muted)' }
+                  }
+                >
+                  <ArrowDownRight className="w-3.5 h-3.5" />
+                  SELL SHARES
+                </button>
+              </div>
+
+              <form onSubmit={handleSubmit} className="space-y-3">
+                {/* Target price (limit only) */}
+                {isLimit && (
+                  <div className="space-y-1.5">
+                    <div className="flex items-center justify-between">
+                      <label
+                        htmlFor="target-price"
+                        className="text-[10px] font-mono uppercase tracking-widest"
+                        style={{ color: 'var(--accent)' }}
+                      >
+                        Target price
+                      </label>
+                      <button
+                        type="button"
+                        onClick={() => setTargetPrice(currentPrice.toFixed(2))}
+                        className="text-[10px] font-mono theme-text-dim hover:theme-text-main transition-colors"
+                      >
+                        Use spot {fmtMoney(currentPrice)}
+                      </button>
+                    </div>
+                    <input
+                      id="target-price"
+                      type="number"
+                      step="0.01"
+                      min="0.01"
+                      required
+                      value={targetPrice}
+                      onChange={(e) => setTargetPrice(e.target.value)}
+                      className="w-full h-[36px] rounded-md border theme-bg-input px-3 text-[13px] font-mono font-bold theme-text-main focus:outline-none"
+                      style={{
+                        borderColor:
+                          'color-mix(in srgb, var(--accent) 45%, transparent)'
+                      }}
+                    />
+                    <p className="text-[10px] font-mono theme-text-dim leading-snug">
+                      {limitHint}
+                    </p>
+                  </div>
+                )}
+
+                {/* Quantity */}
+                <div className="space-y-1.5">
+                  <div className="flex items-center justify-between">
+                    <label
+                      htmlFor="order-qty"
+                      className="text-[10px] font-mono uppercase tracking-widest theme-text-dim"
+                    >
+                      Quantity (shares)
+                    </label>
+                    <div className="flex items-center gap-1">
+                      {QUANTITY_PRESETS.map((n) => (
+                        <button
+                          key={n}
+                          type="button"
+                          onClick={() => setQuantity(String(n))}
+                          className="px-1.5 h-[20px] rounded border theme-border text-[9.5px] font-mono theme-text-muted hover:theme-text-main transition-colors"
+                        >
+                          {n}
+                        </button>
+                      ))}
+                      <button
+                        type="button"
+                        onClick={() => setQuantity(String(Math.max(0, maxQty)))}
+                        title={
+                          isBuy
+                            ? 'Largest quantity your cash covers'
+                            : 'All available shares'
+                        }
+                        className="px-1.5 h-[20px] rounded text-[9.5px] font-mono font-bold transition-colors"
+                        style={{
+                          backgroundColor:
+                            'color-mix(in srgb, var(--accent) 16%, transparent)',
+                          color: 'var(--accent)'
+                        }}
+                      >
+                        MAX
+                      </button>
                     </div>
                   </div>
 
-                  <div className="flex items-center gap-3">
+                  <div className="flex items-center gap-1.5">
                     <button
-                      onClick={() => handleCancelOrder(order.id)}
-                      disabled={cancellingOrderId === order.id}
-                      className="px-2.5 py-1 bg-[#E8453C]/10 hover:bg-[#E8453C]/20 text-[#E8453C] border border-[#E8453C]/30 text-[11px] font-bold rounded-[3px] flex items-center gap-1 transition-all btn-terminal"
+                      type="button"
+                      onClick={() =>
+                        setQuantity((q) => String(Math.max(1, (parseInt(q, 10) || 1) - 1)))
+                      }
+                      aria-label="Decrease quantity"
+                      className="w-9 h-[36px] rounded-md border theme-border theme-bg-input theme-text-main font-bold hover:theme-bg-card-hover transition-colors"
                     >
-                      <Ban className="w-3 h-3" />
-                      {cancellingOrderId === order.id ? '...' : 'Cancel'}
+                      −
+                    </button>
+                    <input
+                      id="order-qty"
+                      type="number"
+                      min="1"
+                      step="1"
+                      required
+                      value={quantity}
+                      onChange={(e) => setQuantity(e.target.value)}
+                      className="flex-1 h-[36px] rounded-md border theme-border theme-bg-input px-3 text-center text-[13px] font-mono font-bold theme-text-main focus:outline-none"
+                    />
+                    <button
+                      type="button"
+                      onClick={() =>
+                        setQuantity((q) => String((parseInt(q, 10) || 0) + 1))
+                      }
+                      aria-label="Increase quantity"
+                      className="w-9 h-[36px] rounded-md border theme-border theme-bg-input theme-text-main font-bold hover:theme-bg-card-hover transition-colors"
+                    >
+                      +
                     </button>
                   </div>
                 </div>
-              ))}
+
+                {/* Totals */}
+                <div className="surface-panel p-3 space-y-2">
+                  <div className="flex items-start justify-between gap-3">
+                    <div>
+                      <div className="text-[9px] font-mono uppercase tracking-widest theme-text-dim">
+                        {isBuy
+                          ? isLimit
+                            ? 'Cash reserved'
+                            : 'Total cost'
+                          : isLimit
+                          ? 'Expected proceeds'
+                          : 'Total proceeds'}
+                      </div>
+                      {/* Label states the direction; the figure stays positive
+                          and takes the colour of the side you're trading, so a
+                          buy total matches the green BUY SHARES button. */}
+                      <div
+                        className="text-[15px] font-mono font-extrabold mt-0.5"
+                        style={{ color: isBuy ? 'var(--gain-green)' : 'var(--loss-red)' }}
+                      >
+                        {fmtMoney(orderTotal)} IC
+                      </div>
+                    </div>
+
+                    <div className="text-right">
+                      <div className="text-[9px] font-mono uppercase tracking-widest theme-text-dim">
+                        {isBuy ? 'Available cash' : 'Available shares'}
+                      </div>
+                      <div className="text-[12px] font-mono font-bold theme-text-main mt-0.5">
+                        {isBuy
+                          ? `${fmtMoney(availWallet)} IC`
+                          : `${availableQty} share${availableQty === 1 ? '' : 's'}`}
+                      </div>
+                      {(isBuy ? balanceInfo.lockedFunds > 0 : lockedQty > 0) && (
+                        <div
+                          className="text-[9px] font-mono mt-0.5"
+                          style={{ color: 'var(--accent)' }}
+                        >
+                          {isBuy
+                            ? `${fmtMoney(balanceInfo.lockedFunds)} IC reserved`
+                            : `${lockedQty} reserved`}
+                        </div>
+                      )}
+                    </div>
+                  </div>
+
+                  {ownedQty > 0 && (
+                    <div className="pt-2 border-t theme-border flex justify-between text-[10px] font-mono">
+                      <span className="theme-text-dim">Your position</span>
+                      <span className="theme-text-main font-bold">
+                        {ownedQty} @ avg {fmtMoney(userHolding?.avgBuyPrice || 0)} IC
+                      </span>
+                    </div>
+                  )}
+                </div>
+
+                {/* Messages */}
+                {notice && (
+                  <div
+                    className="flex items-start gap-2 p-2.5 rounded-md text-[10.5px] font-mono leading-snug"
+                    style={{
+                      backgroundColor:
+                        'color-mix(in srgb, var(--gain-green) 12%, transparent)',
+                      border:
+                        '1px solid color-mix(in srgb, var(--gain-green) 34%, transparent)',
+                      color: 'var(--gain-green)'
+                    }}
+                  >
+                    <CheckCircle2 className="w-3.5 h-3.5 flex-shrink-0 mt-px" />
+                    <span>{notice}</span>
+                  </div>
+                )}
+
+                {error && (
+                  <div
+                    className="flex items-start gap-2 p-2.5 rounded-md text-[10.5px] font-mono leading-snug animate-error-shake"
+                    style={{
+                      backgroundColor:
+                        'color-mix(in srgb, var(--loss-red) 12%, transparent)',
+                      border:
+                        '1px solid color-mix(in srgb, var(--loss-red) 34%, transparent)',
+                      color: 'var(--loss-red)'
+                    }}
+                  >
+                    <AlertTriangle className="w-3.5 h-3.5 flex-shrink-0 mt-px" />
+                    <span>{error}</span>
+                  </div>
+                )}
+
+                {blockReason && !error && (
+                  <div className="flex items-start gap-2 p-2.5 rounded-md text-[10.5px] font-mono leading-snug surface-panel theme-text-muted">
+                    {isTradingLocked ? (
+                      <Ban className="w-3.5 h-3.5 flex-shrink-0 mt-px" />
+                    ) : (
+                      <AlertTriangle className="w-3.5 h-3.5 flex-shrink-0 mt-px" />
+                    )}
+                    <span>{blockReason}</span>
+                  </div>
+                )}
+
+                {/* Submit */}
+                <button
+                  type="submit"
+                  disabled={!canSubmit}
+                  className="w-full h-[42px] rounded-md text-[11.5px] font-heading font-extrabold text-white flex items-center justify-center gap-2 transition-all active:scale-[0.98] disabled:opacity-40 disabled:cursor-not-allowed"
+                  style={{
+                    backgroundColor: isLimit
+                      ? 'var(--accent)'
+                      : isBuy
+                      ? 'var(--gain-green)'
+                      : 'var(--loss-red)',
+                    color: isLimit ? '#0B0E14' : '#fff'
+                  }}
+                >
+                  {loadingTrade ? (
+                    <>
+                      <RefreshCw className="w-4 h-4 animate-spin" />
+                      Processing…
+                    </>
+                  ) : isLimit ? (
+                    <>
+                      <Clock className="w-4 h-4" />
+                      PRE-BOOK {mode} ({parsedQty} @ {fmtMoney(parsedTargetPrice)} IC)
+                    </>
+                  ) : (
+                    <>
+                      <ShoppingBag className="w-4 h-4" />
+                      EXECUTE {mode} ORDER ({parsedQty} @ {fmtMoney(currentPrice)} IC)
+                    </>
+                  )}
+                </button>
+              </form>
+
+              {/* Resting orders for this stock */}
+              <div className="surface-panel p-3 space-y-2">
+                <div className="flex items-center justify-between">
+                  <span
+                    className="text-[10px] font-mono uppercase tracking-widest font-bold flex items-center gap-1.5"
+                    style={{ color: 'var(--accent)' }}
+                  >
+                    <Clock className="w-3 h-3" />
+                    Open orders · {stock.symbol}
+                  </span>
+                  <span className="text-[10px] font-mono theme-text-dim">
+                    {stockPendingOrders.length}
+                  </span>
+                </div>
+
+                {stockPendingOrders.length === 0 ? (
+                  <p className="text-[10px] font-mono theme-text-dim py-1.5">
+                    No resting orders on this stock.
+                  </p>
+                ) : (
+                  <div className="space-y-1.5">
+                    {stockPendingOrders.map((order) => {
+                      const orderColor =
+                        order.type === 'BUY'
+                          ? 'var(--gain-green)'
+                          : 'var(--loss-red)';
+                      const distance = currentPrice
+                        ? ((order.targetPrice - currentPrice) / currentPrice) * 100
+                        : 0;
+
+                      return (
+                        <div
+                          key={order.id}
+                          className="flex items-center justify-between gap-2 px-2.5 py-2 rounded border theme-border theme-bg-input"
+                        >
+                          <div className="min-w-0">
+                            <div className="flex items-center gap-1.5">
+                              <span
+                                className="px-1.5 py-0.5 rounded text-[8.5px] font-mono font-extrabold uppercase"
+                                style={{
+                                  backgroundColor: `color-mix(in srgb, ${orderColor} 16%, transparent)`,
+                                  color: orderColor
+                                }}
+                              >
+                                Limit {order.type}
+                              </span>
+                              <span className="text-[10.5px] font-mono font-bold theme-text-main">
+                                {order.quantity} @ {fmtMoney(order.targetPrice)}
+                              </span>
+                            </div>
+                            <div className="text-[9px] font-mono theme-text-dim mt-0.5">
+                              {distance >= 0 ? '+' : ''}
+                              {distance.toFixed(2)}% from spot
+                            </div>
+                          </div>
+
+                          <button
+                            type="button"
+                            onClick={() => handleCancelOrder(order.id)}
+                            disabled={cancellingOrderId === order.id}
+                            className="flex items-center gap-1 px-2 py-1 rounded text-[9.5px] font-heading font-bold transition-colors disabled:opacity-50 flex-shrink-0"
+                            style={{
+                              backgroundColor:
+                                'color-mix(in srgb, var(--loss-red) 12%, transparent)',
+                              color: 'var(--loss-red)'
+                            }}
+                          >
+                            <Ban className="w-2.5 h-2.5" />
+                            {cancellingOrderId === order.id ? '…' : 'Cancel'}
+                          </button>
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
+              </div>
             </div>
           </div>
-        )}
-
         </div>
-
       </div>
     </div>
   );

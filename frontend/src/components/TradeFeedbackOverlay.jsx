@@ -44,7 +44,7 @@ export function TradeFeedbackOverlay({ status, message, onClose }) {
         </p>
 
         <div className="mt-4 flex items-center gap-1.5 text-[10px] font-mono uppercase tracking-wider text-slate-300">
-          <Zap className="w-3.5 h-3.5 text-amber-400" />
+          <Zap className="w-3.5 h-3.5" style={{ color: 'var(--accent)' }} />
           <span>Equity Arena Matching Engine</span>
         </div>
       </div>

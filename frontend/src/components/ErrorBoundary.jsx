@@ -30,14 +30,14 @@ export class ErrorBoundary extends React.Component {
     if (this.state.hasError) {
       return (
         <div className="min-h-screen theme-bg-main theme-text-main flex items-center justify-center p-4">
-          <div className="max-w-md w-full theme-bg-card p-8 rounded-[6px] border border-[#E8453C]/40 shadow-2xl space-y-6 text-center">
+          <div className="max-w-md w-full theme-bg-card p-8 rounded-[6px] border border-[color-mix(in_srgb,var(--loss-red)_40%,transparent)] shadow-2xl space-y-6 text-center">
             
-            <div className="inline-flex p-3 bg-[#E8453C]/10 border border-[#E8453C]/30 rounded-[4px] text-[#E8453C]">
+            <div className="inline-flex p-3 bg-[color-mix(in_srgb,var(--loss-red)_10%,transparent)] border border-[color-mix(in_srgb,var(--loss-red)_30%,transparent)] rounded-[4px] text-[var(--loss-red)]">
               <AlertTriangle className="w-8 h-8 animate-pulse" />
             </div>
 
             <div>
-              <h2 className="text-lg font-bold font-heading uppercase text-[#E8453C]">
+              <h2 className="text-lg font-bold font-heading uppercase text-[var(--loss-red)]">
                 TERMINAL RENDER EXCEPTION
               </h2>
               <p className="text-xs theme-text-muted mt-2 font-medium">
@@ -52,7 +52,7 @@ export class ErrorBoundary extends React.Component {
             <div className="flex items-center gap-3 pt-2">
               <button
                 onClick={this.handleReset}
-                className="flex-1 py-2.5 bg-[#D4A017] hover:bg-[#D4A017]/90 text-slate-950 font-heading font-extrabold text-xs rounded-[4px] shadow transition-all flex items-center justify-center gap-1.5 min-h-[40px] btn-terminal"
+                className="flex-1 py-2.5 bg-[var(--accent)] hover:bg-[color-mix(in_srgb,var(--accent)_90%,transparent)] text-slate-950 font-heading font-extrabold text-xs rounded-[4px] shadow transition-all flex items-center justify-center gap-1.5 min-h-[40px] btn-terminal"
               >
                 <RefreshCw className="w-4 h-4" />
                 <span>RELOAD TERMINAL</span>
