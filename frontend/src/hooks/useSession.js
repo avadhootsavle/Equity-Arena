@@ -2,25 +2,28 @@ import { useState, useEffect, useCallback } from 'react';
 import { apiFetch } from '../services/api';
 import { useSocket } from '../context/SocketContext';
 
-/**
- * Single source of truth for the game session.
- *
- * Previously the TopBar's countdown widget owned this fetch, which meant the
- * clock had to stay mounted for any other panel to know the session state.
- */
+const DEFAULT_SESSION = {
+  status: 'NOT_STARTED',
+  formattedTime: '00:00:00',
+  isTradingLocked: true,
+  remainingSeconds: 0
+};
+
 export function useSession() {
   const { socket } = useSocket();
-  const [session, setSession] = useState(null);
+  const [session, setSession] = useState(DEFAULT_SESSION);
 
   const refresh = useCallback(async () => {
     try {
-      setSession(await apiFetch('/session'));
+      const data = await apiFetch('/session');
+      if (data) {
+        setSession(data);
+      }
     } catch (err) {
       console.error('Failed to load session:', err);
     }
   }, []);
 
-  // Re-sync periodically so the local countdown can't drift from the server
   useEffect(() => {
     refresh();
     const id = setInterval(refresh, 20000);
@@ -42,5 +45,5 @@ export function useSession() {
     };
   }, [socket, refresh]);
 
-  return session;
+  return session || DEFAULT_SESSION;
 }

@@ -47,8 +47,15 @@ export function TopBar({
   const { user, logout } = useAuth();
   const [muted, setMuted] = useState(isSoundMuted());
   const session = useSession();
+  const formattedTime = session?.formattedTime || '00:00:00';
+  const sessionStatus = session?.status || 'NOT_STARTED';
 
-  const isUrgent = session.formattedTime !== '00:00:00' && session.formattedTime.startsWith('00:04') || session.formattedTime.startsWith('00:03') || session.formattedTime.startsWith('00:02') || session.formattedTime.startsWith('00:01');
+  const isUrgent = formattedTime !== '00:00:00' && (
+    formattedTime.startsWith('00:04') ||
+    formattedTime.startsWith('00:03') ||
+    formattedTime.startsWith('00:02') ||
+    formattedTime.startsWith('00:01')
+  );
 
   const navItems = [
     { id: 'DASHBOARD', label: 'MARKETS', icon: LayoutGrid },
@@ -103,7 +110,7 @@ export function TopBar({
             isUrgent ? 'border-[var(--loss)] text-[var(--loss)] animate-urgent-pulse bg-[var(--loss)]/10' : 'border-[var(--border)] text-[var(--accent-gold)] bg-[var(--bg-secondary)]'
           }`}>
             <Clock className="w-3.5 h-3.5" />
-            <span>{session.status === 'NOT_STARTED' ? 'Waiting for session' : session.formattedTime}</span>
+            <span>{sessionStatus === 'NOT_STARTED' ? 'Waiting for session' : formattedTime}</span>
           </div>
 
           {/* Wallet Balance */}
