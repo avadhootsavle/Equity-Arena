@@ -41,7 +41,7 @@ export function NewsToast({ news, onClose }) {
               <Newspaper className="w-3.5 h-3.5" />
             </div>
             <span className="text-xs font-bold font-heading text-[var(--accent)] uppercase tracking-wider">
-              ANALYST WIRE
+              BREAKING NEWS
             </span>
             {news.stockSymbol && (
               <span className="px-1.5 py-0.2 bg-[color-mix(in_srgb,var(--accent)_20%,transparent)] text-[var(--accent)] font-mono font-extrabold text-[10px] rounded-[3px] border border-[color-mix(in_srgb,var(--accent)_40%,transparent)]">
@@ -75,9 +75,9 @@ export function NewsToast({ news, onClose }) {
         <div className="flex items-center justify-between text-[10px] font-mono theme-text-dim pt-1 border-t theme-border">
           <div className="flex items-center gap-1.5">
             <Radio className="w-3 h-3 text-[var(--accent)] animate-pulse" />
-            <span>Market impact applied</span>
+            <span>Just broadcasted</span>
           </div>
-          <span className="text-[9px] text-[var(--gain-green)] font-bold">LIVE WIRE</span>
+          <span className="text-[9px] text-[var(--gain-green)] font-bold">JUST NOW</span>
         </div>
 
         {/* Auto-Dismiss Progress Bar */}

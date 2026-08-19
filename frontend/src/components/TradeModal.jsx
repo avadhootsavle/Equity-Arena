@@ -39,44 +39,47 @@ export function TradeModal({ stock, userWallet, userHolding, isOpen, onClose, on
       });
 
       if (onSuccess) {
-        onSuccess(data.message, data.portfolio);
+        const msg = mode === 'BUY' 
+          ? `Done! You bought ${parsedQty} shares of ${stock.symbol}.`
+          : `Done! You sold ${parsedQty} shares of ${stock.symbol}.`;
+        onSuccess(msg, data.portfolio);
       }
       onClose();
     } catch (err) {
-      setError(err.message || 'Trade execution failed');
+      setError(err.message || 'Trade failed — please try again');
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-md animate-fadeIn">
-      <div className="w-full max-w-md glass-panel p-6 rounded-2xl border border-slate-800 shadow-2xl relative">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 theme-bg-main/80 backdrop-blur-md animate-fadeIn">
+      <div className="w-full max-w-md theme-bg-card p-6 rounded-2xl border theme-border shadow-2xl relative">
         <button
           onClick={onClose}
-          className="absolute top-4 right-4 p-1.5 bg-slate-800 hover:bg-slate-700 text-slate-400 hover:text-white rounded-lg transition-colors"
+          className="absolute top-4 right-4 p-1.5 theme-bg-panel hover:theme-bg-card-hover theme-text-muted hover:theme-text-main rounded-lg transition-colors"
         >
           <X className="w-4 h-4" />
         </button>
 
         <div className="mb-6">
           <div className="flex items-center gap-2">
-            <span className="text-xl font-extrabold text-white font-mono">{stock.symbol}</span>
-            <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-slate-800 text-slate-300">
+            <span className="text-xl font-extrabold theme-text-main font-mono">{stock.symbol}</span>
+            <span className="px-2 py-0.5 rounded text-[10px] font-bold theme-bg-panel theme-text-muted border theme-border">
               {stock.sector}
             </span>
           </div>
           <div className="mt-2 flex items-baseline justify-between">
             <div>
-              <span className="text-xs text-slate-400">Current Market Price</span>
-              <div className="text-2xl font-extrabold font-mono text-white">
-                {currentPrice.toFixed(2)} <span className="text-sm font-bold text-emerald-400">IC</span>
+              <span className="text-xs theme-text-muted">Market Price</span>
+              <div className="text-2xl font-extrabold font-mono theme-text-main">
+                {currentPrice.toFixed(2)} <span className="text-sm font-bold text-[var(--gain-green)]">IC</span>
               </div>
             </div>
             {userHolding && (
               <div className="text-right">
-                <span className="text-xs text-slate-400">You Own</span>
-                <div className="text-sm font-bold font-mono text-emerald-400">
+                <span className="text-xs theme-text-muted">You Own</span>
+                <div className="text-sm font-bold font-mono text-[var(--gain-green)]">
                   {userHolding.quantity} shares
                 </div>
               </div>
@@ -84,14 +87,14 @@ export function TradeModal({ stock, userWallet, userHolding, isOpen, onClose, on
           </div>
         </div>
 
-        <div className="flex bg-slate-900/90 p-1 rounded-xl mb-6 border border-slate-800">
+        <div className="flex theme-bg-panel p-1 rounded-xl mb-6 border theme-border">
           <button
             type="button"
             onClick={() => setMode('BUY')}
             className={`flex-1 py-2 text-xs font-bold rounded-lg flex items-center justify-center gap-1.5 transition-all ${
               mode === 'BUY'
-                ? 'bg-emerald-500 text-slate-950 shadow-lg shadow-emerald-500/20'
-                : 'text-slate-400 hover:text-white'
+                ? 'bg-[var(--gain-green)] text-white shadow-lg'
+                : 'theme-text-muted hover:theme-text-main'
             }`}
           >
             <ArrowUpRight className="w-4 h-4" />
@@ -102,8 +105,8 @@ export function TradeModal({ stock, userWallet, userHolding, isOpen, onClose, on
             onClick={() => setMode('SELL')}
             className={`flex-1 py-2 text-xs font-bold rounded-lg flex items-center justify-center gap-1.5 transition-all ${
               mode === 'SELL'
-                ? 'bg-rose-500 text-white shadow-lg shadow-rose-500/20'
-                : 'text-slate-400 hover:text-white'
+                ? 'bg-[var(--loss-red)] text-white shadow-lg'
+                : 'theme-text-muted hover:theme-text-main'
             }`}
           >
             <ArrowDownRight className="w-4 h-4" />
@@ -112,7 +115,7 @@ export function TradeModal({ stock, userWallet, userHolding, isOpen, onClose, on
         </div>
 
         {error && (
-          <div className="mb-4 p-3 bg-rose-500/10 border border-rose-500/30 rounded-xl text-rose-400 text-xs font-medium flex items-center gap-2">
+          <div className="mb-4 p-3 bg-[color-mix(in_srgb,var(--loss-red)_10%,transparent)] border border-[color-mix(in_srgb,var(--loss-red)_30%,transparent)] rounded-xl text-[var(--loss-red)] text-xs font-medium flex items-center gap-2">
             <AlertTriangle className="w-4 h-4 flex-shrink-0" />
             <span>{error}</span>
           </div>
@@ -121,14 +124,14 @@ export function TradeModal({ stock, userWallet, userHolding, isOpen, onClose, on
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
             <div className="flex justify-between items-center mb-1">
-              <label className="text-xs font-semibold text-slate-300">Quantity (Shares)</label>
+              <label className="text-xs font-semibold theme-text-muted">Number of Shares</label>
               <div className="flex gap-1">
                 {[1, 5, 10, 50].map((num) => (
                   <button
                     key={num}
                     type="button"
                     onClick={() => setQuantity(num)}
-                    className="px-2 py-0.5 bg-slate-800 hover:bg-slate-700 text-slate-300 text-[10px] font-mono rounded border border-slate-700"
+                    className="px-2 py-0.5 theme-bg-panel hover:theme-bg-card-hover theme-text-main text-[10px] font-mono rounded border theme-border"
                   >
                     {num}
                   </button>
@@ -142,31 +145,31 @@ export function TradeModal({ stock, userWallet, userHolding, isOpen, onClose, on
               required
               value={quantity}
               onChange={(e) => setQuantity(e.target.value)}
-              className="w-full bg-slate-900 border border-slate-800 rounded-xl py-2.5 px-3 text-sm text-white font-mono focus:outline-none focus:border-indigo-500"
+              className="w-full theme-bg-input border theme-border rounded-xl py-2.5 px-3 text-sm theme-text-main font-mono focus:outline-none focus:border-[var(--accent)]"
             />
           </div>
 
-          <div className="p-4 bg-slate-900/60 rounded-xl border border-slate-800 space-y-2">
-            <div className="flex justify-between text-xs text-slate-400">
-              <span>{mode === 'BUY' ? 'Est. Total Cost' : 'Est. Total Proceeds'}</span>
-              <span className="font-mono text-white font-bold">{totalAmount.toFixed(2)} IC</span>
+          <div className="p-4 theme-bg-panel rounded-xl border theme-border space-y-2">
+            <div className="flex justify-between text-xs theme-text-muted">
+              <span>{mode === 'BUY' ? 'Total Cost' : 'Total You Get'}</span>
+              <span className="font-mono theme-text-main font-bold">{totalAmount.toFixed(2)} IC</span>
             </div>
-            <div className="flex justify-between text-xs text-slate-400">
-              <span>{mode === 'BUY' ? 'Available Wallet' : 'Owned Shares'}</span>
-              <span className="font-mono text-slate-300">
+            <div className="flex justify-between text-xs theme-text-muted">
+              <span>{mode === 'BUY' ? 'Your Wallet' : 'Your Shares'}</span>
+              <span className="font-mono theme-text-main">
                 {mode === 'BUY' ? `${userWallet.toFixed(2)} IC` : `${ownedQty} shares`}
               </span>
             </div>
           </div>
 
           {mode === 'BUY' && !canBuy && (
-            <div className="text-[11px] text-rose-400 font-semibold text-center">
-              ⚠️ Insufficient wallet balance. You need ${(totalAmount - userWallet).toFixed(2)} IC more.
+            <div className="text-[11px] text-[var(--loss-red)] font-semibold text-center">
+              You don't have enough money. You need {(totalAmount - userWallet).toFixed(2)} IC more.
             </div>
           )}
           {mode === 'SELL' && !canSell && (
-            <div className="text-[11px] text-rose-400 font-semibold text-center">
-              ⚠️ You own {ownedQty} shares, but tried to sell {parsedQty}.
+            <div className="text-[11px] text-[var(--loss-red)] font-semibold text-center">
+              You only own {ownedQty} shares, so you can't sell {parsedQty}.
             </div>
           )}
 
@@ -175,14 +178,14 @@ export function TradeModal({ stock, userWallet, userHolding, isOpen, onClose, on
             disabled={loading || (mode === 'BUY' ? !canBuy : !canSell)}
             className={`w-full py-3 font-bold text-xs rounded-xl shadow-lg flex items-center justify-center gap-2 transition-all ${
               mode === 'BUY'
-                ? 'bg-emerald-500 hover:bg-emerald-400 text-slate-950 shadow-emerald-500/20'
-                : 'bg-rose-500 hover:bg-rose-400 text-white shadow-rose-500/20'
-            } disabled:opacity-40 disabled:cursor-not-allowed`}
+                ? 'bg-[var(--gain-green)] hover:opacity-90 text-white'
+                : 'bg-[var(--loss-red)] hover:opacity-90 text-white'
+            } disabled:opacity-40 disabled:cursor-not-allowed btn-terminal`}
           >
-            {loading ? 'Executing Trade...' : (
+            {loading ? (mode === 'BUY' ? 'Buying...' : 'Selling...') : (
               <>
                 <ShoppingBag className="w-4 h-4" />
-                <span>CONFIRM {mode} ORDER ({totalAmount.toFixed(2)} IC)</span>
+                <span>{mode === 'BUY' ? 'BUY NOW' : 'SELL NOW'} ({totalAmount.toFixed(2)} IC)</span>
               </>
             )}
           </button>

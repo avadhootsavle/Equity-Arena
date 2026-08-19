@@ -294,19 +294,19 @@ export function AdminDashboard() {
                   ADMIN CONSOLE
                 </span>
               </div>
-              <p className="text-[11px] theme-text-muted">Live Indian Stock Exchange Control Desk</p>
+              <p className="text-[11px] theme-text-muted">Control Desk for 15 Indian Stocks</p>
             </div>
           </div>
 
           <div className="flex items-center gap-4">
             {/* Session Countdown */}
-            <GameClock sessionData={adminSession} title="TIME REMAINING" />
+            <GameClock sessionData={adminSession} title="TIME LEFT" />
 
             {/* 20-Minute News Reminder Widget */}
             <div className="hidden md:flex items-center gap-2 px-3 py-1.5 rounded-[4px] border theme-border theme-bg-card font-mono text-xs shadow-sm">
               <Clock className="w-4 h-4 text-[var(--accent)] animate-pulse" />
               <div>
-                <span className="theme-text-dim text-[9px] block font-bold uppercase tracking-wider">NEWS DUE IN</span>
+                <span className="theme-text-dim text-[9px] block font-bold uppercase tracking-wider">SEND NEWS SOON</span>
                 <span className={`font-bold font-mono ${reminderSeconds < 180 ? 'text-[var(--loss-red)]' : 'theme-text-main'}`}>
                   {Math.floor(reminderSeconds / 60).toString().padStart(2, '0')}:{(reminderSeconds % 60).toString().padStart(2, '0')}
                 </span>
@@ -316,10 +316,10 @@ export function AdminDashboard() {
             <button
               onClick={handleStartNewSession}
               className="px-3 py-1.5 bg-[var(--accent)] hover:bg-[color-mix(in_srgb,var(--accent)_90%,transparent)] text-slate-950 text-xs font-bold font-mono rounded-[4px] transition-all flex items-center gap-1.5 shadow-sm min-h-[36px] btn-terminal"
-              title="Start fresh 3-Hour Trading Session"
+              title="Start a fresh trading session"
             >
               <RotateCcw className="w-3.5 h-3.5" />
-              <span>NEW 3H SESSION</span>
+              <span>START NEW SESSION</span>
             </button>
 
             <button
@@ -356,11 +356,11 @@ export function AdminDashboard() {
             <div className="flex items-center gap-2">
               <SlidersHorizontal className="w-4 h-4 text-[var(--accent)]" />
               <h3 className="text-xs font-bold uppercase tracking-wider font-heading theme-text-main">
-                SESSION TIMING & QUANT ALGORITHM CONTROLLER
+                SESSION TIMING & SETTINGS
               </h3>
             </div>
-            <span className="text-[10px] font-mono text-emerald-400 font-bold bg-emerald-500/10 px-2.5 py-0.5 rounded border border-emerald-500/20">
-              ADMIN CONFIGURABLE
+            <span className="text-[10px] font-mono text-[var(--gain-green)] font-bold bg-[color-mix(in_srgb,var(--gain-green)_10%,transparent)] px-2.5 py-0.5 rounded border border-[color-mix(in_srgb,var(--gain-green)_20%,transparent)]">
+              ADMIN SETTINGS
             </span>
           </div>
 
@@ -420,7 +420,7 @@ export function AdminDashboard() {
                 className="w-full px-4 py-2 bg-[var(--accent)] hover:bg-[color-mix(in_srgb,var(--accent)_90%,transparent)] text-slate-950 text-xs font-black font-mono uppercase rounded-[4px] transition-all flex items-center justify-center gap-2 shadow-sm min-h-[38px] btn-terminal disabled:opacity-50"
               >
                 <RotateCcw className="w-4 h-4" />
-                <span>{isStartingSession ? 'STARTING SESSION...' : 'START TRADING SESSION'}</span>
+                <span>{isStartingSession ? 'STARTING...' : 'START TRADING SESSION'}</span>
               </button>
             </div>
           </form>
@@ -432,8 +432,8 @@ export function AdminDashboard() {
             <div className="flex items-center gap-3">
               <Bell className="w-5 h-5 text-[var(--accent)] animate-bounce flex-shrink-0" />
               <div>
-                <span className="font-extrabold text-sm block">⏰ NEWS BROADCAST REMINDER: 20 MINUTES ELAPSED!</span>
-                <span className="theme-text-muted">It's time to send the next market news headline or analyst template to keep trader momentum active.</span>
+                <span className="font-extrabold text-sm block">⏰ SEND NEWS SOON: 20 MINUTES PASSED!</span>
+                <span className="theme-text-muted">It's time to send a news headline to traders to keep the market active.</span>
               </div>
             </div>
             <button
@@ -457,21 +457,21 @@ export function AdminDashboard() {
           </div>
         )}
 
-        {/* Section 1: Analyst News Templates (Steers Scheduled 15-Min Macro Moves) */}
+        {/* Section 1: Analyst News Templates */}
         <div className="theme-bg-card p-6 rounded-2xl border theme-border space-y-4 shadow-sm">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
             <div>
               <h2 className="text-base font-bold theme-text-main flex items-center gap-2">
                 <Sparkles className="w-5 h-5" style={{ color: 'var(--accent)' }} />
-                Analyst News Templates (Steers Upcoming 15-Min Macro Moves)
+                Send News to Traders (Prebuilt Templates)
               </h2>
               <p className="text-xs theme-text-muted">
-                Triggering a news template directly steers the target stock's next scheduled 15-minute macro move. Single & multi-stock impacts available across 3 difficulty levels.
+                Pick a news template to send to traders and steer stock price movement. Single & multi-stock impacts available across 3 difficulty levels.
               </p>
             </div>
 
             <div className="flex items-center gap-3">
-              <label className="text-xs font-semibold theme-text-muted font-mono whitespace-nowrap">Steer Timing:</label>
+              <label className="text-xs font-semibold theme-text-muted font-mono whitespace-nowrap">Send Delay:</label>
               <select
                 value={delaySeconds}
                 onChange={(e) => setDelaySeconds(e.target.value)}
@@ -538,7 +538,7 @@ export function AdminDashboard() {
                     className="w-full py-2 bg-[color-mix(in_srgb,var(--accent)_18%,transparent)] hover:bg-[var(--accent)] text-[var(--accent)] hover:text-white font-bold text-xs rounded-xl transition-all border border-[color-mix(in_srgb,var(--accent)_35%,transparent)] flex items-center justify-center gap-1.5 min-h-[36px] btn-terminal"
                   >
                     <Zap className="w-3.5 h-3.5" />
-                    <span>Steer Macro Move ({delaySeconds}s)</span>
+                    <span>Send News ({delaySeconds}s)</span>
                   </button>
                 </div>
               );

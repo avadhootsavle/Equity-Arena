@@ -124,7 +124,7 @@ export function Login() {
             EQUITY ARENA
           </h1>
           <p className="theme-text-muted text-xs mt-2 font-medium">
-            Real-time India stock exchange terminal with 20,000 IC starter capital
+            Trade 15 Indian stocks live with 20,000 IC starting cash
           </p>
         </div>
 
@@ -155,7 +155,7 @@ export function Login() {
                 type="button"
                 onClick={() => { setActiveTab('ADMIN'); setError(''); }}
                 className={`flex-1 py-2 text-xs font-bold font-heading uppercase rounded-[3px] transition-all flex items-center justify-center gap-1 min-h-[38px] ${
-                  activeTab === 'ADMIN' ? 'bg-indigo-600 text-white shadow-sm' : 'text-indigo-400 hover:theme-text-main'
+                  activeTab === 'ADMIN' ? 'bg-[var(--accent)] text-slate-950 shadow-sm' : 'theme-text-muted hover:theme-text-main'
                 }`}
               >
                 <Shield className="w-3.5 h-3.5" />
@@ -182,7 +182,7 @@ export function Login() {
                       required
                       value={name}
                       onChange={(e) => setName(e.target.value)}
-                      placeholder="Trader Name"
+                      placeholder="Your Name"
                       className="w-full theme-bg-panel border theme-border rounded-[4px] py-2 pl-10 pr-4 text-sm theme-text-main focus:outline-none focus:border-[var(--accent)] transition-all placeholder:theme-text-dim min-h-[40px] font-mono"
                     />
                   </div>
@@ -198,7 +198,7 @@ export function Login() {
                     required
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
-                    placeholder="trader@example.com"
+                    placeholder="you@example.com"
                     className="w-full theme-bg-panel border theme-border rounded-[4px] py-2 pl-10 pr-4 text-sm theme-text-main focus:outline-none focus:border-[var(--accent)] transition-all placeholder:theme-text-dim min-h-[40px] font-mono"
                   />
                 </div>
@@ -224,9 +224,9 @@ export function Login() {
                 disabled={loading}
                 className="w-full py-3 bg-[var(--accent)] hover:bg-[color-mix(in_srgb,var(--accent)_90%,transparent)] text-slate-950 font-extrabold text-xs font-mono uppercase tracking-wider rounded-[4px] shadow flex items-center justify-center gap-2 transition-all active:scale-[0.99] disabled:opacity-50 mt-6 min-h-[44px] btn-terminal"
               >
-                {loading ? 'AUTHENTICATING SESSION...' : (
+                {loading ? 'LOGGING IN...' : (
                   <>
-                    <span>{activeTab === 'TRADER_REGISTER' ? 'JOIN EXCHANGE (START WITH 20,000 IC)' : 'ENTER TRADING TERMINAL'}</span>
+                    <span>{activeTab === 'TRADER_REGISTER' ? 'START TRADING (20,000 IC CASH)' : 'LOG IN'}</span>
                     <ArrowRight className="w-4 h-4" />
                   </>
                 )}
@@ -246,7 +246,7 @@ export function Login() {
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
                     placeholder="admin@test.com"
-                    className="w-full theme-bg-panel border theme-border rounded-[4px] py-2 pl-10 pr-4 text-sm theme-text-main focus:outline-none focus:border-indigo-500 font-mono min-h-[40px]"
+                    className="w-full theme-bg-panel border theme-border rounded-[4px] py-2 pl-10 pr-4 text-sm theme-text-main focus:outline-none focus:border-[var(--accent)] font-mono min-h-[40px]"
                   />
                 </div>
               </div>
@@ -261,7 +261,7 @@ export function Login() {
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
                     placeholder="••••••••"
-                    className="w-full theme-bg-panel border theme-border rounded-[4px] py-2 pl-10 pr-4 text-sm theme-text-main focus:outline-none focus:border-indigo-500 font-mono min-h-[40px]"
+                    className="w-full theme-bg-panel border theme-border rounded-[4px] py-2 pl-10 pr-4 text-sm theme-text-main focus:outline-none focus:border-[var(--accent)] font-mono min-h-[40px]"
                   />
                 </div>
               </div>
@@ -269,12 +269,12 @@ export function Login() {
               <button
                 type="submit"
                 disabled={loading}
-                className="w-full py-3 bg-indigo-600 hover:bg-indigo-500 text-white font-extrabold text-xs font-mono uppercase tracking-wider rounded-[4px] shadow flex items-center justify-center gap-2 transition-all active:scale-[0.99] disabled:opacity-50 mt-6 min-h-[44px] btn-terminal"
+                className="w-full py-3 bg-[var(--accent)] hover:bg-[color-mix(in_srgb,var(--accent)_90%,transparent)] text-slate-950 font-extrabold text-xs font-mono uppercase tracking-wider rounded-[4px] shadow flex items-center justify-center gap-2 transition-all active:scale-[0.99] disabled:opacity-50 mt-6 min-h-[44px] btn-terminal"
               >
-                {loading ? 'AUTHENTICATING...' : (
+                {loading ? 'LOGGING IN...' : (
                   <>
                     <Shield className="w-4 h-4" />
-                    <span>AUTHORIZE CONSOLE ACCESS</span>
+                    <span>ADMIN LOG IN</span>
                     <ArrowRight className="w-4 h-4" />
                   </>
                 )}
