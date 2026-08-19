@@ -3,87 +3,91 @@
 @tailwind utilities;
 
 :root {
-  /* Design System Tokens — Dark (default) */
-  --bg-main: #080B14;
-  --bg-rail: #0B0F1A;
-  --bg-card: #0F1523;
-  --bg-card-hover: #151C2C;
-  --bg-panel: #0C111C;
-  --bg-input: #0A0E18;
-  --bg-elevated: #161E2E;
-  --border-card: #1E2637;
-  --border-strong: #2C3648;
-  --border-hover: #3B82F6;
-  --text-main: #F1F5F9;
-  --text-muted: #94A3B8;
-  --text-dim: #64748B;
+  /* Design System Tokens — Dark (Primary) */
+  --bg-main: #0D1117;
+  --bg-rail: #161B22;
+  --bg-card: #161B22;
+  --bg-card-hover: #1F242C;
+  --bg-panel: #161B22;
+  --bg-input: #0D1117;
+  --bg-elevated: #161B22;
+  --border-card: #21262D;
+  --border-strong: #30363D;
+  --border-hover: #F0B429;
+  --text-main: #E6EDF3;
+  --text-muted: #8B949E;
+  --text-dim: #8B949E;
 
-  /* Primary accent */
-  --accent: #3B82F6;
-  --accent-strong: #2563EB;
-  --accent-fg: #FFFFFF;
+  /* Primary accent — Warm Amber/Gold */
+  --accent: #F0B429;
+  --accent-strong: #D4970A;
+  --accent-fg: #0D1117;
 
-  --gain-green: #22C55E;
-  --loss-red: #EF4444;
+  /* Gain & Loss */
+  --gain-green: #3FB950;
+  --loss-red: #F85149;
 
-  /* Categorical series — allocation slices, health meters, badges */
-  --cat-1: #EC4899;
-  --cat-2: #3B82F6;
-  --cat-3: #A3E635;
-  --cat-4: #F97316;
-  --cat-5: #2DD4BF;
-  --cat-6: #A78BFA;
-  --cat-7: #FBBF24;
-  --cat-8: #38BDF8;
+  /* Categorical series — strictly warm amber/green/red/gold */
+  --cat-1: #F0B429;
+  --cat-2: #3FB950;
+  --cat-3: #F85149;
+  --cat-4: #D4970A;
+  --cat-5: #2EA043;
+  --cat-6: #DA3633;
+  --cat-7: #B08800;
+  --cat-8: #8B949E;
 
-  --grid-line: rgba(255, 255, 255, 0.055);
-  --crosshair: rgba(241, 245, 249, 0.45);
-  --scrim: rgba(4, 6, 12, 0.78);
-  --card-shadow: 0 1px 2px rgba(0, 0, 0, 0.4), 0 12px 32px rgba(0, 0, 0, 0.35);
-  --glow-green: rgba(34, 197, 94, 0.28);
-  --glow-red: rgba(239, 68, 68, 0.28);
-  --glow-accent: rgba(59, 130, 246, 0.3);
+  --grid-line: rgba(230, 237, 243, 0.06);
+  --crosshair: rgba(230, 237, 243, 0.45);
+  --scrim: rgba(13, 17, 23, 0.85);
+  --card-shadow: 0 1px 3px rgba(0, 0, 0, 0.5), 0 12px 28px rgba(0, 0, 0, 0.4);
+  --glow-green: rgba(63, 185, 80, 0.25);
+  --glow-red: rgba(248, 81, 73, 0.25);
+  --glow-accent: rgba(240, 180, 41, 0.28);
 }
 
 [data-theme="light"] {
   /* Design System Tokens — Light */
-  --bg-main: #F1F5F9;
+  --bg-main: #F6F8FA;
   --bg-rail: #FFFFFF;
   --bg-card: #FFFFFF;
-  --bg-card-hover: #F8FAFC;
-  --bg-panel: #F1F5F9;
+  --bg-card-hover: #F3F4F6;
+  --bg-panel: #F6F8FA;
   --bg-input: #FFFFFF;
   --bg-elevated: #FFFFFF;
-  --border-card: #E2E8F0;
-  --border-strong: #CBD5E1;
-  --border-hover: #2563EB;
-  --text-main: #0F172A;
-  --text-muted: #475569;
-  --text-dim: #7C8AA0;
+  --border-card: #D0D7DE;
+  --border-strong: #AFB8C1;
+  --border-hover: #D4970A;
+  --text-main: #1C2128;
+  --text-muted: #656D76;
+  --text-dim: #656D76;
 
-  --accent: #2563EB;
-  --accent-strong: #1D4ED8;
+  /* Primary accent — Darker Amber for Light Mode */
+  --accent: #D4970A;
+  --accent-strong: #B08800;
   --accent-fg: #FFFFFF;
 
-  --gain-green: #16A34A;
-  --loss-red: #DC2626;
+  /* Gain & Loss */
+  --gain-green: #1A7F37;
+  --loss-red: #CF222E;
 
-  --cat-1: #DB2777;
-  --cat-2: #2563EB;
-  --cat-3: #65A30D;
-  --cat-4: #EA580C;
-  --cat-5: #0D9488;
-  --cat-6: #7C3AED;
-  --cat-7: #D97706;
-  --cat-8: #0284C7;
+  /* Categorical series */
+  --cat-1: #D4970A;
+  --cat-2: #1A7F37;
+  --cat-3: #CF222E;
+  --cat-4: #B08800;
+  --cat-5: #116329;
+  --cat-6: #A40E26;
+  --cat-7: #8C6B00;
+  --cat-8: #656D76;
 
-  --grid-line: rgba(15, 23, 42, 0.08);
-  --crosshair: rgba(15, 23, 42, 0.42);
-  --scrim: rgba(15, 23, 42, 0.5);
-  --card-shadow: 0 1px 2px rgba(15, 23, 42, 0.05), 0 10px 26px rgba(15, 23, 42, 0.07);
-  --glow-green: rgba(22, 163, 74, 0.2);
-  --glow-red: rgba(220, 38, 38, 0.2);
-  --glow-accent: rgba(37, 99, 235, 0.22);
+  --grid-line: rgba(28, 33, 40, 0.08);
+  --crosshair: rgba(28, 33, 40, 0.45);
+  --scrim: rgba(246, 248, 250, 0.65);
+  --card-shadow: 0 1px 3px rgba(28, 33, 40, 0.06), 0 8px 24px rgba(28, 33, 40, 0.08);
+  --glow-green: rgba(26, 127, 55, 0.2);
+  --glow-red: rgba(207, 34, 46, 0.2);
+  --glow-accent: rgba(212, 151, 10, 0.22);
 }
 
 @layer base {

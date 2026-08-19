@@ -103,20 +103,20 @@ export function SessionCountdown({ onSessionUpdate }) {
     <div
       className={`px-3 py-1.5 rounded-[4px] border font-mono text-xs font-bold flex items-center gap-2 transition-all ${
         isEnded
-          ? 'bg-[#E8453C]/20 border-[#E8453C] text-[#E8453C]'
+          ? 'bg-[#F85149]/20 border-[#F85149] text-[#F85149]'
           : isLiquidating
-          ? 'bg-[#E8453C]/20 border-[#E8453C] text-[#E8453C] animate-pulse'
+          ? 'bg-[#F85149]/20 border-[#F85149] text-[#F85149] animate-pulse'
           : isWarning
-          ? 'bg-[#D4A017]/20 border-[#D4A017] text-[#D4A017] animate-pulse'
-          : 'bg-[#D4A017]/10 border-[#D4A017]/40 text-[#D4A017]'
+          ? 'bg-[#F0B429]/20 border-[#F0B429] text-[#F0B429] animate-pulse'
+          : 'bg-[#F0B429]/10 border-[#F0B429]/40 text-[#F0B429]'
       }`}
     >
       {isEnded ? (
-        <ShieldCheck className="w-4 h-4 text-[#E8453C]" />
+        <ShieldCheck className="w-4 h-4 text-[#F85149]" />
       ) : isLiquidating ? (
-        <AlertTriangle className="w-4 h-4 text-[#E8453C] animate-bounce" />
+        <AlertTriangle className="w-4 h-4 text-[#F85149] animate-bounce" />
       ) : (
-        <Clock className="w-4 h-4 text-[#D4A017]" />
+        <Clock className="w-4 h-4 text-[#F0B429]" />
       )}
 
       <div>
