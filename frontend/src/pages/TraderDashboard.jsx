@@ -14,7 +14,7 @@ import { FloorCard } from '../components/FloorCard';
 import { MyStocks } from '../components/MyStocks';
 import { MyTrades } from '../components/MyTrades';
 import { EditOrderDialog } from '../components/EditOrderDialog';
-import { Reveal, ScrollProgressBar, BackToTopButton } from '../components/Reveal';
+import { Reveal, BackToTopButton } from '../components/Reveal';
 import { ToastStack } from '../components/ToastStack';
 import { StockDetailModal } from '../components/StockDetailModal';
 import { OnboardingTour } from '../components/OnboardingTour';
@@ -882,7 +882,6 @@ export function TraderDashboard() {
       </div>
 
       {/* ---------------- Overlays ---------------- */}
-      <ScrollProgressBar />
       <BackToTopButton />
 
       <ToastStack toasts={toasts} onDismiss={dismissToast} />
