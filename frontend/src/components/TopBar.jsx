@@ -59,7 +59,6 @@ export function TopBar({
 
   const navItems = [
     { id: 'DASHBOARD', label: 'MARKETS', icon: LayoutGrid },
-    { id: 'PORTFOLIO', label: 'PORTFOLIO', icon: PieChart },
     { id: 'NEWS', label: 'NEWS', icon: Newspaper },
     { id: 'ORDERS', label: 'ORDERS', icon: List }
   ];
@@ -79,7 +78,7 @@ export function TopBar({
 
         {/* Center: Tab Navigation (Active tab gets gold bottom border underline) */}
         {setActiveTab && (
-          <nav className="hidden md:flex items-center gap-1 h-full">
+          <nav className="flex items-center gap-1 h-full">
             {navItems.map((item) => {
               const Icon = item.icon;
               const isActive = activeTab === item.id;
