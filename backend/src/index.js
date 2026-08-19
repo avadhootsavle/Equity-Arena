@@ -94,7 +94,10 @@ if (fs.existsSync(distPath)) {
   }));
 
   // SPA Fallback: Serve index.html ONLY for non-asset client routes
-  app.get('*', (req, res) => {
+  app.use((req, res, next) => {
+    if (req.method !== 'GET') {
+      return next();
+    }
     if (path.extname(req.path) || req.path.startsWith('/assets/')) {
       return res.status(404).set('Content-Type', 'text/plain').send('404 Not Found: Missing Asset');
     }
