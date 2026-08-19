@@ -1,4 +1,4 @@
-import React, { memo, useMemo, useRef, useEffect, useState, useId } from 'react';
+import React, { memo, useMemo } from 'react';
 import { TrendingUp, TrendingDown, Check, Zap } from 'lucide-react';
 
 const fmtMoney = (n, d = 2) =>
@@ -34,115 +34,6 @@ const CardBackdrop = memo(({ accent, intensity, streakCount = 4 }) => (
 ));
 
 /* ------------------------------------------------------------------
-   Mini sparkline that draws itself in on mount
-   ------------------------------------------------------------------ */
-const MiniSpark = memo(({ history = [], fallbackPrice = 0, width = 200, height = 40, up = true }) => {
-  // Unique per instance: a shared id made every card reuse the first gradient
-  const gid = `spark${useId().replace(/:/g, '')}`;
-  const pathRef = useRef(null);
-  const [dashLength, setDashLength] = useState(600);
-
-  const geometry = useMemo(() => {
-    const rawPrices = (history || [])
-      .map((h) => Number(h?.price))
-      .filter((p) => isFinite(p));
-
-    const prices = rawPrices.length >= 2 
-      ? rawPrices.slice(-50) 
-      : [fallbackPrice || 0, fallbackPrice || 0];
-
-    if (prices.length < 2) return null;
-
-    const lo = Math.min(...prices);
-    const hi = Math.max(...prices);
-    const range = hi - lo || Math.max(hi * 0.005, 0.01);
-    const pad = 4;
-    const usableH = height - pad * 2;
-
-    const coords = prices.map((p, i) => {
-      const x = (i / (prices.length - 1)) * width;
-      const y = pad + usableH - ((p - lo) / range) * usableH;
-      return [x, y];
-    });
-
-    const line = coords
-      .map(([x, y], i) => `${i === 0 ? 'M' : 'L'}${x.toFixed(1)},${y.toFixed(1)}`)
-      .join(' ');
-
-    return {
-      line,
-      area: `${line} L${width},${height} L0,${height} Z`,
-      lastPoint: coords[coords.length - 1]
-    };
-  }, [history, fallbackPrice, width, height]);
-
-  useEffect(() => {
-    if (pathRef.current) {
-      try {
-        setDashLength(Math.ceil(pathRef.current.getTotalLength()) || 600);
-      } catch {
-        setDashLength(600);
-      }
-    }
-  }, [geometry]);
-
-  if (!geometry) {
-    return (
-      <div
-        className="flex items-center justify-center text-[9px] font-mono theme-text-dim"
-        style={{ width: '100%', height }}
-      >
-        no tape
-      </div>
-    );
-  }
-
-  const color = up ? 'var(--gain-green)' : 'var(--loss-red)';
-
-  return (
-    <svg
-      viewBox={`0 0 ${width} ${height}`}
-      preserveAspectRatio="none"
-      style={{ width: '100%', height }}
-      aria-hidden="true"
-      className="block overflow-hidden"
-    >
-      <defs>
-        <linearGradient id={gid} x1="0" y1="0" x2="0" y2="1">
-          <stop offset="0%" stopColor={color} stopOpacity="0.15" />
-          <stop offset="100%" stopColor={color} stopOpacity="0" />
-        </linearGradient>
-      </defs>
-
-      <path d={geometry.area} fill={`url(#${gid})`} />
-      <path
-        ref={pathRef}
-        d={geometry.line}
-        fill="none"
-        stroke={color}
-        strokeWidth="1.6"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-        vectorEffect="non-scaling-stroke"
-        className="animate-draw-line"
-        style={{
-          '--dash-len': dashLength,
-          strokeDasharray: dashLength,
-          strokeDashoffset: dashLength
-        }}
-      />
-      <circle
-        cx={geometry.lastPoint[0]}
-        cy={geometry.lastPoint[1]}
-        r="2"
-        fill={color}
-        vectorEffect="non-scaling-stroke"
-      />
-    </svg>
-  );
-});
-
-/* ------------------------------------------------------------------
    Floor card
    ------------------------------------------------------------------ */
 export const FloorCard = memo(function FloorCard({
@@ -168,7 +59,6 @@ export const FloorCard = memo(function FloorCard({
     flash === 'up' ? 'animate-price-up' : flash === 'down' ? 'animate-price-down' : '';
 
   const accent = isUp ? 'var(--gain-green)' : 'var(--loss-red)';
-
   const intensity = Math.min(1, Math.abs(percentChange) / 40).toFixed(3);
 
   const history = stock?.priceHistories || [];
@@ -199,7 +89,7 @@ export const FloorCard = memo(function FloorCard({
             ? { borderColor: 'color-mix(in srgb, var(--accent) 55%, transparent)' }
             : null)
         }}
-        className={`floor-card animate-card-rise surface px-2 py-1.5 ${
+        className={`floor-card animate-card-rise surface p-2.5 flex flex-col justify-between ${
           isUp ? 'is-up' : 'is-down'
         } ${flashClass}`}
       >
@@ -208,7 +98,7 @@ export const FloorCard = memo(function FloorCard({
 
         <button
           type="button"
-          className="card-open"
+          className="card-open flex-1 flex flex-col justify-between"
           onClick={() => onSelect?.(stock)}
           aria-label={`Open ${stock.symbol} chart, ${fmtMoney(stock.currentPrice)} IC, ${
             isUp ? 'up' : 'down'
@@ -228,17 +118,13 @@ export const FloorCard = memo(function FloorCard({
           </span>
 
           <span
-            className={`block text-sm font-mono font-extrabold theme-text-main mt-0.5 ${priceClass}`}
+            className={`block text-sm font-mono font-extrabold theme-text-main my-1 ${priceClass}`}
           >
             {fmtMoney(stock.currentPrice, stock.currentPrice >= 1000 ? 1 : 2)}
           </span>
 
-          <span className="block h-6 mt-1 overflow-hidden relative rounded">
-            <MiniSpark history={history} fallbackPrice={stock.currentPrice} width={90} height={24} up={isUp} />
-          </span>
-
           <span
-            className="block mt-1 text-[9px] font-mono font-bold px-1 py-0.5 rounded text-center"
+            className="block text-[9px] font-mono font-bold px-1 py-0.5 rounded text-center"
             style={{
               color: accent,
               backgroundColor: `color-mix(in srgb, ${accent} 13%, transparent)`
@@ -249,7 +135,7 @@ export const FloorCard = memo(function FloorCard({
           </span>
         </button>
 
-        <div className="flex items-center gap-1 mt-1.5">
+        <div className="flex items-center gap-1 mt-2">
           <button
             type="button"
             onClick={(e) => handleTrade(e, 'BUY')}
@@ -290,7 +176,7 @@ export const FloorCard = memo(function FloorCard({
           ? { borderColor: 'color-mix(in srgb, var(--accent) 55%, transparent)' }
           : null)
       }}
-      className={`floor-card animate-card-rise surface p-3 ${
+      className={`floor-card animate-card-rise surface p-4 flex flex-col justify-between ${
         isUp ? 'is-up' : 'is-down'
       } ${flashClass}`}
     >
@@ -299,7 +185,7 @@ export const FloorCard = memo(function FloorCard({
 
       <button
         type="button"
-        className="card-open"
+        className="card-open flex-1 flex flex-col justify-between"
         onClick={() => onSelect?.(stock)}
         aria-label={`Open ${stock.symbol} ${stock.name} chart, ${fmtMoney(
           stock.currentPrice
@@ -309,7 +195,7 @@ export const FloorCard = memo(function FloorCard({
         <span className="flex items-start justify-between gap-2">
           <span className="flex items-center gap-2 min-w-0">
             <span
-              className="w-5 h-5 rounded flex items-center justify-center text-[9px] font-mono font-extrabold flex-shrink-0"
+              className="w-7 h-7 rounded-lg flex items-center justify-center text-[10px] font-mono font-extrabold flex-shrink-0 shadow-sm"
               style={{
                 backgroundColor: `color-mix(in srgb, ${accent} 18%, transparent)`,
                 color: accent
@@ -318,10 +204,10 @@ export const FloorCard = memo(function FloorCard({
               {stock.symbol?.slice(0, 2)}
             </span>
             <span className="min-w-0 block">
-              <span className="block text-[11.5px] font-semibold theme-text-main leading-tight truncate max-w-[120px]">
+              <span className="block text-[13px] font-semibold theme-text-main leading-tight truncate max-w-[130px]">
                 {stock.name || stock.symbol}
               </span>
-              <span className="block text-[9.5px] font-mono theme-text-dim leading-tight">
+              <span className="block text-[10px] font-mono theme-text-dim leading-tight mt-0.5">
                 {stock.symbol}
               </span>
             </span>
@@ -329,51 +215,46 @@ export const FloorCard = memo(function FloorCard({
 
           {owned > 0 && (
             <span
-              className="px-1.5 py-0.5 rounded text-[9px] font-mono font-bold flex items-center gap-0.5 flex-shrink-0"
+              className="px-2 py-0.5 rounded text-[9.5px] font-mono font-bold flex items-center gap-1 flex-shrink-0"
               style={{
                 backgroundColor:
                   'color-mix(in srgb, var(--accent) 15%, transparent)',
                 color: 'var(--accent)'
               }}
             >
-              <Check className="w-2.5 h-2.5" />
+              <Check className="w-3 h-3" />
               {owned}
             </span>
           )}
         </span>
 
-        {/* Price + change */}
-        <span className="flex items-end justify-between gap-2 mt-2">
+        {/* Price + % Change Badge */}
+        <span className="flex items-baseline justify-between gap-2 my-3.5">
           <span
-            className={`text-xl font-mono font-extrabold theme-text-main leading-none ${priceClass}`}
+            className={`text-2xl font-mono font-extrabold theme-text-main leading-none ${priceClass}`}
           >
             {fmtMoney(stock.currentPrice)}
           </span>
           <span
-            className="flex items-center gap-0.5 px-1.5 py-0.5 rounded text-[10px] font-mono font-extrabold"
+            className="flex items-center gap-1 px-2 py-1 rounded text-[11px] font-mono font-extrabold"
             style={{
               color: accent,
               backgroundColor: `color-mix(in srgb, ${accent} 15%, transparent)`
             }}
           >
             {isUp ? (
-              <TrendingUp className="w-2.5 h-2.5" />
+              <TrendingUp className="w-3 h-3" />
             ) : (
-              <TrendingDown className="w-2.5 h-2.5" />
+              <TrendingDown className="w-3 h-3" />
             )}
             {isUp ? '+' : ''}
             {percentChange.toFixed(2)}%
           </span>
         </span>
 
-        {/* Sparkline in a dedicated, bounded, non-overlapping container */}
-        <div className="w-full h-10 my-2.5 overflow-hidden relative rounded bg-[color-mix(in_srgb,var(--bg-input)_30%,transparent)] border-y border-[color-mix(in_srgb,var(--border-card)_40%,transparent)]">
-          <MiniSpark history={history} fallbackPrice={stock.currentPrice} width={200} height={40} up={isUp} />
-        </div>
-
-        {/* Footer stats */}
-        <span className="flex items-center justify-between mt-1 pt-1.5 border-t theme-border text-[9px] font-mono theme-text-dim">
-          <span className="uppercase tracking-wide truncate max-w-[70px]">
+        {/* Footer stats: Sector & Day Range */}
+        <span className="flex items-center justify-between pt-2.5 border-t theme-border text-[10px] font-mono theme-text-dim">
+          <span className="uppercase tracking-wide font-semibold truncate max-w-[80px]">
             {stock.sector}
           </span>
           <span>
@@ -384,15 +265,15 @@ export const FloorCard = memo(function FloorCard({
       </button>
 
       {/* Trade actions */}
-      <div className="flex items-center gap-1.5 mt-2">
+      <div className="flex items-center gap-2 mt-3 pt-1">
         <button
           type="button"
           onClick={(e) => handleTrade(e, 'BUY')}
           disabled={isTradingLocked}
           title={isTradingLocked ? 'Trading locked' : `Buy ${stock.symbol}`}
-          className="card-action card-action-buy"
+          className="card-action card-action-buy text-xs font-bold py-1.5"
         >
-          <Zap className="w-3 h-3" />
+          <Zap className="w-3.5 h-3.5" />
           Buy
         </button>
         <button
@@ -406,7 +287,7 @@ export const FloorCard = memo(function FloorCard({
               ? `No ${stock.symbol} shares to sell`
               : `Sell ${availableToSell} available`
           }
-          className="card-action card-action-sell"
+          className="card-action card-action-sell text-xs font-bold py-1.5"
         >
           Sell
           {availableToSell > 0 && (
