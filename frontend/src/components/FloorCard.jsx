@@ -1,4 +1,4 @@
-import React, { memo, useMemo } from 'react';
+import React, { memo, useMemo, useState } from 'react';
 import { TrendingUp, TrendingDown, Check, Zap } from 'lucide-react';
 
 const fmtMoney = (n, d = 2) =>
