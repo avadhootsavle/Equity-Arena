@@ -207,6 +207,7 @@ export function ChartPanel({
       : (selected.currentPrice * percentChange) / 100;
 
   const [quickQty, setQuickQty] = useState('1');
+  const canSell = ownedQuantity > 0 && !isTradingLocked;
 
   const handleQuick = (side) => {
     const parsed = Math.max(1, parseInt(quickQty, 10) || 1);
