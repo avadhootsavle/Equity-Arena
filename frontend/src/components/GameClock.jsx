@@ -21,13 +21,17 @@ export function useSessionClock(sessionData) {
 
   useEffect(() => {
     if (baseRef.current.seconds == null) return;
+    if (sessionData?.status === 'PAUSED' || sessionData?.isPaused) {
+      setRemaining(sessionData?.remainingSeconds ?? baseRef.current.seconds);
+      return;
+    }
     const id = setInterval(() => {
       const { seconds, at } = baseRef.current;
       if (seconds == null) return;
       setRemaining(Math.max(0, seconds - Math.floor((Date.now() - at) / 1000)));
     }, 1000);
     return () => clearInterval(id);
-  }, [sessionData?.remainingSeconds]);
+  }, [sessionData?.remainingSeconds, sessionData?.status, sessionData?.isPaused]);
 
   const totalSeconds = sessionData?.durationMinutes
     ? sessionData.durationMinutes * 60
@@ -38,6 +42,7 @@ export function useSessionClock(sessionData) {
     hasClock: remaining != null,
     isFinalStretch: remaining != null && remaining <= 300 && remaining > 0,
     isOver: remaining === 0,
+    isPaused: sessionData?.status === 'PAUSED' || sessionData?.isPaused === true,
     totalSeconds
   };
 }
@@ -45,7 +50,7 @@ export function useSessionClock(sessionData) {
 /* ------------------------------------------------------------------
    Segmented digital clock
    ------------------------------------------------------------------ */
-function Segment({ value, label, urgent, size }) {
+function Segment({ value, label, urgent, size, isPaused }) {
   const big = size === 'lg';
 
   return (
@@ -57,12 +62,16 @@ function Segment({ value, label, urgent, size }) {
           padding: big ? '6px 8px' : '4px 6px',
           fontSize: big ? 30 : 22,
           lineHeight: 1,
-          color: urgent ? 'var(--loss-red)' : 'var(--text-main)',
-          backgroundColor: urgent
+          color: isPaused ? 'var(--accent)' : urgent ? 'var(--loss-red)' : 'var(--text-main)',
+          backgroundColor: isPaused
+            ? 'color-mix(in srgb, var(--accent) 15%, transparent)'
+            : urgent
             ? 'color-mix(in srgb, var(--loss-red) 12%, transparent)'
             : 'var(--bg-input)',
           border: `1px solid ${
-            urgent
+            isPaused
+              ? 'color-mix(in srgb, var(--accent) 40%, transparent)'
+              : urgent
               ? 'color-mix(in srgb, var(--loss-red) 38%, transparent)'
               : 'var(--border-card)'
           }`,
@@ -75,7 +84,7 @@ function Segment({ value, label, urgent, size }) {
       </div>
       <span
         className="text-[8.5px] font-mono tracking-[0.18em] mt-1"
-        style={{ color: urgent ? 'var(--loss-red)' : 'var(--text-dim)' }}
+        style={{ color: isPaused ? 'var(--accent)' : urgent ? 'var(--loss-red)' : 'var(--text-dim)' }}
       >
         {label}
       </span>
@@ -83,14 +92,14 @@ function Segment({ value, label, urgent, size }) {
   );
 }
 
-function Colon({ urgent }) {
+function Colon({ urgent, isPaused }) {
   return (
     <span
       className="font-mono font-extrabold self-start"
       style={{
         marginTop: 8,
         fontSize: 20,
-        color: urgent ? 'var(--loss-red)' : 'var(--text-dim)'
+        color: isPaused ? 'var(--accent)' : urgent ? 'var(--loss-red)' : 'var(--text-dim)'
       }}
     >
       :
@@ -99,7 +108,7 @@ function Colon({ urgent }) {
 }
 
 export function GameClock({ sessionData, size = 'md', title = 'TIME LEFT' }) {
-  const { remaining, hasClock, isFinalStretch, isOver } = useSessionClock(sessionData);
+  const { remaining, hasClock, isFinalStretch, isOver, isPaused } = useSessionClock(sessionData);
 
   const hrs = hasClock ? two(remaining / 3600) : '--';
   const mins = hasClock ? two((remaining % 3600) / 60) : '--';
@@ -119,15 +128,15 @@ export function GameClock({ sessionData, size = 'md', title = 'TIME LEFT' }) {
     >
       <AnimatePresence mode="wait" initial={false}>
         <motion.div
-          key={isFinalStretch ? 'final' : isOver ? 'over' : 'normal'}
+          key={isPaused ? 'paused' : isFinalStretch ? 'final' : isOver ? 'over' : 'normal'}
           initial={{ opacity: 0, y: -4 }}
           animate={{ opacity: 1, y: 0 }}
           exit={{ opacity: 0, y: 4 }}
           transition={{ duration: 0.25 }}
-          className="text-[9px] font-heading font-bold tracking-[0.2em] mb-1.5"
-          style={{ color: urgent ? 'var(--loss-red)' : 'var(--text-dim)' }}
+          className="text-[9px] font-heading font-bold tracking-[0.2em] mb-1.5 font-mono"
+          style={{ color: isPaused ? 'var(--accent)' : urgent ? 'var(--loss-red)' : 'var(--text-dim)' }}
         >
-          {isOver ? 'GAME OVER' : isFinalStretch ? '🔥 FINAL MINUTES' : title}
+          {isPaused ? '☕ MARKET ON BREAK' : isOver ? 'GAME OVER' : isFinalStretch ? '🔥 FINAL MINUTES' : title}
         </motion.div>
       </AnimatePresence>
 
@@ -142,11 +151,11 @@ export function GameClock({ sessionData, size = 'md', title = 'TIME LEFT' }) {
             : { duration: 0.3 }
         }
       >
-        <Segment value={hrs} label="HRS" urgent={urgent} size={size} />
-        <Colon urgent={urgent} />
-        <Segment value={mins} label="MINS" urgent={urgent} size={size} />
-        <Colon urgent={urgent} />
-        <Segment value={secs} label="SECS" urgent={urgent} size={size} />
+        <Segment value={hrs} label="HRS" urgent={urgent} isPaused={isPaused} size={size} />
+        <Colon urgent={urgent} isPaused={isPaused} />
+        <Segment value={mins} label="MINS" urgent={urgent} isPaused={isPaused} size={size} />
+        <Colon urgent={urgent} isPaused={isPaused} />
+        <Segment value={secs} label="SECS" urgent={urgent} isPaused={isPaused} size={size} />
       </motion.div>
     </motion.div>
   );

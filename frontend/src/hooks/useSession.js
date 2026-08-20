@@ -32,11 +32,15 @@ export function useSession() {
     const onChange = () => refresh();
 
     socket.on('session:started', onChange);
+    socket.on('session:paused', onChange);
+    socket.on('session:resumed', onChange);
     socket.on('session:liquidated', onChange);
     socket.on('session:ended', onChange);
 
     return () => {
       socket.off('session:started', onChange);
+      socket.off('session:paused', onChange);
+      socket.off('session:resumed', onChange);
       socket.off('session:liquidated', onChange);
       socket.off('session:ended', onChange);
     };

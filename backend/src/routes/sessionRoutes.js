@@ -1,6 +1,6 @@
 const express = require('express');
 const { authenticateToken, requireAdmin } = require('../middleware/authMiddleware');
-const { getCurrentSession, startNewSession } = require('../services/sessionService');
+const { getCurrentSession, startNewSession, pauseSession, resumeSession, stopSession } = require('../services/sessionService');
 
 const router = express.Router();
 
@@ -21,20 +21,68 @@ router.post('/admin/session/start', authenticateToken, requireAdmin, async (req,
     const durationMinutes = parseInt(req.body.durationMinutes, 10) || 180;
     const liquidationBufferMinutes = parseInt(req.body.liquidationBufferMinutes, 10) || 5;
     const macroCycleIntervalMinutes = parseInt(req.body.macroCycleIntervalMinutes, 10) || 15;
+    const force = Boolean(req.body.force);
 
     const session = await startNewSession({
       durationMinutes,
       liquidationBufferMinutes,
-      macroCycleIntervalMinutes
+      macroCycleIntervalMinutes,
+      force
     });
 
     return res.json({
-      message: `Started new ${durationMinutes}-minute trading session (Liquidation buffer: ${liquidationBufferMinutes}m, Macro cycle: ${macroCycleIntervalMinutes}m)!`,
+      message: `Started ${durationMinutes}-minute trading session!`,
       session
     });
   } catch (err) {
     console.error('Error starting new session:', err);
-    return res.status(500).json({ error: 'Failed to start session' });
+    const statusCode = err.status || 500;
+    return res.status(statusCode).json({ error: err.message || 'Failed to start session' });
+  }
+});
+
+// POST /api/admin/session/pause — Pause trading session for 10-15 min break (Admin Only)
+router.post('/admin/session/pause', authenticateToken, requireAdmin, async (req, res) => {
+  try {
+    const session = await pauseSession();
+    return res.json({
+      message: 'Market paused for break (10-15 min break). Trading floor locked.',
+      session
+    });
+  } catch (err) {
+    console.error('Error pausing session:', err);
+    const statusCode = err.status || 500;
+    return res.status(statusCode).json({ error: err.message || 'Failed to pause session' });
+  }
+});
+
+// POST /api/admin/session/resume — Resume paused trading session (Admin Only)
+router.post('/admin/session/resume', authenticateToken, requireAdmin, async (req, res) => {
+  try {
+    const session = await resumeSession();
+    return res.json({
+      message: 'Market resumed! Trading floor unlocked.',
+      session
+    });
+  } catch (err) {
+    console.error('Error resuming session:', err);
+    const statusCode = err.status || 500;
+    return res.status(statusCode).json({ error: err.message || 'Failed to resume session' });
+  }
+});
+
+// POST /api/admin/session/stop — Manually close/stop trading session (Admin Only)
+router.post('/admin/session/stop', authenticateToken, requireAdmin, async (req, res) => {
+  try {
+    const session = await stopSession();
+    return res.json({
+      message: 'Trading session stopped by Admin. Market closed.',
+      session
+    });
+  } catch (err) {
+    console.error('Error stopping session:', err);
+    const statusCode = err.status || 500;
+    return res.status(statusCode).json({ error: err.message || 'Failed to stop session' });
   }
 });
 

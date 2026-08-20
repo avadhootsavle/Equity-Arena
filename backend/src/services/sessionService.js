@@ -9,12 +9,12 @@ const prisma = new PrismaClient();
 async function getCurrentSession() {
   let session = await prisma.session.findFirst({
     where: {
-      status: { in: ['ACTIVE', 'LIQUIDATING'] }
+      status: { in: ['ACTIVE', 'PAUSED', 'LIQUIDATING'] }
     },
     orderBy: { createdAt: 'desc' }
   });
 
-  // If no active or liquidating session exists, return NOT_STARTED
+  // If no active, paused, or liquidating session exists, return NOT_STARTED
   if (!session) {
     return {
       id: null,
@@ -24,11 +24,25 @@ async function getCurrentSession() {
       liquidationBufferMinutes: 5,
       macroCycleIntervalMinutes: 15,
       isLiquidated: false,
-      isTradingLocked: true
+      isTradingLocked: true,
+      isPaused: false
     };
   }
 
   const now = new Date();
+  
+  if (session.status === 'PAUSED') {
+    const freezeTime = session.pausedAt ? new Date(session.pausedAt) : now;
+    const remainingSeconds = Math.max(0, Math.floor((session.endTime.getTime() - freezeTime.getTime()) / 1000));
+    return {
+      ...session,
+      remainingSeconds,
+      isLiquidated: false,
+      isTradingLocked: true,
+      isPaused: true
+    };
+  }
+
   const remainingSeconds = Math.max(0, Math.floor((session.endTime.getTime() - now.getTime()) / 1000));
   const liquidationBufferSeconds = (session.liquidationBufferMinutes || 5) * 60;
   const isLiquidated = session.status === 'LIQUIDATING' || session.status === 'ENDED';
@@ -38,7 +52,8 @@ async function getCurrentSession() {
     ...session,
     remainingSeconds,
     isLiquidated,
-    isTradingLocked
+    isTradingLocked,
+    isPaused: false
   };
 }
 
@@ -69,9 +84,17 @@ function resetUsedTemplates() {
 
 /**
  * Starts a new session with admin-configured parameters (Admin Action)
- * Prevents overlapping sessions by ending any active/liquidating sessions first.
  */
 async function startNewSession(options = {}) {
+  const current = await getCurrentSession();
+
+  // If a session is already active or paused and force is not specified, return error
+  if ((current.status === 'ACTIVE' || current.status === 'PAUSED') && !options.force) {
+    const err = new Error(`Trading session is already running (${current.status})! Stop current session first if you want to restart.`);
+    err.status = 400;
+    throw err;
+  }
+
   let durationMins = 180;
   let bufferMins = 5;
   let macroMins = 15;
@@ -90,10 +113,10 @@ async function startNewSession(options = {}) {
   // Clear used news template tracking for the fresh session
   resetUsedTemplates();
 
-  // End any previous active or liquidating sessions
+  // End any previous active or liquidating or paused sessions
   await prisma.session.updateMany({
     where: {
-      status: { in: ['ACTIVE', 'LIQUIDATING'] }
+      status: { in: ['ACTIVE', 'PAUSED', 'LIQUIDATING'] }
     },
     data: { status: 'ENDED' }
   });
@@ -137,7 +160,129 @@ async function startNewSession(options = {}) {
     ...newSession,
     remainingSeconds,
     isLiquidated: false,
-    isTradingLocked: false
+    isTradingLocked: false,
+    isPaused: false
+  };
+}
+
+/**
+ * Pauses the current active session for a 10-15 minute break (Admin Action)
+ */
+async function pauseSession() {
+  const session = await prisma.session.findFirst({
+    where: { status: 'ACTIVE' },
+    orderBy: { createdAt: 'desc' }
+  });
+
+  if (!session) {
+    const err = new Error('No active trading session found to pause!');
+    err.status = 400;
+    throw err;
+  }
+
+  const now = new Date();
+  const updatedSession = await prisma.session.update({
+    where: { id: session.id },
+    data: {
+      status: 'PAUSED',
+      pausedAt: now
+    }
+  });
+
+  const remainingSeconds = Math.max(0, Math.floor((session.endTime.getTime() - now.getTime()) / 1000));
+
+  safeEmitSocket('session:paused', {
+    sessionId: updatedSession.id,
+    status: 'PAUSED',
+    message: '☕ MARKET IS ON BREAK (10-15 Min Break): Trading is temporarily paused by Admin.',
+    remainingSeconds
+  });
+
+  return {
+    ...updatedSession,
+    remainingSeconds,
+    isTradingLocked: true,
+    isPaused: true
+  };
+}
+
+/**
+ * Resumes a paused trading session (Admin Action)
+ */
+async function resumeSession() {
+  const session = await prisma.session.findFirst({
+    where: { status: 'PAUSED' },
+    orderBy: { createdAt: 'desc' }
+  });
+
+  if (!session) {
+    const err = new Error('No paused trading session found to resume!');
+    err.status = 400;
+    throw err;
+  }
+
+  const now = new Date();
+  const pauseDurationMs = session.pausedAt ? (now.getTime() - new Date(session.pausedAt).getTime()) : 0;
+  const newEndTime = new Date(session.endTime.getTime() + pauseDurationMs);
+
+  const updatedSession = await prisma.session.update({
+    where: { id: session.id },
+    data: {
+      status: 'ACTIVE',
+      endTime: newEndTime,
+      pausedAt: null
+    }
+  });
+
+  const remainingSeconds = Math.max(0, Math.floor((newEndTime.getTime() - now.getTime()) / 1000));
+
+  safeEmitSocket('session:resumed', {
+    sessionId: updatedSession.id,
+    status: 'ACTIVE',
+    endTime: newEndTime,
+    message: '🔔 MARKET RESUMED: Trading floor is unlocked!',
+    remainingSeconds
+  });
+
+  return {
+    ...updatedSession,
+    remainingSeconds,
+    isTradingLocked: false,
+    isPaused: false
+  };
+}
+
+/**
+ * Manually stops/ends the current trading session (Admin Action)
+ */
+async function stopSession() {
+  const session = await prisma.session.findFirst({
+    where: { status: { in: ['ACTIVE', 'PAUSED', 'LIQUIDATING'] } },
+    orderBy: { createdAt: 'desc' }
+  });
+
+  if (!session) {
+    const err = new Error('No active or paused session found to stop!');
+    err.status = 400;
+    throw err;
+  }
+
+  const updatedSession = await prisma.session.update({
+    where: { id: session.id },
+    data: { status: 'ENDED' }
+  });
+
+  safeEmitSocket('session:ended', {
+    sessionId: updatedSession.id,
+    status: 'ENDED',
+    message: '🔒 MARKET CLOSED: Trading session stopped by Admin.'
+  });
+
+  return {
+    ...updatedSession,
+    remainingSeconds: 0,
+    isTradingLocked: true,
+    isPaused: false
   };
 }
 
@@ -298,6 +443,9 @@ async function checkSessionTimers() {
 module.exports = {
   getCurrentSession,
   startNewSession,
+  pauseSession,
+  resumeSession,
+  stopSession,
   triggerAutoLiquidation,
   checkSessionTimers,
   getUsedTemplateIds,

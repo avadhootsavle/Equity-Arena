@@ -33,6 +33,8 @@ import {
   LayoutGrid,
   List,
   Clock,
+  Coffee,
+  Lock,
   Ban,
   History,
   Pencil,
@@ -601,29 +603,62 @@ export function TraderDashboard() {
             )}
           </div>
 
-          {/* ---------------- Session lock banner ---------------- */}
+          {/* ---------------- Session status banner ---------------- */}
           {isTradingLocked && (
-            <div
-              className="flex items-center justify-between gap-3 px-3.5 py-2.5 rounded-lg border animate-fadeIn"
-              style={{
-                borderColor: 'color-mix(in srgb, var(--accent) 38%, transparent)',
-                backgroundColor: 'color-mix(in srgb, var(--accent) 9%, transparent)',
-                color: 'var(--accent)'
-              }}
-            >
-              <div className="flex items-center gap-2 text-[11px] font-mono font-bold">
-                <AlertTriangle className="w-4 h-4 flex-shrink-0 animate-pulse" />
-                <span>
-                  {!sessionData?.status || sessionData.status === 'NOT_STARTED'
-                    ? "The game hasn't started yet — your host will open the market"
-                    : sessionData.status === 'LIQUIDATING'
-                    ? 'Game is wrapping up — your stocks are turning back into cash'
-                    : 'Game over — trading is closed'}
-                </span>
-              </div>
-              <span className="text-[9px] font-mono font-extrabold uppercase tracking-widest px-2 py-1 rounded border theme-border flex-shrink-0">
-                {sessionData?.status || 'PAUSED'}
-              </span>
+            <div>
+              {sessionData?.status === 'PAUSED' || sessionData?.isPaused ? (
+                <div className="p-4 rounded-xl border border-amber-500/50 bg-amber-500/10 text-amber-400 animate-fadeIn shadow-lg flex items-center justify-between font-mono">
+                  <div className="flex items-center gap-3">
+                    <Coffee className="w-6 h-6 animate-bounce text-amber-400 flex-shrink-0" />
+                    <div>
+                      <div className="text-sm font-extrabold block">☕ MARKET IS ON BREAK (10-15 Min Break)</div>
+                      <div className="text-xs text-amber-300/80">Trading is temporarily paused by Admin. The market countdown is frozen until the break ends.</div>
+                    </div>
+                  </div>
+                  <span className="px-3 py-1 rounded bg-amber-500 text-slate-950 font-black text-xs uppercase tracking-wider flex-shrink-0">
+                    ON BREAK
+                  </span>
+                </div>
+              ) : !sessionData?.id || sessionData?.status === 'NOT_STARTED' ? (
+                <div className="p-4 rounded-xl border border-indigo-500/50 bg-indigo-500/10 text-indigo-400 animate-fadeIn shadow-lg flex items-center justify-between font-mono">
+                  <div className="flex items-center gap-3">
+                    <Lock className="w-6 h-6 text-indigo-400 flex-shrink-0" />
+                    <div>
+                      <div className="text-sm font-extrabold block">🔒 MARKET IS CLOSED</div>
+                      <div className="text-xs text-indigo-300/80">The 3-hour trading session has not been started yet. Waiting for Admin to open the market floor.</div>
+                    </div>
+                  </div>
+                  <span className="px-3 py-1 rounded bg-indigo-500 text-white font-black text-xs uppercase tracking-wider flex-shrink-0">
+                    MARKET CLOSED
+                  </span>
+                </div>
+              ) : sessionData?.status === 'LIQUIDATING' ? (
+                <div className="p-4 rounded-xl border border-amber-500/50 bg-amber-500/10 text-amber-400 animate-fadeIn shadow-lg flex items-center justify-between font-mono">
+                  <div className="flex items-center gap-3">
+                    <AlertTriangle className="w-6 h-6 text-amber-400 flex-shrink-0 animate-pulse" />
+                    <div>
+                      <div className="text-sm font-extrabold block">⚡ AUTO-LIQUIDATION SWEEP IN PROGRESS</div>
+                      <div className="text-xs text-amber-300/80">Final 5 minutes before session close: all open stock positions are being converted to cash.</div>
+                    </div>
+                  </div>
+                  <span className="px-3 py-1 rounded bg-amber-500 text-slate-950 font-black text-xs uppercase tracking-wider flex-shrink-0">
+                    LIQUIDATING
+                  </span>
+                </div>
+              ) : (
+                <div className="p-4 rounded-xl border border-rose-500/50 bg-rose-500/10 text-rose-400 animate-fadeIn shadow-lg flex items-center justify-between font-mono">
+                  <div className="flex items-center gap-3">
+                    <Lock className="w-6 h-6 text-rose-400 flex-shrink-0" />
+                    <div>
+                      <div className="text-sm font-extrabold block">🏁 TRADING SESSION HAS ENDED</div>
+                      <div className="text-xs text-rose-300/80">The session has ended and final standings are locked. Check your leaderboard ranking!</div>
+                    </div>
+                  </div>
+                  <span className="px-3 py-1 rounded bg-rose-500 text-white font-black text-xs uppercase tracking-wider flex-shrink-0">
+                    SESSION ENDED
+                  </span>
+                </div>
+              )}
             </div>
           )}
 

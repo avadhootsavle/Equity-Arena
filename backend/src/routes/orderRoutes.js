@@ -17,9 +17,16 @@ router.post('/orders', authenticateToken, tradeRateLimiter, async (req, res) => 
   try {
     const session = await getCurrentSession();
     if (!session || session.status !== 'ACTIVE' || session.isTradingLocked) {
-      const msg = session?.status === 'NOT_STARTED'
-        ? "Trading hasn't started yet — waiting for admin to start session"
-        : 'Trading is locked for this session (Session is in auto-liquidation or has ended).';
+      let msg = "Trading is locked.";
+      if (!session || session.status === 'NOT_STARTED') {
+        msg = "Market is closed — waiting for admin to start session";
+      } else if (session.status === 'PAUSED') {
+        msg = "☕ Market is on break (10-15 Min Break) — trading is temporarily paused by Admin";
+      } else if (session.status === 'ENDED') {
+        msg = "Market is closed — trading session has ended";
+      } else {
+        msg = 'Trading is locked for this session (auto-liquidation or ended).';
+      }
       return res.status(400).json({ error: msg });
     }
 
@@ -112,9 +119,16 @@ const handleUpdateOrder = async (req, res) => {
   try {
     const session = await getCurrentSession();
     if (!session || session.status !== 'ACTIVE' || session.isTradingLocked) {
-      const msg = session?.status === 'NOT_STARTED'
-        ? "Trading hasn't started yet — waiting for admin to start session"
-        : 'Trading is locked for this session (Session is in auto-liquidation or has ended).';
+      let msg = "Trading is locked.";
+      if (!session || session.status === 'NOT_STARTED') {
+        msg = "Market is closed — waiting for admin to start session";
+      } else if (session.status === 'PAUSED') {
+        msg = "☕ Market is on break (10-15 Min Break) — trading is temporarily paused by Admin";
+      } else if (session.status === 'ENDED') {
+        msg = "Market is closed — trading session has ended";
+      } else {
+        msg = 'Trading is locked for this session (auto-liquidation or ended).';
+      }
       return res.status(400).json({ error: msg });
     }
 

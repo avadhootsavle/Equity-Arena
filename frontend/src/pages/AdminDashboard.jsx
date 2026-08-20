@@ -10,7 +10,8 @@ import { playNewsChime } from '../services/soundService';
 import { 
   TrendingUp, TrendingDown, Shield, LogOut, Radio, Send, 
   Trophy, Search, RefreshCw, CheckCircle2, AlertCircle, Sparkles, SlidersHorizontal, Clock, Zap, Eye, Sun, Moon, RotateCcw, Bell, Users,
-  ThumbsUp, ThumbsDown, Newspaper, PieChart, BarChart3, Filter, ArrowUpRight, ArrowDownRight, Layers, Activity
+  ThumbsUp, ThumbsDown, Newspaper, PieChart, BarChart3, Filter, ArrowUpRight, ArrowDownRight, Layers, Activity,
+  Play, Square, Coffee, Lock
 } from 'lucide-react';
 
 const SECTOR_TO_STOCK_MAP = {
@@ -117,11 +118,39 @@ export function AdminDashboard() {
         })
       });
       resetNewsTimer();
-      showToast(data.message || 'New trading session started!');
+      showToast(data.message || 'New 3-hour trading session started!');
     } catch (err) {
       showToast(err.message || 'Failed to start session', 'error');
     } finally {
       setIsStartingSession(false);
+    }
+  };
+
+  const handlePauseSession = async () => {
+    try {
+      const data = await apiFetch('/admin/session/pause', { method: 'POST' });
+      showToast(data.message || 'Market paused for 10-15 min break!');
+    } catch (err) {
+      showToast(err.message || 'Failed to pause session', 'error');
+    }
+  };
+
+  const handleResumeSession = async () => {
+    try {
+      const data = await apiFetch('/admin/session/resume', { method: 'POST' });
+      showToast(data.message || 'Market resumed!');
+    } catch (err) {
+      showToast(err.message || 'Failed to resume session', 'error');
+    }
+  };
+
+  const handleStopSession = async () => {
+    if (!window.confirm('Are you sure you want to STOP/CLOSE the trading session? This will lock trading for all players.')) return;
+    try {
+      const data = await apiFetch('/admin/session/stop', { method: 'POST' });
+      showToast(data.message || 'Trading session stopped by Admin.');
+    } catch (err) {
+      showToast(err.message || 'Failed to stop session', 'error');
     }
   };
 
@@ -482,14 +511,53 @@ export function AdminDashboard() {
               </div>
             </div>
 
-            <button
-              onClick={handleStartNewSession}
-              className="px-3 py-1.5 bg-[var(--accent)] hover:bg-[color-mix(in_srgb,var(--accent)_90%,transparent)] text-slate-950 text-xs font-bold font-mono rounded-[4px] transition-all flex items-center gap-1.5 shadow-sm min-h-[36px] btn-terminal"
-              title="Start a fresh trading session"
-            >
-              <RotateCcw className="w-3.5 h-3.5" />
-              <span>START NEW SESSION</span>
-            </button>
+            {/* Master Session Controls Bar */}
+            <div className="flex items-center gap-2 font-mono">
+              {(!adminSession || adminSession.status === 'NOT_STARTED' || adminSession.status === 'ENDED') && (
+                <button
+                  onClick={handleStartNewSession}
+                  disabled={isStartingSession}
+                  className="px-3.5 py-1.5 bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-black text-xs rounded-xl transition-all flex items-center gap-1.5 shadow-md min-h-[38px] btn-terminal"
+                  title="Start 3-Hour Trading Session"
+                >
+                  <Play className="w-3.5 h-3.5 fill-current" />
+                  <span>START SESSION</span>
+                </button>
+              )}
+
+              {adminSession?.status === 'ACTIVE' && (
+                <button
+                  onClick={handlePauseSession}
+                  className="px-3.5 py-1.5 bg-amber-500 hover:bg-amber-400 text-slate-950 font-extrabold text-xs rounded-xl transition-all flex items-center gap-1.5 shadow-md min-h-[38px] btn-terminal"
+                  title="Pause market for 10-15 min break"
+                >
+                  <Coffee className="w-4 h-4" />
+                  <span>PAUSE BREAK (10-15m)</span>
+                </button>
+              )}
+
+              {adminSession?.status === 'PAUSED' && (
+                <button
+                  onClick={handleResumeSession}
+                  className="px-3.5 py-1.5 bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-black text-xs rounded-xl transition-all flex items-center gap-1.5 shadow-md min-h-[38px] btn-terminal animate-pulse"
+                  title="Resume market trading floor"
+                >
+                  <Play className="w-3.5 h-3.5 fill-current" />
+                  <span>RESUME MARKET</span>
+                </button>
+              )}
+
+              {(adminSession?.status === 'ACTIVE' || adminSession?.status === 'PAUSED') && (
+                <button
+                  onClick={handleStopSession}
+                  className="px-3.5 py-1.5 bg-rose-600 hover:bg-rose-500 text-white font-extrabold text-xs rounded-xl transition-all flex items-center gap-1.5 shadow-md min-h-[38px] btn-terminal"
+                  title="Stop & Close Trading Session"
+                >
+                  <Square className="w-3.5 h-3.5 fill-current" />
+                  <span>STOP MARKET</span>
+                </button>
+              )}
+            </div>
 
             <button
               onClick={toggleTheme}

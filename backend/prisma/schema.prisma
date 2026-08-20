@@ -30,6 +30,7 @@ enum OrderStatus {
 
 enum SessionStatus {
   ACTIVE
+  PAUSED
   LIQUIDATING
   ENDED
 }
@@ -146,7 +147,14 @@ model NewsTemplate {
   createdAt     DateTime   @default(now())
 }
 
-model AdminAuditLog {
+model BlacklistedToken {
+  id        String   @id @default(uuid())
+  token     String   @unique
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+}
+
+model AuditLog {
   id        String   @id @default(uuid())
   email     String
   ipAddress String
@@ -159,6 +167,7 @@ model Session {
   id                        String        @id @default(uuid())
   startTime                 DateTime      @default(now())
   endTime                   DateTime
+  pausedAt                  DateTime?
   durationMinutes           Int           @default(180)
   liquidationBufferMinutes  Int           @default(5)
   macroCycleIntervalMinutes Int           @default(15)
