@@ -100,8 +100,8 @@ const safeLogAdminAudit = async (data) => {
   }
 };
 
-// POST /auth/admin-login
-router.post('/admin-login', adminLoginRateLimiter, async (req, res) => {
+// Admin Login Handler (handles both /auth/admin/login and /auth/admin-login)
+const handleAdminLogin = async (req, res) => {
   const ipAddress = req.ip || req.headers['x-forwarded-for'] || req.socket.remoteAddress || '127.0.0.1';
   const emailInput = req.body.email ? req.body.email.trim().toLowerCase() : '';
   const passwordInput = req.body.password || '';
@@ -171,7 +171,10 @@ router.post('/admin-login', adminLoginRateLimiter, async (req, res) => {
     console.error('Admin login error:', err);
     return res.status(500).json({ error: 'Internal server error' });
   }
-});
+};
+
+router.post('/admin/login', adminLoginRateLimiter, handleAdminLogin);
+router.post('/admin-login', adminLoginRateLimiter, handleAdminLogin);
 
 // GET /auth/me — Validate token & return current user info on page reload
 router.get('/me', authenticateToken, async (req, res) => {
