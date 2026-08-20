@@ -90,8 +90,18 @@ router.post('/login', async (req, res) => {
   }
 });
 
-// POST /auth/admin/login (Dedicated Hardened Admin Auth)
-router.post('/admin/login', adminLoginRateLimiter, async (req, res) => {
+const safeLogAdminAudit = async (data) => {
+  try {
+    if (prisma.adminAuditLog) {
+      await prisma.adminAuditLog.create({ data });
+    }
+  } catch (err) {
+    console.error('Admin audit log error:', err.message);
+  }
+};
+
+// POST /auth/admin-login
+router.post('/admin-login', adminLoginRateLimiter, async (req, res) => {
   const ipAddress = req.ip || req.headers['x-forwarded-for'] || req.socket.remoteAddress || '127.0.0.1';
   const emailInput = req.body.email ? req.body.email.trim().toLowerCase() : '';
   const passwordInput = req.body.password || '';
@@ -99,13 +109,11 @@ router.post('/admin/login', adminLoginRateLimiter, async (req, res) => {
   try {
     if (!emailInput || !passwordInput) {
       recordAdminFailedAttempt(ipAddress);
-      await prisma.adminAuditLog.create({
-        data: {
-          email: emailInput || 'UNKNOWN',
-          ipAddress,
-          status: 'FAILED',
-          details: 'Missing email or password'
-        }
+      await safeLogAdminAudit({
+        email: emailInput || 'UNKNOWN',
+        ipAddress,
+        status: 'FAILED',
+        details: 'Missing email or password'
       });
       return res.status(400).json({ error: 'Email and password are required' });
     }
@@ -114,13 +122,11 @@ router.post('/admin/login', adminLoginRateLimiter, async (req, res) => {
 
     if (!user || user.role !== 'ADMIN') {
       recordAdminFailedAttempt(ipAddress);
-      await prisma.adminAuditLog.create({
-        data: {
-          email: emailInput,
-          ipAddress,
-          status: 'FAILED',
-          details: 'Invalid credentials or non-admin user'
-        }
+      await safeLogAdminAudit({
+        email: emailInput,
+        ipAddress,
+        status: 'FAILED',
+        details: 'Invalid credentials or non-admin user'
       });
       return res.status(401).json({ error: 'Invalid admin credentials' });
     }
@@ -131,26 +137,22 @@ router.post('/admin/login', adminLoginRateLimiter, async (req, res) => {
     }
     if (!isMatch) {
       recordAdminFailedAttempt(ipAddress);
-      await prisma.adminAuditLog.create({
-        data: {
-          email: emailInput,
-          ipAddress,
-          status: 'FAILED',
-          details: 'Password mismatch'
-        }
+      await safeLogAdminAudit({
+        email: emailInput,
+        ipAddress,
+        status: 'FAILED',
+        details: 'Password mismatch'
       });
       return res.status(401).json({ error: 'Invalid admin credentials' });
     }
 
     // Success! Clear rate limit counter and record audit log
     clearAdminRateLimit(ipAddress);
-    await prisma.adminAuditLog.create({
-      data: {
-        email: user.email,
-        ipAddress,
-        status: 'SUCCESS',
-        details: 'Admin logged in successfully'
-      }
+    await safeLogAdminAudit({
+      email: user.email,
+      ipAddress,
+      status: 'SUCCESS',
+      details: 'Admin logged in successfully'
     });
 
     const token = generateToken(user); // 2-hour Admin JWT

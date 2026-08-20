@@ -154,7 +154,7 @@ model BlacklistedToken {
   createdAt DateTime @default(now())
 }
 
-model AuditLog {
+model AdminAuditLog {
   id        String   @id @default(uuid())
   email     String
   ipAddress String
