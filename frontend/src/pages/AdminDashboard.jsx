@@ -18,12 +18,16 @@ export function AdminDashboard() {
   const { socket, isConnected } = useSocket();
   const { theme, toggleTheme } = useTheme();
 
+  const [activeAdminTab, setActiveAdminTab] = useState('STOCKS'); // STOCKS | NEWS | LEADERBOARD | SETTINGS
   const [stocks, setStocks] = useState([]);
   const [loadingStocks, setLoadingStocks] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
   
   const [customPercents, setCustomPercents] = useState({});
   const [adjustingStockId, setAdjustingStockId] = useState(null);
+
+  const [bulkPercent, setBulkPercent] = useState('');
+  const [isBulkAdjusting, setIsBulkAdjusting] = useState(false);
 
   const [newsMessage, setNewsMessage] = useState('');
   const [selectedStockId, setSelectedStockId] = useState('');
@@ -222,6 +226,26 @@ export function AdminDashboard() {
       showToast(err.message || 'Price adjustment failed', 'error');
     } finally {
       setAdjustingStockId(null);
+    }
+  };
+
+  const handleAdjustAllPrices = async (percent) => {
+    setIsBulkAdjusting(true);
+    try {
+      const data = await apiFetch('/admin/market/adjust-all', {
+        method: 'POST',
+        body: JSON.stringify({ percent })
+      });
+      fetchStocks();
+      fetchStockHoldings();
+      fetchLeaderboard();
+      const sign = percent >= 0 ? '+' : '';
+      showToast(`Market Move: All stocks adjusted by ${sign}${percent}%!`);
+      setBulkPercent('');
+    } catch (err) {
+      showToast(err.message || 'Market adjust failed', 'error');
+    } finally {
+      setIsBulkAdjusting(false);
     }
   };
 
@@ -718,15 +742,94 @@ export function AdminDashboard() {
 
         </div>
 
-        {/* Section 3: Live Stock Controls */}
+        {/* Section 3: Live Stock Controls & Bulk Market Actions */}
         <div className="space-y-4">
+          {/* Bulk Market Actions Bar */}
+          <div className="theme-bg-card p-4 rounded-2xl border theme-border shadow-sm space-y-3">
+            <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-3">
+              <div>
+                <h3 className="text-sm font-bold theme-text-main font-mono flex items-center gap-2">
+                  <Zap className="w-4 h-4 text-amber-400" />
+                  Market-Wide Control Desk (Move All 15 Stocks at Once)
+                </h3>
+                <p className="text-xs theme-text-muted font-mono">
+                  Pump or dump the entire market across all 15 stocks simultaneously with 1 click
+                </p>
+              </div>
+
+              <div className="flex flex-wrap items-center gap-2">
+                <button
+                  type="button"
+                  onClick={() => handleAdjustAllPrices(5)}
+                  disabled={isBulkAdjusting}
+                  className="px-3 py-1.5 bg-emerald-500/15 hover:bg-emerald-500 text-emerald-500 hover:text-slate-950 font-extrabold text-xs rounded-lg transition-all border border-emerald-500/30 flex items-center gap-1 font-mono btn-terminal disabled:opacity-40 min-h-[36px]"
+                >
+                  <TrendingUp className="w-3.5 h-3.5" />
+                  PUMP ALL +5%
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => handleAdjustAllPrices(10)}
+                  disabled={isBulkAdjusting}
+                  className="px-3 py-1.5 bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-black text-xs rounded-lg transition-all shadow-md flex items-center gap-1 font-mono btn-terminal disabled:opacity-40 min-h-[36px]"
+                >
+                  <TrendingUp className="w-3.5 h-3.5" />
+                  SUPER PUMP +10%
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => handleAdjustAllPrices(-5)}
+                  disabled={isBulkAdjusting}
+                  className="px-3 py-1.5 bg-rose-500/15 hover:bg-rose-500 text-rose-500 hover:text-white font-extrabold text-xs rounded-lg transition-all border border-rose-500/30 flex items-center gap-1 font-mono btn-terminal disabled:opacity-40 min-h-[36px]"
+                >
+                  <TrendingDown className="w-3.5 h-3.5" />
+                  DUMP ALL -5%
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => handleAdjustAllPrices(-10)}
+                  disabled={isBulkAdjusting}
+                  className="px-3 py-1.5 bg-rose-600 hover:bg-rose-500 text-white font-black text-xs rounded-lg transition-all shadow-md flex items-center gap-1 font-mono btn-terminal disabled:opacity-40 min-h-[36px]"
+                >
+                  <TrendingDown className="w-3.5 h-3.5" />
+                  SUPER DUMP -10%
+                </button>
+
+                <div className="flex items-center gap-1">
+                  <input
+                    type="number"
+                    placeholder="±% ALL"
+                    value={bulkPercent}
+                    onChange={(e) => setBulkPercent(e.target.value)}
+                    className="w-20 theme-bg-panel border theme-border rounded-lg py-1.5 px-2 text-xs font-mono theme-text-main text-center focus:outline-none focus:border-amber-400 min-h-[36px]"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const val = parseFloat(bulkPercent);
+                      if (!isNaN(val)) handleAdjustAllPrices(val);
+                    }}
+                    disabled={isBulkAdjusting || !bulkPercent}
+                    className="px-3 py-1.5 bg-amber-500 hover:bg-amber-400 text-slate-950 font-extrabold text-xs rounded-lg transition-all disabled:opacity-40 min-h-[36px] btn-terminal font-mono"
+                  >
+                    MOVE ALL
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Individual Stock Control Desk Header & Search */}
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 theme-bg-card p-4 rounded-2xl border theme-border shadow-sm">
             <div>
               <h2 className="text-base font-bold theme-text-main flex items-center gap-2 font-mono">
                 <SlidersHorizontal className="w-5 h-5 text-indigo-500" />
-                Live Stock Controls (15 India Sector Stocks)
+                Individual Stock Controls (15 India Sector Stocks)
               </h2>
-              <p className="text-xs theme-text-muted font-mono">15 India sector stocks active across Low (~30-100 IC), Mid (~100-500 IC), and High (~1,000-4,000 IC) price tiers</p>
+              <p className="text-xs theme-text-muted font-mono">Adjust prices instantly with 1-click preset buttons (+10%, +5%, +1%, -1%, -5%, -10%) or custom %</p>
             </div>
 
             <div className="relative w-full sm:w-72">
@@ -803,43 +906,98 @@ export function AdminDashboard() {
                       </div>
                     )}
 
-                    <div className="flex items-center gap-2 pt-2 border-t theme-border">
-                      <button
-                        onClick={() => handleAdjustPrice(stock.id, 5)}
-                        disabled={adjustingStockId === stock.id}
-                        className="flex-1 py-1.5 bg-emerald-500/10 hover:bg-emerald-500 text-emerald-500 hover:text-slate-950 font-bold text-xs rounded-lg transition-all border border-emerald-500/30 flex items-center justify-center gap-1 min-h-[36px] btn-terminal font-mono"
-                      >
-                        <TrendingUp className="w-3.5 h-3.5" />
-                        <span>+5%</span>
-                      </button>
-
-                      <button
-                        onClick={() => handleAdjustPrice(stock.id, -5)}
-                        disabled={adjustingStockId === stock.id}
-                        className="flex-1 py-1.5 bg-rose-500/10 hover:bg-rose-500 text-rose-500 hover:text-white font-bold text-xs rounded-lg transition-all border border-rose-500/30 flex items-center justify-center gap-1 min-h-[36px] btn-terminal font-mono"
-                      >
-                        <TrendingDown className="w-3.5 h-3.5" />
-                        <span>-5%</span>
-                      </button>
-
-                      <div className="flex items-center gap-1">
-                        <input
-                          type="number"
-                          placeholder="±%"
-                          value={customVal}
-                          onChange={(e) => setCustomPercents((prev) => ({ ...prev, [stock.id]: e.target.value }))}
-                          className="w-16 theme-bg-panel border theme-border rounded-lg py-1.5 px-2 text-xs font-mono theme-text-main text-center focus:outline-none focus:border-indigo-500 min-h-[36px]"
-                        />
+                    {/* Quick Adjustment Action Presets */}
+                    <div className="space-y-1.5 pt-2 border-t theme-border">
+                      <div className="grid grid-cols-6 gap-1">
                         <button
-                          onClick={() => {
-                            const val = parseFloat(customVal);
-                            if (!isNaN(val)) handleAdjustPrice(stock.id, val);
-                          }}
-                          disabled={adjustingStockId === stock.id || !customVal}
-                          className="px-2.5 py-1.5 bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-xs rounded-lg transition-all disabled:opacity-40 min-h-[36px] btn-terminal font-mono"
+                          type="button"
+                          onClick={() => handleAdjustPrice(stock.id, 10)}
+                          disabled={adjustingStockId === stock.id}
+                          className="py-1 bg-emerald-500/20 hover:bg-emerald-500 text-emerald-400 hover:text-slate-950 font-extrabold text-[10px] font-mono rounded border border-emerald-500/40 transition-all btn-terminal"
                         >
-                          GO
+                          +10%
                         </button>
+                        <button
+                          type="button"
+                          onClick={() => handleAdjustPrice(stock.id, 5)}
+                          disabled={adjustingStockId === stock.id}
+                          className="py-1 bg-emerald-500/10 hover:bg-emerald-500 text-emerald-500 hover:text-slate-950 font-bold text-[10px] font-mono rounded border border-emerald-500/30 transition-all btn-terminal"
+                        >
+                          +5%
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => handleAdjustPrice(stock.id, 1)}
+                          disabled={adjustingStockId === stock.id}
+                          className="py-1 bg-emerald-500/5 hover:bg-emerald-500 text-emerald-500 hover:text-slate-950 font-semibold text-[10px] font-mono rounded border border-emerald-500/20 transition-all btn-terminal"
+                        >
+                          +1%
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => handleAdjustPrice(stock.id, -1)}
+                          disabled={adjustingStockId === stock.id}
+                          className="py-1 bg-rose-500/5 hover:bg-rose-500 text-rose-500 hover:text-white font-semibold text-[10px] font-mono rounded border border-rose-500/20 transition-all btn-terminal"
+                        >
+                          -1%
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => handleAdjustPrice(stock.id, -5)}
+                          disabled={adjustingStockId === stock.id}
+                          className="py-1 bg-rose-500/10 hover:bg-rose-500 text-rose-500 hover:text-white font-bold text-[10px] font-mono rounded border border-rose-500/30 transition-all btn-terminal"
+                        >
+                          -5%
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => handleAdjustPrice(stock.id, -10)}
+                          disabled={adjustingStockId === stock.id}
+                          className="py-1 bg-rose-500/20 hover:bg-rose-500 text-rose-400 hover:text-white font-extrabold text-[10px] font-mono rounded border border-rose-500/40 transition-all btn-terminal"
+                        >
+                          -10%
+                        </button>
+                      </div>
+
+                      <div className="flex items-center gap-1.5 pt-1">
+                        <button
+                          type="button"
+                          onClick={() => handleAdjustPrice(stock.id, 1)}
+                          disabled={adjustingStockId === stock.id}
+                          className="px-2 py-1 bg-emerald-500/10 hover:bg-emerald-500 text-emerald-500 hover:text-slate-950 font-bold text-[11px] rounded border border-emerald-500/30 flex items-center justify-center flex-1 btn-terminal font-mono"
+                          title="Nudge price up +1%"
+                        >
+                          ▲ Nudge Up
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => handleAdjustPrice(stock.id, -1)}
+                          disabled={adjustingStockId === stock.id}
+                          className="px-2 py-1 bg-rose-500/10 hover:bg-rose-500 text-rose-500 hover:text-white font-bold text-[11px] rounded border border-rose-500/30 flex items-center justify-center flex-1 btn-terminal font-mono"
+                          title="Nudge price down -1%"
+                        >
+                          ▼ Nudge Down
+                        </button>
+                        <div className="flex items-center gap-1 flex-1">
+                          <input
+                            type="number"
+                            placeholder="±%"
+                            value={customVal}
+                            onChange={(e) => setCustomPercents((prev) => ({ ...prev, [stock.id]: e.target.value }))}
+                            className="w-full theme-bg-panel border theme-border rounded py-1 px-2 text-xs font-mono theme-text-main text-center focus:outline-none focus:border-indigo-500 min-h-[30px]"
+                          />
+                          <button
+                            type="button"
+                            onClick={() => {
+                              const val = parseFloat(customVal);
+                              if (!isNaN(val)) handleAdjustPrice(stock.id, val);
+                            }}
+                            disabled={adjustingStockId === stock.id || !customVal}
+                            className="px-2 py-1 bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-xs rounded transition-all disabled:opacity-40 min-h-[30px] btn-terminal font-mono flex-shrink-0"
+                          >
+                            GO
+                          </button>
+                        </div>
                       </div>
                     </div>
                   </div>

@@ -143,7 +143,66 @@ router.post('/stock/:id/adjust', async (req, res) => {
     });
   } catch (err) {
     console.error('Adjust stock price error:', err);
-    return res.status(500).json({ error: 'Internal server error' });
+    return res.status(500).json({ error: 'Failed to adjust stock price' });
+  }
+});
+
+// POST /admin/market/adjust-all — Shift all stock prices simultaneously
+router.post('/market/adjust-all', async (req, res) => {
+  try {
+    const { percent } = req.body;
+    const parsedPercent = parseFloat(percent);
+    if (isNaN(parsedPercent) || parsedPercent < -99 || parsedPercent > 1000) {
+      return res.status(400).json({ error: 'Adjustment percentage must be between -99% and +1000%' });
+    }
+
+    const stocks = await prisma.stock.findMany();
+    const updatedStocks = [];
+
+    for (const stock of stocks) {
+      const rawNewPrice = stock.currentPrice * (1 + parsedPercent / 100);
+      const newPrice = Math.max(0.50, Math.round(rawNewPrice * 100) / 100);
+      const highVolume = getRandomVolume(60000, 150000);
+
+      const [updatedStock, newHistory] = await prisma.$transaction([
+        prisma.stock.update({
+          where: { id: stock.id },
+          data: { currentPrice: newPrice }
+        }),
+        prisma.priceHistory.create({
+          data: {
+            stockId: stock.id,
+            price: newPrice,
+            volume: highVolume
+          }
+        })
+      ]);
+
+      const percentChange = stock.basePrice > 0
+        ? Math.round((((newPrice - stock.basePrice) / stock.basePrice) * 100) * 100) / 100
+        : 0;
+
+      emitStockUpdate({
+        stockId: updatedStock.id,
+        symbol: updatedStock.symbol,
+        name: updatedStock.name,
+        newPrice: updatedStock.currentPrice,
+        volume: newHistory.volume,
+        percentChange,
+        timestamp: newHistory.timestamp
+      });
+
+      await checkAndExecuteLimitOrders(updatedStock.id, newPrice);
+      updatedStocks.push(updatedStock);
+    }
+
+    return res.json({
+      message: `Adjusted all ${updatedStocks.length} stocks by ${parsedPercent >= 0 ? '+' : ''}${parsedPercent}%`,
+      stocksCount: updatedStocks.length
+    });
+  } catch (err) {
+    console.error('Market-wide adjust error:', err);
+    return res.status(500).json({ error: 'Failed to adjust market prices' });
   }
 });
 
