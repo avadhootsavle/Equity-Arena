@@ -6,6 +6,7 @@
 
 let audioCtx = null;
 let lastPlayTime = 0;
+let customSoundUrl = '/sounds/notification.mp3';
 
 function getAudioContext() {
   if (!audioCtx) {
@@ -45,6 +46,16 @@ if (typeof window !== 'undefined') {
 }
 
 /**
+ * Allows setting a custom MP3 audio file URL
+ * e.g., setCustomSoundUrl('/sounds/my_bell.mp3')
+ */
+export function setCustomSoundUrl(url) {
+  if (url) {
+    customSoundUrl = url;
+  }
+}
+
+/**
  * Gets mute status from localStorage (default: false / sound ON)
  */
 export function isSoundMuted() {
@@ -71,7 +82,9 @@ export function toggleSoundMute() {
 }
 
 /**
- * Plays a warm, professional 0.4s dual-tone news alert chime (D5 -> A5)
+ * Plays news notification chime.
+ * Tries custom MP3 file first (e.g. /sounds/notification.mp3),
+ * falling back to synthesized dual-tone Web Audio chime if MP3 is missing.
  */
 export function playNewsChime() {
   if (isSoundMuted()) return;
@@ -80,6 +93,33 @@ export function playNewsChime() {
   if (now - lastPlayTime < 1000) return; // Debounce triggers within 1 second
   lastPlayTime = now;
 
+  // Try playing MP3 audio file first
+  if (customSoundUrl) {
+    const audio = new Audio(customSoundUrl);
+    audio.volume = 0.85;
+    
+    const playPromise = audio.play();
+    if (playPromise !== undefined) {
+      playPromise
+        .then(() => {
+          // MP3 played successfully
+          return;
+        })
+        .catch(() => {
+          // MP3 file not found or blocked by autoplay — fallback to Web Audio synthesis
+          playSynthesizedChime();
+        });
+      return;
+    }
+  }
+
+  playSynthesizedChime();
+}
+
+/**
+ * Fallback Web Audio API dual-tone synthesized chime (D5 -> A5)
+ */
+function playSynthesizedChime() {
   try {
     const ctx = getAudioContext();
     if (!ctx) return;
@@ -96,7 +136,7 @@ export function playNewsChime() {
     osc.frequency.setValueAtTime(587.33, currentTime);
     osc.frequency.exponentialRampToValueAtTime(880.00, currentTime + 0.12);
 
-    // Warm gain envelope: fast attack (0.01s), decay (0.35s), increased peak gain (0.85)
+    // Warm gain envelope
     gain.gain.setValueAtTime(0.001, currentTime);
     gain.gain.linearRampToValueAtTime(0.85, currentTime + 0.015);
     gain.gain.exponentialRampToValueAtTime(0.001, currentTime + 0.38);
