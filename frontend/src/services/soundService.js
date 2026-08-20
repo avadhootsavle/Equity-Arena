@@ -1,12 +1,10 @@
-/**
- * Web Audio API Sound Service for Equity Arena
- * Provides clean, professional 0.4s dual-tone UI alert chimes (D5 -> A5)
- * Handles browser autoplay policies, volume gain, mute toggle, and localStorage persistence.
- */
+import notificationMp3Asset from '../notification.mp3';
 
 let audioCtx = null;
 let lastPlayTime = 0;
-let customSoundUrl = '/sounds/notification.mp3';
+let customSoundUrl = notificationMp3Asset || '/sounds/notification.mp3';
+let decodedMp3Buffer = null;
+let isDecoding = false;
 
 function getAudioContext() {
   if (!audioCtx) {
@@ -24,11 +22,46 @@ function getAudioContext() {
   return audioCtx;
 }
 
-// Global user interaction listener to unlock AudioContext
+// Pre-fetch and decode the MP3 file into a Web Audio buffer for 100% instant playback
+async function loadAndDecodeMp3() {
+  if (decodedMp3Buffer || isDecoding) return;
+  isDecoding = true;
+
+  try {
+    const ctx = getAudioContext();
+    if (!ctx) return;
+
+    const urlsToTry = [notificationMp3Asset, '/sounds/notification.mp3', '/notification.mp3'].filter(Boolean);
+    
+    for (const url of urlsToTry) {
+      try {
+        const response = await fetch(url);
+        if (response.ok) {
+          const arrayBuffer = await response.arrayBuffer();
+          decodedMp3Buffer = await ctx.decodeAudioData(arrayBuffer);
+          console.log('✅ Custom MP3 notification sound decoded & ready');
+          break;
+        }
+      } catch (e) {
+        // Try next candidate URL
+      }
+    }
+  } catch (err) {
+    console.error('Failed to decode custom MP3 audio:', err);
+  } finally {
+    isDecoding = false;
+  }
+}
+
+// Global user interaction listener to unlock AudioContext and decode MP3
 function unlockAudioOnInteraction() {
   const unlock = () => {
     const ctx = getAudioContext();
-    if (ctx && ctx.state === 'running') {
+    if (ctx) {
+      if (ctx.state === 'suspended') {
+        ctx.resume().catch(() => {});
+      }
+      loadAndDecodeMp3();
       window.removeEventListener('pointerdown', unlock);
       window.removeEventListener('keydown', unlock);
       window.removeEventListener('touchstart', unlock);
@@ -40,18 +73,20 @@ function unlockAudioOnInteraction() {
   window.addEventListener('touchstart', unlock, { once: true });
 }
 
-// Initialize interaction unlocker immediately on module load
+// Initialize interaction unlocker and attempt load immediately
 if (typeof window !== 'undefined') {
   unlockAudioOnInteraction();
+  loadAndDecodeMp3();
 }
 
 /**
  * Allows setting a custom MP3 audio file URL
- * e.g., setCustomSoundUrl('/sounds/my_bell.mp3')
  */
 export function setCustomSoundUrl(url) {
   if (url) {
     customSoundUrl = url;
+    decodedMp3Buffer = null;
+    loadAndDecodeMp3();
   }
 }
 
@@ -83,8 +118,7 @@ export function toggleSoundMute() {
 
 /**
  * Plays news notification chime.
- * Tries custom MP3 file first (e.g. /sounds/notification.mp3),
- * falling back to synthesized dual-tone Web Audio chime if MP3 is missing.
+ * Uses decoded custom MP3 buffer first, falling back to Web Audio synthesis if unavailable.
  */
 export function playNewsChime() {
   if (isSoundMuted()) return;
@@ -93,41 +127,47 @@ export function playNewsChime() {
   if (now - lastPlayTime < 1000) return; // Debounce triggers within 1 second
   lastPlayTime = now;
 
-  // Candidate sound URLs to try in order
-  const soundCandidates = Array.from(new Set([
-    customSoundUrl,
-    '/sounds/notification.mp3',
-    '/notification.mp3'
-  ])).filter(Boolean);
+  const ctx = getAudioContext();
+  if (!ctx) return;
 
-  let triedCount = 0;
+  // If AudioContext is suspended, resume it
+  if (ctx.state === 'suspended') {
+    ctx.resume().catch(() => {});
+  }
 
-  const tryPlayCandidate = (index) => {
-    if (index >= soundCandidates.length) {
-      playSynthesizedChime();
+  // 1. Play decoded MP3 buffer if available
+  if (decodedMp3Buffer) {
+    try {
+      const source = ctx.createBufferSource();
+      const gainNode = ctx.createGain();
+      source.buffer = decodedMp3Buffer;
+      gainNode.gain.setValueAtTime(0.85, ctx.currentTime);
+      source.connect(gainNode);
+      gainNode.connect(ctx.destination);
+      source.start(0);
       return;
+    } catch (err) {
+      console.error('Error playing decoded MP3 buffer:', err);
     }
+  }
 
-    const url = soundCandidates[index];
-    const audio = new Audio(url);
+  // 2. Try HTML5 Audio fallback
+  try {
+    const audio = new Audio(customSoundUrl || notificationMp3Asset);
     audio.volume = 0.85;
-
     const playPromise = audio.play();
     if (playPromise !== undefined) {
-      playPromise
-        .then(() => {
-          // MP3 played successfully!
-        })
-        .catch(() => {
-          // Candidate failed, try next URL candidate
-          tryPlayCandidate(index + 1);
-        });
-    } else {
-      tryPlayCandidate(index + 1);
+      playPromise.then(() => {}).catch(() => {
+        playSynthesizedChime();
+      });
+      return;
     }
-  };
+  } catch (e) {
+    // Fall through to synthesis
+  }
 
-  tryPlayCandidate(0);
+  // 3. Fallback to Web Audio synthesized chime
+  playSynthesizedChime();
 }
 
 /**
