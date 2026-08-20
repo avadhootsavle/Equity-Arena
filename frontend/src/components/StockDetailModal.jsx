@@ -50,14 +50,15 @@ export function StockDetailModal({
   onClose,
   onSuccess,
   isTradingLocked,
-  initialMode = 'BUY'
+  initialMode = 'BUY',
+  initialQuantity = 1
 }) {
   const { socket } = useSocket();
   const session = useSession();
 
   const [tradeCategory, setTradeCategory] = useState('INSTANT'); // INSTANT | LIMIT
   const [mode, setMode] = useState(initialMode); // BUY | SELL
-  const [quantity, setQuantity] = useState('1');
+  const [quantity, setQuantity] = useState(String(initialQuantity || 1));
   const [targetPrice, setTargetPrice] = useState('');
 
   const [timeframe, setTimeframe] = useState('15M');
@@ -118,16 +119,18 @@ export function StockDetailModal({
 
     if (stockIdRef.current !== stock.id) {
       stockIdRef.current = stock.id;
-      setQuantity('1');
+      setQuantity(String(initialQuantity || 1));
       setTargetPrice(stock.currentPrice.toFixed(2));
       setTradeCategory('INSTANT');
       setTimeframe('15M');
       setRawHistory([]);
+    } else {
+      setQuantity(String(initialQuantity || 1));
     }
     setError('');
     setNotice('');
     setMode(initialMode);
-  }, [stock?.id, isOpen, initialMode]);
+  }, [stock?.id, isOpen, initialMode, initialQuantity]);
 
   useEffect(() => {
     if (!isOpen || !stock?.id) return;

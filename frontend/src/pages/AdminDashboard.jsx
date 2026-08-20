@@ -9,7 +9,7 @@ import { AdminTraderDetailModal } from '../components/AdminTraderDetailModal';
 import { playNewsChime } from '../services/soundService';
 import { 
   TrendingUp, TrendingDown, Shield, LogOut, Radio, Send, 
-  Trophy, Search, RefreshCw, CheckCircle2, AlertCircle, Sparkles, SlidersHorizontal, Clock, Zap, Eye, Sun, Moon, RotateCcw, Bell
+  Trophy, Search, RefreshCw, CheckCircle2, AlertCircle, Sparkles, SlidersHorizontal, Clock, Zap, Eye, Sun, Moon, RotateCcw, Bell, Users
 } from 'lucide-react';
 
 export function AdminDashboard() {
@@ -42,6 +42,7 @@ export function AdminDashboard() {
 
   const [leaderboard, setLeaderboard] = useState([]);
   const [loadingLeaderboard, setLoadingLeaderboard] = useState(false);
+  const [stockHoldingsMap, setStockHoldingsMap] = useState({});
 
   // Admin Trader Drill-Down Modal state
   const [selectedTraderId, setSelectedTraderId] = useState(null);
@@ -116,6 +117,15 @@ export function AdminDashboard() {
     }
   };
 
+  const fetchStockHoldings = async () => {
+    try {
+      const data = await apiFetch('/admin/stock-holdings');
+      setStockHoldingsMap(data || {});
+    } catch (err) {
+      console.error('Failed to fetch stock holdings:', err);
+    }
+  };
+
   const fetchLeaderboard = async () => {
     setLoadingLeaderboard(true);
     try {
@@ -132,10 +142,12 @@ export function AdminDashboard() {
     fetchStocks();
     fetchNewsTemplates();
     fetchLeaderboard();
+    fetchStockHoldings();
 
     const interval = setInterval(() => {
       fetchLeaderboard();
       fetchNewsTemplates();
+      fetchStockHoldings();
     }, 5000);
     return () => clearInterval(interval);
   }, []);
@@ -204,6 +216,8 @@ export function AdminDashboard() {
       const sign = percent >= 0 ? '+' : '';
       showToast(`${data.stock.symbol} price adjusted by ${sign}${percent}% → ${data.stock.currentPrice.toFixed(2)} IC`);
       setCustomPercents((prev) => ({ ...prev, [stockId]: '' }));
+      fetchStockHoldings();
+      fetchLeaderboard();
     } catch (err) {
       showToast(err.message || 'Price adjustment failed', 'error');
     } finally {
@@ -767,6 +781,27 @@ export function AdminDashboard() {
                         </div>
                       </div>
                     </div>
+
+                    {/* Trader Holdings breakdown for Admin view */}
+                    {stockHoldingsMap[stock.id]?.length > 0 ? (
+                      <div className="px-2.5 py-1.5 rounded-lg bg-[color-mix(in_srgb,var(--accent)_12%,transparent)] border border-[color-mix(in_srgb,var(--accent)_30%,transparent)] text-[11px] font-mono text-[var(--accent)] flex items-center justify-between">
+                        <span className="font-bold flex items-center gap-1">
+                          <Users className="w-3.5 h-3.5 flex-shrink-0" />
+                          <span>Owned by {stockHoldingsMap[stock.id].length} trader{stockHoldingsMap[stock.id].length > 1 ? 's' : ''}:</span>
+                        </span>
+                        <span
+                          className="font-extrabold truncate max-w-[150px] text-right"
+                          title={stockHoldingsMap[stock.id].map((h) => `${h.traderName} (${h.quantity} sh)`).join(', ')}
+                        >
+                          {stockHoldingsMap[stock.id].map((h) => `${h.traderName} (${h.quantity} sh)`).join(', ')}
+                        </span>
+                      </div>
+                    ) : (
+                      <div className="text-[10px] font-mono theme-text-dim px-1 flex items-center gap-1">
+                        <Users className="w-3 h-3 opacity-50" />
+                        <span>No traders currently hold this stock.</span>
+                      </div>
+                    )}
 
                     <div className="flex items-center gap-2 pt-2 border-t theme-border">
                       <button

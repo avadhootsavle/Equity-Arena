@@ -283,15 +283,17 @@ router.get('/leaderboard', async (req, res) => {
         return sum + (h.quantity * h.stock.currentPrice);
       }, 0);
 
-      const totalValue = Math.round((trader.walletBalance + holdingsValue) * 100) / 100;
-
       return {
         id: trader.id,
         name: trader.name,
         email: trader.email,
         walletBalance: Math.round(trader.walletBalance * 100) / 100,
         holdingsValue: Math.round(holdingsValue * 100) / 100,
-        totalPortfolioValue: totalValue
+        totalPortfolioValue: totalValue,
+        holdings: trader.holdings.map((h) => ({
+          stockId: h.stockId,
+          quantity: h.quantity
+        }))
       };
     });
 
@@ -306,6 +308,38 @@ router.get('/leaderboard', async (req, res) => {
   } catch (err) {
     console.error('Get leaderboard error:', err);
     return res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+// GET /admin/stock-holdings — Returns breakdown of who owns which stocks
+router.get('/stock-holdings', async (req, res) => {
+  try {
+    const holdings = await prisma.holding.findMany({
+      where: {
+        user: { role: 'TRADER', isTestAccount: false }
+      },
+      include: {
+        user: { select: { id: true, name: true, email: true } },
+        stock: { select: { id: true, symbol: true, name: true } }
+      }
+    });
+
+    const stockMap = {};
+    for (const h of holdings) {
+      if (!stockMap[h.stockId]) {
+        stockMap[h.stockId] = [];
+      }
+      stockMap[h.stockId].push({
+        traderId: h.user.id,
+        traderName: h.user.name || h.user.email.split('@')[0],
+        quantity: h.quantity
+      });
+    }
+
+    return res.json(stockMap);
+  } catch (err) {
+    console.error('Get stock holdings error:', err);
+    return res.status(500).json({ error: 'Failed to fetch stock holdings' });
   }
 });
 

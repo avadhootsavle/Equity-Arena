@@ -98,6 +98,7 @@ export function TraderDashboard() {
   const [detailStock, setDetailStock] = useState(null);
   const [isDetailOpen, setIsDetailOpen] = useState(false);
   const [detailSide, setDetailSide] = useState('BUY');
+  const [detailQuantity, setDetailQuantity] = useState(1);
   const [cancellingOrderId, setCancellingOrderId] = useState(null);
   const [editingOrder, setEditingOrder] = useState(null);
 
@@ -401,13 +402,11 @@ export function TraderDashboard() {
 
 
   /* ---------------------------------------------------------------
-     Quick trade — 1 share, fires straight away.
-     No confirmation step: the toast is the confirmation.
+     Quick trade — fires straight away with specified quantity.
      --------------------------------------------------------------- */
   const runQuickTrade = useCallback(
-    async (side) => {
-      if (!chartStock || quickSubmitting) return;
-
+    async (side, qty = 1) => {
+      if (!chartStock) return;
       if (isTradingLocked) {
         pushToast(
           'Trading is locked — the market session is not running yet.',
@@ -417,7 +416,7 @@ export function TraderDashboard() {
         return;
       }
 
-      const quantity = 1;
+      const quantity = Math.max(1, parseInt(qty, 10) || 1);
       const endpoint = side === 'BUY' ? '/trade/buy' : '/trade/sell';
       setQuickSubmitting(true);
 
@@ -484,15 +483,16 @@ export function TraderDashboard() {
     });
   }, []);
 
-  const handleOpenDetail = useCallback((stock, side = 'BUY') => {
+  const handleOpenDetail = useCallback((stock, side = 'BUY', qty = 1) => {
     setDetailStock(stock);
     setDetailSide(side);
+    setDetailQuantity(qty);
     setIsDetailOpen(true);
   }, []);
 
   // Buy / Sell straight from a floor card opens the trade window on that side
   const handleCardTrade = useCallback(
-    (stock, side) => {
+    (stock, side, qty = 1) => {
       if (isTradingLocked) {
         pushToast(
           'Trading is locked — the market session is not running yet.',
@@ -501,7 +501,7 @@ export function TraderDashboard() {
         );
         return;
       }
-      handleOpenDetail(stock, side);
+      handleOpenDetail(stock, side, qty);
     },
     [isTradingLocked, pushToast, handleOpenDetail]
   );
@@ -883,6 +883,7 @@ export function TraderDashboard() {
         userHolding={liveDetailStock ? holdingFor(liveDetailStock.id) : null}
         isOpen={isDetailOpen}
         initialMode={detailSide}
+        initialQuantity={detailQuantity}
         onClose={() => setIsDetailOpen(false)}
         onSuccess={(message, updated) => {
           pushToast(message, 'success', 'Order confirmed');

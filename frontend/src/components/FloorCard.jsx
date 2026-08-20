@@ -72,9 +72,12 @@ export const FloorCard = memo(function FloorCard({
     return { dayLow: Math.min(...prices), dayHigh: Math.max(...prices) };
   }, [history, stock?.currentPrice]);
 
+  const [cardQty, setCardQty] = useState('1');
+
   const handleTrade = (e, side) => {
     e.stopPropagation();
-    onTrade?.(stock, side);
+    const parsed = Math.max(1, parseInt(cardQty, 10) || 1);
+    onTrade?.(stock, side, parsed);
   };
 
   const canSell = availableToSell > 0 && !isTradingLocked;
@@ -264,20 +267,25 @@ export const FloorCard = memo(function FloorCard({
         </span>
       </button>
 
-      {/* Trade actions — Left side: Quantity badge + Buy, Right side: Sell */}
+      {/* Trade actions — Left side: Editable Quantity input + Buy, Right side: Sell */}
       <div className="flex items-center gap-2 mt-3 pt-1">
         <div className="flex items-center gap-1.5 flex-1 min-w-0">
-          <span
-            className="px-1.5 py-1 rounded text-[9.5px] font-mono font-bold theme-text-dim border theme-border flex-shrink-0"
-            title="Standard 1 share quick trade quantity"
-          >
-            1x
-          </span>
+          <input
+            type="number"
+            min="1"
+            step="1"
+            value={cardQty}
+            onClick={(e) => e.stopPropagation()}
+            onChange={(e) => setCardQty(e.target.value)}
+            title="Type quantity to buy or sell (e.g. 1, 5, 10, 100)"
+            aria-label={`Quantity for ${stock.symbol}`}
+            className="w-12 h-[30px] rounded border theme-border theme-bg-input px-1 text-center text-[11px] font-mono font-bold theme-text-main focus:outline-none focus:border-[var(--accent)] flex-shrink-0"
+          />
           <button
             type="button"
             onClick={(e) => handleTrade(e, 'BUY')}
             disabled={isTradingLocked}
-            title={isTradingLocked ? 'Trading locked' : `Buy ${stock.symbol}`}
+            title={isTradingLocked ? 'Trading locked' : `Buy ${cardQty} ${stock.symbol}`}
             className="card-action card-action-buy text-xs font-bold py-1.5 flex-1"
           >
             <Zap className="w-3.5 h-3.5" />

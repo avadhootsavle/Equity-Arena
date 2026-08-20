@@ -206,8 +206,12 @@ export function ChartPanel({
       ? selected.currentPrice - selected.basePrice
       : (selected.currentPrice * percentChange) / 100;
 
-  const canSell = ownedQuantity > 0 && !isTradingLocked;
-  const activeTf = TIMEFRAMES.find((t) => t.key === timeframe) || TIMEFRAMES[0];
+  const [quickQty, setQuickQty] = useState('1');
+
+  const handleQuick = (side) => {
+    const parsed = Math.max(1, parseInt(quickQty, 10) || 1);
+    onQuickTrade?.(side, parsed);
+  };
 
   return (
     <div
@@ -265,21 +269,25 @@ export function ChartPanel({
           {/* ---- Quick trade: one share, instantly ---- */}
           <div className="flex flex-col items-end gap-1.5">
             <div className="flex items-center gap-1.5">
-              <span
-                className="px-2 py-1.5 rounded-md text-[10px] font-mono font-bold theme-text-dim border theme-border"
-                title="Standard 1 share quick trade quantity"
-              >
-                1x
-              </span>
+              <input
+                type="number"
+                min="1"
+                step="1"
+                value={quickQty}
+                onChange={(e) => setQuickQty(e.target.value)}
+                title="Type quantity to buy or sell (e.g. 1, 5, 10, 100)"
+                aria-label="Quick trade quantity"
+                className="w-12 h-[34px] rounded-md border theme-border theme-bg-input px-1 text-center text-[12px] font-mono font-bold theme-text-main focus:outline-none focus:border-[var(--accent)]"
+              />
 
               <button
                 type="button"
-                onClick={() => onQuickTrade('BUY')}
+                onClick={() => handleQuick('BUY')}
                 disabled={isTradingLocked}
                 title={
                   isTradingLocked
                     ? 'Trading is locked — the session is not running'
-                    : `Buy 1 ${selected.symbol} at the live price`
+                    : `Buy ${quickQty} ${selected.symbol} at the live price`
                 }
                 className="group flex items-center gap-1.5 px-3.5 h-[34px] rounded-md text-[12px] font-heading font-extrabold text-white transition-all active:scale-95 disabled:opacity-40 disabled:cursor-not-allowed"
                 style={{
@@ -297,14 +305,14 @@ export function ChartPanel({
 
               <button
                 type="button"
-                onClick={() => onQuickTrade('SELL')}
+                onClick={() => handleQuick('SELL')}
                 disabled={!canSell}
                 title={
                   isTradingLocked
                     ? 'Trading is locked — the session is not running'
                     : ownedQuantity === 0
                     ? `You hold no ${selected.symbol} shares to sell`
-                    : `Sell 1 ${selected.symbol} at the live price`
+                    : `Sell ${quickQty} ${selected.symbol} at the live price`
                 }
                 className="group flex items-center gap-1.5 px-3.5 h-[34px] rounded-md text-[12px] font-heading font-extrabold text-white transition-all active:scale-95 disabled:opacity-40 disabled:cursor-not-allowed"
                 style={{
