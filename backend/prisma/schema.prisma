@@ -168,6 +168,9 @@ model Session {
   startTime                 DateTime      @default(now())
   endTime                   DateTime
   pausedAt                  DateTime?
+  breakDurationMinutes      Int?          @default(10)
+  breakEndTime              DateTime?
+  breakNote                 String?
   durationMinutes           Int           @default(180)
   liquidationBufferMinutes  Int           @default(5)
   macroCycleIntervalMinutes Int           @default(15)

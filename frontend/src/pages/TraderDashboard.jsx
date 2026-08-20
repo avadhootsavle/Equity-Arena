@@ -8,6 +8,7 @@ import { Sidebar, MobileNav } from '../components/Sidebar';
 import { TopBar } from '../components/TopBar';
 import { LiveTickerMarquee } from '../components/LiveTickerMarquee';
 import { GameTimerHero } from '../components/GameTimerHero';
+import { BreakCountdownTimer } from '../components/GameClock';
 import { StatTile } from '../components/StatTile';
 import { ChartPanel, TIMEFRAMES } from '../components/ChartPanel';
 import { FloorCard } from '../components/FloorCard';
@@ -607,17 +608,39 @@ export function TraderDashboard() {
           {isTradingLocked && (
             <div>
               {sessionData?.status === 'PAUSED' || sessionData?.isPaused ? (
-                <div className="p-4 rounded-xl border border-amber-500/50 bg-amber-500/10 text-amber-400 animate-fadeIn shadow-lg flex items-center justify-between font-mono">
-                  <div className="flex items-center gap-3">
-                    <Coffee className="w-6 h-6 animate-bounce text-amber-400 flex-shrink-0" />
-                    <div>
-                      <div className="text-sm font-extrabold block">☕ MARKET IS ON BREAK (10-15 Min Break)</div>
-                      <div className="text-xs text-amber-300/80">Trading is temporarily paused by Admin. The market countdown is frozen until the break ends.</div>
+                <div className="p-6 rounded-2xl border border-amber-500/50 theme-bg-card text-amber-400 animate-fadeIn shadow-2xl space-y-4 font-mono">
+                  <div className="flex items-center justify-between flex-wrap gap-4 border-b theme-border pb-4">
+                    <div className="flex items-center gap-3">
+                      <div className="p-3 rounded-xl bg-amber-500/20 border border-amber-500/40 text-amber-400">
+                        <Coffee className="w-8 h-8 animate-bounce" />
+                      </div>
+                      <div>
+                        <div className="text-lg font-extrabold theme-text-main flex items-center gap-2">
+                          ☕ REFRESHMENT BREAK IN PROGRESS
+                        </div>
+                        <div className="text-xs theme-text-dim mt-0.5">
+                          Trading floor is temporarily locked for snacks, refreshments & strategy discussion.
+                        </div>
+                      </div>
                     </div>
+
+                    <BreakCountdownTimer sessionData={sessionData} />
                   </div>
-                  <span className="px-3 py-1 rounded bg-amber-500 text-slate-950 font-black text-xs uppercase tracking-wider flex-shrink-0">
-                    ON BREAK
-                  </span>
+
+                  {/* Admin's Custom Note Banner */}
+                  {sessionData?.breakNote && (
+                    <div className="p-3.5 rounded-xl bg-amber-500/10 border border-amber-500/30 flex items-start gap-2.5 text-xs text-amber-200">
+                      <span className="font-extrabold text-amber-400 uppercase tracking-wider flex-shrink-0">📢 ANNOUNCEMENT:</span>
+                      <span className="font-bold leading-relaxed">{sessionData.breakNote}</span>
+                    </div>
+                  )}
+
+                  <div className="text-[11px] theme-text-muted flex items-center justify-between flex-wrap gap-2">
+                    <span>🔒 Market trading will automatically unlock when the countdown reaches 00:00.</span>
+                    <span className="px-2.5 py-1 rounded bg-amber-500 text-slate-950 font-black text-[10px] uppercase tracking-wider">
+                      ON BREAK
+                    </span>
+                  </div>
                 </div>
               ) : !sessionData?.id || sessionData?.status === 'NOT_STARTED' ? (
                 <div className="p-4 rounded-xl border border-indigo-500/50 bg-indigo-500/10 text-indigo-400 animate-fadeIn shadow-lg flex items-center justify-between font-mono">

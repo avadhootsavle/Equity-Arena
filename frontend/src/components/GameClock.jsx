@@ -160,3 +160,34 @@ export function GameClock({ sessionData, size = 'md', title = 'TIME LEFT' }) {
     </motion.div>
   );
 }
+
+export function BreakCountdownTimer({ sessionData }) {
+  const breakEndMs = sessionData?.breakEndTime ? new Date(sessionData.breakEndTime).getTime() : null;
+  const initialSeconds = sessionData?.breakRemainingSeconds ?? (sessionData?.breakDurationMinutes || 10) * 60;
+  const [secondsLeft, setSecondsLeft] = useState(initialSeconds);
+
+  useEffect(() => {
+    setSecondsLeft(initialSeconds);
+  }, [initialSeconds, sessionData?.breakEndTime]);
+
+  useEffect(() => {
+    const timer = setInterval(() => {
+      if (breakEndMs) {
+        setSecondsLeft(Math.max(0, Math.floor((breakEndMs - Date.now()) / 1000)));
+      } else {
+        setSecondsLeft((prev) => Math.max(0, prev - 1));
+      }
+    }, 1000);
+    return () => clearInterval(timer);
+  }, [breakEndMs]);
+
+  const mins = String(Math.floor(secondsLeft / 60)).padStart(2, '0');
+  const secs = String(secondsLeft % 60).padStart(2, '0');
+
+  return (
+    <div className="font-mono text-xl sm:text-2xl font-extrabold text-amber-400 bg-amber-500/20 border border-amber-500/40 px-4 py-2 rounded-xl inline-flex items-center gap-2 shadow-inner">
+      <span>☕ BREAK ENDS IN</span>
+      <span className="text-amber-300 font-black tracking-widest">{mins}:{secs}</span>
+    </div>
+  );
+}

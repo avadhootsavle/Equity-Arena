@@ -25,7 +25,10 @@ async function getCurrentSession() {
       macroCycleIntervalMinutes: 15,
       isLiquidated: false,
       isTradingLocked: true,
-      isPaused: false
+      isPaused: false,
+      breakRemainingSeconds: 0,
+      breakDurationMinutes: 10,
+      breakNote: ''
     };
   }
 
@@ -34,9 +37,20 @@ async function getCurrentSession() {
   if (session.status === 'PAUSED') {
     const freezeTime = session.pausedAt ? new Date(session.pausedAt) : now;
     const remainingSeconds = Math.max(0, Math.floor((session.endTime.getTime() - freezeTime.getTime()) / 1000));
+    
+    let breakRemainingSeconds = 0;
+    if (session.breakEndTime) {
+      breakRemainingSeconds = Math.max(0, Math.floor((new Date(session.breakEndTime).getTime() - now.getTime()) / 1000));
+    } else {
+      breakRemainingSeconds = (session.breakDurationMinutes || 10) * 60;
+    }
+
     return {
       ...session,
       remainingSeconds,
+      breakRemainingSeconds,
+      breakDurationMinutes: session.breakDurationMinutes || 10,
+      breakNote: session.breakNote || "☕ Refreshment Break — Grab snacks, water, and take a quick rest!",
       isLiquidated: false,
       isTradingLocked: true,
       isPaused: true
@@ -51,6 +65,9 @@ async function getCurrentSession() {
   return {
     ...session,
     remainingSeconds,
+    breakRemainingSeconds: 0,
+    breakDurationMinutes: session.breakDurationMinutes || 10,
+    breakNote: session.breakNote || '',
     isLiquidated,
     isTradingLocked,
     isPaused: false
@@ -166,9 +183,9 @@ async function startNewSession(options = {}) {
 }
 
 /**
- * Pauses the current active session for a 10-15 minute break (Admin Action)
+ * Pauses the current active session for a configurable break duration and note (Admin Action)
  */
-async function pauseSession() {
+async function pauseSession(options = {}) {
   const session = await prisma.session.findFirst({
     where: { status: 'ACTIVE' },
     orderBy: { createdAt: 'desc' }
@@ -181,26 +198,45 @@ async function pauseSession() {
   }
 
   const now = new Date();
+  const breakMins = parseInt(options.breakMinutes || options.durationMinutes, 10) || 10;
+  const breakEnd = new Date(now.getTime() + breakMins * 60 * 1000);
+  const defaultNote = "☕ Refreshment Break — Grab snacks, water, and take a quick rest!";
+  const note = (options.note && typeof options.note === 'string' && options.note.trim())
+    ? options.note.trim()
+    : defaultNote;
+
   const updatedSession = await prisma.session.update({
     where: { id: session.id },
     data: {
       status: 'PAUSED',
-      pausedAt: now
+      pausedAt: now,
+      breakDurationMinutes: breakMins,
+      breakEndTime: breakEnd,
+      breakNote: note
     }
   });
 
   const remainingSeconds = Math.max(0, Math.floor((session.endTime.getTime() - now.getTime()) / 1000));
+  const breakRemainingSeconds = Math.max(0, Math.floor((breakEnd.getTime() - now.getTime()) / 1000));
 
   safeEmitSocket('session:paused', {
     sessionId: updatedSession.id,
     status: 'PAUSED',
-    message: '☕ MARKET IS ON BREAK (10-15 Min Break): Trading is temporarily paused by Admin.',
+    breakDurationMinutes: breakMins,
+    breakEndTime: breakEnd,
+    breakNote: note,
+    breakRemainingSeconds,
+    message: `☕ MARKET ON BREAK (${breakMins}m): ${note}`,
     remainingSeconds
   });
 
   return {
     ...updatedSession,
     remainingSeconds,
+    breakRemainingSeconds,
+    breakDurationMinutes: breakMins,
+    breakEndTime: breakEnd,
+    breakNote: note,
     isTradingLocked: true,
     isPaused: true
   };
@@ -230,7 +266,9 @@ async function resumeSession() {
     data: {
       status: 'ACTIVE',
       endTime: newEndTime,
-      pausedAt: null
+      pausedAt: null,
+      breakEndTime: null,
+      breakNote: null
     }
   });
 
@@ -247,6 +285,9 @@ async function resumeSession() {
   return {
     ...updatedSession,
     remainingSeconds,
+    breakRemainingSeconds: 0,
+    breakDurationMinutes: session.breakDurationMinutes || 10,
+    breakNote: null,
     isTradingLocked: false,
     isPaused: false
   };
@@ -399,6 +440,15 @@ async function checkSessionTimers() {
   if (session.status === 'NOT_STARTED') return session;
 
   const now = Date.now();
+
+  // Auto-Resume Break Trigger: when break countdown hits 0 while session is PAUSED
+  if (session.status === 'PAUSED' && session.breakEndTime) {
+    if (now >= new Date(session.breakEndTime).getTime()) {
+      console.log('☕ BREAK COUNTDOWN COMPLETED: Auto-resuming market trading floor!');
+      return await resumeSession();
+    }
+    return session;
+  }
   if (session.status === 'ACTIVE' && (now - lastAutoBackupTime > 15 * 60 * 1000)) {
     lastAutoBackupTime = now;
     try {

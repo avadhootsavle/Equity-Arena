@@ -41,12 +41,15 @@ router.post('/admin/session/start', authenticateToken, requireAdmin, async (req,
   }
 });
 
-// POST /api/admin/session/pause — Pause trading session for 10-15 min break (Admin Only)
+// POST /api/admin/session/pause — Pause trading session for configurable break & note (Admin Only)
 router.post('/admin/session/pause', authenticateToken, requireAdmin, async (req, res) => {
   try {
-    const session = await pauseSession();
+    const breakMinutes = parseInt(req.body.breakMinutes || req.body.durationMinutes, 10) || 10;
+    const note = req.body.note || req.body.breakNote || '';
+
+    const session = await pauseSession({ breakMinutes, note });
     return res.json({
-      message: 'Market paused for break (10-15 min break). Trading floor locked.',
+      message: `Market paused for ${breakMinutes}-minute break! Trading floor locked.`,
       session
     });
   } catch (err) {

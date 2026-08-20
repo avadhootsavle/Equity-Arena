@@ -100,6 +100,11 @@ export function AdminDashboard() {
   const [macroCycleMins, setMacroCycleMins] = useState(15);
   const [isStartingSession, setIsStartingSession] = useState(false);
 
+  /* Break Modal State */
+  const [showBreakModal, setShowBreakModal] = useState(false);
+  const [breakMinutes, setBreakMinutes] = useState(10);
+  const [breakNote, setBreakNote] = useState("☕ Refreshment Break — Grab snacks, water, and take a quick rest!");
+
   const showToast = (message, type = 'success') => {
     setToast({ message, type });
     setTimeout(() => setToast(null), 4000);
@@ -126,12 +131,20 @@ export function AdminDashboard() {
     }
   };
 
-  const handlePauseSession = async () => {
+  const handleStartBreak = async (e) => {
+    if (e) e.preventDefault();
     try {
-      const data = await apiFetch('/admin/session/pause', { method: 'POST' });
-      showToast(data.message || 'Market paused for 10-15 min break!');
+      const data = await apiFetch('/admin/session/pause', {
+        method: 'POST',
+        body: JSON.stringify({
+          breakMinutes: parseInt(breakMinutes, 10) || 10,
+          note: breakNote
+        })
+      });
+      showToast(data.message || `Market paused for ${breakMinutes}-minute break!`);
+      setShowBreakModal(false);
     } catch (err) {
-      showToast(err.message || 'Failed to pause session', 'error');
+      showToast(err.message || 'Failed to start break', 'error');
     }
   };
 
@@ -527,12 +540,12 @@ export function AdminDashboard() {
 
               {adminSession?.status === 'ACTIVE' && (
                 <button
-                  onClick={handlePauseSession}
+                  onClick={() => setShowBreakModal(true)}
                   className="px-3.5 py-1.5 bg-amber-500 hover:bg-amber-400 text-slate-950 font-extrabold text-xs rounded-xl transition-all flex items-center gap-1.5 shadow-md min-h-[38px] btn-terminal"
-                  title="Pause market for 10-15 min break"
+                  title="Configure and start break (10m, 5m, 4m, 2m)"
                 >
                   <Coffee className="w-4 h-4" />
-                  <span>PAUSE BREAK (10-15m)</span>
+                  <span>PAUSE BREAK</span>
                 </button>
               )}
 
@@ -1459,6 +1472,93 @@ export function AdminDashboard() {
         )}
 
       </main>
+
+      {/* Admin Break Setup Modal */}
+      {showBreakModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-sm animate-fadeIn font-mono">
+          <div className="w-full max-w-md theme-bg-panel border theme-border rounded-2xl p-6 shadow-2xl space-y-5">
+            <div className="flex items-center justify-between border-b theme-border pb-3">
+              <div className="flex items-center gap-2">
+                <Coffee className="w-6 h-6 text-amber-400 animate-bounce" />
+                <h3 className="text-sm font-extrabold theme-text-main">START REFRESHMENT BREAK</h3>
+              </div>
+              <button
+                type="button"
+                onClick={() => setShowBreakModal(false)}
+                className="text-slate-400 hover:text-white text-base font-bold"
+              >
+                ✕
+              </button>
+            </div>
+
+            <form onSubmit={handleStartBreak} className="space-y-4">
+              <div>
+                <label className="text-xs font-bold theme-text-dim block mb-2 uppercase tracking-wider">
+                  Break Duration (Minutes)
+                </label>
+                <div className="grid grid-cols-4 gap-2 mb-2">
+                  {[10, 5, 4, 2].map((m) => (
+                    <button
+                      key={m}
+                      type="button"
+                      onClick={() => setBreakMinutes(m)}
+                      className={`py-2 text-xs font-bold rounded-xl border transition-all ${
+                        breakMinutes === m
+                          ? 'bg-amber-500 text-slate-950 border-amber-400 font-extrabold shadow-md'
+                          : 'theme-bg-card theme-text-main theme-border hover:border-amber-500/50'
+                      }`}
+                    >
+                      {m} Mins
+                    </button>
+                  ))}
+                </div>
+                <input
+                  type="number"
+                  min="1"
+                  max="60"
+                  value={breakMinutes}
+                  onChange={(e) => setBreakMinutes(parseInt(e.target.value, 10) || 10)}
+                  className="w-full px-3 py-2 rounded-xl border theme-border theme-bg-input text-xs font-bold theme-text-main"
+                  placeholder="Custom Minutes (e.g. 15)"
+                />
+              </div>
+
+              <div>
+                <label className="text-xs font-bold theme-text-dim block mb-2 uppercase tracking-wider">
+                  Trader Announcement / Note
+                </label>
+                <textarea
+                  rows="3"
+                  value={breakNote}
+                  onChange={(e) => setBreakNote(e.target.value)}
+                  className="w-full px-3 py-2 rounded-xl border theme-border theme-bg-input text-xs font-mono theme-text-main resize-none focus:outline-none focus:border-amber-500"
+                  placeholder="e.g. Refreshment Break — Grab snacks, water, and take a quick rest!"
+                />
+                <p className="text-[10px] theme-text-dim mt-1">
+                  This note and a live break countdown timer will be displayed on all traders' screens during the break.
+                </p>
+              </div>
+
+              <div className="flex items-center gap-3 pt-2">
+                <button
+                  type="button"
+                  onClick={() => setShowBreakModal(false)}
+                  className="flex-1 py-2.5 text-xs font-bold rounded-xl border theme-border theme-bg-card theme-text-muted hover:theme-text-main"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  className="flex-1 py-2.5 text-xs font-black rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 shadow-lg flex items-center justify-center gap-1.5"
+                >
+                  <Coffee className="w-4 h-4" />
+                  START {breakMinutes}M BREAK
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
 
       {/* Admin Trader Drill-Down Modal */}
       <AdminTraderDetailModal
