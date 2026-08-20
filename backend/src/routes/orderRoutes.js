@@ -107,6 +107,139 @@ router.post('/orders', authenticateToken, tradeRateLimiter, async (req, res) => 
   }
 });
 
+// PATCH & PUT /orders/:id — Update a Pending Order (targetPrice and/or quantity)
+const handleUpdateOrder = async (req, res) => {
+  try {
+    const session = await getCurrentSession();
+    if (!session || session.status !== 'ACTIVE' || session.isTradingLocked) {
+      const msg = session?.status === 'NOT_STARTED'
+        ? "Trading hasn't started yet — waiting for admin to start session"
+        : 'Trading is locked for this session (Session is in auto-liquidation or has ended).';
+      return res.status(400).json({ error: msg });
+    }
+
+    const { id } = req.params;
+    const userId = req.user.userId;
+    const { targetPrice, quantity } = req.body;
+
+    const existingOrder = await prisma.order.findUnique({
+      where: { id },
+      include: { stock: true }
+    });
+
+    if (!existingOrder) {
+      return res.status(404).json({ error: 'Order not found' });
+    }
+
+    if (existingOrder.userId !== userId) {
+      return res.status(403).json({ error: 'Forbidden: You can only edit your own orders' });
+    }
+
+    if (existingOrder.status !== 'PENDING') {
+      return res.status(400).json({ error: `Cannot edit order with status ${existingOrder.status}` });
+    }
+
+    const newTargetPrice = targetPrice !== undefined ? parseFloat(targetPrice) : existingOrder.targetPrice;
+    const newQuantity = quantity !== undefined ? parseInt(quantity, 10) : existingOrder.quantity;
+
+    if (isNaN(newTargetPrice) || newTargetPrice <= 0) {
+      return res.status(400).json({ error: 'targetPrice must be a positive number' });
+    }
+
+    if (isNaN(newQuantity) || newQuantity <= 0) {
+      return res.status(400).json({ error: 'quantity must be a positive integer' });
+    }
+
+    // Check availability based on order type (BUY or SELL)
+    if (existingOrder.type === 'BUY') {
+      const user = await prisma.user.findUnique({
+        where: { id: userId },
+        select: { walletBalance: true }
+      });
+      const walletBalance = user ? user.walletBalance : 0;
+
+      const otherPendingBuys = await prisma.order.findMany({
+        where: {
+          userId,
+          type: 'BUY',
+          status: 'PENDING',
+          id: { not: id }
+        },
+        select: { targetPrice: true, quantity: true }
+      });
+
+      const otherLockedFunds = otherPendingBuys.reduce((sum, o) => sum + (o.targetPrice * o.quantity), 0);
+      const availableCashForThisOrder = walletBalance - otherLockedFunds;
+      const newCost = newTargetPrice * newQuantity;
+
+      if (newCost > availableCashForThisOrder) {
+        return res.status(400).json({
+          error: `Insufficient available funds for updated Limit Buy order. Required: ${newCost.toFixed(2)} IC, Available: ${Math.max(0, availableCashForThisOrder).toFixed(2)} IC`
+        });
+      }
+    } else if (existingOrder.type === 'SELL') {
+      const holding = await prisma.holding.findUnique({
+        where: { userId_stockId: { userId, stockId: existingOrder.stockId } }
+      });
+
+      const totalOwnedShares = holding ? holding.quantity : 0;
+
+      const otherPendingSells = await prisma.order.findMany({
+        where: {
+          userId,
+          stockId: existingOrder.stockId,
+          type: 'SELL',
+          status: 'PENDING',
+          id: { not: id }
+        },
+        select: { quantity: true }
+      });
+
+      const otherLockedShares = otherPendingSells.reduce((sum, o) => sum + o.quantity, 0);
+      const availableSharesForThisOrder = totalOwnedShares - otherLockedShares;
+
+      if (newQuantity > availableSharesForThisOrder) {
+        return res.status(400).json({
+          error: `Insufficient available shares for updated Limit Sell order. Required: ${newQuantity}, Available: ${Math.max(0, availableSharesForThisOrder)}`
+        });
+      }
+    }
+
+    // Update the pending order
+    const updatedOrder = await prisma.order.update({
+      where: { id },
+      data: {
+        targetPrice: newTargetPrice,
+        quantity: newQuantity
+      },
+      include: { stock: true }
+    });
+
+    // Check for immediate execution if current live price satisfies updated target
+    const stock = existingOrder.stock;
+    const executed = await checkAndExecuteLimitOrders(stock.id, stock.currentPrice);
+    const wasExecutedImmediately = executed.some((o) => o.id === id);
+
+    const refetchedOrder = await prisma.order.findUnique({
+      where: { id },
+      include: { stock: true }
+    });
+
+    return res.json({
+      message: wasExecutedImmediately
+        ? `Limit ${updatedOrder.type} order executed immediately at ${stock.currentPrice.toFixed(2)} IC!`
+        : `Limit ${updatedOrder.type} order for ${stock.symbol} updated successfully (Target: ${newTargetPrice.toFixed(2)} IC, Qty: ${newQuantity}).`,
+      order: refetchedOrder
+    });
+  } catch (err) {
+    console.error('Error updating limit order:', err);
+    return res.status(500).json({ error: 'Failed to update limit order' });
+  }
+};
+
+router.patch('/orders/:id', authenticateToken, tradeRateLimiter, handleUpdateOrder);
+router.put('/orders/:id', authenticateToken, tradeRateLimiter, handleUpdateOrder);
+
 // DELETE /orders/:id — Cancel a Pending Order
 router.delete('/orders/:id', authenticateToken, async (req, res) => {
   try {
