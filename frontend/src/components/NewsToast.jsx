@@ -1,15 +1,20 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import { Newspaper, X, Radio } from 'lucide-react';
 import { playNewsChime } from '../services/soundService';
 
 export function NewsToast({ news, onClose }) {
   const [progress, setProgress] = useState(100);
+  const playedRef = useRef(null);
 
   useEffect(() => {
     if (!news) return;
 
-    // Trigger professional UI notification chime
-    playNewsChime();
+    // Trigger notification chime strictly ONCE per unique news item
+    const newsKey = news.id || `${news.timestamp}-${news.message}`;
+    if (playedRef.current !== newsKey) {
+      playedRef.current = newsKey;
+      playNewsChime();
+    }
 
     const startTime = Date.now();
     const duration = 5500; // 5.5 seconds auto-dismiss

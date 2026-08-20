@@ -264,18 +264,27 @@ export const FloorCard = memo(function FloorCard({
         </span>
       </button>
 
-      {/* Trade actions */}
+      {/* Trade actions — Left side: Quantity badge + Buy, Right side: Sell */}
       <div className="flex items-center gap-2 mt-3 pt-1">
-        <button
-          type="button"
-          onClick={(e) => handleTrade(e, 'BUY')}
-          disabled={isTradingLocked}
-          title={isTradingLocked ? 'Trading locked' : `Buy ${stock.symbol}`}
-          className="card-action card-action-buy text-xs font-bold py-1.5"
-        >
-          <Zap className="w-3.5 h-3.5" />
-          Buy
-        </button>
+        <div className="flex items-center gap-1.5 flex-1 min-w-0">
+          <span
+            className="px-1.5 py-1 rounded text-[9.5px] font-mono font-bold theme-text-dim border theme-border flex-shrink-0"
+            title="Standard 1 share quick trade quantity"
+          >
+            1x
+          </span>
+          <button
+            type="button"
+            onClick={(e) => handleTrade(e, 'BUY')}
+            disabled={isTradingLocked}
+            title={isTradingLocked ? 'Trading locked' : `Buy ${stock.symbol}`}
+            className="card-action card-action-buy text-xs font-bold py-1.5 flex-1"
+          >
+            <Zap className="w-3.5 h-3.5" />
+            Buy
+          </button>
+        </div>
+
         <button
           type="button"
           onClick={(e) => handleTrade(e, 'SELL')}
@@ -287,11 +296,11 @@ export const FloorCard = memo(function FloorCard({
               ? `No ${stock.symbol} shares to sell`
               : `Sell ${availableToSell} available`
           }
-          className="card-action card-action-sell text-xs font-bold py-1.5"
+          className="card-action card-action-sell text-xs font-bold py-1.5 flex-1"
         >
           Sell
           {availableToSell > 0 && (
-            <span className="opacity-70">({availableToSell})</span>
+            <span className="opacity-75 font-mono">({availableToSell})</span>
           )}
         </button>
       </div>

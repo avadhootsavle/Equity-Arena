@@ -19,8 +19,8 @@ const fmtMoney = (n, d = 2) =>
 export const TIMEFRAMES = [
   { key: '5M', label: '5M', minutes: 5 },
   { key: '15M', label: '15M', minutes: 15 },
-  { key: '1H', label: '1H', minutes: 60 },
-  { key: 'ALL', label: 'All', minutes: Infinity }
+  { key: '30M', label: '30M', minutes: 30 },
+  { key: '1H', label: '1H', minutes: 60 }
 ];
 
 /* ------------------------------------------------------------------
@@ -265,6 +265,13 @@ export function ChartPanel({
           {/* ---- Quick trade: one share, instantly ---- */}
           <div className="flex flex-col items-end gap-1.5">
             <div className="flex items-center gap-1.5">
+              <span
+                className="px-2 py-1.5 rounded-md text-[10px] font-mono font-bold theme-text-dim border theme-border"
+                title="Standard 1 share quick trade quantity"
+              >
+                1x
+              </span>
+
               <button
                 type="button"
                 onClick={() => onQuickTrade('BUY')}
@@ -310,7 +317,7 @@ export function ChartPanel({
                 ) : (
                   <Zap className="w-3.5 h-3.5 transition-transform group-hover:scale-125" />
                 )}
-                Sell
+                Sell {ownedQuantity > 0 && <span className="opacity-80 font-mono">({ownedQuantity})</span>}
               </button>
             </div>
 

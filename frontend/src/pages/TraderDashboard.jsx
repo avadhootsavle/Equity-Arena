@@ -185,14 +185,11 @@ export function TraderDashboard() {
     setChartStockId(leader?.id || stocks[0].id);
   }, [stocks, chartStockId]);
 
-  const fetchChartHistory = useCallback(async (stockId, tf) => {
+  const fetchChartHistory = useCallback(async (stockId) => {
     if (!stockId) return;
     setLoadingHistory(true);
     try {
-      // 5M/15M/1H all live inside the last day — fetch raw once and window it
-      // client-side so switching timeframes never costs a round trip.
-      const range = tf === 'ALL' ? 'ALL' : '1D';
-      const data = await apiFetch(`/stocks/${stockId}/history?range=${range}`);
+      const data = await apiFetch(`/stocks/${stockId}/history?range=1D`);
       setChartRaw(Array.isArray(data) ? data : []);
     } catch (err) {
       console.error('Fetch chart history error:', err);
@@ -204,35 +201,21 @@ export function TraderDashboard() {
 
   useEffect(() => {
     if (!chartStock?.id) return;
-    fetchChartHistory(chartStock.id, timeframe === 'ALL' ? 'ALL' : '1D');
-  }, [chartStock?.id, timeframe === 'ALL', fetchChartHistory]); // eslint-disable-line react-hooks/exhaustive-deps
+    fetchChartHistory(chartStock.id);
+  }, [chartStock?.id, fetchChartHistory]);
 
   const chartHistory = useMemo(() => {
     const source = chartRaw.length > 1 ? chartRaw : chartStock?.priceHistories || [];
     const tf = TIMEFRAMES.find((t) => t.key === timeframe);
 
-    if (!tf || !isFinite(tf.minutes)) {
-      /* "All" means the whole game, not the seeded backstory. The raw feed
-         reaches a month back with multi-hour gaps, which drew a flat line
-         across the middle and squeezed the real session into a sliver. */
-      const sessionStart = sessionData?.startTime
-        ? new Date(sessionData.startTime).getTime()
-        : null;
-      if (!sessionStart) return source;
-      const sinceStart = source.filter(
-        (h) => new Date(h.timestamp).getTime() >= sessionStart
-      );
-      return sinceStart.length >= 2 ? sinceStart : source.slice(-240);
-    }
-
-    const cutoff = Date.now() - tf.minutes * 60_000;
+    const minutes = tf?.minutes || 15;
+    const cutoff = Date.now() - minutes * 60_000;
     const windowed = source.filter(
       (h) => new Date(h.timestamp).getTime() >= cutoff
     );
 
-    // If the session is younger than the window, show whatever tape exists
     return windowed.length >= 2 ? windowed : source.slice(-60);
-  }, [chartRaw, chartStock, timeframe, sessionData?.startTime]);
+  }, [chartRaw, chartStock, timeframe]);
 
   /* ---------------------------------------------------------------
      Real-time socket wiring

@@ -37,8 +37,7 @@ const TIMEFRAMES = [
   { key: '5M', label: '5M', minutes: 5 },
   { key: '15M', label: '15M', minutes: 15 },
   { key: '30M', label: '30M', minutes: 30 },
-  { key: '1H', label: '1H', minutes: 60 },
-  { key: 'ALL', label: 'ALL', minutes: Infinity }
+  { key: '1H', label: '1H', minutes: 60 }
 ];
 
 const QUANTITY_PRESETS = [1, 5, 10, 50, 100];
