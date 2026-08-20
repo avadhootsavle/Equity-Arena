@@ -93,27 +93,41 @@ export function playNewsChime() {
   if (now - lastPlayTime < 1000) return; // Debounce triggers within 1 second
   lastPlayTime = now;
 
-  // Try playing MP3 audio file first
-  if (customSoundUrl) {
-    const audio = new Audio(customSoundUrl);
+  // Candidate sound URLs to try in order
+  const soundCandidates = Array.from(new Set([
+    customSoundUrl,
+    '/sounds/notification.mp3',
+    '/notification.mp3'
+  ])).filter(Boolean);
+
+  let triedCount = 0;
+
+  const tryPlayCandidate = (index) => {
+    if (index >= soundCandidates.length) {
+      playSynthesizedChime();
+      return;
+    }
+
+    const url = soundCandidates[index];
+    const audio = new Audio(url);
     audio.volume = 0.85;
-    
+
     const playPromise = audio.play();
     if (playPromise !== undefined) {
       playPromise
         .then(() => {
-          // MP3 played successfully
-          return;
+          // MP3 played successfully!
         })
         .catch(() => {
-          // MP3 file not found or blocked by autoplay — fallback to Web Audio synthesis
-          playSynthesizedChime();
+          // Candidate failed, try next URL candidate
+          tryPlayCandidate(index + 1);
         });
-      return;
+    } else {
+      tryPlayCandidate(index + 1);
     }
-  }
+  };
 
-  playSynthesizedChime();
+  tryPlayCandidate(0);
 }
 
 /**
