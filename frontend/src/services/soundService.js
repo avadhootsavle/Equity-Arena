@@ -5,6 +5,15 @@ let lastPlayTime = 0;
 let customSoundUrl = notificationMp3Asset || '/sounds/notification.mp3';
 let decodedMp3Buffer = null;
 let isDecoding = false;
+let preloadedAudio = null;
+
+if (typeof window !== 'undefined') {
+  try {
+    preloadedAudio = new Audio(customSoundUrl);
+    preloadedAudio.preload = 'auto';
+    preloadedAudio.load();
+  } catch (e) {}
+}
 
 function getAudioContext() {
   if (!audioCtx) {
@@ -62,6 +71,9 @@ function unlockAudioOnInteraction() {
         ctx.resume().catch(() => {});
       }
       loadAndDecodeMp3();
+      if (preloadedAudio) {
+        preloadedAudio.load();
+      }
       window.removeEventListener('pointerdown', unlock);
       window.removeEventListener('keydown', unlock);
       window.removeEventListener('touchstart', unlock);
@@ -86,6 +98,13 @@ export function setCustomSoundUrl(url) {
   if (url) {
     customSoundUrl = url;
     decodedMp3Buffer = null;
+    if (typeof window !== 'undefined') {
+      try {
+        preloadedAudio = new Audio(url);
+        preloadedAudio.preload = 'auto';
+        preloadedAudio.load();
+      } catch (e) {}
+    }
     loadAndDecodeMp3();
   }
 }
@@ -118,26 +137,23 @@ export function toggleSoundMute() {
 
 /**
  * Plays news notification chime.
- * Uses decoded custom MP3 buffer first, falling back to Web Audio synthesis if unavailable.
+ * Uses decoded custom MP3 buffer first for 0ms instant sync.
  */
 export function playNewsChime() {
   if (isSoundMuted()) return;
 
   const now = Date.now();
-  if (now - lastPlayTime < 1000) return; // Debounce triggers within 1 second
+  if (now - lastPlayTime < 800) return; // Debounce triggers within 0.8s
   lastPlayTime = now;
 
   const ctx = getAudioContext();
-  if (!ctx) return;
 
-  // If AudioContext is suspended, resume it
-  if (ctx.state === 'suspended') {
-    ctx.resume().catch(() => {});
-  }
-
-  // 1. Play decoded MP3 buffer if available
-  if (decodedMp3Buffer) {
+  // 1. Play decoded MP3 Web Audio buffer (0ms instant sync)
+  if (ctx && decodedMp3Buffer) {
     try {
+      if (ctx.state === 'suspended') {
+        ctx.resume().catch(() => {});
+      }
       const source = ctx.createBufferSource();
       const gainNode = ctx.createGain();
       source.buffer = decodedMp3Buffer;
@@ -151,19 +167,19 @@ export function playNewsChime() {
     }
   }
 
-  // 2. Try HTML5 Audio fallback
-  try {
-    const audio = new Audio(customSoundUrl || notificationMp3Asset);
-    audio.volume = 0.85;
-    const playPromise = audio.play();
-    if (playPromise !== undefined) {
-      playPromise.then(() => {}).catch(() => {
-        playSynthesizedChime();
-      });
-      return;
-    }
-  } catch (e) {
-    // Fall through to synthesis
+  // 2. Try preloaded HTML5 Audio element for instant playback
+  if (preloadedAudio) {
+    try {
+      preloadedAudio.currentTime = 0;
+      preloadedAudio.volume = 0.85;
+      const playPromise = preloadedAudio.play();
+      if (playPromise !== undefined) {
+        playPromise.then(() => {}).catch(() => {
+          playSynthesizedChime();
+        });
+        return;
+      }
+    } catch (e) {}
   }
 
   // 3. Fallback to Web Audio synthesized chime

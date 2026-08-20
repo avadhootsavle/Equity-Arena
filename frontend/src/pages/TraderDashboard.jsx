@@ -20,6 +20,7 @@ import { StockDetailModal } from '../components/StockDetailModal';
 import { OnboardingTour } from '../components/OnboardingTour';
 import { NewsToast } from '../components/NewsToast';
 import { TradeFeedbackOverlay } from '../components/TradeFeedbackOverlay';
+import { playNewsChime } from '../services/soundService';
 
 import {
   Wallet,
@@ -293,6 +294,7 @@ export function TraderDashboard() {
     };
 
     const handleNews = (news) => {
+      playNewsChime(); // Instant 0ms sound trigger on WebSocket frame arrival
       setActiveNewsToast(news);
       setNewsFeed((prev) => (Array.isArray(prev) ? [news, ...prev] : [news]));
     };
