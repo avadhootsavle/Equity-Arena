@@ -178,4 +178,59 @@ router.get('/news', authenticateToken, async (req, res) => {
   }
 });
 
+// GET /leaderboard (Live Tournament Standings for Traders & Admin)
+router.get('/leaderboard', authenticateToken, async (req, res) => {
+  try {
+    const traders = await prisma.user.findMany({
+      where: {
+        role: 'TRADER',
+        isTestAccount: false
+      },
+      include: {
+        holdings: {
+          include: {
+            stock: {
+              select: { currentPrice: true }
+            }
+          }
+        }
+      }
+    });
+
+    const leaderboard = traders.map((trader) => {
+      const holdingsValue = trader.holdings.reduce((sum, h) => {
+        return sum + (h.quantity * (h.stock?.currentPrice || 0));
+      }, 0);
+
+      const totalValue = Math.round((trader.walletBalance + holdingsValue) * 100) / 100;
+
+      return {
+        id: trader.id,
+        name: trader.name,
+        email: trader.email,
+        walletBalance: Math.round(trader.walletBalance * 100) / 100,
+        holdingsValue: Math.round(holdingsValue * 100) / 100,
+        totalPortfolioValue: totalValue,
+        totalNetWorth: totalValue,
+        holdings: trader.holdings.map((h) => ({
+          stockId: h.stockId,
+          quantity: h.quantity
+        }))
+      };
+    });
+
+    leaderboard.sort((a, b) => b.totalPortfolioValue - a.totalPortfolioValue);
+
+    const rankedLeaderboard = leaderboard.map((item, index) => ({
+      rank: index + 1,
+      ...item
+    }));
+
+    return res.json(rankedLeaderboard);
+  } catch (err) {
+    console.error('Get leaderboard error:', err);
+    return res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
 module.exports = router;

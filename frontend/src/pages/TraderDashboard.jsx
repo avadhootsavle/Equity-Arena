@@ -112,7 +112,7 @@ export function TraderDashboard() {
 
   const fetchLeaderboard = useCallback(async () => {
     try {
-      const data = await apiFetch('/admin/leaderboard');
+      const data = await apiFetch('/leaderboard');
       setLeaderboard(Array.isArray(data) ? data : []);
     } catch (err) {
       console.error('Failed to fetch leaderboard:', err);

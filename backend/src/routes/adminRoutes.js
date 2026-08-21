@@ -339,8 +339,10 @@ router.get('/leaderboard', async (req, res) => {
 
     const leaderboard = traders.map((trader) => {
       const holdingsValue = trader.holdings.reduce((sum, h) => {
-        return sum + (h.quantity * h.stock.currentPrice);
+        return sum + (h.quantity * (h.stock?.currentPrice || 0));
       }, 0);
+
+      const totalValue = Math.round((trader.walletBalance + holdingsValue) * 100) / 100;
 
       return {
         id: trader.id,
@@ -349,6 +351,7 @@ router.get('/leaderboard', async (req, res) => {
         walletBalance: Math.round(trader.walletBalance * 100) / 100,
         holdingsValue: Math.round(holdingsValue * 100) / 100,
         totalPortfolioValue: totalValue,
+        totalNetWorth: totalValue,
         holdings: trader.holdings.map((h) => ({
           stockId: h.stockId,
           quantity: h.quantity

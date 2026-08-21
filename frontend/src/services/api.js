@@ -22,15 +22,12 @@ export async function apiFetch(endpoint, options = {}) {
   const data = await response.json().catch(() => ({}));
 
   if (!response.ok) {
-    /* Only a real auth failure should end the session. This used to fire on
-       ANY 403, so an ordinary rejected action could dump the player back to
-       the login screen mid-game and look like their order had vanished. */
+    /* Only a true 401 Unauthorized or expired token error should end the user's session.
+       Ordinary 403 Forbidden role errors or 404/500 errors must fail gracefully
+       without logging out the user mid-session. */
     const authFailed =
       response.status === 401 ||
-      (response.status === 403 &&
-        /token|unauthor|forbidden|expired|signature/i.test(
-          String(data.error || data.message || '')
-        ));
+      (data.error && /token expired|invalid token|jwt expired|jwt malformed/i.test(String(data.error)));
 
     if (authFailed && typeof window !== 'undefined') {
       localStorage.removeItem('ignite_token');
