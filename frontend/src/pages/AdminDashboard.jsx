@@ -382,403 +382,218 @@ export function AdminDashboard() {
   const isSessionRunning = adminSession?.status === 'ACTIVE' || adminSession?.status === 'PAUSED';
 
   return (
-    <div className="min-h-screen theme-bg-main theme-text-main flex flex-col font-sans transition-colors duration-200">
+    <div className="min-h-screen bg-[#0D0D0D] text-white font-sans selection:bg-[#F0B429] selection:text-black">
       
       {/* Toast Notification Popup */}
       {toast && (
         <div
-          className={`fixed top-4 right-4 z-50 px-4 py-3 rounded-xl shadow-2xl border text-xs font-mono font-bold flex items-center gap-2 animate-bounce ${
+          className={`fixed top-4 right-4 z-50 px-4 py-3 rounded-[4px] border text-xs font-mono font-bold flex items-center gap-2 ${
             toast.type === 'error'
-              ? 'bg-rose-950 text-rose-200 border-rose-500'
-              : 'bg-emerald-950 text-emerald-200 border-emerald-500'
+              ? 'bg-[#F85149]/10 text-[#F85149] border-[#F85149]'
+              : 'bg-[#3FB950]/10 text-[#3FB950] border-[#3FB950]'
           }`}
         >
-          {toast.type === 'error' ? <AlertCircle className="w-4 h-4 text-rose-400" /> : <CheckCircle2 className="w-4 h-4 text-emerald-400" />}
+          {toast.type === 'error' ? <AlertCircle className="w-4 h-4 text-[#F85149]" /> : <CheckCircle2 className="w-4 h-4 text-[#3FB950]" />}
           <span>{toast.message}</span>
         </div>
       )}
 
-      {/* Top Navigation Header */}
-      <header className="theme-bg-header border-b theme-border sticky top-0 z-30 shadow-md">
-        <div className="max-w-7xl mx-auto px-4 py-3 flex items-center justify-between gap-4">
-          <div className="flex items-center gap-3">
-            <div className="p-2.5 rounded-xl bg-indigo-500/10 border border-indigo-500/30 text-indigo-400">
-              <Shield className="w-6 h-6" />
-            </div>
-            <div>
-              <div className="flex items-center gap-2">
-                <span className="text-base font-extrabold theme-text-main font-mono">EQUITY ARENA</span>
-                <span className="px-2 py-0.5 rounded-md text-[10px] font-extrabold bg-rose-500/15 text-rose-500 border border-rose-500/30 uppercase font-mono">
-                  ADMIN OPERATIONS DESK
-                </span>
-              </div>
-              <p className="text-[11px] theme-text-muted font-mono">Live Tournament Operations & Stock Control</p>
-            </div>
-          </div>
+      {/* ====================================================================== */}
+      {/* SECTION 1: MASTER SESSION CONTROL BAR (TOP OF PAGE)                     */}
+      {/* ====================================================================== */}
+      <header className="border-b border-[#2A2A2A] bg-[#111111] px-6 py-3.5 flex items-center justify-between font-mono text-xs flex-wrap gap-4">
+        {/* Left: App Title */}
+        <div className="flex items-center gap-3">
+          <span className="font-extrabold uppercase tracking-[0.12em] text-[#F0B429] text-xs">EQUITY ARENA ADMIN</span>
+          <span className="text-[#444444]">|</span>
+          <span className="text-[#888888] text-[11px]">Session Control</span>
+        </div>
 
-          <div className="flex items-center gap-3">
-            <button
-              onClick={toggleTheme}
-              className="p-2 rounded-xl border theme-border theme-bg-panel theme-text-muted hover:theme-text-main transition-colors min-h-[40px] min-w-[40px] flex items-center justify-center"
-              title="Toggle Dark / Light Theme"
-            >
-              {theme === 'dark' ? <Sun className="w-4 h-4 text-amber-400" /> : <Moon className="w-4 h-4 text-amber-400" />}
-            </button>
+        {/* Center: Session Status & Clock */}
+        <div className="flex items-center gap-3">
+          {adminSession?.status === 'ACTIVE' ? (
+            <div className="flex items-center gap-2">
+              <span className="text-[#3FB950] font-bold">SESSION RUNNING —</span>
+              <GameClock sessionData={adminSession} />
+            </div>
+          ) : adminSession?.status === 'PAUSED' ? (
+            <div className="flex items-center gap-2">
+              <span className="text-[#F0B429] font-bold">MARKET ON BREAK —</span>
+              <span className="text-white font-bold">{adminSession.breakNote}</span>
+            </div>
+          ) : (
+            <span className="text-[#888888]">No active session</span>
+          )}
+        </div>
 
-            <div className="flex items-center gap-2 border-l theme-border pl-3">
-              <div className="text-right hidden sm:block font-mono">
-                <div className="text-xs font-bold theme-text-main">{user?.name || 'Admin Host'}</div>
-                <div className="text-[10px] theme-text-dim">{user?.email}</div>
-              </div>
-              <button
-                onClick={logout}
-                className="p-2 text-rose-500 hover:bg-rose-500/10 rounded-xl transition-colors min-h-[40px] min-w-[40px] flex items-center justify-center"
-                title="Logout Admin"
+        {/* Right: Action Buttons */}
+        <div className="flex items-center gap-2">
+          {!isSessionRunning ? (
+            <div className="flex items-center gap-2">
+              <span className="text-[10px] text-[#666666] uppercase">Duration:</span>
+              <select
+                value={sessionDurationMins}
+                onChange={(e) => setSessionDurationMins(parseInt(e.target.value, 10))}
+                className="bg-[#161616] border border-[#3A3A3A] rounded-[4px] px-2 py-1 text-xs text-white focus:outline-none focus:border-[#F0B429]"
               >
-                <LogOut className="w-4 h-4" />
+                <option value={30}>30 Min</option>
+                <option value={60}>60 Min</option>
+                <option value={180}>180 Min (3 hr)</option>
+              </select>
+
+              <button
+                type="button"
+                onClick={() => handleStartNewSession()}
+                disabled={isStartingSession}
+                className="px-3.5 py-1.5 text-xs font-bold uppercase tracking-wider rounded-[4px] border border-[#F0B429] text-[#F0B429] hover:bg-[#F0B429]/10 transition-colors disabled:opacity-50"
+              >
+                {isStartingSession ? 'STARTING...' : 'START SESSION'}
               </button>
             </div>
-          </div>
+          ) : (
+            <div className="flex items-center gap-2">
+              {adminSession?.status === 'PAUSED' ? (
+                <button
+                  type="button"
+                  onClick={handleResumeSession}
+                  className="px-3 py-1.5 text-xs font-bold uppercase tracking-wider rounded-[4px] border border-white text-white hover:bg-white/10 transition-colors"
+                >
+                  RESUME SESSION
+                </button>
+              ) : (
+                <button
+                  type="button"
+                  onClick={() => setShowBreakModal(true)}
+                  className="px-3 py-1.5 text-xs font-bold uppercase tracking-wider rounded-[4px] border border-white text-white hover:bg-white/10 transition-colors"
+                >
+                  BREAK
+                </button>
+              )}
+
+              <button
+                type="button"
+                onClick={handleStopSession}
+                className="px-3 py-1.5 text-xs font-bold uppercase tracking-wider rounded-[4px] border border-[#F85149] text-[#F85149] hover:bg-[#F85149]/10 transition-colors"
+              >
+                END SESSION
+              </button>
+            </div>
+          )}
+
+          <button
+            type="button"
+            onClick={logout}
+            className="ml-3 px-2 py-1 text-xs text-[#888888] hover:text-white transition-colors"
+            title="Logout Admin"
+          >
+            LOGOUT
+          </button>
         </div>
       </header>
 
-      {/* Main 4-Section Dashboard Content */}
-      <main className="flex-1 max-w-7xl w-full mx-auto p-4 md:p-6 space-y-6">
+      {/* ====================================================================== */}
+      {/* TWO-COLUMN LAYOUT: SECTION 2 (NEWS) & SECTION 3 (STOCKS)               */}
+      {/* ====================================================================== */}
+      <div className="grid grid-cols-1 lg:grid-cols-12 border-b border-[#2A2A2A]">
 
         {/* ====================================================================== */}
-        {/* SECTION 1: SESSION CONTROL (TOP OF PAGE, ALWAYS VISIBLE)               */}
+        {/* SECTION 2: NEWS STUDIO (~40% WIDTH / LG:COL-SPAN-5)                   */}
         {/* ====================================================================== */}
-        <section className="theme-bg-panel p-5 rounded-2xl border theme-border shadow-lg space-y-4 font-mono">
-          <div className="flex items-center justify-between border-b theme-border pb-3 flex-wrap gap-3">
-            <div className="flex items-center gap-2.5">
-              <div className={`p-2 rounded-xl border ${
-                adminSession?.status === 'ACTIVE'
-                  ? 'bg-emerald-500/20 text-emerald-400 border-emerald-500/40'
-                  : adminSession?.status === 'PAUSED'
-                  ? 'bg-amber-500/20 text-amber-400 border-amber-500/40 animate-pulse'
-                  : 'bg-indigo-500/20 text-indigo-400 border-indigo-500/40'
-              }`}>
-                {adminSession?.status === 'ACTIVE' ? <Play className="w-5 h-5 fill-current" /> : adminSession?.status === 'PAUSED' ? <Coffee className="w-5 h-5" /> : <Lock className="w-5 h-5" />}
-              </div>
-              <div>
-                <div className="text-xs text-amber-400 font-extrabold uppercase tracking-wider">SECTION 1: MASTER SESSION CONTROL</div>
-                <div className="text-sm font-bold theme-text-main flex items-center gap-2">
-                  {adminSession?.status === 'ACTIVE' ? (
-                    <span className="text-emerald-400">SESSION RUNNING — TRADING FLOOR UNLOCKED</span>
-                  ) : adminSession?.status === 'PAUSED' ? (
-                    <span className="text-amber-400">MARKET ON REFRESHMENT BREAK</span>
-                  ) : (
-                    <span className="theme-text-muted">MARKET CLOSED — START SESSION TO LET TRADERS TRADE</span>
-                  )}
-                </div>
-              </div>
-            </div>
-
-            {/* 20-Minute News Reminder Timer */}
-            <div className="flex items-center gap-2 px-3 py-1.5 rounded-xl border theme-border theme-bg-card text-xs shadow-sm">
-              <Clock className="w-4 h-4 text-amber-400 animate-pulse" />
-              <div>
-                <span className="theme-text-dim text-[9px] block font-bold uppercase tracking-wider">NEWS REMINDER TIMER</span>
-                <span className={`font-bold font-mono ${reminderSeconds < 180 ? 'text-rose-400 animate-bounce' : 'theme-text-main'}`}>
-                  {Math.floor(reminderSeconds / 60).toString().padStart(2, '0')}:{(reminderSeconds % 60).toString().padStart(2, '0')}
-                </span>
-              </div>
-              <button
-                type="button"
-                onClick={resetNewsTimer}
-                className="ml-1 p-1 hover:bg-slate-800 rounded text-slate-400 hover:text-white"
-                title="Reset 20-minute news reminder"
-              >
-                <RotateCcw className="w-3.5 h-3.5" />
-              </button>
+        <div className="lg:col-span-5 border-r border-[#2A2A2A] p-5 space-y-4 font-mono">
+          <div className="flex items-center justify-between">
+            <span className="text-[11px] uppercase tracking-[0.08em] text-[#666666]">SEND NEWS</span>
+            <div className="flex items-center gap-2 text-[10px] text-[#888888]">
+              <span>Next Reminder:</span>
+              <span className={`font-bold ${reminderSeconds < 180 ? 'text-[#F0B429]' : 'text-white'}`}>
+                {Math.floor(reminderSeconds / 60).toString().padStart(2, '0')}:{(reminderSeconds % 60).toString().padStart(2, '0')}
+              </span>
+              <button type="button" onClick={resetNewsTimer} className="hover:text-white ml-1">RESET</button>
             </div>
           </div>
 
-          {/* Session Action Bar */}
-          <div className="flex items-center justify-between flex-wrap gap-4 pt-1">
-            {!isSessionRunning ? (
-              /* When session is NOT running: Start Session Controls */
-              <div className="flex items-center gap-3 flex-wrap w-full">
-                <div className="flex items-center gap-2">
-                  <span className="text-xs font-bold theme-text-dim uppercase">Duration:</span>
-                  {[30, 60, 180].map((m) => (
-                    <button
-                      key={m}
-                      type="button"
-                      onClick={() => setSessionDurationMins(m)}
-                      className={`px-3 py-1.5 text-xs font-extrabold rounded-xl border transition-all ${
-                        sessionDurationMins === m
-                          ? 'bg-emerald-500 text-slate-950 border-emerald-400 shadow-md'
-                          : 'theme-bg-card theme-text-main theme-border hover:border-emerald-500/50'
+          {/* Sub-Columns: POSITIVE & NEGATIVE separated by 1px vertical border */}
+          <div className="grid grid-cols-2 border border-[#2A2A2A] rounded-[4px] bg-[#111111] overflow-hidden">
+            
+            {/* POSITIVE SUB-COLUMN */}
+            <div className="p-3 border-r border-[#2A2A2A] space-y-2">
+              <div className="text-[10px] uppercase tracking-[0.08em] text-[#3FB950] font-bold border-b border-[#2A2A2A] pb-1.5">
+                POSITIVE ({filteredGoodNews.length})
+              </div>
+
+              <div className="space-y-2 max-h-[380px] overflow-y-auto pr-1">
+                {filteredGoodNews.map((tpl) => {
+                  const isSent = usedTemplateIds.includes(tpl.id);
+                  const isTriggering = triggeringTemplateId === tpl.id;
+                  return (
+                    <div
+                      key={tpl.id}
+                      className={`p-2 bg-[#161616] border border-[#2A2A2A] rounded-[4px] space-y-1.5 transition-opacity ${
+                        isSent ? 'opacity-40' : ''
                       }`}
                     >
-                      {m} Mins
-                    </button>
-                  ))}
-                </div>
-
-                <div className="flex items-center gap-2">
-                  <input
-                    type="number"
-                    min="1"
-                    max="600"
-                    value={sessionDurationMins}
-                    onChange={(e) => setSessionDurationMins(parseInt(e.target.value, 10) || 180)}
-                    className="w-24 px-3 py-1.5 rounded-xl border theme-border theme-bg-input text-xs font-bold theme-text-main focus:outline-none"
-                    placeholder="Custom Mins"
-                  />
-                  <button
-                    type="button"
-                    onClick={() => handleStartNewSession()}
-                    disabled={isStartingSession}
-                    className="px-6 py-2 bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-black text-xs uppercase rounded-xl transition-all shadow-lg flex items-center gap-2 btn-terminal disabled:opacity-50 min-h-[40px]"
-                  >
-                    <Play className="w-4 h-4 fill-current" />
-                    <span>{isStartingSession ? 'STARTING...' : 'START SESSION NOW'}</span>
-                  </button>
-                </div>
-              </div>
-            ) : (
-              /* When session IS running: Live Countdown Timer & Master Controls */
-              <div className="flex items-center justify-between flex-wrap gap-4 w-full">
-                <div className="flex items-center gap-4">
-                  <GameClock sessionData={adminSession} title="SESSION CLOCK" size="large" />
-                </div>
-
-                <div className="flex items-center gap-2">
-                  {adminSession?.status === 'ACTIVE' && (
-                    <button
-                      type="button"
-                      onClick={() => setShowBreakModal(true)}
-                      className="px-4 py-2 bg-amber-500 hover:bg-amber-400 text-slate-950 font-extrabold text-xs uppercase rounded-xl transition-all shadow-md flex items-center gap-1.5 btn-terminal min-h-[40px]"
-                    >
-                      <Coffee className="w-4 h-4" />
-                      <span>PAUSE BREAK</span>
-                    </button>
-                  )}
-
-                  {adminSession?.status === 'PAUSED' && (
-                    <button
-                      type="button"
-                      onClick={handleResumeSession}
-                      className="px-4 py-2 bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-black text-xs uppercase rounded-xl transition-all shadow-md flex items-center gap-1.5 btn-terminal animate-pulse min-h-[40px]"
-                    >
-                      <Play className="w-4 h-4 fill-current" />
-                      <span>RESUME MARKET</span>
-                    </button>
-                  )}
-
-                  <button
-                    type="button"
-                    onClick={handleStopSession}
-                    className="px-4 py-2 border border-rose-500/60 hover:bg-rose-500/20 text-rose-400 font-extrabold text-xs uppercase rounded-xl transition-all flex items-center gap-1.5 min-h-[40px]"
-                  >
-                    <Square className="w-3.5 h-3.5 fill-current" />
-                    <span>STOP SESSION</span>
-                  </button>
-                </div>
-              </div>
-            )}
-          </div>
-        </section>
-
-
-        {/* ====================================================================== */}
-        {/* SECTION 2: SEND NEWS STUDIO (MOST FREQUENT ACTION — 2 COLUMNS)          */}
-        {/* ====================================================================== */}
-        <section className="theme-bg-panel p-5 rounded-2xl border theme-border shadow-lg space-y-4 font-mono">
-          <div className="flex items-center justify-between border-b theme-border pb-3 flex-wrap gap-3">
-            <div className="flex items-center gap-2">
-              <div className="p-2 bg-indigo-500/20 border border-indigo-500/40 rounded-xl text-indigo-400">
-                <Newspaper className="w-5 h-5" />
-              </div>
-              <div>
-                <h2 className="text-xs text-amber-400 font-extrabold uppercase tracking-wider">SECTION 2: SEND NEWS STUDIO</h2>
-                <p className="text-sm font-bold theme-text-main">Tap any prebuilt headline to trigger instant market moves</p>
-              </div>
-            </div>
-
-            {/* Filter by Stock Symbol */}
-            <div className="flex items-center gap-2">
-              <label className="text-xs font-bold theme-text-dim uppercase">Filter Company:</label>
-              <select
-                value={newsCompanyFilter}
-                onChange={(e) => setNewsCompanyFilter(e.target.value)}
-                className="theme-bg-input border theme-border rounded-xl px-3 py-1.5 text-xs font-mono font-bold theme-text-main focus:outline-none focus:border-indigo-500 min-h-[36px]"
-              >
-                <option value="ALL">All 15 Companies</option>
-                {Object.values(SECTOR_TO_STOCK_MAP).map((s) => (
-                  <option key={s.symbol} value={s.symbol}>
-                    {s.symbol} — {s.name}
-                  </option>
-                ))}
-              </select>
-            </div>
-          </div>
-
-          {/* Two Side-by-Side Columns */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            
-            {/* LEFT COLUMN: GOOD NEWS (GREEN HEADER) */}
-            <div className="p-4 rounded-xl border border-emerald-500/40 bg-emerald-950/10 space-y-3">
-              <div className="flex items-center justify-between border-b border-emerald-500/30 pb-2">
-                <div className="flex items-center gap-2 text-emerald-400">
-                  <ThumbsUp className="w-4 h-4" />
-                  <h3 className="text-xs font-black uppercase tracking-wider">GOOD NEWS / BULLISH (PUMPS)</h3>
-                </div>
-                <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-emerald-500/20 text-emerald-400 border border-emerald-500/30">
-                  {filteredGoodNews.length} Templates
-                </span>
-              </div>
-
-              <div className="space-y-2 max-h-[500px] overflow-y-auto pr-1">
-                {filteredGoodNews.map((tpl) => {
-                  const isUsed = usedTemplateIds.includes(tpl.id);
-                  const isConfirming = inlineConfirmTplId === tpl.id;
-                  const company = SECTOR_TO_STOCK_MAP[tpl.sector] || { symbol: 'MKT' };
-
-                  return (
-                    <div key={tpl.id} className="space-y-2">
-                      <button
-                        type="button"
-                        onClick={() => setInlineConfirmTplId(isConfirming ? null : tpl.id)}
-                        className={`w-full text-left p-3 rounded-xl border text-xs font-mono transition-all flex items-start justify-between gap-2 shadow-sm ${
-                          isUsed
-                            ? 'bg-slate-900/60 border-slate-800 text-slate-500 line-through opacity-70'
-                            : 'theme-bg-card border-emerald-500/30 hover:border-emerald-400 text-emerald-200'
-                        }`}
-                      >
-                        <div>
-                          <span className="font-extrabold text-emerald-400 mr-1">[{company.symbol}]</span>
-                          <span>{tpl.headline}</span>
+                      <p className="text-[11px] text-white leading-snug line-clamp-2">{tpl.headline}</p>
+                      <div className="flex items-center justify-between gap-1 pt-1 border-t border-[#222222]">
+                        <span className="text-[9px] text-[#3FB950] font-bold">+{tpl.effectPercent}</span>
+                        <div className="flex items-center gap-1">
+                          <input
+                            type="number"
+                            value={delaySeconds}
+                            onChange={(e) => setDelaySeconds(parseInt(e.target.value, 10) || 30)}
+                            className="w-8 h-5 bg-[#0D0D0D] border border-[#3A3A3A] rounded-[2px] text-[10px] text-center text-white"
+                          />
+                          <button
+                            type="button"
+                            onClick={() => handleTriggerTemplate(tpl.id)}
+                            disabled={isTriggering}
+                            className="px-2 py-0.5 text-[10px] uppercase font-bold text-[#F0B429] hover:bg-[#F0B429]/10 rounded-[2px] border border-[#F0B429] transition-colors"
+                          >
+                            {isTriggering ? 'SENDING...' : 'SEND'}
+                          </button>
                         </div>
-                        {isUsed ? (
-                          <span className="px-1.5 py-0.5 rounded text-[9px] font-black bg-emerald-500/30 text-emerald-400 border border-emerald-500/50 flex-shrink-0">
-                            SENT
-                          </span>
-                        ) : (
-                          <span className="px-1.5 py-0.5 rounded text-[9px] font-bold bg-emerald-500 text-slate-950 font-black flex-shrink-0">
-                            +{tpl.effectPercent}%
-                          </span>
-                        )}
-                      </button>
-
-                      {/* Inline Confirmation Drawer */}
-                      {isConfirming && (
-                        <div className="p-3 rounded-xl bg-emerald-950 border border-emerald-500 text-xs font-mono space-y-2 animate-fadeIn">
-                          <div className="text-emerald-300 font-bold">Broadcast this bullish headline?</div>
-                          <div className="flex items-center gap-2">
-                            <span className="text-[10px] theme-text-dim uppercase font-bold">Delay:</span>
-                            <select
-                              value={delaySeconds}
-                              onChange={(e) => setDelaySeconds(e.target.value)}
-                              className="theme-bg-input border theme-border rounded-lg px-2 py-1 text-xs theme-text-main"
-                            >
-                              <option value={15}>15s Delay</option>
-                              <option value={30}>30s Delay</option>
-                              <option value={60}>60s Delay</option>
-                            </select>
-                            <button
-                              type="button"
-                              onClick={() => handleTriggerTemplate(tpl.id)}
-                              disabled={triggeringTemplateId === tpl.id}
-                              className="px-3 py-1 bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-black text-xs rounded-lg shadow"
-                            >
-                              {triggeringTemplateId === tpl.id ? 'BROADCASTING...' : 'SEND NOW'}
-                            </button>
-                            <button
-                              type="button"
-                              onClick={() => setInlineConfirmTplId(null)}
-                              className="px-2 py-1 text-slate-400 hover:text-white"
-                            >
-                              Cancel
-                            </button>
-                          </div>
-                        </div>
-                      )}
+                      </div>
                     </div>
                   );
                 })}
               </div>
             </div>
 
-            {/* RIGHT COLUMN: BAD NEWS (RED HEADER) */}
-            <div className="p-4 rounded-xl border border-rose-500/40 bg-rose-950/10 space-y-3">
-              <div className="flex items-center justify-between border-b border-rose-500/30 pb-2">
-                <div className="flex items-center gap-2 text-rose-400">
-                  <ThumbsDown className="w-4 h-4" />
-                  <h3 className="text-xs font-black uppercase tracking-wider">BAD NEWS / BEARISH (DUMPS)</h3>
-                </div>
-                <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-rose-500/20 text-rose-400 border border-rose-500/30">
-                  {filteredBadNews.length} Templates
-                </span>
+            {/* NEGATIVE SUB-COLUMN */}
+            <div className="p-3 space-y-2">
+              <div className="text-[10px] uppercase tracking-[0.08em] text-[#F85149] font-bold border-b border-[#2A2A2A] pb-1.5">
+                NEGATIVE ({filteredBadNews.length})
               </div>
 
-              <div className="space-y-2 max-h-[500px] overflow-y-auto pr-1">
+              <div className="space-y-2 max-h-[380px] overflow-y-auto pr-1">
                 {filteredBadNews.map((tpl) => {
-                  const isUsed = usedTemplateIds.includes(tpl.id);
-                  const isConfirming = inlineConfirmTplId === tpl.id;
-                  const company = SECTOR_TO_STOCK_MAP[tpl.sector] || { symbol: 'MKT' };
-
+                  const isSent = usedTemplateIds.includes(tpl.id);
+                  const isTriggering = triggeringTemplateId === tpl.id;
                   return (
-                    <div key={tpl.id} className="space-y-2">
-                      <button
-                        type="button"
-                        onClick={() => setInlineConfirmTplId(isConfirming ? null : tpl.id)}
-                        className={`w-full text-left p-3 rounded-xl border text-xs font-mono transition-all flex items-start justify-between gap-2 shadow-sm ${
-                          isUsed
-                            ? 'bg-slate-900/60 border-slate-800 text-slate-500 line-through opacity-70'
-                            : 'theme-bg-card border-rose-500/30 hover:border-rose-400 text-rose-200'
-                        }`}
-                      >
-                        <div>
-                          <span className="font-extrabold text-rose-400 mr-1">[{company.symbol}]</span>
-                          <span>{tpl.headline}</span>
+                    <div
+                      key={tpl.id}
+                      className={`p-2 bg-[#161616] border border-[#2A2A2A] rounded-[4px] space-y-1.5 transition-opacity ${
+                        isSent ? 'opacity-40' : ''
+                      }`}
+                    >
+                      <p className="text-[11px] text-white leading-snug line-clamp-2">{tpl.headline}</p>
+                      <div className="flex items-center justify-between gap-1 pt-1 border-t border-[#222222]">
+                        <span className="text-[9px] text-[#F85149] font-bold">{tpl.effectPercent}</span>
+                        <div className="flex items-center gap-1">
+                          <input
+                            type="number"
+                            value={delaySeconds}
+                            onChange={(e) => setDelaySeconds(parseInt(e.target.value, 10) || 30)}
+                            className="w-8 h-5 bg-[#0D0D0D] border border-[#3A3A3A] rounded-[2px] text-[10px] text-center text-white"
+                          />
+                          <button
+                            type="button"
+                            onClick={() => handleTriggerTemplate(tpl.id)}
+                            disabled={isTriggering}
+                            className="px-2 py-0.5 text-[10px] uppercase font-bold text-[#F85149] hover:bg-[#F85149]/10 rounded-[2px] border border-[#F85149] transition-colors"
+                          >
+                            {isTriggering ? 'SENDING...' : 'SEND'}
+                          </button>
                         </div>
-                        {isUsed ? (
-                          <span className="px-1.5 py-0.5 rounded text-[9px] font-black bg-rose-500/30 text-rose-400 border border-rose-500/50 flex-shrink-0">
-                            SENT
-                          </span>
-                        ) : (
-                          <span className="px-1.5 py-0.5 rounded text-[9px] font-bold bg-rose-500 text-white font-black flex-shrink-0">
-                            {tpl.effectPercent}%
-                          </span>
-                        )}
-                      </button>
-
-                      {/* Inline Confirmation Drawer */}
-                      {isConfirming && (
-                        <div className="p-3 rounded-xl bg-rose-950 border border-rose-500 text-xs font-mono space-y-2 animate-fadeIn">
-                          <div className="text-rose-300 font-bold">Broadcast this bearish headline?</div>
-                          <div className="flex items-center gap-2">
-                            <span className="text-[10px] theme-text-dim uppercase font-bold">Delay:</span>
-                            <select
-                              value={delaySeconds}
-                              onChange={(e) => setDelaySeconds(e.target.value)}
-                              className="theme-bg-input border theme-border rounded-lg px-2 py-1 text-xs theme-text-main"
-                            >
-                              <option value={15}>15s Delay</option>
-                              <option value={30}>30s Delay</option>
-                              <option value={60}>60s Delay</option>
-                            </select>
-                            <button
-                              type="button"
-                              onClick={() => handleTriggerTemplate(tpl.id)}
-                              disabled={triggeringTemplateId === tpl.id}
-                              className="px-3 py-1 bg-rose-600 hover:bg-rose-500 text-white font-black text-xs rounded-lg shadow"
-                            >
-                              {triggeringTemplateId === tpl.id ? 'BROADCASTING...' : 'SEND NOW'}
-                            </button>
-                            <button
-                              type="button"
-                              onClick={() => setInlineConfirmTplId(null)}
-                              className="px-2 py-1 text-slate-400 hover:text-white"
-                            >
-                              Cancel
-                            </button>
-                          </div>
-                        </div>
-                      )}
+                      </div>
                     </div>
                   );
                 })}
@@ -787,21 +602,20 @@ export function AdminDashboard() {
 
           </div>
 
-          {/* Custom News Broadcast Form */}
-          <div className="pt-3 border-t theme-border">
-            <form onSubmit={handleSendNews} className="flex items-center gap-2 flex-wrap">
-              <input
-                type="text"
-                required
-                value={newsMessage}
-                onChange={(e) => setNewsMessage(e.target.value)}
-                placeholder="Type custom manual breaking news headline..."
-                className="flex-1 min-w-[240px] px-3 py-2 rounded-xl border theme-border theme-bg-input text-xs font-mono theme-text-main focus:outline-none focus:border-indigo-500"
-              />
+          {/* CUSTOM MANUAL NEWS BROADCAST */}
+          <form onSubmit={handleSendNews} className="space-y-2 pt-2 border-t border-[#2A2A2A]">
+            <textarea
+              rows={2}
+              value={newsMessage}
+              onChange={(e) => setNewsMessage(e.target.value)}
+              placeholder="Type custom manual breaking news headline..."
+              className="w-full bg-[#111111] border border-[#2A2A2A] rounded-[4px] p-2.5 text-xs text-white placeholder-[#555555] focus:outline-none focus:border-[#F0B429] font-mono resize-none"
+            />
+            <div className="flex items-center justify-between gap-2">
               <select
                 value={selectedStockId}
                 onChange={(e) => setSelectedStockId(e.target.value)}
-                className="px-3 py-2 rounded-xl border theme-border theme-bg-input text-xs font-mono theme-text-main focus:outline-none"
+                className="bg-[#111111] border border-[#2A2A2A] rounded-[4px] px-2.5 py-1 text-xs text-[#888888] font-mono"
               >
                 <option value="">Target: Whole Market</option>
                 {stocks.map((s) => (
@@ -811,89 +625,63 @@ export function AdminDashboard() {
               <button
                 type="submit"
                 disabled={sendingNews || !newsMessage.trim()}
-                className="px-5 py-2 bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-black rounded-xl shadow flex items-center gap-1.5 btn-terminal disabled:opacity-50 min-h-[38px]"
+                className="px-4 py-1 text-xs uppercase font-bold text-[#F0B429] border border-[#F0B429] rounded-[4px] hover:bg-[#F0B429]/10 transition-colors disabled:opacity-50"
               >
-                <Send className="w-3.5 h-3.5" />
-                <span>{sendingNews ? 'SENDING...' : 'BROADCAST CUSTOM'}</span>
-              </button>
-            </form>
-          </div>
-        </section>
-
-
-        {/* ====================================================================== */}
-        {/* SECTION 3: STOCK PRICE CONTROLS (SINGLE ROW PER STOCK)                  */}
-        {/* ====================================================================== */}
-        <section className="theme-bg-panel p-5 rounded-2xl border theme-border shadow-lg space-y-4 font-mono">
-          <div className="flex items-center justify-between border-b theme-border pb-3 flex-wrap gap-3">
-            <div className="flex items-center gap-2">
-              <div className="p-2 bg-cyan-500/20 border border-cyan-500/40 rounded-xl text-cyan-400">
-                <SlidersHorizontal className="w-5 h-5" />
-              </div>
-              <div>
-                <h2 className="text-xs text-amber-400 font-extrabold uppercase tracking-wider">SECTION 3: STOCK PRICE CONTROLS</h2>
-                <p className="text-sm font-bold theme-text-main">Instant price controls for all 15 exchange listings</p>
-              </div>
-            </div>
-
-            {/* Sort Order Toggle */}
-            <div className="flex items-center gap-2">
-              <span className="text-xs font-bold theme-text-dim uppercase">Sort By:</span>
-              <button
-                type="button"
-                onClick={() => setStockSortMode(stockSortMode === 'CHANGE' ? 'ALPHA' : 'CHANGE')}
-                className="px-3 py-1.5 rounded-xl border theme-border theme-bg-card text-xs font-bold theme-text-main flex items-center gap-1.5"
-              >
-                {stockSortMode === 'CHANGE' ? 'Gainers Top (% Change)' : 'Alphabetical (A-Z)'}
+                {sendingNews ? 'SENDING...' : 'BROADCAST NEWS'}
               </button>
             </div>
+          </form>
+        </div>
+
+        {/* ====================================================================== */}
+        {/* SECTION 3: STOCKS PRICE CONTROLS (~60% WIDTH / LG:COL-SPAN-7)          */}
+        {/* ====================================================================== */}
+        <div className="lg:col-span-7 p-5 space-y-4 font-mono">
+          <div className="flex items-center justify-between">
+            <span className="text-[11px] uppercase tracking-[0.08em] text-[#666666]">STOCKS (15 LISTINGS)</span>
+            <button
+              type="button"
+              onClick={() => setStockSortMode(stockSortMode === 'CHANGE' ? 'ALPHA' : 'CHANGE')}
+              className="text-[10px] uppercase font-mono text-[#888888] hover:text-white border border-[#3A3A3A] px-2.5 py-0.5 rounded-[4px] transition-colors"
+            >
+              {stockSortMode === 'CHANGE' ? 'Sort: Gainers Top' : 'Sort: Alphabetical A-Z'}
+            </button>
           </div>
 
-          {/* Compact Scannable Stock Rows */}
-          <div className="space-y-2">
-            {sortedStocks.map((s) => {
+          {/* Scannable Stock Rows with Alternating Backgrounds (#111111 / #161616) */}
+          <div className="border border-[#2A2A2A] rounded-[4px] overflow-hidden">
+            {sortedStocks.map((s, idx) => {
               const isUp = Number(s.percentChange) >= 0;
               const isAdjusting = adjustingStockId === s.id;
 
               return (
                 <div
                   key={s.id}
-                  className={`p-3 rounded-xl border transition-all flex items-center justify-between flex-wrap gap-3 ${
-                    isUp
-                      ? 'bg-emerald-950/20 border-emerald-500/30'
-                      : 'bg-rose-950/20 border-rose-500/30'
-                  }`}
+                  className={`p-2.5 flex items-center justify-between gap-3 text-xs ${
+                    idx % 2 === 0 ? 'bg-[#111111]' : 'bg-[#161616]'
+                  } border-b border-[#2A2A2A] last:border-b-0`}
                 >
-                  {/* Stock Symbol & Spot Price */}
-                  <div className="flex items-center gap-3 min-w-[200px]">
-                    <div className={`w-8 h-8 rounded-lg flex items-center justify-center font-black text-xs ${
-                      isUp ? 'bg-emerald-500/20 text-emerald-400' : 'bg-rose-500/20 text-rose-400'
-                    }`}>
-                      {s.symbol.slice(0, 2)}
-                    </div>
-                    <div>
-                      <div className="flex items-center gap-2">
-                        <span className="font-extrabold text-sm theme-text-main">{s.symbol}</span>
-                        <span className={`text-xs font-extrabold ${isUp ? 'text-emerald-400' : 'text-rose-400'}`}>
-                          {isUp ? '+' : ''}{Number(s.percentChange || 0).toFixed(2)}%
-                        </span>
-                      </div>
-                      <div className="text-[11px] theme-text-dim">{s.name} ({s.sector})</div>
-                    </div>
+                  {/* Stock Symbol & Name */}
+                  <div className="flex items-center gap-3 min-w-[160px]">
+                    <span className="font-bold text-white w-12">{s.symbol}</span>
+                    <span className="text-[#888888] text-[11px] truncate max-w-[110px]">{s.name}</span>
                   </div>
 
-                  <div className="text-right min-w-[100px]">
-                    <div className="text-base font-black theme-text-main">{fmtMoney(s.currentPrice)} IC</div>
-                    <div className="text-[10px] theme-text-dim">Base: {fmtMoney(s.basePrice)} IC</div>
+                  {/* Live Price & % Change */}
+                  <div className="flex items-center gap-3 min-w-[130px] justify-end">
+                    <span className="text-white font-bold">{fmtMoney(s.currentPrice)} IC</span>
+                    <span className={`font-bold ${isUp ? 'text-[#3FB950]' : 'text-[#F85149]'}`}>
+                      {isUp ? `+${Number(s.percentChange || 0).toFixed(2)}%` : `${Number(s.percentChange || 0).toFixed(2)}%`}
+                    </span>
                   </div>
 
-                  {/* 5 Controls: 4 Quick Presets + 1 Custom Input */}
-                  <div className="flex items-center gap-1.5 flex-wrap">
+                  {/* Preset & Custom Adjustments */}
+                  <div className="flex items-center gap-1 flex-wrap">
                     <button
                       type="button"
                       disabled={isAdjusting}
                       onClick={() => handleAdjustPrice(s.id, 10)}
-                      className="px-2.5 py-1.5 bg-emerald-500/20 hover:bg-emerald-500 text-emerald-400 hover:text-slate-950 font-black text-xs rounded-lg border border-emerald-500/40 transition-all"
+                      className="h-[28px] px-2 text-[10px] font-bold rounded-[4px] border border-[#3A3A3A] text-white hover:bg-white/10 transition-colors"
                     >
                       +10%
                     </button>
@@ -901,7 +689,7 @@ export function AdminDashboard() {
                       type="button"
                       disabled={isAdjusting}
                       onClick={() => handleAdjustPrice(s.id, 25)}
-                      className="px-2.5 py-1.5 bg-emerald-500/20 hover:bg-emerald-500 text-emerald-400 hover:text-slate-950 font-black text-xs rounded-lg border border-emerald-500/40 transition-all"
+                      className="h-[28px] px-2 text-[10px] font-bold rounded-[4px] border border-[#3A3A3A] text-white hover:bg-white/10 transition-colors"
                     >
                       +25%
                     </button>
@@ -909,7 +697,7 @@ export function AdminDashboard() {
                       type="button"
                       disabled={isAdjusting}
                       onClick={() => handleAdjustPrice(s.id, -10)}
-                      className="px-2.5 py-1.5 bg-rose-500/20 hover:bg-rose-500 text-rose-400 hover:text-white font-black text-xs rounded-lg border border-rose-500/40 transition-all"
+                      className="h-[28px] px-2 text-[10px] font-bold rounded-[4px] border border-[#3A3A3A] text-white hover:bg-white/10 transition-colors"
                     >
                       -10%
                     </button>
@@ -917,144 +705,121 @@ export function AdminDashboard() {
                       type="button"
                       disabled={isAdjusting}
                       onClick={() => handleAdjustPrice(s.id, -25)}
-                      className="px-2.5 py-1.5 bg-rose-500/20 hover:bg-rose-500 text-rose-400 hover:text-white font-black text-xs rounded-lg border border-rose-500/40 transition-all"
+                      className="h-[28px] px-2 text-[10px] font-bold rounded-[4px] border border-[#3A3A3A] text-white hover:bg-white/10 transition-colors"
                     >
                       -25%
                     </button>
 
-                    {/* Custom % Input */}
-                    <div className="flex items-center gap-1 ml-1">
-                      <input
-                        type="number"
-                        step="1"
-                        value={customPercents[s.id] || ''}
-                        onChange={(e) => setCustomPercents({ ...customPercents, [s.id]: e.target.value })}
-                        placeholder="% (e.g. 15)"
-                        className="w-16 px-2 py-1 rounded-lg border theme-border theme-bg-input text-xs font-bold theme-text-main focus:outline-none"
-                      />
-                      <button
-                        type="button"
-                        disabled={isAdjusting || !customPercents[s.id]}
-                        onClick={() => handleAdjustPrice(s.id, parseFloat(customPercents[s.id]))}
-                        className="px-2.5 py-1 bg-amber-500 hover:bg-amber-400 text-slate-950 font-black text-xs rounded-lg disabled:opacity-40"
-                      >
-                        Apply
-                      </button>
-                    </div>
+                    <input
+                      type="number"
+                      placeholder="%"
+                      value={customPercents[s.id] || ''}
+                      onChange={(e) => setCustomPercents({ ...customPercents, [s.id]: e.target.value })}
+                      className="w-12 h-[28px] bg-[#0D0D0D] border border-[#3A3A3A] rounded-[4px] px-1 text-center text-xs text-white focus:outline-none focus:border-[#F0B429]"
+                    />
+                    <button
+                      type="button"
+                      disabled={isAdjusting || !customPercents[s.id]}
+                      onClick={() => handleAdjustPrice(s.id, parseFloat(customPercents[s.id]))}
+                      className="h-[28px] px-2 text-[10px] font-bold uppercase rounded-[4px] border border-[#F0B429] text-[#F0B429] hover:bg-[#F0B429]/10 transition-colors disabled:opacity-50"
+                    >
+                      APPLY
+                    </button>
                   </div>
                 </div>
               );
             })}
           </div>
-        </section>
+        </div>
 
+      </div>
 
-        {/* ====================================================================== */}
-        {/* SECTION 4: LIVE TRADER ACTIVITY & TOURNAMENT LEADERBOARD               */}
-        {/* ====================================================================== */}
-        <section className="grid grid-cols-1 lg:grid-cols-2 gap-6 font-mono">
+      {/* ====================================================================== */}
+      {/* SECTION 4: LIVE ACTIVITY FEED & LEADERBOARD STANDINGS                   */}
+      {/* ====================================================================== */}
+      <div className="p-5 space-y-4 font-mono">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           
-          {/* LIVE TRADER ACTIVITY STREAM */}
-          <div className="theme-bg-panel p-5 rounded-2xl border theme-border shadow-lg space-y-3">
-            <div className="flex items-center justify-between border-b theme-border pb-3">
-              <div className="flex items-center gap-2">
-                <Activity className="w-5 h-5 text-emerald-400" />
-                <h2 className="text-xs text-amber-400 font-extrabold uppercase tracking-wider">LIVE TRADER ACTIVITY FEED</h2>
-              </div>
-              <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-emerald-500/20 text-emerald-400 border border-emerald-500/30">
-                REAL-TIME STREAM
-              </span>
-            </div>
-
-            <div className="space-y-2 max-h-[400px] overflow-y-auto pr-1">
+          {/* Live Activity Stream */}
+          <div className="space-y-2">
+            <span className="text-[11px] uppercase tracking-[0.08em] text-[#666666]">LIVE ACTIVITY STREAM</span>
+            <div className="border border-[#2A2A2A] rounded-[4px] bg-[#111111] p-3 space-y-1.5 max-h-[260px] overflow-y-auto text-xs">
               {liveTradeFeed.length === 0 ? (
-                <div className="py-12 text-center theme-text-dim text-xs border theme-border rounded-xl">
-                  Awaiting live trades from floor...
+                <div className="py-8 text-center text-[#666666] italic">
+                  Awaiting player trade activity...
                 </div>
               ) : (
-                liveTradeFeed.map((item) => (
-                  <div key={item.id} className="p-2.5 rounded-xl border theme-border theme-bg-card flex items-center justify-between text-xs animate-fadeIn">
+                liveTradeFeed.map((trade) => (
+                  <div key={trade.id} className="flex items-center justify-between py-1 border-b border-[#1A1A1A] last:border-b-0 text-[11px]">
                     <div className="flex items-center gap-2">
-                      <span className={`px-2 py-0.5 rounded text-[10px] font-black ${
-                        item.action === 'BUY' ? 'bg-emerald-500/20 text-emerald-400' : 'bg-rose-500/20 text-rose-400'
-                      }`}>
-                        {item.action}
+                      <span className="text-white font-bold">{trade.traderName}</span>
+                      <span className={trade.action === 'BUY' ? 'text-[#3FB950]' : 'text-[#F85149]'}>
+                        {trade.action.toLowerCase()} {trade.quantity} {trade.symbol}
                       </span>
-                      <span className="font-bold theme-text-main">{item.traderName}</span>
-                      <span className="theme-text-dim">traded {item.quantity} sh of <span className="theme-text-main font-bold">{item.symbol}</span></span>
                     </div>
-                    <span className="font-bold theme-text-main">{fmtMoney(item.price)} IC</span>
+                    <div className="flex items-center gap-3">
+                      <span className="text-white font-bold">{fmtMoney(trade.price * trade.quantity)} IC</span>
+                      <span className="text-[#666666] text-[10px]">{new Date(trade.timestamp).toLocaleTimeString()}</span>
+                    </div>
                   </div>
                 ))
               )}
             </div>
           </div>
 
-          {/* TOURNAMENT LEADERBOARD */}
-          <div className="theme-bg-panel p-5 rounded-2xl border theme-border shadow-lg space-y-3">
-            <div className="flex items-center justify-between border-b theme-border pb-3">
-              <div className="flex items-center gap-2">
-                <Trophy className="w-5 h-5 text-amber-400" />
-                <h2 className="text-xs text-amber-400 font-extrabold uppercase tracking-wider">TOURNAMENT LEADERBOARD</h2>
-              </div>
-              <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-amber-500/20 text-amber-400 border border-amber-500/30">
-                {leaderboard.length} Players Ranked
-              </span>
-            </div>
-
-            <div className="space-y-2 max-h-[400px] overflow-y-auto pr-1">
-              {leaderboard.map((entry, idx) => (
-                <div key={entry.id || idx} className="p-2.5 rounded-xl border theme-border theme-bg-card flex items-center justify-between text-xs">
-                  <div className="flex items-center gap-3">
-                    <span className={`w-6 h-6 rounded-full flex items-center justify-center font-black text-[11px] ${
-                      idx === 0 ? 'bg-amber-400 text-slate-950' : idx === 1 ? 'bg-slate-300 text-slate-950' : idx === 2 ? 'bg-amber-700 text-white' : 'theme-bg-panel theme-text-muted'
-                    }`}>
-                      {idx + 1}
-                    </span>
-                    <span className="font-bold theme-text-main">{entry.name}</span>
-                  </div>
-
-                  <div className="flex items-center gap-3">
-                    <span className="font-bold text-emerald-400">{fmtMoney(entry.portfolioValue || entry.totalNetWorth)} IC</span>
-                    <button
-                      type="button"
-                      onClick={() => handleOpenTraderDetail(entry.id)}
-                      className="px-2 py-1 rounded bg-indigo-500/20 hover:bg-indigo-500 text-indigo-300 hover:text-white border border-indigo-500/40 text-[10px] font-bold"
-                    >
-                      Audit
-                    </button>
-                  </div>
+          {/* Tournament Standings Leaderboard */}
+          <div className="space-y-2">
+            <span className="text-[11px] uppercase tracking-[0.08em] text-[#666666]">LEADERBOARD STANDINGS</span>
+            <div className="border border-[#2A2A2A] rounded-[4px] bg-[#111111] p-3 space-y-1.5 max-h-[260px] overflow-y-auto text-xs">
+              {leaderboard.length === 0 ? (
+                <div className="py-8 text-center text-[#666666] italic">
+                  Loading tournament standings...
                 </div>
-              ))}
+              ) : (
+                leaderboard.map((entry, idx) => (
+                  <div key={entry.id || idx} className="flex items-center justify-between py-1 border-b border-[#1A1A1A] last:border-b-0 text-[11px]">
+                    <div className="flex items-center gap-3">
+                      <span className="text-[#888888] font-bold w-5">#{idx + 1}</span>
+                      <span className="text-white font-bold">{entry.name}</span>
+                    </div>
+                    <div className="flex items-center gap-4">
+                      <span className="text-[#3FB950] font-bold">{fmtMoney(entry.totalNetWorth || entry.portfolioValue)} IC</span>
+                      <button
+                        type="button"
+                        onClick={() => handleOpenTraderDetail(entry.id)}
+                        className="text-[10px] uppercase font-bold text-[#F0B429] border border-[#F0B429] rounded-[4px] px-2 py-0.5 hover:bg-[#F0B429]/10 transition-colors"
+                      >
+                        AUDIT
+                      </button>
+                    </div>
+                  </div>
+                ))
+              )}
             </div>
           </div>
 
-        </section>
+        </div>
+      </div>
 
-      </main>
-
-      {/* Admin Break Setup Modal */}
+      {/* Admin Break Setup Dialog */}
       {showBreakModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-sm animate-fadeIn font-mono">
-          <div className="w-full max-w-md theme-bg-panel border theme-border rounded-2xl p-6 shadow-2xl space-y-5">
-            <div className="flex items-center justify-between border-b theme-border pb-3">
-              <div className="flex items-center gap-2">
-                <Coffee className="w-6 h-6 text-amber-400 animate-bounce" />
-                <h3 className="text-sm font-extrabold theme-text-main">START REFRESHMENT BREAK</h3>
-              </div>
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 font-mono animate-fadeIn">
+          <div className="w-full max-w-md bg-[#0D0D0D] border border-[#2A2A2A] rounded-[4px] p-5 space-y-4 text-white">
+            <div className="flex items-center justify-between border-b border-[#2A2A2A] pb-3">
+              <span className="text-[11px] uppercase tracking-[0.08em] text-[#666666]">START REFRESHMENT BREAK</span>
               <button
                 type="button"
                 onClick={() => setShowBreakModal(false)}
-                className="text-slate-400 hover:text-white text-base font-bold"
+                className="text-[#888888] hover:text-white font-bold text-sm"
               >
                 X
               </button>
             </div>
 
-            <form onSubmit={handleStartBreak} className="space-y-4">
+            <form onSubmit={handleStartBreak} className="space-y-4 text-xs">
               <div>
-                <label className="text-xs font-bold theme-text-dim block mb-2 uppercase tracking-wider">
-                  Break Duration (Minutes)
+                <label className="text-[10px] uppercase text-[#666666] block mb-2 font-bold">
+                  BREAK DURATION (MINUTES)
                 </label>
                 <div className="grid grid-cols-4 gap-2 mb-2">
                   {[5, 10, 15, 20].map((m) => (
@@ -1062,10 +827,10 @@ export function AdminDashboard() {
                       key={m}
                       type="button"
                       onClick={() => setBreakMinutes(m)}
-                      className={`py-2 text-xs font-bold rounded-xl border transition-all ${
+                      className={`py-1.5 text-xs font-bold rounded-[4px] border transition-colors ${
                         breakMinutes === m
-                          ? 'bg-amber-500 text-slate-950 border-amber-400 font-extrabold shadow-md'
-                          : 'theme-bg-card theme-text-main theme-border hover:border-amber-500/50'
+                          ? 'border-[#F0B429] text-[#F0B429]'
+                          : 'border-[#3A3A3A] text-white hover:bg-white/10'
                       }`}
                     >
                       {m} Mins
@@ -1078,20 +843,20 @@ export function AdminDashboard() {
                   max="60"
                   value={breakMinutes}
                   onChange={(e) => setBreakMinutes(parseInt(e.target.value, 10) || 10)}
-                  className="w-full px-3 py-2 rounded-xl border theme-border theme-bg-input text-xs font-bold theme-text-main"
+                  className="w-full px-3 py-2 bg-[#111111] border border-[#2A2A2A] rounded-[4px] text-xs text-white font-mono focus:outline-none focus:border-[#F0B429]"
                   placeholder="Custom Minutes (e.g. 15)"
                 />
               </div>
 
               <div>
-                <label className="text-xs font-bold theme-text-dim block mb-2 uppercase tracking-wider">
-                  Trader Announcement / Note
+                <label className="text-[10px] uppercase text-[#666666] block mb-2 font-bold">
+                  TRADER ANNOUNCEMENT / NOTE
                 </label>
                 <textarea
                   rows="3"
                   value={breakNote}
                   onChange={(e) => setBreakNote(e.target.value)}
-                  className="w-full px-3 py-2 rounded-xl border theme-border theme-bg-input text-xs font-mono theme-text-main resize-none focus:outline-none focus:border-amber-500"
+                  className="w-full px-3 py-2 bg-[#111111] border border-[#2A2A2A] rounded-[4px] text-xs font-mono text-white resize-none focus:outline-none focus:border-[#F0B429]"
                   placeholder="e.g. Refreshment Break — Grab snacks, water, and take a quick rest!"
                 />
               </div>
@@ -1100,15 +865,14 @@ export function AdminDashboard() {
                 <button
                   type="button"
                   onClick={() => setShowBreakModal(false)}
-                  className="flex-1 py-2.5 text-xs font-bold rounded-xl border theme-border theme-bg-card theme-text-muted hover:theme-text-main"
+                  className="flex-1 py-2 text-xs font-bold rounded-[4px] border border-[#3A3A3A] text-[#888888] hover:text-white"
                 >
-                  Cancel
+                  CANCEL
                 </button>
                 <button
                   type="submit"
-                  className="flex-1 py-2.5 text-xs font-black rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 shadow-lg flex items-center justify-center gap-1.5"
+                  className="flex-1 py-2 text-xs font-bold uppercase rounded-[4px] border border-[#F0B429] text-[#F0B429] hover:bg-[#F0B429]/10"
                 >
-                  <Coffee className="w-4 h-4" />
                   START {breakMinutes}M BREAK
                 </button>
               </div>
@@ -1117,7 +881,7 @@ export function AdminDashboard() {
         </div>
       )}
 
-      {/* Admin Trader Drill-Down Modal */}
+      {/* Admin Trader Drill-Down Slide-Over Audit */}
       <AdminTraderDetailModal
         traderId={selectedTraderId}
         isOpen={isTraderModalOpen}
