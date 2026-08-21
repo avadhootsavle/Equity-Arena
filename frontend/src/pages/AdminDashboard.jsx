@@ -1057,7 +1057,7 @@ export function AdminDashboard() {
                   Break Duration (Minutes)
                 </label>
                 <div className="grid grid-cols-4 gap-2 mb-2">
-                  {[10, 5, 4, 2].map((m) => (
+                  {[5, 10, 15, 20].map((m) => (
                     <button
                       key={m}
                       type="button"

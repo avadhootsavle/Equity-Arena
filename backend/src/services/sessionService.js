@@ -230,6 +230,15 @@ async function pauseSession(options = {}) {
     remainingSeconds
   });
 
+  safeEmitSocket('break:started', {
+    sessionId: updatedSession.id,
+    durationSeconds: breakMins * 60,
+    breakDurationMinutes: breakMins,
+    breakEndTime: breakEnd,
+    endsAt: breakEnd,
+    note
+  });
+
   return {
     ...updatedSession,
     remainingSeconds,
@@ -282,6 +291,11 @@ async function resumeSession() {
     remainingSeconds
   });
 
+  safeEmitSocket('break:ended', {
+    sessionId: updatedSession.id,
+    status: 'ACTIVE'
+  });
+
   return {
     ...updatedSession,
     remainingSeconds,
@@ -317,6 +331,11 @@ async function stopSession() {
     sessionId: updatedSession.id,
     status: 'ENDED',
     message: '🔒 MARKET CLOSED: Trading session stopped by Admin.'
+  });
+
+  safeEmitSocket('break:ended', {
+    sessionId: updatedSession.id,
+    status: 'ENDED'
   });
 
   return {

@@ -332,11 +332,17 @@ export function TraderDashboard() {
       fetchPortfolio();
     };
 
+    const handleBreakEnded = () => {
+      pushToast('Market is back! Trading has resumed.', 'success', 'Market Unlocked');
+    };
+
     socket.on('connect', handleConnect);
     socket.on('stock:update', handleStockUpdate);
     socket.on('news:broadcast', handleNews);
     socket.on('portfolio:update', handlePortfolioUpdate);
     socket.on('order:executed', handleOrderExecuted);
+    socket.on('break:ended', handleBreakEnded);
+    socket.on('session:resumed', handleBreakEnded);
 
     return () => {
       socket.off('connect', handleConnect);
@@ -344,6 +350,8 @@ export function TraderDashboard() {
       socket.off('news:broadcast', handleNews);
       socket.off('portfolio:update', handlePortfolioUpdate);
       socket.off('order:executed', handleOrderExecuted);
+      socket.off('break:ended', handleBreakEnded);
+      socket.off('session:resumed', handleBreakEnded);
       flashTimers.forEach((t) => clearTimeout(t));
     };
   }, [socket, fetchStocks, fetchPortfolio, fetchNewsFeed, pushToast]);
@@ -1118,6 +1126,84 @@ export function TraderDashboard() {
       />
 
       <OnboardingTour isOpen={isTourOpen} onClose={() => setIsTourOpen(false)} />
+
+      {/* Phase 44: Full-Screen Break Countdown Overlay on Trader Side */}
+      {(sessionData?.status === 'PAUSED' || sessionData?.isPaused) && (
+        <div className="fixed inset-0 z-50 theme-bg-main overflow-y-auto flex flex-col items-center justify-between p-6 font-mono text-center animate-fadeIn backdrop-blur-xl">
+          {/* Header */}
+          <div className="w-full max-w-2xl mx-auto flex items-center justify-between pt-4 border-b theme-border pb-4">
+            <div className="flex items-center gap-2 text-amber-400">
+              <Coffee className="w-6 h-6 animate-bounce" />
+              <span className="text-sm font-extrabold uppercase tracking-wider">REFRESHMENT BREAK IN PROGRESS</span>
+            </div>
+            <span className="px-3 py-1 rounded-full bg-amber-500/20 text-amber-400 border border-amber-500/40 text-xs font-bold uppercase">
+              MARKET PAUSED
+            </span>
+          </div>
+
+          {/* Hero Timer Center */}
+          <div className="my-auto py-10 space-y-6 max-w-xl mx-auto w-full">
+            <div className="inline-block p-4 rounded-3xl bg-amber-500/10 border border-amber-500/30">
+              <Coffee className="w-16 h-16 text-amber-400 mx-auto animate-pulse" />
+            </div>
+
+            <div className="space-y-2">
+              <div className="text-xs font-bold text-amber-400 uppercase tracking-widest">
+                TRADING RESUMES IN
+              </div>
+              <BreakCountdownTimer sessionData={sessionData} />
+            </div>
+
+            <div className="p-4 rounded-2xl theme-bg-card border theme-border space-y-2 text-xs">
+              <p className="font-bold theme-text-main text-sm">
+                Take a breather. Trading resumes when the countdown hits zero.
+              </p>
+              {sessionData?.breakNote && (
+                <p className="text-amber-300 font-semibold bg-amber-500/10 p-3 rounded-xl border border-amber-500/20">
+                  📢 {sessionData.breakNote}
+                </p>
+              )}
+            </div>
+
+            {/* Embedded Live Leaderboard for Traders */}
+            <div className="w-full theme-bg-card border theme-border rounded-2xl p-4 text-left space-y-3 shadow-xl">
+              <div className="flex items-center justify-between border-b theme-border pb-2">
+                <div className="flex items-center gap-2">
+                  <Trophy className="w-4 h-4 text-amber-400" />
+                  <span className="text-xs font-black theme-text-main uppercase">Current Tournament Standings</span>
+                </div>
+                <span className="text-[10px] theme-text-dim">Live Standings</span>
+              </div>
+
+              <div className="space-y-1.5 max-h-[180px] overflow-y-auto pr-1">
+                {leaderboard.slice(0, 5).map((entry, idx) => {
+                  const isMe = entry.id === user?.id || entry.userId === user?.id || entry.name === user?.name;
+                  return (
+                    <div
+                      key={entry.id || idx}
+                      className={`p-2 rounded-lg text-xs flex items-center justify-between ${
+                        isMe ? 'bg-amber-500/20 border border-amber-500/40 text-amber-300 font-bold' : 'theme-bg-panel theme-text-main'
+                      }`}
+                    >
+                      <div className="flex items-center gap-2">
+                        <span className="font-bold text-[11px] theme-text-dim">#{idx + 1}</span>
+                        <span>{entry.name} {isMe && '(YOU)'}</span>
+                      </div>
+                      <span className="font-bold text-emerald-400">{fmtMoney(entry.totalNetWorth || entry.portfolioValue)} IC</span>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          </div>
+
+          {/* Footer */}
+          <div className="w-full max-w-md mx-auto pb-4 text-xs theme-text-dim flex items-center justify-center gap-2">
+            <Lock className="w-4 h-4 text-amber-400" />
+            <span>Trading floor, live prices, and order executions are locked until break ends.</span>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
