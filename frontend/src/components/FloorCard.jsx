@@ -279,12 +279,16 @@ export const FloorCard = memo(function FloorCard({
             }}
           >
             {isUp ? (
-              <TrendingUp className="w-3 h-3" />
+              <>
+                <TrendingUp className="w-3 h-3" />
+                <span>▲ Up {Math.abs(percentChange).toFixed(2)}%</span>
+              </>
             ) : (
-              <TrendingDown className="w-3 h-3" />
+              <>
+                <TrendingDown className="w-3 h-3" />
+                <span>▼ Down {Math.abs(percentChange).toFixed(2)}%</span>
+              </>
             )}
-            {isUp ? '+' : ''}
-            {percentChange.toFixed(2)}%
           </span>
         </span>
 

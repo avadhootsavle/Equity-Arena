@@ -99,10 +99,10 @@ export function MyStocks({ holdings = [], stocks = [], onSell, onShowChart }) {
                     style={{ color: 'var(--text-dim)' }}
                   />
                   <div className="text-[13px] theme-text-main font-semibold">
-                    You don't own any stocks yet
+                    You don't own any stocks yet.
                   </div>
                   <div className="text-[11.5px] theme-text-muted mt-1">
-                    Pick a stock from the market and hit Buy to get started
+                    Buy some from the market to get started.
                   </div>
                 </td>
               </tr>

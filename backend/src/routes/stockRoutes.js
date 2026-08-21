@@ -10,6 +10,7 @@ const prisma = new PrismaClient();
  */
 function aggregatePriceHistory(histories, bucketType) {
   if (!histories || histories.length === 0) return [];
+  if (bucketType === 'RAW') return histories;
 
   const buckets = {};
 
@@ -17,12 +18,18 @@ function aggregatePriceHistory(histories, bucketType) {
     const d = new Date(item.timestamp);
     let key = '';
 
-    if (bucketType === '30SEC') {
+    if (bucketType === '15SEC') {
+      // Bucket by 15-second window
+      key = String(Math.floor(d.getTime() / 15000) * 15000);
+    } else if (bucketType === '30SEC') {
       // Bucket by 30-second window
       key = String(Math.floor(d.getTime() / 30000) * 30000);
     } else if (bucketType === '1MIN') {
       // Bucket by 1-minute window
       key = String(Math.floor(d.getTime() / 60000) * 60000);
+    } else if (bucketType === '2MIN') {
+      // Bucket by 2-minute window
+      key = String(Math.floor(d.getTime() / 120000) * 120000);
     } else if (bucketType === 'HOURLY') {
       // Bucket by YYYY-MM-DD-HH
       key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}-${String(d.getHours()).padStart(2, '0')}`;
@@ -109,17 +116,17 @@ router.get('/:id/history', async (req, res) => {
     let bucketType = 'RAW';
 
     if (range === '5M') {
-      startDate = new Date(now - 5 * 60 * 1000); // Last 5 minutes, raw ticks
+      startDate = new Date(now - 5 * 60 * 1000); // Last 5 minutes, 100% raw unaggregated ticks
       bucketType = 'RAW';
     } else if (range === '15M' || !range) {
-      startDate = new Date(now - 15 * 60 * 1000); // Last 15 minutes, raw ticks
-      bucketType = 'RAW';
+      startDate = new Date(now - 15 * 60 * 1000); // Last 15 minutes, 15-second aggregated buckets
+      bucketType = '15SEC';
     } else if (range === '30M') {
-      startDate = new Date(now - 30 * 60 * 1000); // Last 30 minutes, 30-second buckets
-      bucketType = '30SEC';
-    } else if (range === '1H') {
-      startDate = new Date(now - 60 * 60 * 1000); // Last 60 minutes, 1-minute buckets
+      startDate = new Date(now - 30 * 60 * 1000); // Last 30 minutes, 1-minute aggregated buckets
       bucketType = '1MIN';
+    } else if (range === '1H') {
+      startDate = new Date(now - 60 * 60 * 1000); // Last 60 minutes, 2-minute aggregated buckets
+      bucketType = '2MIN';
     } else if (range === '1D') {
       startDate = new Date(now - 24 * 60 * 60 * 1000);
       bucketType = 'RAW';

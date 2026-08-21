@@ -107,6 +107,22 @@ export function TraderDashboard() {
   const [editingOrder, setEditingOrder] = useState(null);
 
   const [quickSubmitting, setQuickSubmitting] = useState(false);
+  const [leaderboard, setLeaderboard] = useState([]);
+
+  const fetchLeaderboard = useCallback(async () => {
+    try {
+      const data = await apiFetch('/admin/leaderboard');
+      setLeaderboard(Array.isArray(data) ? data : []);
+    } catch (err) {
+      console.error('Failed to fetch leaderboard:', err);
+    }
+  }, []);
+
+  useEffect(() => {
+    fetchLeaderboard();
+    const interval = setInterval(fetchLeaderboard, 5000);
+    return () => clearInterval(interval);
+  }, [fetchLeaderboard]);
 
   const [isTourOpen, setIsTourOpen] = useState(() => {
     try {
@@ -896,22 +912,41 @@ export function TraderDashboard() {
                 )}
               </Reveal>
 
-              {/* ---------------- What I own ---------------- */}
-              <Reveal>
+            </>
+          )}
+
+          {/* =============== PORTFOLIO TAB ("MY STOCKS") =============== */}
+          {activeTab === 'PORTFOLIO' && (
+            <div className="space-y-5 font-mono">
+              <div className="surface p-5 rounded-2xl border theme-border shadow-xl space-y-4">
+                <h3 className="text-base font-extrabold theme-text-main">Your Money Overview</h3>
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                  <div className="p-3.5 rounded-xl theme-bg-card border theme-border">
+                    <span className="text-[10px] theme-text-dim block font-bold uppercase tracking-wider">Available Cash</span>
+                    <span className="text-xl font-black text-amber-400">{fmtMoney(availableCash)} IC</span>
+                  </div>
+                  <div className="p-3.5 rounded-xl theme-bg-card border theme-border">
+                    <span className="text-[10px] theme-text-dim block font-bold uppercase tracking-wider">Money in Stocks</span>
+                    <span className="text-xl font-black theme-text-main">{fmtMoney(liveHoldingsValue)} IC</span>
+                  </div>
+                  <div className="p-3.5 rounded-xl theme-bg-card border theme-border">
+                    <span className="text-[10px] theme-text-dim block font-bold uppercase tracking-wider">Total Profit / Loss</span>
+                    <span className={`text-xl font-black ${totalProfit >= 0 ? 'text-emerald-400' : 'text-rose-400'}`}>
+                      {totalProfit >= 0 ? `You're up ${fmtMoney(totalProfit)} IC` : `You're down ${fmtMoney(Math.abs(totalProfit))} IC`}
+                    </span>
+                  </div>
+                </div>
+              </div>
+
               <MyStocks
                 holdings={portfolio.holdings || []}
                 stocks={stocks}
                 onSell={handleOpenDetail}
                 onShowChart={handleSelectFromFloor}
               />
-              </Reveal>
 
-              {/* ---------------- What I've traded ---------------- */}
-              <Reveal>
-                <MyTrades transactions={portfolio.transactions || []} limit={6} />
-              </Reveal>
-
-            </>
+              <MyTrades transactions={portfolio.transactions || []} limit={10} />
+            </div>
           )}
 
           {/* =============== ORDERS TAB =============== */}
@@ -928,8 +963,117 @@ export function TraderDashboard() {
           {activeTab === 'NEWS' && (
             <NewsTab news={newsFeed} loading={loadingNews} onRefresh={fetchNewsFeed} />
           )}
+
+          {/* =============== LEADERBOARD TAB ("WHO'S WINNING RIGHT NOW") =============== */}
+          {activeTab === 'LEADERBOARD' && (
+            <div className="space-y-4 font-mono">
+              <div className="surface p-5 rounded-2xl border theme-border shadow-xl space-y-4">
+                <div className="flex items-center justify-between border-b theme-border pb-3">
+                  <div>
+                    <h2 className="text-lg font-black theme-text-main">Who's winning right now 🏆</h2>
+                    <p className="text-xs theme-text-dim">Live tournament standings sorted by portfolio net worth</p>
+                  </div>
+                </div>
+
+                <div className="space-y-2">
+                  {leaderboard.length === 0 ? (
+                    <div className="py-12 text-center theme-text-dim text-xs">
+                      Loading tournament standings...
+                    </div>
+                  ) : (
+                    leaderboard.map((entry, idx) => {
+                      const isMe = entry.id === user?.id || entry.userId === user?.id || entry.name === user?.name;
+                      return (
+                        <div
+                          key={entry.id || idx}
+                          className={`p-3.5 rounded-xl border flex items-center justify-between transition-all ${
+                            isMe
+                              ? 'bg-amber-500/15 border-amber-500 text-amber-300 ring-2 ring-amber-500/50 shadow-lg'
+                              : 'theme-bg-card theme-border theme-text-main'
+                          }`}
+                        >
+                          <div className="flex items-center gap-3">
+                            <span className={`w-8 h-8 rounded-full flex items-center justify-center font-black text-xs ${
+                              idx === 0 ? 'bg-amber-400 text-slate-950' : idx === 1 ? 'bg-slate-300 text-slate-950' : idx === 2 ? 'bg-amber-700 text-white' : 'theme-bg-panel theme-text-muted'
+                            }`}>
+                              #{idx + 1}
+                            </span>
+                            <div>
+                              <span className="font-extrabold text-sm">{entry.name} {isMe && '(YOU)'}</span>
+                              {isMe && <span className="block text-[10px] text-amber-400 font-bold">Your Current Ranking</span>}
+                            </div>
+                          </div>
+
+                          <div className="text-right">
+                            <span className="text-sm font-black text-emerald-400">{fmtMoney(entry.totalNetWorth || entry.portfolioValue)} IC</span>
+                          </div>
+                        </div>
+                      );
+                    })
+                  )}
+                </div>
+              </div>
+            </div>
+          )}
         </main>
       </div>
+
+      {/* Persistent Bottom 4-Tab Navigation Bar */}
+      <nav className="fixed bottom-0 left-0 right-0 z-40 theme-bg-header border-t theme-border shadow-2xl backdrop-blur-md font-mono">
+        <div className="max-w-md mx-auto flex items-center justify-around py-2 px-2">
+          <button
+            type="button"
+            onClick={() => setActiveTab('DASHBOARD')}
+            className={`flex flex-col items-center gap-1 py-1 px-3 rounded-xl transition-all ${
+              activeTab === 'DASHBOARD'
+                ? 'text-amber-400 font-extrabold bg-amber-500/15 scale-105'
+                : 'theme-text-muted hover:theme-text-main'
+            }`}
+          >
+            <TrendingUp className="w-5 h-5" />
+            <span className="text-[11px] font-bold">📈 Market</span>
+          </button>
+
+          <button
+            type="button"
+            onClick={() => setActiveTab('PORTFOLIO')}
+            className={`flex flex-col items-center gap-1 py-1 px-3 rounded-xl transition-all ${
+              activeTab === 'PORTFOLIO'
+                ? 'text-amber-400 font-extrabold bg-amber-500/15 scale-105'
+                : 'theme-text-muted hover:theme-text-main'
+            }`}
+          >
+            <Wallet className="w-5 h-5" />
+            <span className="text-[11px] font-bold">💼 My Stocks</span>
+          </button>
+
+          <button
+            type="button"
+            onClick={() => setActiveTab('NEWS')}
+            className={`flex flex-col items-center gap-1 py-1 px-3 rounded-xl transition-all ${
+              activeTab === 'NEWS'
+                ? 'text-amber-400 font-extrabold bg-amber-500/15 scale-105'
+                : 'theme-text-muted hover:theme-text-main'
+            }`}
+          >
+            <Newspaper className="w-5 h-5" />
+            <span className="text-[11px] font-bold">📰 News</span>
+          </button>
+
+          <button
+            type="button"
+            onClick={() => setActiveTab('LEADERBOARD')}
+            className={`flex flex-col items-center gap-1 py-1 px-3 rounded-xl transition-all ${
+              activeTab === 'LEADERBOARD'
+                ? 'text-amber-400 font-extrabold bg-amber-500/15 scale-105'
+                : 'theme-text-muted hover:theme-text-main'
+            }`}
+          >
+            <Trophy className="w-5 h-5" />
+            <span className="text-[11px] font-bold">🏆 Leaderboard</span>
+          </button>
+        </div>
+      </nav>
 
       {/* ---------------- Overlays ---------------- */}
       <BackToTopButton />
