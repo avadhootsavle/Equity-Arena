@@ -13,8 +13,7 @@ export const NAV_ITEMS = [
   { key: 'DASHBOARD', label: 'Market', Icon: LayoutDashboard },
   { key: 'PORTFOLIO', label: 'My Stocks', Icon: Wallet },
   { key: 'ORDERS', label: 'Orders', Icon: ClipboardList },
-  { key: 'NEWS', label: 'News', Icon: Newspaper },
-  { key: 'LEADERBOARD', label: 'Leaderboard', Icon: Trophy }
+  { key: 'NEWS', label: 'News', Icon: Newspaper }
 ];
 
 export function Sidebar({ activeTab, setActiveTab, counts = {} }) {
@@ -123,11 +122,11 @@ export function Sidebar({ activeTab, setActiveTab, counts = {} }) {
             className="flex items-center gap-1.5 text-[10px] font-heading font-bold uppercase tracking-wider"
             style={{ color: 'var(--accent)' }}
           >
-            <Trophy className="w-3 h-3" />
-            Trade. Climb. Win.
+            <TrendingUp className="w-3 h-3" />
+            Trade. Build. Win.
           </div>
           <p className="text-[9.5px] theme-text-dim leading-snug mt-1">
-            One session, one shot. Every fill moves you up or down the board.
+            One session, one shot. Build your portfolio value before time expires.
           </p>
         </div>
       </div>

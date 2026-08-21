@@ -108,22 +108,6 @@ export function TraderDashboard() {
   const [editingOrder, setEditingOrder] = useState(null);
 
   const [quickSubmitting, setQuickSubmitting] = useState(false);
-  const [leaderboard, setLeaderboard] = useState([]);
-
-  const fetchLeaderboard = useCallback(async () => {
-    try {
-      const data = await apiFetch('/leaderboard');
-      setLeaderboard(Array.isArray(data) ? data : []);
-    } catch (err) {
-      console.error('Failed to fetch leaderboard:', err);
-    }
-  }, []);
-
-  useEffect(() => {
-    fetchLeaderboard();
-    const interval = setInterval(fetchLeaderboard, 5000);
-    return () => clearInterval(interval);
-  }, [fetchLeaderboard]);
 
   const [isTourOpen, setIsTourOpen] = useState(() => {
     try {
@@ -388,10 +372,7 @@ export function TraderDashboard() {
     );
   }, [stocks, searchQuery]);
 
-  const visibleStocks = useMemo(
-    () => filteredStocks.slice(0, pageSize),
-    [filteredStocks, pageSize]
-  );
+
 
   const liveHoldingsValue = useMemo(
     () =>
@@ -645,7 +626,7 @@ export function TraderDashboard() {
                       </div>
                       <div>
                         <div className="text-lg font-extrabold theme-text-main flex items-center gap-2">
-                          ☕ REFRESHMENT BREAK IN PROGRESS
+                          REFRESHMENT BREAK IN PROGRESS
                         </div>
                         <div className="text-xs theme-text-dim mt-0.5">
                           Trading floor is temporarily locked for snacks, refreshments & strategy discussion.
@@ -659,13 +640,13 @@ export function TraderDashboard() {
                   {/* Admin's Custom Note Banner */}
                   {sessionData?.breakNote && (
                     <div className="p-3.5 rounded-xl bg-amber-500/10 border border-amber-500/30 flex items-start gap-2.5 text-xs text-amber-200">
-                      <span className="font-extrabold text-amber-400 uppercase tracking-wider flex-shrink-0">📢 ANNOUNCEMENT:</span>
+                      <span className="font-extrabold text-amber-400 uppercase tracking-wider flex-shrink-0">ANNOUNCEMENT:</span>
                       <span className="font-bold leading-relaxed">{sessionData.breakNote}</span>
                     </div>
                   )}
 
                   <div className="text-[11px] theme-text-muted flex items-center justify-between flex-wrap gap-2">
-                    <span>🔒 Market trading will automatically unlock when the countdown reaches 00:00.</span>
+                    <span>Market trading will automatically unlock when the countdown reaches 00:00.</span>
                     <span className="px-2.5 py-1 rounded bg-amber-500 text-slate-950 font-black text-[10px] uppercase tracking-wider">
                       ON BREAK
                     </span>
@@ -676,7 +657,7 @@ export function TraderDashboard() {
                   <div className="flex items-center gap-3">
                     <Lock className="w-6 h-6 text-indigo-400 flex-shrink-0" />
                     <div>
-                      <div className="text-sm font-extrabold block">🔒 MARKET IS CLOSED</div>
+                      <div className="text-sm font-extrabold block">MARKET IS CLOSED</div>
                       <div className="text-xs text-indigo-300/80">The 3-hour trading session has not been started yet. Waiting for Admin to open the market floor.</div>
                     </div>
                   </div>
@@ -689,7 +670,7 @@ export function TraderDashboard() {
                   <div className="flex items-center gap-3">
                     <AlertTriangle className="w-6 h-6 text-amber-400 flex-shrink-0 animate-pulse" />
                     <div>
-                      <div className="text-sm font-extrabold block">⚡ AUTO-LIQUIDATION SWEEP IN PROGRESS</div>
+                      <div className="text-sm font-extrabold block">AUTO-LIQUIDATION SWEEP IN PROGRESS</div>
                       <div className="text-xs text-amber-300/80">Final 5 minutes before session close: all open stock positions are being converted to cash.</div>
                     </div>
                   </div>
@@ -702,8 +683,8 @@ export function TraderDashboard() {
                   <div className="flex items-center gap-3">
                     <Lock className="w-6 h-6 text-rose-400 flex-shrink-0" />
                     <div>
-                      <div className="text-sm font-extrabold block">🏁 TRADING SESSION HAS ENDED</div>
-                      <div className="text-xs text-rose-300/80">The session has ended and final standings are locked. Check your leaderboard ranking!</div>
+                      <div className="text-sm font-extrabold block">TRADING SESSION HAS ENDED</div>
+                      <div className="text-xs text-rose-300/80">The session has ended and final standings are locked.</div>
                     </div>
                   </div>
                   <span className="px-3 py-1 rounded bg-rose-500 text-white font-black text-xs uppercase tracking-wider flex-shrink-0">
@@ -890,7 +871,7 @@ export function TraderDashboard() {
                         : 'grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 xl:grid-cols-8 gap-2'
                     }
                   >
-                    {visibleStocks.map((stock, i) => (
+                    {filteredStocks.map((stock, i) => (
                       <FloorCard
                         key={stock.id}
                         stock={stock}
@@ -906,18 +887,6 @@ export function TraderDashboard() {
                       />
                     ))}
                   </div>
-                )}
-
-                {filteredStocks.length > pageSize && (
-                  <button
-                    type="button"
-                    onClick={() =>
-                      setPageSize((n) => Math.min(n + 15, filteredStocks.length))
-                    }
-                    className="w-full py-2 rounded-lg border border-dashed theme-border text-[11px] font-mono theme-text-muted hover:theme-text-main hover:theme-bg-card-hover transition-colors"
-                  >
-                    Show {Math.min(15, filteredStocks.length - pageSize)} more stocks
-                  </button>
                 )}
               </Reveal>
 
@@ -971,58 +940,6 @@ export function TraderDashboard() {
           {/* =============== NEWS TAB =============== */}
           {activeTab === 'NEWS' && (
             <NewsTab news={newsFeed} loading={loadingNews} onRefresh={fetchNewsFeed} />
-          )}
-
-          {/* =============== LEADERBOARD TAB ("WHO'S WINNING RIGHT NOW") =============== */}
-          {activeTab === 'LEADERBOARD' && (
-            <div className="space-y-4 font-mono">
-              <div className="surface p-5 rounded-2xl border theme-border shadow-xl space-y-4">
-                <div className="flex items-center justify-between border-b theme-border pb-3">
-                  <div>
-                    <h2 className="text-lg font-black theme-text-main">Who's winning right now 🏆</h2>
-                    <p className="text-xs theme-text-dim">Live tournament standings sorted by portfolio net worth</p>
-                  </div>
-                </div>
-
-                <div className="space-y-2">
-                  {leaderboard.length === 0 ? (
-                    <div className="py-12 text-center theme-text-dim text-xs">
-                      Loading tournament standings...
-                    </div>
-                  ) : (
-                    leaderboard.map((entry, idx) => {
-                      const isMe = entry.id === user?.id || entry.userId === user?.id || entry.name === user?.name;
-                      return (
-                        <div
-                          key={entry.id || idx}
-                          className={`p-3.5 rounded-xl border flex items-center justify-between transition-all ${
-                            isMe
-                              ? 'bg-amber-500/15 border-amber-500 text-amber-300 ring-2 ring-amber-500/50 shadow-lg'
-                              : 'theme-bg-card theme-border theme-text-main'
-                          }`}
-                        >
-                          <div className="flex items-center gap-3">
-                            <span className={`w-8 h-8 rounded-full flex items-center justify-center font-black text-xs ${
-                              idx === 0 ? 'bg-amber-400 text-slate-950' : idx === 1 ? 'bg-slate-300 text-slate-950' : idx === 2 ? 'bg-amber-700 text-white' : 'theme-bg-panel theme-text-muted'
-                            }`}>
-                              #{idx + 1}
-                            </span>
-                            <div>
-                              <span className="font-extrabold text-sm">{entry.name} {isMe && '(YOU)'}</span>
-                              {isMe && <span className="block text-[10px] text-amber-400 font-bold">Your Current Ranking</span>}
-                            </div>
-                          </div>
-
-                          <div className="text-right">
-                            <span className="text-sm font-black text-emerald-400">{fmtMoney(entry.totalNetWorth || entry.portfolioValue)} IC</span>
-                          </div>
-                        </div>
-                      );
-                    })
-                  )}
-                </div>
-              </div>
-            </div>
           )}
         </main>
       </div>
@@ -1105,40 +1022,9 @@ export function TraderDashboard() {
               </p>
               {sessionData?.breakNote && (
                 <p className="text-amber-300 font-semibold bg-amber-500/10 p-3 rounded-xl border border-amber-500/20">
-                  📢 {sessionData.breakNote}
+                  {sessionData.breakNote}
                 </p>
               )}
-            </div>
-
-            {/* Embedded Live Leaderboard for Traders */}
-            <div className="w-full theme-bg-card border theme-border rounded-2xl p-4 text-left space-y-3 shadow-xl">
-              <div className="flex items-center justify-between border-b theme-border pb-2">
-                <div className="flex items-center gap-2">
-                  <Trophy className="w-4 h-4 text-amber-400" />
-                  <span className="text-xs font-black theme-text-main uppercase">Current Tournament Standings</span>
-                </div>
-                <span className="text-[10px] theme-text-dim">Live Standings</span>
-              </div>
-
-              <div className="space-y-1.5 max-h-[180px] overflow-y-auto pr-1">
-                {leaderboard.slice(0, 5).map((entry, idx) => {
-                  const isMe = entry.id === user?.id || entry.userId === user?.id || entry.name === user?.name;
-                  return (
-                    <div
-                      key={entry.id || idx}
-                      className={`p-2 rounded-lg text-xs flex items-center justify-between ${
-                        isMe ? 'bg-amber-500/20 border border-amber-500/40 text-amber-300 font-bold' : 'theme-bg-panel theme-text-main'
-                      }`}
-                    >
-                      <div className="flex items-center gap-2">
-                        <span className="font-bold text-[11px] theme-text-dim">#{idx + 1}</span>
-                        <span>{entry.name} {isMe && '(YOU)'}</span>
-                      </div>
-                      <span className="font-bold text-emerald-400">{fmtMoney(entry.totalNetWorth || entry.portfolioValue)} IC</span>
-                    </div>
-                  );
-                })}
-              </div>
             </div>
           </div>
 

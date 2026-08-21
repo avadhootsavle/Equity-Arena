@@ -136,7 +136,7 @@ export function GameClock({ sessionData, size = 'md', title = 'TIME LEFT' }) {
           className="text-[9px] font-heading font-bold tracking-[0.2em] mb-1.5 font-mono"
           style={{ color: isPaused ? 'var(--accent)' : urgent ? 'var(--loss-red)' : 'var(--text-dim)' }}
         >
-          {isPaused ? '☕ MARKET ON BREAK' : isOver ? 'GAME OVER' : isFinalStretch ? '🔥 FINAL MINUTES' : title}
+          {isPaused ? 'MARKET ON BREAK' : isOver ? 'GAME OVER' : isFinalStretch ? 'FINAL MINUTES' : title}
         </motion.div>
       </AnimatePresence>
 
@@ -186,7 +186,7 @@ export function BreakCountdownTimer({ sessionData }) {
 
   return (
     <div className="font-mono text-xl sm:text-2xl font-extrabold text-amber-400 bg-amber-500/20 border border-amber-500/40 px-4 py-2 rounded-xl inline-flex items-center gap-2 shadow-inner">
-      <span>☕ BREAK ENDS IN</span>
+      <span>BREAK ENDS IN</span>
       <span className="text-amber-300 font-black tracking-widest">{mins}:{secs}</span>
     </div>
   );

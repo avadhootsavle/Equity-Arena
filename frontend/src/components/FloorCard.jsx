@@ -281,12 +281,12 @@ export const FloorCard = memo(function FloorCard({
             {isUp ? (
               <>
                 <TrendingUp className="w-3 h-3" />
-                <span>▲ Up {Math.abs(percentChange).toFixed(2)}%</span>
+                <span>Up {Math.abs(percentChange).toFixed(2)}%</span>
               </>
             ) : (
               <>
                 <TrendingDown className="w-3 h-3" />
-                <span>▼ Down {Math.abs(percentChange).toFixed(2)}%</span>
+                <span>Down {Math.abs(percentChange).toFixed(2)}%</span>
               </>
             )}
           </span>
@@ -355,7 +355,7 @@ export const FloorCard = memo(function FloorCard({
             className="card-action card-action-buy text-[11px] font-black min-h-[40px] px-2 flex-1 flex items-center justify-center gap-1 shadow-md uppercase tracking-wider"
           >
             <Zap className="w-3.5 h-3.5 fill-current" />
-            <span>⚡ QUICK BUY</span>
+            <span>QUICK BUY</span>
           </button>
 
           <button
@@ -371,7 +371,7 @@ export const FloorCard = memo(function FloorCard({
             }
             className="card-action card-action-sell text-[11px] font-black min-h-[40px] px-2 flex-1 flex items-center justify-center gap-1 shadow-md uppercase tracking-wider"
           >
-            <span>⚡ QUICK SELL</span>
+            <span>QUICK SELL</span>
           </button>
         </div>
 
@@ -383,7 +383,7 @@ export const FloorCard = memo(function FloorCard({
             className="flex-1 py-1.5 px-2 rounded-lg border theme-border theme-bg-card hover:theme-bg-card-hover text-[10px] font-extrabold theme-text-main flex items-center justify-center gap-1 transition-all active:scale-95 min-h-[36px]"
             title="Open review panel to inspect cost or place target limit order"
           >
-            <span>📋 Normal Buy</span>
+            <span>Normal Buy</span>
           </button>
 
           <button
@@ -392,7 +392,7 @@ export const FloorCard = memo(function FloorCard({
             className="flex-1 py-1.5 px-2 rounded-lg border theme-border theme-bg-card hover:theme-bg-card-hover text-[10px] font-extrabold theme-text-main flex items-center justify-center gap-1 transition-all active:scale-95 min-h-[36px]"
             title="Open review panel to sell shares or set sell limit order"
           >
-            <span>📋 Normal Sell</span>
+            <span>Normal Sell</span>
           </button>
         </div>
       </div>

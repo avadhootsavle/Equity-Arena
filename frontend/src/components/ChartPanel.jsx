@@ -319,7 +319,7 @@ export function ChartPanel({
                   className="min-h-[44px] px-4 bg-[var(--gain-green)] hover:brightness-110 text-white font-extrabold text-xs uppercase tracking-wider rounded-lg transition-all active:scale-95 disabled:opacity-40 disabled:cursor-not-allowed shadow-md flex items-center gap-1.5"
                 >
                   {isTradingLocked ? <Lock className="w-4 h-4" /> : <Zap className="w-4 h-4 fill-current" />}
-                  <span>⚡ QUICK BUY</span>
+                  <span>QUICK BUY</span>
                 </button>
 
                 <button
@@ -336,7 +336,7 @@ export function ChartPanel({
                   className="min-h-[44px] px-4 bg-[var(--loss-red)] hover:brightness-110 text-white font-extrabold text-xs uppercase tracking-wider rounded-lg transition-all active:scale-95 disabled:opacity-40 disabled:cursor-not-allowed shadow-md flex items-center gap-1.5"
                 >
                   {!canSell ? <Lock className="w-4 h-4" /> : <Zap className="w-4 h-4 fill-current" />}
-                  <span>⚡ QUICK SELL</span>
+                  <span>QUICK SELL</span>
                 </button>
               </div>
 
@@ -347,7 +347,7 @@ export function ChartPanel({
                 className="px-3 py-2 rounded-lg border theme-border theme-bg-card hover:theme-bg-card-hover text-xs font-extrabold theme-text-main flex items-center justify-center gap-1.5 transition-all active:scale-95 min-h-[38px]"
                 title="Open review panel to inspect cost breakdown or place target limit order"
               >
-                <span>📋 Normal Trade (Review & Limit)</span>
+                <span>Normal Trade (Review & Limit)</span>
               </button>
             </div>
 

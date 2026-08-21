@@ -82,7 +82,7 @@ export function AdminDashboard() {
   /* Break Modal State */
   const [showBreakModal, setShowBreakModal] = useState(false);
   const [breakMinutes, setBreakMinutes] = useState(10);
-  const [breakNote, setBreakNote] = useState("☕ Refreshment Break — Grab snacks, water, and take a quick rest!");
+  const [breakNote, setBreakNote] = useState("Refreshment Break — Grab snacks, water, and take a quick rest!");
 
   const [sessionDurationMins, setSessionDurationMins] = useState(180);
   const [isStartingSession, setIsStartingSession] = useState(false);
@@ -464,11 +464,11 @@ export function AdminDashboard() {
                 <div className="text-xs text-amber-400 font-extrabold uppercase tracking-wider">SECTION 1: MASTER SESSION CONTROL</div>
                 <div className="text-sm font-bold theme-text-main flex items-center gap-2">
                   {adminSession?.status === 'ACTIVE' ? (
-                    <span className="text-emerald-400">🟢 SESSION RUNNING — TRADING FLOOR UNLOCKED</span>
+                    <span className="text-emerald-400">SESSION RUNNING — TRADING FLOOR UNLOCKED</span>
                   ) : adminSession?.status === 'PAUSED' ? (
-                    <span className="text-amber-400">☕ MARKET ON REFRESHMENT BREAK</span>
+                    <span className="text-amber-400">MARKET ON REFRESHMENT BREAK</span>
                   ) : (
-                    <span className="theme-text-muted">🔒 MARKET CLOSED — START SESSION TO LET TRADERS TRADE</span>
+                    <span className="theme-text-muted">MARKET CLOSED — START SESSION TO LET TRADERS TRADE</span>
                   )}
                 </div>
               </div>
@@ -624,7 +624,7 @@ export function AdminDashboard() {
               <div className="flex items-center justify-between border-b border-emerald-500/30 pb-2">
                 <div className="flex items-center gap-2 text-emerald-400">
                   <ThumbsUp className="w-4 h-4" />
-                  <h3 className="text-xs font-black uppercase tracking-wider">🟢 GOOD NEWS / BULLISH (PUMPS)</h3>
+                  <h3 className="text-xs font-black uppercase tracking-wider">GOOD NEWS / BULLISH (PUMPS)</h3>
                 </div>
                 <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-emerald-500/20 text-emerald-400 border border-emerald-500/30">
                   {filteredGoodNews.length} Templates
@@ -684,7 +684,7 @@ export function AdminDashboard() {
                               disabled={triggeringTemplateId === tpl.id}
                               className="px-3 py-1 bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-black text-xs rounded-lg shadow"
                             >
-                              {triggeringTemplateId === tpl.id ? 'BROADCASTING...' : '🚀 SEND NOW'}
+                              {triggeringTemplateId === tpl.id ? 'BROADCASTING...' : 'SEND NOW'}
                             </button>
                             <button
                               type="button"
@@ -707,7 +707,7 @@ export function AdminDashboard() {
               <div className="flex items-center justify-between border-b border-rose-500/30 pb-2">
                 <div className="flex items-center gap-2 text-rose-400">
                   <ThumbsDown className="w-4 h-4" />
-                  <h3 className="text-xs font-black uppercase tracking-wider">🔴 BAD NEWS / BEARISH (DUMPS)</h3>
+                  <h3 className="text-xs font-black uppercase tracking-wider">BAD NEWS / BEARISH (DUMPS)</h3>
                 </div>
                 <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-rose-500/20 text-rose-400 border border-rose-500/30">
                   {filteredBadNews.length} Templates
@@ -767,7 +767,7 @@ export function AdminDashboard() {
                               disabled={triggeringTemplateId === tpl.id}
                               className="px-3 py-1 bg-rose-600 hover:bg-rose-500 text-white font-black text-xs rounded-lg shadow"
                             >
-                              {triggeringTemplateId === tpl.id ? 'BROADCASTING...' : '🚀 SEND NOW'}
+                              {triggeringTemplateId === tpl.id ? 'BROADCASTING...' : 'SEND NOW'}
                             </button>
                             <button
                               type="button"
@@ -844,7 +844,7 @@ export function AdminDashboard() {
                 onClick={() => setStockSortMode(stockSortMode === 'CHANGE' ? 'ALPHA' : 'CHANGE')}
                 className="px-3 py-1.5 rounded-xl border theme-border theme-bg-card text-xs font-bold theme-text-main flex items-center gap-1.5"
               >
-                {stockSortMode === 'CHANGE' ? '📈 Gainers Top (% Change)' : '🔤 Alphabetical (A-Z)'}
+                {stockSortMode === 'CHANGE' ? 'Gainers Top (% Change)' : 'Alphabetical (A-Z)'}
               </button>
             </div>
           </div>
@@ -895,7 +895,7 @@ export function AdminDashboard() {
                       onClick={() => handleAdjustPrice(s.id, 10)}
                       className="px-2.5 py-1.5 bg-emerald-500/20 hover:bg-emerald-500 text-emerald-400 hover:text-slate-950 font-black text-xs rounded-lg border border-emerald-500/40 transition-all"
                     >
-                      ▲ +10%
+                      +10%
                     </button>
                     <button
                       type="button"
@@ -903,7 +903,7 @@ export function AdminDashboard() {
                       onClick={() => handleAdjustPrice(s.id, 25)}
                       className="px-2.5 py-1.5 bg-emerald-500/20 hover:bg-emerald-500 text-emerald-400 hover:text-slate-950 font-black text-xs rounded-lg border border-emerald-500/40 transition-all"
                     >
-                      ▲ +25%
+                      +25%
                     </button>
                     <button
                       type="button"
@@ -911,7 +911,7 @@ export function AdminDashboard() {
                       onClick={() => handleAdjustPrice(s.id, -10)}
                       className="px-2.5 py-1.5 bg-rose-500/20 hover:bg-rose-500 text-rose-400 hover:text-white font-black text-xs rounded-lg border border-rose-500/40 transition-all"
                     >
-                      ▼ -10%
+                      -10%
                     </button>
                     <button
                       type="button"
@@ -919,7 +919,7 @@ export function AdminDashboard() {
                       onClick={() => handleAdjustPrice(s.id, -25)}
                       className="px-2.5 py-1.5 bg-rose-500/20 hover:bg-rose-500 text-rose-400 hover:text-white font-black text-xs rounded-lg border border-rose-500/40 transition-all"
                     >
-                      ▼ -25%
+                      -25%
                     </button>
 
                     {/* Custom % Input */}
@@ -1021,7 +1021,7 @@ export function AdminDashboard() {
                       onClick={() => handleOpenTraderDetail(entry.id)}
                       className="px-2 py-1 rounded bg-indigo-500/20 hover:bg-indigo-500 text-indigo-300 hover:text-white border border-indigo-500/40 text-[10px] font-bold"
                     >
-                      🔍 Audit
+                      Audit
                     </button>
                   </div>
                 </div>
@@ -1047,7 +1047,7 @@ export function AdminDashboard() {
                 onClick={() => setShowBreakModal(false)}
                 className="text-slate-400 hover:text-white text-base font-bold"
               >
-                ✕
+                X
               </button>
             </div>
 

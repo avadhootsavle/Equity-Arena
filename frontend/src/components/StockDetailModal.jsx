@@ -286,8 +286,8 @@ export function StockDetailModal({
   let blockReason = '';
   if (isTradingLocked) {
     blockReason = session?.status === 'PAUSED' || session?.isPaused
-      ? '☕ Market is on break (10-15 Min Break) — trading is temporarily paused by Admin.'
-      : '🔒 Market is closed — waiting for Admin to start the session.';
+      ? 'Market is on break — trading is temporarily paused by Admin.'
+      : 'Market is closed — waiting for Admin to start the session.';
   } else if (parsedQty <= 0) {
     blockReason = 'Enter a quantity of at least 1 share.';
   } else if (isBuy && orderTotal > availWallet) {
