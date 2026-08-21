@@ -17,7 +17,13 @@ function aggregatePriceHistory(histories, bucketType) {
     const d = new Date(item.timestamp);
     let key = '';
 
-    if (bucketType === 'HOURLY') {
+    if (bucketType === '30SEC') {
+      // Bucket by 30-second window
+      key = String(Math.floor(d.getTime() / 30000) * 30000);
+    } else if (bucketType === '1MIN') {
+      // Bucket by 1-minute window
+      key = String(Math.floor(d.getTime() / 60000) * 60000);
+    } else if (bucketType === 'HOURLY') {
       // Bucket by YYYY-MM-DD-HH
       key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}-${String(d.getHours()).padStart(2, '0')}`;
     } else if (bucketType === 'DAILY') {
@@ -38,17 +44,18 @@ function aggregatePriceHistory(histories, bucketType) {
     }
 
     buckets[key].sumPrice += item.price;
-    buckets[key].sumVolume += (item.volume || 10000);
+    buckets[key].sumVolume += (item.volume || 100);
     buckets[key].count += 1;
     buckets[key].lastTimestamp = item.timestamp;
   }
 
   return Object.keys(buckets).map((key) => {
     const b = buckets[key];
+    const itemTime = isNaN(Number(key)) ? b.lastTimestamp : new Date(Number(key));
     return {
       price: Math.round((b.sumPrice / b.count) * 100) / 100,
       volume: Math.round(b.sumVolume),
-      timestamp: b.lastTimestamp
+      timestamp: itemTime
     };
   });
 }
@@ -91,24 +98,36 @@ router.get('/', async (req, res) => {
   }
 });
 
-// GET /stocks/:id/history?range=1D|1W|1M (With Downsampling Aggregation)
+// GET /stocks/:id/history?range=5M|15M|30M|1H (With Accurate Downsampling Aggregation)
 router.get('/:id/history', async (req, res) => {
   try {
     const { id } = req.params;
-    const { range } = req.query; // '1D', '1W', '1M'
+    const { range } = req.query; // '5M', '15M', '30M', '1H'
 
     const now = Date.now();
     let startDate = new Date(0);
     let bucketType = 'RAW';
 
-    if (range === '1D') {
-      startDate = new Date(now - 24 * 60 * 60 * 1000); // Last 24 hours
+    if (range === '5M') {
+      startDate = new Date(now - 5 * 60 * 1000); // Last 5 minutes, raw ticks
+      bucketType = 'RAW';
+    } else if (range === '15M' || !range) {
+      startDate = new Date(now - 15 * 60 * 1000); // Last 15 minutes, raw ticks
+      bucketType = 'RAW';
+    } else if (range === '30M') {
+      startDate = new Date(now - 30 * 60 * 1000); // Last 30 minutes, 30-second buckets
+      bucketType = '30SEC';
+    } else if (range === '1H') {
+      startDate = new Date(now - 60 * 60 * 1000); // Last 60 minutes, 1-minute buckets
+      bucketType = '1MIN';
+    } else if (range === '1D') {
+      startDate = new Date(now - 24 * 60 * 60 * 1000);
       bucketType = 'RAW';
     } else if (range === '1W') {
-      startDate = new Date(now - 7 * 24 * 60 * 60 * 1000); // Last 7 days
+      startDate = new Date(now - 7 * 24 * 60 * 60 * 1000);
       bucketType = 'HOURLY';
     } else if (range === '1M') {
-      startDate = new Date(now - 30 * 24 * 60 * 60 * 1000); // Last 30 days
+      startDate = new Date(now - 30 * 24 * 60 * 60 * 1000);
       bucketType = 'DAILY';
     }
 

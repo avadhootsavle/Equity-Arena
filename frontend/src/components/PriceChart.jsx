@@ -398,7 +398,7 @@ export function PriceChart({
                 fontSize="10"
                 fontFamily="'JetBrains Mono', monospace"
               >
-                {fmtMoney(tick, tick >= 1000 ? 0 : 2)}
+                {fmtMoney(tick, tick >= 1000 ? 0 : 2)} IC
               </text>
               )}
             </g>
@@ -702,12 +702,12 @@ export function PriceChart({
       {/* ---- Session statistics strip ---- */}
       <div className="grid grid-cols-2 sm:grid-cols-5 gap-px mt-3 rounded-lg overflow-hidden border theme-border">
         {[
-          { label: 'Open', value: `${fmtMoney(model.openPrice)}` },
-          { label: 'High', value: `${fmtMoney(model.high)}`, tone: 'up' },
-          { label: 'Low', value: `${fmtMoney(model.low)}`, tone: 'down' },
+          { label: 'Open', value: `${fmtMoney(model.openPrice)} IC` },
+          { label: 'High', value: `${fmtMoney(model.high)} IC`, tone: 'up' },
+          { label: 'Low', value: `${fmtMoney(model.low)} IC`, tone: 'down' },
           {
             label: 'Range',
-            value: `${fmtMoney(model.high - model.low)}`
+            value: `${fmtMoney(model.high - model.low)} IC`
           },
           {
             label: 'Ticks',

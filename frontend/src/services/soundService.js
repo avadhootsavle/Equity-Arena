@@ -139,13 +139,13 @@ export function toggleSoundMute() {
  * Plays news notification chime.
  * Uses decoded custom MP3 buffer first for 0ms instant sync.
  */
-export function playNewsChime() {
-  if (isSoundMuted()) return;
+let isPlayingQueue = false;
+const newsSoundQueue = [];
 
-  const now = Date.now();
-  if (now - lastPlayTime < 800) return; // Debounce triggers within 0.8s
-  lastPlayTime = now;
-
+/**
+ * Internal audio executor
+ */
+function executeChimeSound() {
   const ctx = getAudioContext();
 
   // 1. Play decoded MP3 Web Audio buffer (0ms instant sync)
@@ -184,6 +184,53 @@ export function playNewsChime() {
 
   // 3. Fallback to Web Audio synthesized chime
   playSynthesizedChime();
+}
+
+function processAudioQueue() {
+  if (isPlayingQueue || newsSoundQueue.length === 0) return;
+
+  isPlayingQueue = true;
+  newsSoundQueue.shift(); // Remove current item
+
+  executeChimeSound();
+
+  // Wait 1.0s (length of chime) before processing next sound in queue so sounds never stack or overlap
+  setTimeout(() => {
+    isPlayingQueue = false;
+    processAudioQueue();
+  }, 1000);
+}
+
+/**
+ * Plays news notification chime exactly ONCE per news broadcast.
+ * Features cross-tab deduplication via localStorage, tab-visibility check, and non-overlapping queueing.
+ */
+export function playNewsChime(eventId) {
+  if (isSoundMuted()) return;
+
+  // 1. Multi-tab check: Only active visible tab plays sound
+  if (typeof document !== 'undefined' && document.visibilityState === 'hidden') {
+    return;
+  }
+
+  // 2. Cross-tab & multi-socket deduplication via localStorage news ID tracking
+  if (eventId) {
+    try {
+      const lastId = localStorage.getItem('equity_last_played_news_id');
+      if (lastId === String(eventId)) {
+        return; // Already played globally by this or another tab!
+      }
+      localStorage.setItem('equity_last_played_news_id', String(eventId));
+    } catch (e) {}
+  }
+
+  const now = Date.now();
+  if (!eventId && now - lastPlayTime < 800) return; // Debounce anonymous triggers within 0.8s
+  lastPlayTime = now;
+
+  // 3. Queue sound to ensure consecutive events play sequentially without stacking/overlapping
+  newsSoundQueue.push(eventId || now);
+  processAudioQueue();
 }
 
 /**

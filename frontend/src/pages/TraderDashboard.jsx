@@ -297,7 +297,7 @@ export function TraderDashboard() {
     };
 
     const handleNews = (news) => {
-      playNewsChime(); // Instant 0ms sound trigger on WebSocket frame arrival
+      playNewsChime(news?.id || news?.timestamp || news?.headline);
       setActiveNewsToast(news);
       setNewsFeed((prev) => (Array.isArray(prev) ? [news, ...prev] : [news]));
     };
@@ -753,6 +753,7 @@ export function TraderDashboard() {
                     loadingHistory={loadingHistory}
                     onQuickTrade={runQuickTrade}
                     ownedQuantity={chartOwnedQty}
+                    cashBalance={portfolio.cashBalance}
                     isTradingLocked={isTradingLocked}
                   />
                 </div>

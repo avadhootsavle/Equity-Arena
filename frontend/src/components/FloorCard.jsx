@@ -236,7 +236,7 @@ export const FloorCard = memo(function FloorCard({
           <span
             className={`text-2xl font-mono font-extrabold theme-text-main leading-none ${priceClass}`}
           >
-            {fmtMoney(stock.currentPrice)}
+            {fmtMoney(stock.currentPrice)} IC
           </span>
           <span
             className="flex items-center gap-1 px-2 py-1 rounded text-[11px] font-mono font-extrabold"
@@ -279,17 +279,17 @@ export const FloorCard = memo(function FloorCard({
             onChange={(e) => setCardQty(e.target.value)}
             title="Type quantity to buy or sell (e.g. 1, 5, 10, 100)"
             aria-label={`Quantity for ${stock.symbol}`}
-            className="w-12 h-[30px] rounded border theme-border theme-bg-input px-1 text-center text-[11px] font-mono font-bold theme-text-main focus:outline-none focus:border-[var(--accent)] flex-shrink-0"
+            className="w-14 h-[44px] rounded-lg border theme-border theme-bg-input px-1 text-center text-xs font-mono font-bold theme-text-main focus:outline-none focus:border-[var(--accent)] flex-shrink-0"
           />
           <button
             type="button"
             onClick={(e) => handleTrade(e, 'BUY')}
             disabled={isTradingLocked}
             title={isTradingLocked ? 'Trading locked' : `Buy ${cardQty} ${stock.symbol}`}
-            className="card-action card-action-buy text-xs font-bold py-1.5 flex-1"
+            className="card-action card-action-buy text-xs font-extrabold min-h-[44px] px-3 flex-1 flex items-center justify-center gap-1 shadow-sm"
           >
-            <Zap className="w-3.5 h-3.5" />
-            Buy
+            <Zap className="w-4 h-4 fill-current" />
+            BUY
           </button>
         </div>
 
@@ -304,11 +304,11 @@ export const FloorCard = memo(function FloorCard({
               ? `No ${stock.symbol} shares to sell`
               : `Sell ${availableToSell} available`
           }
-          className="card-action card-action-sell text-xs font-bold py-1.5 flex-1"
+          className="card-action card-action-sell text-xs font-extrabold min-h-[44px] px-3 flex-1 flex items-center justify-center gap-1 shadow-sm"
         >
-          Sell
+          SELL
           {availableToSell > 0 && (
-            <span className="opacity-75 font-mono">({availableToSell})</span>
+            <span className="opacity-80 font-mono">({availableToSell})</span>
           )}
         </button>
       </div>

@@ -186,6 +186,7 @@ export function ChartPanel({
   loadingHistory = false,
   onQuickTrade,
   ownedQuantity = 0,
+  cashBalance = 0,
   isTradingLocked = false
 }) {
   if (!selected) {
@@ -268,72 +269,86 @@ export function ChartPanel({
             </div>
           </div>
 
-          {/* ---- Quick trade: one share, instantly ---- */}
-          <div className="flex flex-col items-end gap-1.5">
-            <div className="flex items-center gap-1.5">
-              <input
-                type="number"
-                min="1"
-                step="1"
-                value={quickQty}
-                onChange={(e) => setQuickQty(e.target.value)}
-                title="Type quantity to buy or sell (e.g. 1, 5, 10, 100)"
-                aria-label="Quick trade quantity"
-                className="w-12 h-[34px] rounded-md border theme-border theme-bg-input px-1 text-center text-[12px] font-mono font-bold theme-text-main focus:outline-none focus:border-[var(--accent)]"
-              />
+          {/* ---- Quick trade: quantity stepper on left, Buy/Sell buttons on right ---- */}
+          <div className="flex flex-col items-end gap-1.5 font-mono">
+            <div className="flex items-center gap-2">
+              {/* Stepper controls */}
+              <div className="flex items-center gap-1">
+                <button
+                  type="button"
+                  onClick={() => setQuickQty((prev) => String(Math.max(1, (parseInt(prev, 10) || 1) - 1)))}
+                  className="w-[44px] h-[44px] rounded-lg border theme-border theme-bg-card hover:theme-bg-card-hover font-black text-lg theme-text-main flex items-center justify-center transition-all active:scale-95 shadow-sm"
+                  title="Decrease quantity by 1"
+                >
+                  −
+                </button>
 
-              <button
-                type="button"
-                onClick={() => handleQuick('BUY')}
-                disabled={isTradingLocked}
-                title={
-                  isTradingLocked
-                    ? 'Trading is locked — the session is not running'
-                    : `Buy ${quickQty} ${selected.symbol} at the live price`
-                }
-                className="group flex items-center gap-1.5 px-3.5 h-[34px] rounded-md text-[12px] font-heading font-extrabold text-white transition-all active:scale-95 disabled:opacity-40 disabled:cursor-not-allowed"
-                style={{
-                  backgroundColor: 'var(--gain-green)',
-                  boxShadow: isTradingLocked ? 'none' : '0 4px 14px -4px var(--glow-green)'
-                }}
-              >
-                {isTradingLocked ? (
-                  <Lock className="w-3.5 h-3.5" />
-                ) : (
-                  <Zap className="w-3.5 h-3.5 transition-transform group-hover:scale-125" />
-                )}
-                Buy
-              </button>
+                <input
+                  type="number"
+                  min="1"
+                  step="1"
+                  value={quickQty}
+                  onChange={(e) => setQuickQty(e.target.value)}
+                  title="Type quantity to buy or sell"
+                  aria-label="Quick trade quantity"
+                  className="w-[60px] h-[44px] rounded-lg border theme-border theme-bg-input px-1 text-center text-sm font-bold theme-text-main focus:outline-none focus:border-[var(--accent)]"
+                />
 
-              <button
-                type="button"
-                onClick={() => handleQuick('SELL')}
-                disabled={!canSell}
-                title={
-                  isTradingLocked
-                    ? 'Trading is locked — the session is not running'
-                    : ownedQuantity === 0
-                    ? `You hold no ${selected.symbol} shares to sell`
-                    : `Sell ${quickQty} ${selected.symbol} at the live price`
-                }
-                className="group flex items-center gap-1.5 px-3.5 h-[34px] rounded-md text-[12px] font-heading font-extrabold text-white transition-all active:scale-95 disabled:opacity-40 disabled:cursor-not-allowed"
-                style={{
-                  backgroundColor: 'var(--loss-red)',
-                  boxShadow: canSell ? '0 4px 14px -4px var(--glow-red)' : 'none'
-                }}
-              >
-                {!canSell ? (
-                  <Lock className="w-3.5 h-3.5" />
-                ) : (
-                  <Zap className="w-3.5 h-3.5 transition-transform group-hover:scale-125" />
-                )}
-                Sell {ownedQuantity > 0 && <span className="opacity-80 font-mono">({ownedQuantity})</span>}
-              </button>
+                <button
+                  type="button"
+                  onClick={() => setQuickQty((prev) => String((parseInt(prev, 10) || 1) + 1))}
+                  className="w-[44px] h-[44px] rounded-lg border theme-border theme-bg-card hover:theme-bg-card-hover font-black text-lg theme-text-main flex items-center justify-center transition-all active:scale-95 shadow-sm"
+                  title="Increase quantity by 1"
+                >
+                  +
+                </button>
+              </div>
+
+              {/* Large BUY / SELL buttons */}
+              <div className="flex items-center gap-2">
+                <button
+                  type="button"
+                  onClick={() => handleQuick('BUY')}
+                  disabled={isTradingLocked}
+                  title={
+                    isTradingLocked
+                      ? 'Trading is locked — session is not running'
+                      : `Buy ${quickQty} ${selected.symbol} at live price`
+                  }
+                  className="min-h-[44px] px-5 bg-[var(--gain-green)] hover:brightness-110 text-white font-extrabold text-xs uppercase tracking-wider rounded-lg transition-all active:scale-95 disabled:opacity-40 disabled:cursor-not-allowed shadow-md flex items-center gap-1.5"
+                >
+                  {isTradingLocked ? <Lock className="w-4 h-4" /> : <Zap className="w-4 h-4 fill-current" />}
+                  <span>BUY</span>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => handleQuick('SELL')}
+                  disabled={!canSell}
+                  title={
+                    isTradingLocked
+                      ? 'Trading is locked — session is not running'
+                      : ownedQuantity === 0
+                      ? `You hold no ${selected.symbol} shares to sell`
+                      : `Sell ${quickQty} ${selected.symbol} at live price`
+                  }
+                  className="min-h-[44px] px-5 bg-[var(--loss-red)] hover:brightness-110 text-white font-extrabold text-xs uppercase tracking-wider rounded-lg transition-all active:scale-95 disabled:opacity-40 disabled:cursor-not-allowed shadow-md flex items-center gap-1.5"
+                >
+                  {!canSell ? <Lock className="w-4 h-4" /> : <Zap className="w-4 h-4 fill-current" />}
+                  <span>SELL</span>
+                </button>
+              </div>
             </div>
 
-            <span className="text-[9px] font-mono theme-text-dim">
-              1 share · instant · confirmed
-            </span>
+            {/* Live Total Cost / Proceeds Line */}
+            <div className="text-[11px] font-bold theme-text-main text-right">
+              You'll spend {fmtMoney((parseInt(quickQty, 10) || 1) * selected.currentPrice)} IC
+            </div>
+
+            {/* Available Funds / Shares Line */}
+            <div className="text-[10px] theme-text-dim text-right">
+              You have {fmtMoney(cashBalance)} IC available · You own {ownedQuantity} shares
+            </div>
           </div>
         </div>
 
