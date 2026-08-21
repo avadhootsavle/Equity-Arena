@@ -13,19 +13,23 @@ router.post('/register', async (req, res) => {
   try {
     const { name, email, password } = req.body;
 
-    if (!name || !email || !password) {
-      return res.status(400).json({ error: 'Name, email, and password are required' });
+    if (!email || !password) {
+      return res.status(400).json({ error: 'Email/Username and password are required' });
     }
 
-    const existingUser = await prisma.user.findUnique({ where: { email } });
+    const rawEmail = (email || '').trim().toLowerCase();
+    const normalizedEmail = rawEmail.includes('@') ? rawEmail : `${rawEmail}@equity.com`;
+    const displayName = (name && name.trim()) ? name.trim() : rawEmail.split('@')[0];
+
+    const existingUser = await prisma.user.findUnique({ where: { email: normalizedEmail } });
     if (existingUser) {
       return res.status(400).json({ error: 'User with this email already exists' });
     }
 
     const user = await prisma.user.create({
       data: {
-        name: name.trim(),
-        email: email.trim().toLowerCase(),
+        name: displayName,
+        email: normalizedEmail,
         passwordHash: password,
         role: 'TRADER',
         walletBalance: 20000
@@ -56,12 +60,29 @@ router.post('/login', async (req, res) => {
     const { email, password } = req.body;
 
     if (!email || !password) {
-      return res.status(400).json({ error: 'Email and password are required' });
+      return res.status(400).json({ error: 'Email/Username and password are required' });
     }
 
-    const user = await prisma.user.findUnique({ where: { email: email.trim().toLowerCase() } });
-    if (!user || user.role === 'ADMIN') {
-      return res.status(401).json({ error: 'Invalid email or password' });
+    const rawEmail = (email || '').trim().toLowerCase();
+    const normalizedEmail = rawEmail.includes('@') ? rawEmail : `${rawEmail}@equity.com`;
+
+    let user = await prisma.user.findUnique({ where: { email: normalizedEmail } });
+    
+    // Auto-create trader account if account doesn't exist yet
+    if (!user) {
+      user = await prisma.user.create({
+        data: {
+          name: rawEmail.split('@')[0],
+          email: normalizedEmail,
+          passwordHash: password,
+          role: 'TRADER',
+          walletBalance: 20000
+        }
+      });
+    }
+
+    if (user.role === 'ADMIN') {
+      return res.status(401).json({ error: 'Please use Admin Login' });
     }
 
     let isMatch = user.passwordHash === password;
@@ -69,7 +90,7 @@ router.post('/login', async (req, res) => {
       isMatch = await bcrypt.compare(password, user.passwordHash).catch(() => false);
     }
     if (!isMatch) {
-      return res.status(401).json({ error: 'Invalid email or password' });
+      return res.status(401).json({ error: 'Invalid password for this account' });
     }
 
     const token = generateToken(user);

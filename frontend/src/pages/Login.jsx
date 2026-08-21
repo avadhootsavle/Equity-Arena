@@ -190,15 +190,15 @@ export function Login() {
               )}
 
               <div>
-                <label className="block text-xs font-semibold theme-text-muted mb-1 font-heading">Email Address</label>
+                <label className="block text-xs font-semibold theme-text-muted mb-1 font-heading">Email or Username</label>
                 <div className="relative">
                   <Mail className="absolute left-3 top-3 w-4 h-4 theme-text-dim" />
                   <input
-                    type="email"
+                    type="text"
                     required
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
-                    placeholder="you@example.com"
+                    placeholder="trader1 or you@example.com"
                     className="w-full theme-bg-panel border theme-border rounded-[4px] py-2 pl-10 pr-4 text-sm theme-text-main focus:outline-none focus:border-[var(--accent)] transition-all placeholder:theme-text-dim min-h-[40px] font-mono"
                   />
                 </div>
