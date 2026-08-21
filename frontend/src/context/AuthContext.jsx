@@ -135,7 +135,7 @@ export function AuthProvider({ children }) {
     token,
     user,
     loading,
-    isAuthenticated: !!token && !!user,
+    isAuthenticated: Boolean(token && user && !loading),
     isAdmin: user?.role === 'ADMIN',
     isTrader: user?.role === 'TRADER',
     login,
