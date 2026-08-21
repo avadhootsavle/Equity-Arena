@@ -2,6 +2,7 @@ import React from 'react';
 import { useSocket } from '../context/SocketContext';
 import {
   LayoutDashboard,
+  Wallet,
   ClipboardList,
   Newspaper,
   TrendingUp,
@@ -9,9 +10,11 @@ import {
 } from 'lucide-react';
 
 export const NAV_ITEMS = [
-  { key: 'DASHBOARD', label: 'Dashboard', Icon: LayoutDashboard },
+  { key: 'DASHBOARD', label: 'Market', Icon: LayoutDashboard },
+  { key: 'PORTFOLIO', label: 'My Stocks', Icon: Wallet },
   { key: 'ORDERS', label: 'Orders', Icon: ClipboardList },
-  { key: 'NEWS', label: 'News', Icon: Newspaper }
+  { key: 'NEWS', label: 'News', Icon: Newspaper },
+  { key: 'LEADERBOARD', label: 'Leaderboard', Icon: Trophy }
 ];
 
 export function Sidebar({ activeTab, setActiveTab, counts = {} }) {

@@ -1027,62 +1027,7 @@ export function TraderDashboard() {
         </main>
       </div>
 
-      {/* Persistent Bottom 4-Tab Navigation Bar */}
-      <nav className="fixed bottom-0 left-0 right-0 z-40 theme-bg-header border-t theme-border shadow-2xl backdrop-blur-md font-mono">
-        <div className="max-w-md mx-auto flex items-center justify-around py-2 px-2">
-          <button
-            type="button"
-            onClick={() => setActiveTab('DASHBOARD')}
-            className={`flex flex-col items-center gap-1 py-1 px-3 rounded-xl transition-all ${
-              activeTab === 'DASHBOARD'
-                ? 'text-amber-400 font-extrabold bg-amber-500/15 scale-105'
-                : 'theme-text-muted hover:theme-text-main'
-            }`}
-          >
-            <TrendingUp className="w-5 h-5" />
-            <span className="text-[11px] font-bold">📈 Market</span>
-          </button>
-
-          <button
-            type="button"
-            onClick={() => setActiveTab('PORTFOLIO')}
-            className={`flex flex-col items-center gap-1 py-1 px-3 rounded-xl transition-all ${
-              activeTab === 'PORTFOLIO'
-                ? 'text-amber-400 font-extrabold bg-amber-500/15 scale-105'
-                : 'theme-text-muted hover:theme-text-main'
-            }`}
-          >
-            <Wallet className="w-5 h-5" />
-            <span className="text-[11px] font-bold">💼 My Stocks</span>
-          </button>
-
-          <button
-            type="button"
-            onClick={() => setActiveTab('NEWS')}
-            className={`flex flex-col items-center gap-1 py-1 px-3 rounded-xl transition-all ${
-              activeTab === 'NEWS'
-                ? 'text-amber-400 font-extrabold bg-amber-500/15 scale-105'
-                : 'theme-text-muted hover:theme-text-main'
-            }`}
-          >
-            <Newspaper className="w-5 h-5" />
-            <span className="text-[11px] font-bold">📰 News</span>
-          </button>
-
-          <button
-            type="button"
-            onClick={() => setActiveTab('LEADERBOARD')}
-            className={`flex flex-col items-center gap-1 py-1 px-3 rounded-xl transition-all ${
-              activeTab === 'LEADERBOARD'
-                ? 'text-amber-400 font-extrabold bg-amber-500/15 scale-105'
-                : 'theme-text-muted hover:theme-text-main'
-            }`}
-          >
-            <Trophy className="w-5 h-5" />
-            <span className="text-[11px] font-bold">🏆 Leaderboard</span>
-          </button>
-        </div>
-      </nav>
+      {/* ---------------- Overlays ---------------- */}
 
       {/* ---------------- Overlays ---------------- */}
       <BackToTopButton />
