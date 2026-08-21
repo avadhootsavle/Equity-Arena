@@ -410,15 +410,17 @@ export function TraderDashboard() {
      Quick trade — fires straight away with specified quantity.
      --------------------------------------------------------------- */
   const runQuickTrade = useCallback(
-    async (side, qty = 1) => {
-      if (!chartStock) return;
+    async (side, qty = 1, targetStock = null) => {
+      const activeStock = targetStock || chartStock;
+      if (!activeStock) return { error: 'No listing selected' };
+
       if (isTradingLocked) {
         pushToast(
           'Trading is locked — the market session is not running yet.',
           'error',
           'Market closed'
         );
-        return;
+        return { error: 'Market is locked' };
       }
 
       const quantity = Math.max(1, parseInt(qty, 10) || 1);
@@ -428,20 +430,20 @@ export function TraderDashboard() {
       try {
         const data = await apiFetch(endpoint, {
           method: 'POST',
-          body: JSON.stringify({ stockId: chartStock.id, quantity })
+          body: JSON.stringify({ stockId: activeStock.id, quantity })
         });
 
-        const execPrice = data.transaction?.price ?? chartStock.currentPrice;
+        const execPrice = data.transaction?.price ?? activeStock.currentPrice;
         const total =
           data.transaction?.totalCost ??
           Math.round(execPrice * quantity * 100) / 100;
 
         setFeedbackOverlay({
           status: 'success',
-          message: `${side === 'BUY' ? 'Bought' : 'Sold'} ${quantity} ${chartStock.symbol}`
+          message: `${side === 'BUY' ? 'Bought' : 'Sold'} ${quantity} ${activeStock.symbol}`
         });
         pushToast(
-          `${side === 'BUY' ? 'Bought' : 'Sold'} ${quantity} ${chartStock.symbol} @ ${fmtMoney(
+          `${side === 'BUY' ? 'Bought' : 'Sold'} ${quantity} ${activeStock.symbol} @ ${fmtMoney(
             execPrice
           )} IC · ${side === 'BUY' ? 'Paid' : 'Received'} ${fmtMoney(total)} IC`,
           'success',
@@ -459,12 +461,14 @@ export function TraderDashboard() {
           }));
         }
         fetchPortfolio();
+        return { ok: true };
       } catch (err) {
         pushToast(
           err.message || `Quick ${side.toLowerCase()} failed`,
           'error',
           'Order rejected'
         );
+        return { error: err.message };
       } finally {
         setQuickSubmitting(false);
       }
@@ -752,6 +756,7 @@ export function TraderDashboard() {
                     onTimeframeChange={setTimeframe}
                     loadingHistory={loadingHistory}
                     onQuickTrade={runQuickTrade}
+                    onNormalTrade={handleCardTrade}
                     ownedQuantity={chartOwnedQty}
                     cashBalance={portfolio.cashBalance}
                     isTradingLocked={isTradingLocked}
@@ -871,7 +876,8 @@ export function TraderDashboard() {
                         isActive={stock.id === chartStock?.id}
                         isTradingLocked={isTradingLocked}
                         onSelect={handleSelectFromFloor}
-                        onTrade={handleCardTrade}
+                        onQuickTrade={runQuickTrade}
+                        onNormalTrade={handleCardTrade}
                       />
                     ))}
                   </div>

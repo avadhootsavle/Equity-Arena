@@ -45,7 +45,9 @@ export const FloorCard = memo(function FloorCard({
   isActive = false,
   isTradingLocked = false,
   onSelect,
-  onTrade
+  onTrade,
+  onQuickTrade,
+  onNormalTrade
 }) {
   const percentChange = Number(stock?.percentChange) || 0;
   const isUp = percentChange >= 0;
@@ -53,8 +55,18 @@ export const FloorCard = memo(function FloorCard({
   const availableToSell =
     holding?.availableQuantity !== undefined ? holding.availableQuantity : owned;
 
+  const [cardFlash, setCardFlash] = useState(null); // 'success' | 'error' | null
+
   const flashClass =
-    flash === 'up' ? 'animate-tick-up' : flash === 'down' ? 'animate-tick-down' : '';
+    cardFlash === 'success'
+      ? 'ring-2 ring-emerald-500 animate-pulse'
+      : cardFlash === 'error'
+      ? 'ring-2 ring-rose-500 animate-error-shake'
+      : flash === 'up'
+      ? 'animate-tick-up'
+      : flash === 'down'
+      ? 'animate-tick-down'
+      : '';
   const priceClass =
     flash === 'up' ? 'animate-price-up' : flash === 'down' ? 'animate-price-down' : '';
 
@@ -74,10 +86,31 @@ export const FloorCard = memo(function FloorCard({
 
   const [cardQty, setCardQty] = useState('1');
 
-  const handleTrade = (e, side) => {
+  const handleQuickTrade = async (e, side) => {
     e.stopPropagation();
     const parsed = Math.max(1, parseInt(cardQty, 10) || 1);
-    onTrade?.(stock, side, parsed);
+    if (onQuickTrade) {
+      const res = await onQuickTrade(side, parsed, stock);
+      if (res?.ok) {
+        setCardFlash('success');
+        setTimeout(() => setCardFlash(null), 1200);
+      } else {
+        setCardFlash('error');
+        setTimeout(() => setCardFlash(null), 1200);
+      }
+    } else {
+      onTrade?.(stock, side, parsed);
+    }
+  };
+
+  const handleNormalTrade = (e, side = 'BUY') => {
+    e.stopPropagation();
+    const parsed = Math.max(1, parseInt(cardQty, 10) || 1);
+    if (onNormalTrade) {
+      onNormalTrade(stock, side, parsed);
+    } else {
+      onSelect?.(stock);
+    }
   };
 
   const canSell = availableToSell > 0 && !isTradingLocked;
@@ -267,50 +300,97 @@ export const FloorCard = memo(function FloorCard({
         </span>
       </button>
 
-      {/* Trade actions — Left side: Editable Quantity input + Buy, Right side: Sell */}
-      <div className="flex items-center gap-2 mt-3 pt-1">
-        <div className="flex items-center gap-1.5 flex-1 min-w-0">
-          <input
-            type="number"
-            min="1"
-            step="1"
-            value={cardQty}
-            onClick={(e) => e.stopPropagation()}
-            onChange={(e) => setCardQty(e.target.value)}
-            title="Type quantity to buy or sell (e.g. 1, 5, 10, 100)"
-            aria-label={`Quantity for ${stock.symbol}`}
-            className="w-14 h-[44px] rounded-lg border theme-border theme-bg-input px-1 text-center text-xs font-mono font-bold theme-text-main focus:outline-none focus:border-[var(--accent)] flex-shrink-0"
-          />
+      {/* Mode 1 & Mode 2 Trade Actions */}
+      <div className="space-y-2 mt-3 pt-2 border-t theme-border font-mono" onClick={(e) => e.stopPropagation()}>
+        {/* Mode 1: Quick Buy & Quick Sell (Instant Execution) */}
+        <div className="flex items-center gap-1.5">
+          {/* Stepper controls */}
+          <div className="flex items-center gap-0.5 flex-shrink-0">
+            <button
+              type="button"
+              onClick={(e) => {
+                e.stopPropagation();
+                setCardQty((prev) => String(Math.max(1, (parseInt(prev, 10) || 1) - 1)));
+              }}
+              className="w-[28px] h-[40px] rounded-lg border theme-border theme-bg-card hover:theme-bg-card-hover font-black text-sm theme-text-main flex items-center justify-center transition-all active:scale-95 shadow-sm"
+              title="Decrease quantity by 1"
+            >
+              −
+            </button>
+
+            <input
+              type="number"
+              min="1"
+              step="1"
+              value={cardQty}
+              onClick={(e) => e.stopPropagation()}
+              onChange={(e) => setCardQty(e.target.value)}
+              title="Quantity to trade"
+              className="w-[42px] h-[40px] rounded-lg border theme-border theme-bg-input px-0.5 text-center text-xs font-bold theme-text-main focus:outline-none focus:border-[var(--accent)]"
+            />
+
+            <button
+              type="button"
+              onClick={(e) => {
+                e.stopPropagation();
+                setCardQty((prev) => String((parseInt(prev, 10) || 1) + 1));
+              }}
+              className="w-[28px] h-[40px] rounded-lg border theme-border theme-bg-card hover:theme-bg-card-hover font-black text-sm theme-text-main flex items-center justify-center transition-all active:scale-95 shadow-sm"
+              title="Increase quantity by 1"
+            >
+              +
+            </button>
+          </div>
+
+          {/* Quick Buy & Quick Sell Instant Buttons */}
           <button
             type="button"
-            onClick={(e) => handleTrade(e, 'BUY')}
+            onClick={(e) => handleQuickTrade(e, 'BUY')}
             disabled={isTradingLocked}
-            title={isTradingLocked ? 'Trading locked' : `Buy ${cardQty} ${stock.symbol}`}
-            className="card-action card-action-buy text-xs font-extrabold min-h-[44px] px-3 flex-1 flex items-center justify-center gap-1 shadow-sm"
+            title={isTradingLocked ? 'Trading locked' : `Instant Quick Buy ${cardQty} ${stock.symbol}`}
+            className="card-action card-action-buy text-[11px] font-black min-h-[40px] px-2 flex-1 flex items-center justify-center gap-1 shadow-md uppercase tracking-wider"
           >
-            <Zap className="w-4 h-4 fill-current" />
-            BUY
+            <Zap className="w-3.5 h-3.5 fill-current" />
+            <span>⚡ QUICK BUY</span>
+          </button>
+
+          <button
+            type="button"
+            onClick={(e) => handleQuickTrade(e, 'SELL')}
+            disabled={!canSell}
+            title={
+              isTradingLocked
+                ? 'Trading locked'
+                : availableToSell === 0
+                ? `No ${stock.symbol} shares to sell`
+                : `Instant Quick Sell ${availableToSell} available`
+            }
+            className="card-action card-action-sell text-[11px] font-black min-h-[40px] px-2 flex-1 flex items-center justify-center gap-1 shadow-md uppercase tracking-wider"
+          >
+            <span>⚡ QUICK SELL</span>
           </button>
         </div>
 
-        <button
-          type="button"
-          onClick={(e) => handleTrade(e, 'SELL')}
-          disabled={!canSell}
-          title={
-            isTradingLocked
-              ? 'Trading locked'
-              : availableToSell === 0
-              ? `No ${stock.symbol} shares to sell`
-              : `Sell ${availableToSell} available`
-          }
-          className="card-action card-action-sell text-xs font-extrabold min-h-[44px] px-3 flex-1 flex items-center justify-center gap-1 shadow-sm"
-        >
-          SELL
-          {availableToSell > 0 && (
-            <span className="opacity-80 font-mono">({availableToSell})</span>
-          )}
-        </button>
+        {/* Mode 2: Normal Buy / Normal Sell (Review Panel & Limit Order Mode) */}
+        <div className="flex items-center gap-1.5 pt-0.5">
+          <button
+            type="button"
+            onClick={(e) => handleNormalTrade(e, 'BUY')}
+            className="flex-1 py-1.5 px-2 rounded-lg border theme-border theme-bg-card hover:theme-bg-card-hover text-[10px] font-extrabold theme-text-main flex items-center justify-center gap-1 transition-all active:scale-95 min-h-[36px]"
+            title="Open review panel to inspect cost or place target limit order"
+          >
+            <span>📋 Normal Buy</span>
+          </button>
+
+          <button
+            type="button"
+            onClick={(e) => handleNormalTrade(e, 'SELL')}
+            className="flex-1 py-1.5 px-2 rounded-lg border theme-border theme-bg-card hover:theme-bg-card-hover text-[10px] font-extrabold theme-text-main flex items-center justify-center gap-1 transition-all active:scale-95 min-h-[36px]"
+            title="Open review panel to sell shares or set sell limit order"
+          >
+            <span>📋 Normal Sell</span>
+          </button>
+        </div>
       </div>
     </div>
   );

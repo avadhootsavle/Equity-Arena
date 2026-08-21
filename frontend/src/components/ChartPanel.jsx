@@ -185,6 +185,7 @@ export function ChartPanel({
   onTimeframeChange,
   loadingHistory = false,
   onQuickTrade,
+  onNormalTrade,
   ownedQuantity = 0,
   cashBalance = 0,
   isTradingLocked = false
@@ -313,12 +314,12 @@ export function ChartPanel({
                   title={
                     isTradingLocked
                       ? 'Trading is locked — session is not running'
-                      : `Buy ${quickQty} ${selected.symbol} at live price`
+                      : `Instant Quick Buy ${quickQty} ${selected.symbol}`
                   }
-                  className="min-h-[44px] px-5 bg-[var(--gain-green)] hover:brightness-110 text-white font-extrabold text-xs uppercase tracking-wider rounded-lg transition-all active:scale-95 disabled:opacity-40 disabled:cursor-not-allowed shadow-md flex items-center gap-1.5"
+                  className="min-h-[44px] px-4 bg-[var(--gain-green)] hover:brightness-110 text-white font-extrabold text-xs uppercase tracking-wider rounded-lg transition-all active:scale-95 disabled:opacity-40 disabled:cursor-not-allowed shadow-md flex items-center gap-1.5"
                 >
                   {isTradingLocked ? <Lock className="w-4 h-4" /> : <Zap className="w-4 h-4 fill-current" />}
-                  <span>BUY</span>
+                  <span>⚡ QUICK BUY</span>
                 </button>
 
                 <button
@@ -330,14 +331,24 @@ export function ChartPanel({
                       ? 'Trading is locked — session is not running'
                       : ownedQuantity === 0
                       ? `You hold no ${selected.symbol} shares to sell`
-                      : `Sell ${quickQty} ${selected.symbol} at live price`
+                      : `Instant Quick Sell ${quickQty} ${selected.symbol}`
                   }
-                  className="min-h-[44px] px-5 bg-[var(--loss-red)] hover:brightness-110 text-white font-extrabold text-xs uppercase tracking-wider rounded-lg transition-all active:scale-95 disabled:opacity-40 disabled:cursor-not-allowed shadow-md flex items-center gap-1.5"
+                  className="min-h-[44px] px-4 bg-[var(--loss-red)] hover:brightness-110 text-white font-extrabold text-xs uppercase tracking-wider rounded-lg transition-all active:scale-95 disabled:opacity-40 disabled:cursor-not-allowed shadow-md flex items-center gap-1.5"
                 >
                   {!canSell ? <Lock className="w-4 h-4" /> : <Zap className="w-4 h-4 fill-current" />}
-                  <span>SELL</span>
+                  <span>⚡ QUICK SELL</span>
                 </button>
               </div>
+
+              {/* Normal Trade Button (Review Panel & Limit Order Mode) */}
+              <button
+                type="button"
+                onClick={() => onNormalTrade?.(selected, 'BUY', Math.max(1, parseInt(quickQty, 10) || 1))}
+                className="px-3 py-2 rounded-lg border theme-border theme-bg-card hover:theme-bg-card-hover text-xs font-extrabold theme-text-main flex items-center justify-center gap-1.5 transition-all active:scale-95 min-h-[38px]"
+                title="Open review panel to inspect cost breakdown or place target limit order"
+              >
+                <span>📋 Normal Trade (Review & Limit)</span>
+              </button>
             </div>
 
             {/* Live Total Cost / Proceeds Line */}
