@@ -40,7 +40,8 @@ import {
   History,
   Pencil,
   ArrowUpRight,
-  AlertTriangle
+  AlertTriangle,
+  Trophy
 } from 'lucide-react';
 
 const fmtMoney = (n, d = 2) =>
