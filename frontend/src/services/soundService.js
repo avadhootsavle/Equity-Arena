@@ -48,7 +48,6 @@ async function loadAndDecodeMp3() {
         if (response.ok) {
           const arrayBuffer = await response.arrayBuffer();
           decodedMp3Buffer = await ctx.decodeAudioData(arrayBuffer);
-          console.log('Custom MP3 notification sound decoded & ready');
           break;
         }
       } catch (e) {
@@ -56,7 +55,7 @@ async function loadAndDecodeMp3() {
       }
     }
   } catch (err) {
-    console.error('Failed to decode custom MP3 audio:', err);
+    // Audio context decode fallback
   } finally {
     isDecoding = false;
   }

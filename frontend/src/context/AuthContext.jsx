@@ -31,7 +31,6 @@ export function AuthProvider({ children }) {
     async function validateAuthToken() {
       const storedToken = localStorage.getItem('ignite_token');
       if (!storedToken) {
-        console.log('[Auth] No session token found in localStorage. User unauthenticated.');
         if (isMounted) {
           setToken(null);
           setUser(null);
@@ -40,18 +39,14 @@ export function AuthProvider({ children }) {
         return;
       }
 
-      console.log('[Auth] Found session token in localStorage. Validating with backend (GET /auth/me)...');
-
       try {
         const data = await apiFetch('/auth/me');
         if (isMounted && data?.user) {
-          console.log(`[Auth] Session token validated successfully. User: ${data.user.email} (Role: ${data.user.role})`);
           setUser(data.user);
           localStorage.setItem('ignite_user', JSON.stringify(data.user));
         }
       } catch (err) {
         if (isMounted) {
-          console.warn('[Auth] Session token validation failed (clearing stale token):', err.message);
           setToken(null);
           setUser(null);
           localStorage.removeItem('ignite_token');
@@ -67,7 +62,6 @@ export function AuthProvider({ children }) {
     validateAuthToken();
 
     const handleUnauthorized = () => {
-      console.warn('[Auth] Received auth:unauthorized event. Resetting auth state...');
       if (isMounted) {
         setToken(null);
         setUser(null);
@@ -77,7 +71,6 @@ export function AuthProvider({ children }) {
 
     const handleStorageChange = (e) => {
       if (e.key === 'ignite_token' || e.key === 'ignite_user') {
-        console.log(`[Auth] localStorage key '${e.key}' changed in another tab. Syncing auth state...`);
         const freshToken = localStorage.getItem('ignite_token');
         const freshUserRaw = localStorage.getItem('ignite_user');
         if (!freshToken || !freshUserRaw) {
@@ -116,7 +109,6 @@ export function AuthProvider({ children }) {
   }, []);
 
   const login = (newToken, newUser) => {
-    console.log(`[Auth] User logged in: ${newUser.email} (Role: ${newUser.role}). Storing token in localStorage.`);
     setToken(newToken);
     setUser(newUser);
     localStorage.setItem('ignite_token', newToken);
@@ -124,7 +116,6 @@ export function AuthProvider({ children }) {
   };
 
   const logout = () => {
-    console.log('[Auth] User logging out. Clearing token from localStorage.');
     setToken(null);
     setUser(null);
     localStorage.removeItem('ignite_token');

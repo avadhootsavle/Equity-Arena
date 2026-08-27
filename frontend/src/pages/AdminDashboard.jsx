@@ -175,7 +175,7 @@ export function AdminDashboard() {
       setTemplates(data.templates || []);
       setUsedTemplateIds(data.usedTemplateIds || []);
     } catch (err) {
-      console.error('Failed to fetch news templates:', err);
+      // Background retry
     }
   };
 
@@ -184,7 +184,7 @@ export function AdminDashboard() {
       const data = await apiFetch('/admin/stock-holdings');
       setStockHoldingsMap(data || {});
     } catch (err) {
-      console.error('Failed to fetch stock holdings:', err);
+      // Background retry
     }
   };
 
@@ -194,7 +194,7 @@ export function AdminDashboard() {
       const data = await apiFetch('/admin/leaderboard');
       setLeaderboard(data);
     } catch (err) {
-      console.error('Failed to fetch leaderboard:', err);
+      // Background retry
     } finally {
       setLoadingLeaderboard(false);
     }

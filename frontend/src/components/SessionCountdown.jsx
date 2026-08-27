@@ -20,7 +20,7 @@ export function SessionCountdown({ onSessionUpdate }) {
       setRemainingSeconds(data.remainingSeconds || 0);
       if (onSessionUpdateRef.current) onSessionUpdateRef.current(data);
     } catch (err) {
-      console.error('Failed to fetch session countdown:', err);
+      // Background retry on next sync interval
     }
   }, []);
 

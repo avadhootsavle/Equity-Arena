@@ -91,7 +91,6 @@ export function StockDetailModal({
       const data = await apiFetch(`/stocks/${stockId}/history?range=${range}`);
       setRawHistory(Array.isArray(data) ? data : []);
     } catch (err) {
-      console.error('Failed to fetch stock history:', err);
       setRawHistory([]);
     } finally {
       setLoadingHistory(false);
@@ -109,7 +108,7 @@ export function StockDetailModal({
         });
       }
     } catch (err) {
-      console.error('Failed to fetch orders:', err);
+      // Ignore background fetch error
     }
   }, []);
 

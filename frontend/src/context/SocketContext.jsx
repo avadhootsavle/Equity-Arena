@@ -15,7 +15,6 @@ export function SocketProvider({ children }) {
     // and user is verified authenticated with a valid token.
     if (loading || !isAuthenticated || !token || !user) {
       if (socket) {
-        console.log('[Socket] Cleaning up socket connection (User unauthenticated or auth loading).');
         socket.disconnect();
         setSocket(null);
         setIsConnected(false);
@@ -28,8 +27,6 @@ export function SocketProvider({ children }) {
       (typeof window !== 'undefined'
         ? `${window.location.protocol}//${window.location.hostname}:5001`
         : '/');
-
-    console.log(`[Socket] Initiating authenticated socket connection for ${user.email} (Role: ${user.role})...`);
 
     const socketInstance = io(targetUrl, {
       auth: { token },
@@ -45,29 +42,24 @@ export function SocketProvider({ children }) {
     });
 
     socketInstance.on('connect', () => {
-      console.log('[Socket] Connected cleanly to server, ID:', socketInstance.id);
       setIsConnected(true);
       setReconnectFailed(false);
     });
 
-    socketInstance.on('disconnect', (reason) => {
-      console.log('[Socket] Disconnected from server. Reason:', reason);
+    socketInstance.on('disconnect', () => {
       setIsConnected(false);
     });
 
-    socketInstance.on('connect_error', (err) => {
-      console.warn('[Socket] Connection attempt error:', err.message);
+    socketInstance.on('connect_error', () => {
       setIsConnected(false);
     });
 
     socketInstance.on('reconnect_failed', () => {
-      console.error('[Socket] Maximum reconnection attempts (5) reached.');
       setReconnectFailed(true);
     });
 
     // Handle auth:unauthorized on socket: close socket instance only, DO NOT trigger global auth reset or redirect
     socketInstance.on('auth:unauthorized', () => {
-      console.warn('[Socket] Socket server sent auth:unauthorized. Closing socket connection only (NO global redirect).');
       socketInstance.disconnect();
       setIsConnected(false);
     });

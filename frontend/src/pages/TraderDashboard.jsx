@@ -153,7 +153,7 @@ export function TraderDashboard() {
       const data = await apiFetch('/portfolio');
       setPortfolio((prev) => ({ ...prev, ...data }));
     } catch (err) {
-      console.error('Fetch portfolio error:', err);
+      // Silent error fallback
     }
   }, []);
 
@@ -163,7 +163,6 @@ export function TraderDashboard() {
       const data = await apiFetch('/news');
       setNewsFeed(Array.isArray(data) ? data : []);
     } catch (err) {
-      console.error('Fetch news error:', err);
       setNewsFeed([]);
     } finally {
       setLoadingNews(false);
@@ -200,7 +199,6 @@ export function TraderDashboard() {
       const data = await apiFetch(`/stocks/${stockId}/history?range=1D`);
       setChartRaw(Array.isArray(data) ? data : []);
     } catch (err) {
-      console.error('Fetch chart history error:', err);
       setChartRaw([]);
     } finally {
       setLoadingHistory(false);

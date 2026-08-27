@@ -16,7 +16,7 @@ export function useSession() {
     try {
       setSession(await apiFetch('/session'));
     } catch (err) {
-      console.error('Failed to load session:', err);
+      // Periodic refresh retry
     }
   }, []);
 

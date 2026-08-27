@@ -174,7 +174,7 @@ export const FloorCard = memo(function FloorCard({
         <div className="flex items-center gap-1 mt-2">
           <button
             type="button"
-            onClick={(e) => handleTrade(e, 'BUY')}
+            onClick={(e) => handleQuickTrade(e, 'BUY')}
             disabled={isTradingLocked}
             title={isTradingLocked ? 'Trading locked' : `Buy ${stock.symbol}`}
             className="card-action card-action-buy"
@@ -184,7 +184,7 @@ export const FloorCard = memo(function FloorCard({
           </button>
           <button
             type="button"
-            onClick={(e) => handleTrade(e, 'SELL')}
+            onClick={(e) => handleQuickTrade(e, 'SELL')}
             disabled={!canSell}
             title={
               isTradingLocked
