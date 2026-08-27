@@ -86,7 +86,10 @@ export function TraderDashboard() {
   const sessionData = useSession();
 
   const [toasts, setToasts] = useState([]);
-  const [feedbackOverlay, setFeedbackOverlay] = useState(null);
+
+  /* Wallet count-up animation state */
+  const [animatedWalletBalance, setAnimatedWalletBalance] = useState(null);
+  const prevWalletRef = useRef(null);
 
   /* Floor display controls */
   const [floorView, setFloorView] = useState('grid'); // 'grid' | 'compact'
@@ -121,9 +124,9 @@ export function TraderDashboard() {
      --------------------------------------------------------------- */
   const toastIdRef = useRef(0);
 
-  const pushToast = useCallback((message, type = 'success', title) => {
+  const pushToast = useCallback((message, type = 'success', title, duration = 2500) => {
     const id = ++toastIdRef.current;
-    setToasts((prev) => [...prev.slice(-3), { id, message, type, title }]);
+    setToasts((prev) => [...prev.slice(-3), { id, message, type, title, duration }]);
   }, []);
 
   const dismissToast = useCallback((id) => {
@@ -348,15 +351,52 @@ export function TraderDashboard() {
   }, [socket, user, fetchStocks, fetchPortfolio, fetchNewsFeed, pushToast]);
 
   /* ---------------------------------------------------------------
+     Part 2: Wallet balance count-up animation on IC Top-Up
+     --------------------------------------------------------------- */
+  useEffect(() => {
+    if (portfolio?.walletBalance !== undefined) {
+      const newBal = portfolio.walletBalance;
+      const oldBal = prevWalletRef.current;
+
+      if (oldBal !== null && oldBal !== undefined && newBal > oldBal) {
+        const diff = Math.round((newBal - oldBal) * 100) / 100;
+        pushToast(`Admin added ${diff.toLocaleString()} IC to your wallet`, 'success', 'Wallet Credit', 3000);
+
+        const startVal = oldBal;
+        const endVal = newBal;
+        const startTime = performance.now();
+        const duration = 600;
+
+        const step = (now) => {
+          const elapsed = now - startTime;
+          const progress = Math.min(elapsed / duration, 1);
+          const easeProgress = 1 - Math.pow(1 - progress, 2);
+          const current = startVal + (endVal - startVal) * easeProgress;
+          setAnimatedWalletBalance(current);
+          if (progress < 1) {
+            requestAnimationFrame(step);
+          } else {
+            setAnimatedWalletBalance(null);
+          }
+        };
+        requestAnimationFrame(step);
+      }
+      prevWalletRef.current = newBal;
+    }
+  }, [portfolio?.walletBalance, pushToast]);
+
+  /* ---------------------------------------------------------------
      Derived values
      --------------------------------------------------------------- */
   const isTradingLocked =
     !sessionData || sessionData.status !== 'ACTIVE' || sessionData.isTradingLocked;
 
-  const availableCash =
+  const baseCash =
     portfolio.availableWalletBalance !== undefined
       ? portfolio.availableWalletBalance
       : portfolio.walletBalance;
+
+  const availableCash = animatedWalletBalance !== null ? animatedWalletBalance : baseCash;
 
   const holdingFor = useCallback(
     (stockId) => portfolio.holdings?.find((h) => h.stockId === stockId),
@@ -944,12 +984,6 @@ export function TraderDashboard() {
       <BackToTopButton />
 
       <ToastStack toasts={toasts} onDismiss={dismissToast} />
-
-      <TradeFeedbackOverlay
-        status={feedbackOverlay?.status}
-        message={feedbackOverlay?.message}
-        onClose={() => setFeedbackOverlay(null)}
-      />
 
       <NewsToast news={activeNewsToast} onClose={() => setActiveNewsToast(null)} />
 

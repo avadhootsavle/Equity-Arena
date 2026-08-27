@@ -14,13 +14,16 @@ export function AdminTraderDetailModal({ traderId, isOpen, onClose }) {
   const [error, setError] = useState('');
   const [toastMsg, setToastMsg] = useState('');
 
-  // Top-Up state
+  // Top-Up state & inline confirm
   const [topUpAmount, setTopUpAmount] = useState('');
   const [isTopUpLoading, setIsTopUpLoading] = useState(false);
+  const [confirmTopUp, setConfirmTopUp] = useState(false);
+  const [topUpTimer, setTopUpTimer] = useState(null);
 
-  // Stock adjustment state
+  // Stock adjustment state & inline confirm
   const [customPercents, setCustomPercents] = useState({});
   const [adjustingStockId, setAdjustingStockId] = useState(null);
+  const [confirmStockAdj, setConfirmStockAdj] = useState(null);
 
   useEffect(() => {
     if (traderId && isOpen) {
@@ -46,8 +49,25 @@ export function AdminTraderDetailModal({ traderId, isOpen, onClose }) {
     }
   };
 
-  // Fix 4: Admin manual top-up handler
+  const handleTopUpClick = () => {
+    const amount = parseFloat(topUpAmount);
+    if (isNaN(amount) || amount <= 0) return;
+    setConfirmTopUp(true);
+    if (topUpTimer) clearTimeout(topUpTimer);
+    const timer = setTimeout(() => setConfirmTopUp(false), 8000);
+    setTopUpTimer(timer);
+  };
+
+  const handleCancelTopUp = () => {
+    if (topUpTimer) clearTimeout(topUpTimer);
+    setConfirmTopUp(false);
+  };
+
+  // Admin manual top-up handler
   const handleGiveTopUp = async () => {
+    if (topUpTimer) clearTimeout(topUpTimer);
+    setConfirmTopUp(false);
+
     const amount = parseFloat(topUpAmount);
     if (isNaN(amount) || amount <= 0) return;
 
@@ -68,8 +88,24 @@ export function AdminTraderDetailModal({ traderId, isOpen, onClose }) {
     }
   };
 
-  // Fix 2: Global stock adjustment inside trader detail view
+  const handleCustomApplyClick = (stockId, symbol) => {
+    const percent = parseFloat(customPercents[stockId]);
+    if (isNaN(percent)) return;
+    if (confirmStockAdj?.timer) clearTimeout(confirmStockAdj.timer);
+    const timer = setTimeout(() => setConfirmStockAdj(null), 8000);
+    setConfirmStockAdj({ stockId, symbol, percent, timer });
+  };
+
+  const handleCancelCustomAdj = () => {
+    if (confirmStockAdj?.timer) clearTimeout(confirmStockAdj.timer);
+    setConfirmStockAdj(null);
+  };
+
+  // Global stock adjustment inside trader detail view
   const handleAdjustStockPrice = async (stockId, percent) => {
+    if (confirmStockAdj?.timer) clearTimeout(confirmStockAdj.timer);
+    setConfirmStockAdj(null);
+
     setAdjustingStockId(stockId);
     try {
       const res = await apiFetch(`/admin/stock/${stockId}/adjust`, {
@@ -163,27 +199,57 @@ export function AdminTraderDetailModal({ traderId, isOpen, onClose }) {
               </div>
             </div>
 
-            {/* FIX 4: MANUAL IC TOP-UP CONTROL */}
-            <div className="p-3 bg-[#111111] border border-[#2A2A2A] rounded-[4px] flex items-center justify-between gap-3 flex-wrap">
-              <span className="text-[11px] font-mono font-bold text-[#F0B429] uppercase">GIVE EXTRA COINS:</span>
-              <div className="flex items-center gap-2 flex-1 justify-end">
-                <input
-                  type="number"
-                  min="1"
-                  placeholder="Amount in IC"
-                  value={topUpAmount}
-                  onChange={(e) => setTopUpAmount(e.target.value)}
-                  className="w-36 h-[32px] bg-[#0D0D0D] border border-[#3A3A3A] rounded-[4px] px-2.5 text-xs text-white focus:outline-none focus:border-[#F0B429]"
-                />
-                <button
-                  type="button"
-                  disabled={isTopUpLoading || !topUpAmount || parseFloat(topUpAmount) <= 0}
-                  onClick={handleGiveTopUp}
-                  className="h-[32px] px-4 text-xs uppercase font-bold text-[#F0B429] border border-[#F0B429] rounded-[4px] hover:bg-[#F0B429]/10 transition-colors disabled:opacity-50"
-                >
-                  {isTopUpLoading ? 'GIVING...' : 'GIVE'}
-                </button>
+            {/* FIX 4: MANUAL IC TOP-UP CONTROL WITH INLINE CONFIRM */}
+            <div className="p-3 bg-[#111111] border border-[#2A2A2A] rounded-[4px] space-y-2 font-mono">
+              <div className="flex items-center justify-between gap-3 flex-wrap">
+                <span className="text-[11px] font-bold text-[#F0B429] uppercase">GIVE EXTRA COINS:</span>
+                <div className="flex items-center gap-2 flex-1 justify-end">
+                  <input
+                    type="number"
+                    min="1"
+                    placeholder="Amount in IC"
+                    value={topUpAmount}
+                    onChange={(e) => setTopUpAmount(e.target.value)}
+                    className="w-36 h-[32px] bg-[#0D0D0D] border border-[#3A3A3A] rounded-[4px] px-2.5 text-xs text-white focus:outline-none focus:border-[#F0B429]"
+                  />
+                  {!confirmTopUp ? (
+                    <button
+                      type="button"
+                      disabled={isTopUpLoading || !topUpAmount || parseFloat(topUpAmount) <= 0}
+                      onClick={handleTopUpClick}
+                      className="h-[32px] px-4 text-xs uppercase font-bold text-[#F0B429] border border-[#F0B429] rounded-[4px] hover:bg-[#F0B429]/10 transition-colors disabled:opacity-50"
+                    >
+                      GIVE
+                    </button>
+                  ) : null}
+                </div>
               </div>
+
+              {/* Inline Confirmation Drawer for Give IC */}
+              {confirmTopUp && (
+                <div className="p-2 bg-[#0D0D0D] border border-[#F0B429] rounded-[4px] flex items-center justify-between text-xs animate-fadeIn">
+                  <span className="text-white font-bold">
+                    Add {parseFloat(topUpAmount || 0).toLocaleString()} IC to {data.trader.name}?
+                  </span>
+                  <div className="flex items-center gap-2">
+                    <button
+                      type="button"
+                      onClick={handleGiveTopUp}
+                      disabled={isTopUpLoading}
+                      className="px-3 py-1 uppercase font-bold text-[#F0B429] border border-[#F0B429] rounded-[4px] hover:bg-[#F0B429]/10"
+                    >
+                      {isTopUpLoading ? 'GIVING...' : 'CONFIRM'}
+                    </button>
+                    <button
+                      type="button"
+                      onClick={handleCancelTopUp}
+                      className="px-2.5 py-1 text-[#888888] hover:text-white"
+                    >
+                      CANCEL
+                    </button>
+                  </div>
+                </div>
+              )}
             </div>
 
             {/* FIX 2: ACTIVE HOLDINGS WITH PER-HOLDING PRICE CONTROLS & P/L */}
@@ -201,9 +267,10 @@ export function AdminTraderDetailModal({ traderId, isOpen, onClose }) {
                   {data.holdings.map((h) => {
                     const isPos = h.unrealizedPL >= 0;
                     const isAdjusting = adjustingStockId === h.stockId;
+                    const isConfirmingCustom = confirmStockAdj?.stockId === h.stockId;
 
                     return (
-                      <div key={h.id} className="p-3 bg-[#111111] border border-[#2A2A2A] rounded-[4px] space-y-2">
+                      <div key={h.id} className="p-3 bg-[#111111] border border-[#2A2A2A] rounded-[4px] space-y-2 font-mono">
                         {/* Holding Row */}
                         <div className="flex items-center justify-between text-xs">
                           <div>
@@ -217,7 +284,7 @@ export function AdminTraderDetailModal({ traderId, isOpen, onClose }) {
                         </div>
 
                         {/* P/L Metrics for this trader on this stock */}
-                        <div className="flex items-center justify-between text-[11px] font-mono border-t border-[#1F1F1F] pt-2">
+                        <div className="flex items-center justify-between text-[11px] border-t border-[#1F1F1F] pt-2">
                           <span className="text-[#666666]">Holding P/L:</span>
                           <span className={`font-bold ${isPos ? 'text-[#3FB950]' : 'text-[#F85149]'}`}>
                             {isPos ? `+${fmtMoney(h.unrealizedPL)}` : fmtMoney(h.unrealizedPL)} IC
@@ -269,12 +336,38 @@ export function AdminTraderDetailModal({ traderId, isOpen, onClose }) {
                           <button
                             type="button"
                             disabled={isAdjusting || !customPercents[h.stockId]}
-                            onClick={() => handleAdjustStockPrice(h.stockId, parseFloat(customPercents[h.stockId]))}
+                            onClick={() => handleCustomApplyClick(h.stockId, h.symbol)}
                             className="h-[26px] px-2 text-[10px] font-bold uppercase rounded-[4px] border border-[#F0B429] text-[#F0B429] hover:bg-[#F0B429]/10"
                           >
                             APPLY
                           </button>
                         </div>
+
+                        {/* Inline Confirm Drawer for Custom % Adjustment */}
+                        {isConfirmingCustom && (
+                          <div className="p-2 bg-[#0D0D0D] border border-[#F0B429] rounded-[4px] flex items-center justify-between text-xs animate-fadeIn">
+                            <span className="text-white font-bold">
+                              Move {confirmStockAdj.symbol} price by {confirmStockAdj.percent >= 0 ? '+' : ''}{confirmStockAdj.percent}%?
+                            </span>
+                            <div className="flex items-center gap-2">
+                              <button
+                                type="button"
+                                onClick={() => handleAdjustStockPrice(confirmStockAdj.stockId, confirmStockAdj.percent)}
+                                disabled={isAdjusting}
+                                className="px-3 py-0.5 uppercase font-bold text-[#F0B429] border border-[#F0B429] rounded-[4px] hover:bg-[#F0B429]/10"
+                              >
+                                CONFIRM
+                              </button>
+                              <button
+                                type="button"
+                                onClick={handleCancelCustomAdj}
+                                className="px-2 py-0.5 text-[#888888] hover:text-white"
+                              >
+                                CANCEL
+                              </button>
+                            </div>
+                          </div>
+                        )}
                       </div>
                     );
                   })}

@@ -334,8 +334,7 @@ export function StockDetailModal({
         });
 
         onSuccess?.(
-          data.message ||
-            `${isBuy ? 'Bought' : 'Sold'} ${parsedQty} ${stock.symbol}`,
+          `${isBuy ? 'Bought' : 'Sold'} ${parsedQty} shares of ${stock.symbol}`,
           data.portfolio
         );
         fetchOrders();
