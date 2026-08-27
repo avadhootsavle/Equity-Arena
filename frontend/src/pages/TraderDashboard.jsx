@@ -50,7 +50,7 @@ const fmtMoney = (n, d = 2) =>
     maximumFractionDigits: d
   });
 
-const PAGE_SIZES = [10, 15, 25, 50];
+
 
 export function TraderDashboard() {
   const { user } = useAuth();
@@ -90,7 +90,6 @@ export function TraderDashboard() {
 
   /* Floor display controls */
   const [floorView, setFloorView] = useState('grid'); // 'grid' | 'compact'
-  const [pageSize, setPageSize] = useState(10);
   const [lastRefresh, setLastRefresh] = useState(Date.now());
 
   /* Chart */
@@ -784,7 +783,7 @@ export function TraderDashboard() {
                     <h3 className="text-[15px] font-heading font-extrabold theme-text-main flex items-center gap-2">
                       All Stocks
                       <span className="text-[11px] font-normal theme-text-dim">
-                        showing {visibleStocks.length} of {filteredStocks.length}
+                        ({filteredStocks.length} listed)
                       </span>
                     </h3>
                     <p className="text-[11px] theme-text-muted mt-0.5">
@@ -794,19 +793,6 @@ export function TraderDashboard() {
                   </div>
 
                   <div className="flex items-center gap-2">
-                    <select
-                      value={pageSize}
-                      onChange={(e) => setPageSize(Number(e.target.value))}
-                      aria-label="How many stocks to show"
-                      className="h-[28px] rounded-md border theme-border theme-bg-input px-2 text-[11px] font-mono theme-text-main focus:outline-none"
-                    >
-                      {PAGE_SIZES.map((n) => (
-                        <option key={n} value={n}>
-                          {n}
-                        </option>
-                      ))}
-                    </select>
-
                     <div
                       className="inline-flex items-center gap-0.5 p-0.5 rounded-md border theme-border"
                       style={{ backgroundColor: 'var(--bg-input)' }}
