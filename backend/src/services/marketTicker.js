@@ -12,10 +12,30 @@ let tickerInterval = null;
 const stockStates = new Map();
 
 let baseMacroIntervalMinutes = 15;
+let currentVolatilityLevel = 'MEDIUM';
+let currentVolatilityDt = 0.008;
 
 function setBaseMacroIntervalMinutes(mins) {
   if (mins && typeof mins === 'number' && mins > 0) {
     baseMacroIntervalMinutes = mins;
+  }
+}
+
+function setSessionVolatility(level = 'MEDIUM', customPercent = null) {
+  currentVolatilityLevel = level || 'MEDIUM';
+  if (level === 'LOW') {
+    currentVolatilityDt = 0.004;
+  } else if (level === 'HIGH') {
+    currentVolatilityDt = 0.018;
+  } else if (level === 'CUSTOM' && customPercent) {
+    const val = parseFloat(customPercent);
+    if (!isNaN(val) && val > 0) {
+      currentVolatilityDt = Math.max(0.002, Math.min(0.05, (val / 100) * 0.2));
+    } else {
+      currentVolatilityDt = 0.008;
+    }
+  } else {
+    currentVolatilityDt = 0.008;
   }
 }
 
@@ -178,7 +198,7 @@ async function tickMarket() {
       const minPrice = Math.max(1.00, Math.round((stock.basePrice || stock.currentPrice) * 0.20 * 100) / 100);
       const maxPrice = Math.round((stock.basePrice || stock.currentPrice) * 2.50 * 100) / 100;
 
-      const dt = 0.008;
+      const dt = currentVolatilityDt;
       let rawPrice = calculateGBMPrice({
         currentPrice: stock.currentPrice,
         drift: effectiveDrift,
@@ -277,5 +297,6 @@ module.exports = {
   tickMarket,
   steerMacroMoveForNews,
   getStockState,
-  setBaseMacroIntervalMinutes
+  setBaseMacroIntervalMinutes,
+  setSessionVolatility
 };

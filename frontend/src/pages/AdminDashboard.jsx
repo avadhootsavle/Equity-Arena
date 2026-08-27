@@ -45,7 +45,7 @@ export function AdminDashboard() {
   const { theme, toggleTheme } = useTheme();
 
   const [newsCompanyFilter, setNewsCompanyFilter] = useState('ALL');
-  const [stockSortMode, setStockSortMode] = useState('CHANGE'); // 'CHANGE' (Gainers top) | 'ALPHA' (A-Z)
+  const [stockSortMode, setStockSortMode] = useState('CHANGE'); // 'CHANGE' | 'ALPHA'
 
   const [stocks, setStocks] = useState([]);
   const [loadingStocks, setLoadingStocks] = useState(true);
@@ -53,6 +53,7 @@ export function AdminDashboard() {
   
   const [customPercents, setCustomPercents] = useState({});
   const [adjustingStockId, setAdjustingStockId] = useState(null);
+  const [confirmStockAdj, setConfirmStockAdj] = useState(null); // { stockId, percent }
 
   const [newsMessage, setNewsMessage] = useState('');
   const [selectedStockId, setSelectedStockId] = useState('');
@@ -66,12 +67,8 @@ export function AdminDashboard() {
   const [delaySeconds, setDelaySeconds] = useState(60);
   const [triggeringTemplateId, setTriggeringTemplateId] = useState(null);
 
-  // 20-minute recurring news reminder timer (1200 seconds)
-  const [reminderSeconds, setReminderSeconds] = useState(1200);
-
   const [leaderboard, setLeaderboard] = useState([]);
   const [loadingLeaderboard, setLoadingLeaderboard] = useState(false);
-  const [stockHoldingsMap, setStockHoldingsMap] = useState({});
   const [liveTradeFeed, setLiveTradeFeed] = useState([]);
 
   // Admin Trader Drill-Down Modal state
@@ -83,9 +80,18 @@ export function AdminDashboard() {
   /* Break Modal State */
   const [showBreakModal, setShowBreakModal] = useState(false);
   const [breakMinutes, setBreakMinutes] = useState(10);
-  const [breakNote, setBreakNote] = useState("Refreshment Break — Grab snacks, water, and take a quick rest!");
+  const [breakNote, setBreakNote] = useState("☕ Refreshment Break — Grab snacks, water, and take a quick rest!");
 
+  /* Session Setup Configurable Inputs */
   const [sessionDurationMins, setSessionDurationMins] = useState(180);
+  const [customDurationInput, setCustomDurationInput] = useState('');
+  const [liquidationBufferMins, setLiquidationBufferMins] = useState(5);
+  const [customBufferInput, setCustomBufferInput] = useState('');
+  const [macroCycleIntervalMins, setMacroCycleIntervalMins] = useState(15);
+  const [customMacroInput, setCustomMacroInput] = useState('');
+  const [volatilityLevel, setVolatilityLevel] = useState('MEDIUM'); // 'LOW' | 'MEDIUM' | 'HIGH' | 'CUSTOM'
+  const [volatilityCustomPercent, setVolatilityCustomPercent] = useState('');
+
   const [isStartingSession, setIsStartingSession] = useState(false);
 
   const showToast = (message, type = 'success') => {
@@ -93,151 +99,30 @@ export function AdminDashboard() {
     setTimeout(() => setToast(null), 4000);
   };
 
-  const resetNewsTimer = () => {
-    setReminderSeconds(1200);
-  };
-
-  useEffect(() => {
-    const timer = setInterval(() => {
-      setReminderSeconds((prev) => {
-        if (prev <= 1) {
-          playNewsChime();
-          return 1200; // Reset countdown
-        }
-        return prev - 1;
-      });
-    }, 1000);
-    return () => clearInterval(timer);
-  }, []);
-
-  const handleStartNewSession = async (overrideDuration) => {
-    setIsStartingSession(true);
-    const mins = overrideDuration || parseInt(sessionDurationMins, 10) || 180;
-    try {
-      const data = await apiFetch('/admin/session/start', {
-        method: 'POST',
-        body: JSON.stringify({
-          durationMinutes: mins,
-          liquidationBufferMinutes: 5,
-          macroCycleIntervalMinutes: 15
-        })
-      });
-      resetNewsTimer();
-      showToast(data.message || `New ${mins}-minute trading session started!`);
-    } catch (err) {
-      showToast(err.message || 'Failed to start session', 'error');
-    } finally {
-      setIsStartingSession(false);
-    }
-  };
-
-  const handleStartBreak = async (e) => {
-    if (e) e.preventDefault();
-    try {
-      const data = await apiFetch('/admin/session/pause', {
-        method: 'POST',
-        body: JSON.stringify({
-          breakMinutes: parseInt(breakMinutes, 10) || 10,
-          note: breakNote
-        })
-      });
-      showToast(data.message || `Market paused for ${breakMinutes}-minute break!`);
-      setShowBreakModal(false);
-    } catch (err) {
-      showToast(err.message || 'Failed to start break', 'error');
-    }
-  };
-
-  const handleResumeSession = async () => {
-    try {
-      const data = await apiFetch('/admin/session/resume', { method: 'POST' });
-      showToast(data.message || 'Market resumed!');
-    } catch (err) {
-      showToast(err.message || 'Failed to resume session', 'error');
-    }
-  };
-
-
-  const fetchStocks = async () => {
-    try {
-      const data = await apiFetch('/stocks');
-      setStocks(data);
-    } catch (err) {
-      showToast(err.message || 'Failed to fetch stocks', 'error');
-    } finally {
-      setLoadingStocks(false);
-    }
-  };
-
-  const fetchNewsTemplates = async () => {
-    try {
-      const data = await apiFetch('/admin/news-templates');
-      setTemplates(data.templates || []);
-      setUsedTemplateIds(data.usedTemplateIds || []);
-    } catch (err) {
-      // Background retry
-    }
-  };
-
-  const fetchStockHoldings = async () => {
-    try {
-      const data = await apiFetch('/admin/stock-holdings');
-      setStockHoldingsMap(data || {});
-    } catch (err) {
-      // Background retry
-    }
-  };
-
-  const fetchLeaderboard = async () => {
-    setLoadingLeaderboard(true);
-    try {
-      const data = await apiFetch('/admin/leaderboard');
-      setLeaderboard(data);
-    } catch (err) {
-      // Background retry
-    } finally {
-      setLoadingLeaderboard(false);
-    }
-  };
-
   useEffect(() => {
     fetchStocks();
     fetchNewsTemplates();
     fetchLeaderboard();
-    fetchStockHoldings();
-
-    const interval = setInterval(() => {
-      fetchLeaderboard();
-      fetchNewsTemplates();
-      fetchStockHoldings();
-    }, 5000);
-    return () => clearInterval(interval);
   }, []);
 
-  // Real-time socket listeners for live price & trader activity
+  // WebSockets setup
   useEffect(() => {
     if (!socket) return;
 
     const handleConnect = () => {
       fetchStocks();
       fetchLeaderboard();
-      fetchNewsTemplates();
     };
 
-    const handleStockUpdate = (diff) => {
-      setStocks((prevStocks) =>
-        prevStocks.map((s) => {
-          if (s.id === diff.stockId) {
-            const newHistory = [
-              ...(s.priceHistories || []),
-              { price: diff.newPrice, volume: diff.volume, timestamp: diff.timestamp }
-            ];
-
+    const handleStockUpdate = (data) => {
+      setStocks((prev) =>
+        prev.map((s) => {
+          if (s.id === data.stockId) {
             return {
               ...s,
-              currentPrice: diff.newPrice,
-              percentChange: diff.percentChange,
-              priceHistories: newHistory
+              currentPrice: data.newPrice,
+              percentChange: data.percentChange,
+              lastAdjustedAt: Date.now()
             };
           }
           return s;
@@ -245,36 +130,22 @@ export function AdminDashboard() {
       );
     };
 
-    const handleTradeExecuted = (data) => {
-      setLiveTradeFeed((prev) => [
-        {
-          id: Date.now() + Math.random(),
-          traderName: data.traderName || data.userName || data.user?.name || 'Trader',
-          action: data.side || data.type || 'BUY',
-          quantity: data.quantity || 1,
-          symbol: data.symbol || data.stockSymbol || 'STK',
-          price: data.price || data.executedPrice || 0,
-          timestamp: Date.now()
-        },
-        ...prev
-      ].slice(0, 30));
+    const handleTradeExecuted = () => {
+      fetchLeaderboard();
     };
 
-    const handleBankruptAlert = (data) => {
-      showToast(`${data.traderName || 'A trader'} has gone bankrupt — total value: 0 IC`, 'error');
-      setLiveTradeFeed((prev) => [
-        {
-          id: Date.now() + Math.random(),
-          traderName: data.traderName || 'Trader',
-          action: 'BANKRUPT',
-          quantity: 0,
-          symbol: 'BUST',
-          price: data.totalValue || 0,
-          timestamp: data.timestamp || Date.now(),
-          isBankrupt: true
-        },
-        ...prev
-      ].slice(0, 30));
+    const handleBankruptAlert = (alertData) => {
+      fetchLeaderboard();
+      const itemWithId = {
+        id: alertData?.id || (Date.now() + Math.random()),
+        traderName: alertData?.traderName || 'Trader',
+        action: 'BANKRUPTCY ALERT',
+        symbol: '0 IC',
+        price: 0,
+        timestamp: Date.now(),
+        isBankrupt: true
+      };
+      setLiveTradeFeed((prev) => [itemWithId, ...prev].slice(0, 30));
     };
 
     const handleActivityLog = (data) => {
@@ -303,102 +174,80 @@ export function AdminDashboard() {
     };
   }, [socket]);
 
-  /* Recently adjusted stock flash state */
-  const [recentlyAdjustedStockId, setRecentlyAdjustedStockId] = useState(null);
-
-  /* End Session inline confirmation state */
-  const [confirmEndSession, setConfirmEndSession] = useState(false);
-  const [endSessionTimer, setEndSessionTimer] = useState(null);
-
-  /* Custom % Stock adjustment inline confirmation state */
-  const [confirmStockAdj, setConfirmStockAdj] = useState(null);
-
-  const handleEndSessionClick = () => {
-    setConfirmEndSession(true);
-    if (endSessionTimer) clearTimeout(endSessionTimer);
-    const timer = setTimeout(() => setConfirmEndSession(false), 8000);
-    setEndSessionTimer(timer);
-  };
-
-  const handleCancelEndSession = () => {
-    if (endSessionTimer) clearTimeout(endSessionTimer);
-    setConfirmEndSession(false);
-  };
-
-  const handleStopSession = async () => {
-    if (endSessionTimer) clearTimeout(endSessionTimer);
-    setConfirmEndSession(false);
-
+  const fetchStocks = async () => {
     try {
-      const data = await apiFetch('/admin/session/stop', { method: 'POST' });
-      showToast(data.message || 'Trading session stopped by Admin.');
+      const data = await apiFetch('/stocks');
+      setStocks(data);
     } catch (err) {
-      showToast(err.message || 'Failed to stop session', 'error');
+      showToast('Failed to fetch stocks', 'error');
+    } finally {
+      setLoadingStocks(false);
     }
   };
 
-  const handleCustomApplyClick = (stockId, symbol) => {
-    const percent = parseFloat(customPercents[stockId]);
-    if (isNaN(percent)) return;
-    if (confirmStockAdj?.timer) clearTimeout(confirmStockAdj.timer);
-    const timer = setTimeout(() => setConfirmStockAdj(null), 8000);
-    setConfirmStockAdj({ stockId, symbol, percent, timer });
+  const fetchNewsTemplates = async () => {
+    try {
+      const data = await apiFetch('/admin/news-templates');
+      setTemplates(data.templates || []);
+      setUsedTemplateIds(data.usedTemplateIds || []);
+    } catch (err) {
+      // Fallback
+    }
   };
 
-  const handleCancelCustomAdj = () => {
-    if (confirmStockAdj?.timer) clearTimeout(confirmStockAdj.timer);
-    setConfirmStockAdj(null);
+  const fetchLeaderboard = async () => {
+    setLoadingLeaderboard(true);
+    try {
+      const data = await apiFetch('/admin/leaderboard');
+      setLeaderboard(data);
+    } catch (err) {
+      // Silent error fallback
+    } finally {
+      setLoadingLeaderboard(false);
+    }
   };
 
-  const handleAdjustPrice = async (stockId, percent) => {
-    if (confirmStockAdj?.timer) clearTimeout(confirmStockAdj.timer);
-    setConfirmStockAdj(null);
-
+  // Stock adjustments
+  const executeStockAdjust = async (stockId, percent) => {
     setAdjustingStockId(stockId);
     try {
       const data = await apiFetch(`/admin/stock/${stockId}/adjust`, {
         method: 'POST',
         body: JSON.stringify({ percent })
       });
+      showToast(data.message, 'success');
       fetchStocks();
-      const sign = percent >= 0 ? '+' : '';
-      showToast(`${data.stock.symbol} adjusted ${sign}${percent}% → ${data.stock.currentPrice.toFixed(2)} IC`);
-      setCustomPercents((prev) => ({ ...prev, [stockId]: '' }));
-      
-      // Trigger price cell highlight flash
-      setRecentlyAdjustedStockId(stockId);
-      setTimeout(() => setRecentlyAdjustedStockId(null), 1000);
-
-      fetchStockHoldings();
-      fetchLeaderboard();
     } catch (err) {
-      showToast(err.message || 'Price adjustment failed', 'error');
+      showToast(err.message || 'Failed to adjust stock price', 'error');
     } finally {
       setAdjustingStockId(null);
+      setConfirmStockAdj(null);
     }
   };
 
-  const handleSendNews = async (e) => {
-    if (e) e.preventDefault();
-    if (!newsMessage.trim()) return;
+  const handleCustomApplyClick = (stockId) => {
+    const rawVal = customPercents[stockId];
+    if (rawVal === undefined || rawVal === '' || isNaN(parseFloat(rawVal))) return;
+    setConfirmStockAdj({ stockId, percent: parseFloat(rawVal) });
+  };
 
+  // Custom news send handler with inline confirmation
+  const handleCustomNewsSend = async () => {
+    if (!newsMessage.trim()) return;
     setSendingNews(true);
     try {
-      const data = await apiFetch('/admin/news', {
+      await apiFetch('/admin/news', {
         method: 'POST',
         body: JSON.stringify({
           message: newsMessage.trim(),
-          stockId: selectedStockId || undefined,
-          delaySeconds: parseInt(delaySeconds, 10) || 60
+          stockId: selectedStockId || null
         })
       });
 
-      setRecentNews((prev) => [data.news, ...prev]);
+      showToast('Breaking News broadcasted successfully!', 'success');
       setNewsMessage('');
       setSelectedStockId('');
       setCustomNewsConfirm(false);
-      resetNewsTimer();
-      showToast('News broadcasted to all connected traders!');
     } catch (err) {
       showToast(err.message || 'Failed to send news', 'error');
     } finally {
@@ -406,6 +255,7 @@ export function AdminDashboard() {
     }
   };
 
+  // Template trigger handler with inline confirmation
   const handleTriggerTemplate = async (templateId) => {
     setTriggeringTemplateId(templateId);
     try {
@@ -413,594 +263,547 @@ export function AdminDashboard() {
         method: 'POST',
         body: JSON.stringify({
           templateId,
-          delaySeconds: parseInt(delaySeconds, 10) || 60
+          delaySeconds
         })
       });
 
+      showToast(data.message || 'News template broadcasted!', 'success');
       setUsedTemplateIds((prev) => [...prev, templateId]);
       setInlineConfirmTplId(null);
-      fetchNewsTemplates();
-      resetNewsTimer();
-      showToast(data.message || 'News headline broadcasted to exchange!');
     } catch (err) {
-      showToast(err.message || 'Failed to trigger news template', 'error');
+      showToast(err.message || 'Failed to trigger template', 'error');
     } finally {
       setTriggeringTemplateId(null);
     }
   };
 
-  const handleOpenTraderDetail = (traderId) => {
+  // Session Control Handlers
+  const handleStartSession = async () => {
+    setIsStartingSession(true);
+    try {
+      const duration = customDurationInput ? parseInt(customDurationInput, 10) : sessionDurationMins;
+      const buffer = customBufferInput ? parseInt(customBufferInput, 10) : liquidationBufferMins;
+      const macro = customMacroInput ? parseInt(customMacroInput, 10) : macroCycleIntervalMins;
+
+      await apiFetch('/admin/session/start', {
+        method: 'POST',
+        body: JSON.stringify({
+          durationMinutes: duration,
+          liquidationBufferMinutes: buffer,
+          macroCycleIntervalMinutes: macro,
+          volatilityLevel,
+          volatilityCustomPercent: volatilityLevel === 'CUSTOM' ? parseFloat(volatilityCustomPercent) : null,
+          force: true
+        })
+      });
+      adminSession.refetchSession();
+      showToast(`Started ${duration}-minute session (Auto-liquidate: ${buffer}m, Macro: ${macro}m, Volatility: ${volatilityLevel})!`, 'success');
+    } catch (err) {
+      showToast(err.message || 'Failed to start session', 'error');
+    } finally {
+      setIsStartingSession(false);
+    }
+  };
+
+  const handlePauseSession = async () => {
+    try {
+      await apiFetch('/admin/session/pause', {
+        method: 'POST',
+        body: JSON.stringify({
+          breakMinutes,
+          note: breakNote
+        })
+      });
+      adminSession.refetchSession();
+      setShowBreakModal(false);
+      showToast(`Market paused for ${breakMinutes}-minute break!`, 'success');
+    } catch (err) {
+      showToast(err.message || 'Failed to pause session', 'error');
+    }
+  };
+
+  const handleResumeSession = async () => {
+    try {
+      await apiFetch('/admin/session/resume', { method: 'POST' });
+      adminSession.refetchSession();
+      showToast('Market resumed! Trading unlocked.', 'success');
+    } catch (err) {
+      showToast(err.message || 'Failed to resume session', 'error');
+    }
+  };
+
+  const handleStopSession = async () => {
+    if (!window.confirm('Are you sure you want to end the current trading session? All remaining positions will lock.')) return;
+    try {
+      await apiFetch('/admin/session/stop', { method: 'POST' });
+      adminSession.refetchSession();
+      showToast('Trading session stopped. Market closed.', 'success');
+    } catch (err) {
+      showToast(err.message || 'Failed to stop session', 'error');
+    }
+  };
+
+  // Open Trader Audit Slide-Over
+  const handleOpenTraderModal = (traderId) => {
     setSelectedTraderId(traderId);
     setIsTraderModalOpen(true);
   };
 
-  // Stock sorting logic (Gainers top vs A-Z)
-  const sortedStocks = useMemo(() => {
-    const list = [...stocks];
+  // Filtered & Sorted Stocks List
+  const filteredAndSortedStocks = useMemo(() => {
+    let result = stocks.filter(
+      (s) =>
+        s.symbol.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        s.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        s.sector.toLowerCase().includes(searchQuery.toLowerCase())
+    );
+
     if (stockSortMode === 'CHANGE') {
-      return list.sort((a, b) => (Number(b.percentChange) || 0) - (Number(a.percentChange) || 0));
+      result.sort((a, b) => (b.percentChange || 0) - (a.percentChange || 0));
+    } else {
+      result.sort((a, b) => a.symbol.localeCompare(b.symbol));
     }
-    return list.sort((a, b) => a.symbol.localeCompare(b.symbol));
-  }, [stocks, stockSortMode]);
 
-  // News studio lists (Good News Left, Bad News Right)
-  const filteredGoodNews = templates.filter((tpl) => {
-    if (tpl.effectPercent <= 0) return false;
-    if (newsCompanyFilter === 'ALL') return true;
-    const mapped = SECTOR_TO_STOCK_MAP[tpl.sector];
-    return mapped?.symbol === newsCompanyFilter;
-  });
+    return result;
+  }, [stocks, searchQuery, stockSortMode]);
 
-  const filteredBadNews = templates.filter((tpl) => {
-    if (tpl.effectPercent >= 0) return false;
-    if (newsCompanyFilter === 'ALL') return true;
-    const mapped = SECTOR_TO_STOCK_MAP[tpl.sector];
-    return mapped?.symbol === newsCompanyFilter;
-  });
+  // Categorize News Templates
+  const positiveTemplates = useMemo(
+    () => templates.filter((t) => t.effectPercent > 0),
+    [templates]
+  );
+  const negativeTemplates = useMemo(
+    () => templates.filter((t) => t.effectPercent < 0),
+    [templates]
+  );
 
-  const isSessionRunning = adminSession?.status === 'ACTIVE' || adminSession?.status === 'PAUSED';
+  const isSessionRunning = adminSession.status === 'ACTIVE' || adminSession.status === 'PAUSED';
 
   return (
-    <div className="min-h-screen bg-[#0D0D0D] text-white font-mono selection:bg-[#F0B429] selection:text-black">
+    <div className="min-h-screen bg-[#0F1117] text-[#F0F2FF] p-4 sm:p-6 font-sans selection:bg-[#F0B429] selection:text-black">
       
-      {/* Toast Notification Popup */}
+      {/* Toast Notification Stack */}
       {toast && (
-        <div
-          className={`fixed top-4 right-4 z-50 px-4 py-3 rounded-[4px] border text-xs font-mono font-bold flex items-center gap-2 ${
-            toast.type === 'error'
-              ? 'bg-[#F85149]/10 text-[#F85149] border-[#F85149]'
-              : 'bg-[#3FB950]/10 text-[#3FB950] border-[#3FB950]'
-          }`}
-        >
-          {toast.type === 'error' ? <AlertCircle className="w-4 h-4 text-[#F85149]" /> : <CheckCircle2 className="w-4 h-4 text-[#3FB950]" />}
+        <div className={`fixed top-4 right-4 z-50 px-4 py-2.5 rounded-lg shadow-xl text-xs font-mono font-bold flex items-center gap-2 animate-fadeIn border ${
+          toast.type === 'error'
+            ? 'bg-[#EF4444]/10 border-[#EF4444] text-[#EF4444]'
+            : 'bg-[#22C55E]/10 border-[#22C55E] text-[#22C55E]'
+        }`}>
+          {toast.type === 'error' ? <AlertCircle className="w-4 h-4" /> : <CheckCircle2 className="w-4 h-4" />}
           <span>{toast.message}</span>
         </div>
       )}
 
-      {/* TOP BAR (FULL WIDTH, MINIMAL) */}
-      <header className="border-b border-[#2A2A2A] bg-[#111111] px-6 py-3.5 flex items-center justify-between font-mono text-xs flex-wrap gap-4 sticky top-0 z-40">
-        {/* Left: App Title */}
+      {/* TOP BAR */}
+      <header className="bg-[#1A1D27] border border-[#2D3142] rounded-lg p-3 sm:p-4 mb-6 flex flex-wrap items-center justify-between gap-4 shadow-lg">
+        {/* Left: Branding */}
         <div className="flex items-center gap-3">
-          <span className="font-extrabold uppercase tracking-[0.12em] text-white text-xs">EQUITY ARENA</span>
-          <span className="text-[#444444]">·</span>
-          <span className="text-[#F0B429] font-bold text-[11px]">ADMIN</span>
+          <div className="w-8 h-8 rounded-lg bg-[color-mix(in_srgb,var(--accent)_15%,transparent)] border border-[color-mix(in_srgb,var(--accent)_40%,transparent)] flex items-center justify-center font-bold text-[#F0B429] text-sm">
+            ⬡
+          </div>
+          <div>
+            <div className="flex items-center gap-2">
+              <span className="font-extrabold text-sm tracking-wide text-[#F0F2FF]">EQUITY ARENA ADMIN</span>
+              <span className="px-1.5 py-0.2 rounded text-[9px] font-mono font-bold bg-[#F0B429]/15 text-[#F0B429] border border-[#F0B429]/30">
+                OPS PANEL
+              </span>
+            </div>
+            <p className="text-[10px] text-[#7B82A0] font-mono">Real-time market simulation controller</p>
+          </div>
         </div>
 
-        {/* Center: Session Status & Timer with Pulsing Green Dot */}
-        <div className="flex items-center gap-3">
-          {adminSession?.status === 'ACTIVE' ? (
-            <div className="flex items-center gap-2">
-              <span className="relative flex h-2 w-2">
-                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-[#3FB950] opacity-75"></span>
-                <span className="relative inline-flex rounded-full h-2 w-2 bg-[#3FB950]"></span>
-              </span>
-              <span className="text-[#3FB950] font-bold">Session running —</span>
-              <GameClock sessionData={adminSession} />
-            </div>
-          ) : adminSession?.status === 'PAUSED' ? (
-            <div className="flex items-center gap-2">
-              <span className="text-[#F0B429] font-bold">Market on break —</span>
-              <span className="text-white font-bold">{adminSession.breakNote}</span>
-            </div>
-          ) : (
-            <span className="text-[#888888]">No active session — press Start</span>
+        {/* Center: Live Session Status Badge */}
+        <div className="flex items-center gap-3 bg-[#0F1117] border border-[#2D3142] px-3.5 py-1.5 rounded-lg font-mono text-xs">
+          <div className="flex items-center gap-2">
+            <span className={`w-2 h-2 rounded-full ${isSessionRunning ? 'bg-[#22C55E] animate-pulse' : 'bg-[#EF4444]'}`} />
+            <span className="font-bold text-[#F0F2FF]">
+              {adminSession.status === 'ACTIVE' ? (
+                <span className="text-[#22C55E]">Live</span>
+              ) : adminSession.status === 'PAUSED' ? (
+                <span className="text-[#F0B429]">Market Paused</span>
+              ) : (
+                <span className="text-[#7B82A0]">No Session</span>
+              )}
+            </span>
+          </div>
+
+          {isSessionRunning && (
+            <>
+              <span className="text-[#2D3142]">|</span>
+              <GameClock session={adminSession} />
+            </>
           )}
         </div>
 
-        {/* Right: Action Buttons */}
-        <div className="flex items-center gap-2">
-          {isSessionRunning ? (
-            <div className="flex items-center gap-2">
-              {adminSession?.status === 'PAUSED' ? (
-                <button
-                  type="button"
-                  onClick={handleResumeSession}
-                  className="px-3 py-1 text-xs font-bold uppercase tracking-wider rounded-[4px] border border-white text-white hover:bg-white/5 transition-colors"
-                >
-                  RESUME SESSION
-                </button>
-              ) : (
-                <button
-                  type="button"
-                  onClick={() => setShowBreakModal(true)}
-                  className="px-3 py-1 text-xs font-bold uppercase tracking-wider rounded-[4px] border border-white text-white hover:bg-white/5 transition-colors"
-                >
-                  BREAK
-                </button>
-              )}
+        {/* Right: Actions */}
+        <div className="flex items-center gap-2.5">
+          {adminSession.status === 'ACTIVE' && (
+            <button
+              onClick={() => setShowBreakModal(true)}
+              className="px-3 py-1.5 rounded-lg text-xs font-mono font-bold bg-[#F0B429]/10 border border-[#F0B429]/40 text-[#F0B429] hover:bg-[#F0B429]/20 transition-all flex items-center gap-1.5"
+            >
+              <Coffee className="w-3.5 h-3.5" />
+              <span>PAUSE BREAK</span>
+            </button>
+          )}
 
-              {!confirmEndSession ? (
-                <button
-                  type="button"
-                  onClick={handleEndSessionClick}
-                  className="px-3 py-1 text-xs font-bold uppercase tracking-wider rounded-[4px] border border-[#F85149] text-[#F85149] hover:bg-[#F85149]/10 transition-colors"
-                >
-                  END SESSION
-                </button>
-              ) : (
-                <div className="flex items-center gap-2 bg-[#0D0D0D] border border-[#F85149] px-2.5 py-1 rounded-[4px] animate-fadeIn">
-                  <span className="text-[#F85149] font-bold text-[11px]">End the session now? All trading will stop. →</span>
-                  <button
-                    type="button"
-                    onClick={handleStopSession}
-                    className="px-2.5 py-0.5 text-xs font-bold uppercase border border-[#F85149] text-[#F85149] hover:bg-[#F85149]/10 rounded-[2px]"
-                  >
-                    YES, END
-                  </button>
-                  <button
-                    type="button"
-                    onClick={handleCancelEndSession}
-                    className="px-2 py-0.5 text-xs text-[#888888] hover:text-white"
-                  >
-                    CANCEL
-                  </button>
-                </div>
-              )}
-            </div>
-          ) : null}
+          {adminSession.status === 'PAUSED' && (
+            <button
+              onClick={handleResumeSession}
+              className="px-3 py-1.5 rounded-lg text-xs font-mono font-bold bg-[#22C55E]/10 border border-[#22C55E]/40 text-[#22C55E] hover:bg-[#22C55E]/20 transition-all flex items-center gap-1.5"
+            >
+              <Play className="w-3.5 h-3.5" />
+              <span>RESUME MARKET</span>
+            </button>
+          )}
+
+          {isSessionRunning && (
+            <button
+              onClick={handleStopSession}
+              className="px-3 py-1.5 rounded-lg text-xs font-mono font-bold bg-[#EF4444]/10 border border-[#EF4444]/40 text-[#EF4444] hover:bg-[#EF4444]/20 transition-all flex items-center gap-1.5"
+            >
+              <Square className="w-3.5 h-3.5" />
+              <span>END SESSION</span>
+            </button>
+          )}
 
           <button
-            type="button"
             onClick={logout}
-            className="ml-3 px-2 py-1 text-xs text-[#888888] hover:text-white transition-colors"
-            title="Logout Admin"
+            className="p-2 rounded-lg text-[#7B82A0] hover:text-[#EF4444] hover:bg-[#1F2235] transition-colors"
+            title="Log out"
           >
-            LOGOUT
+            <LogOut className="w-4 h-4" />
           </button>
         </div>
       </header>
 
-      {/* TWO-COLUMN SIDE-BY-SIDE LAYOUT (FULL HEIGHT WITH 24px BREATHING ROOM & 1px DIVIDER) */}
-      <div className="grid grid-cols-1 lg:grid-cols-12 min-h-[calc(100vh-49px)]">
-
-        {/* LEFT COLUMN (40% / LG:COL-SPAN-5): SESSION CONTROL + SEND NEWS */}
-        <div className="lg:col-span-5 border-r border-[#2A2A2A] p-6 space-y-6 font-mono">
-          
-          {/* SESSION BLOCK (TOP OF LEFT COLUMN) */}
-          <div className="border border-[#2A2A2A] rounded-[4px] bg-[#111111] p-5 space-y-4">
-            <span className="text-[10px] uppercase tracking-[0.1em] text-[#555555] font-bold block mb-2">SESSION CONTROL</span>
-
-            {!isSessionRunning ? (
-              <div className="space-y-4">
-                <div className="flex items-center justify-between gap-2 flex-wrap">
-                  <span className="text-xs text-[#888888]">Duration:</span>
-                  <div className="flex items-center gap-2 flex-wrap">
-                    {[30, 60, 180].map((m) => (
-                      <button
-                        key={m}
-                        type="button"
-                        onClick={() => setSessionDurationMins(m)}
-                        className={`px-3 py-1.5 text-xs font-bold rounded-[4px] border transition-colors ${
-                          sessionDurationMins === m
-                            ? 'border-[#F0B429] text-[#F0B429] bg-[#F0B429]/10'
-                            : 'border-[#3A3A3A] text-white hover:bg-white/5'
-                        }`}
-                      >
-                        {m}m
-                      </button>
-                    ))}
-                    <input
-                      type="number"
-                      min="1"
-                      value={sessionDurationMins}
-                      onChange={(e) => setSessionDurationMins(parseInt(e.target.value, 10) || 180)}
-                      className="w-16 h-[30px] bg-[#0D0D0D] border border-[#3A3A3A] rounded-[4px] px-1 text-center text-xs text-white focus:outline-none focus:border-[#F0B429]"
-                      placeholder="custom"
-                    />
-                  </div>
-                </div>
-
-                {/* Filled Amber START SESSION Button (Prominent) */}
-                <button
-                  type="button"
-                  onClick={() => handleStartNewSession()}
-                  disabled={isStartingSession}
-                  className="w-full h-[36px] bg-[#F0B429] hover:bg-[#d9a120] text-black font-bold uppercase tracking-wider text-xs rounded-[4px] transition-colors disabled:opacity-50"
-                >
-                  {isStartingSession ? 'STARTING...' : 'START SESSION'}
-                </button>
-              </div>
-            ) : (
-              <div className="flex items-center justify-between text-xs pt-1">
-                <div className="flex items-center gap-2">
-                  <span className="text-[#888888]">Timer:</span>
-                  <GameClock sessionData={adminSession} />
-                </div>
-                <div className="flex items-center gap-2 text-[10px] text-[#888888]">
-                  <span>Reminder:</span>
-                  <span className={`font-bold ${reminderSeconds <= 120 ? 'text-[#F0B429]' : 'text-white'}`}>
-                    {Math.floor(reminderSeconds / 60).toString().padStart(2, '0')}:{(reminderSeconds % 60).toString().padStart(2, '0')}
-                  </span>
-                  <button type="button" onClick={resetNewsTimer} className="hover:text-white ml-1">RESET</button>
-                </div>
-              </div>
-            )}
-          </div>
-
-          {/* NEWS BLOCK (REST OF LEFT COLUMN) */}
-          <div className="space-y-4">
-            <div className="flex items-center justify-between mt-5 mb-2">
-              <span className="text-[10px] uppercase tracking-[0.1em] text-[#555555] font-bold block">SEND NEWS</span>
-              <select
-                value={newsCompanyFilter}
-                onChange={(e) => setNewsCompanyFilter(e.target.value)}
-                className="bg-[#111111] border border-[#2A2A2A] rounded-[4px] px-2.5 py-1 text-[11px] text-[#888888] font-mono"
-              >
-                <option value="ALL">All 15 Companies</option>
-                {Object.values(SECTOR_TO_STOCK_MAP).map((s) => (
-                  <option key={s.symbol} value={s.symbol}>{s.symbol} — {s.name}</option>
-                ))}
-              </select>
-            </div>
-
-            {/* Sub-Columns: POSITIVE | NEGATIVE */}
-            <div className="grid grid-cols-2 border border-[#2A2A2A] rounded-[4px] bg-[#111111] overflow-hidden">
-              
-              {/* POSITIVE */}
-              <div className="p-4 border-r border-[#2A2A2A] space-y-3">
-                <div className="text-[10px] uppercase tracking-[0.1em] text-[#3FB950] font-bold border-b border-[#2A2A2A] pb-2">
-                  POSITIVE ({filteredGoodNews.length})
-                </div>
-
-                <div className="space-y-2.5 max-h-[420px] overflow-y-auto pr-1">
-                  {filteredGoodNews.map((tpl) => {
-                    const isSent = usedTemplateIds.includes(tpl.id);
-                    const isConfirming = inlineConfirmTplId === tpl.id;
-                    const isTriggering = triggeringTemplateId === tpl.id;
-
-                    return (
-                      <div
-                        key={tpl.id}
-                        className={`p-2.5 bg-[#161616] border border-[#2A2A2A] rounded-[4px] space-y-2 transition-opacity ${
-                          isSent ? 'opacity-40' : ''
-                        }`}
-                      >
-                        <p className="text-[14px] font-normal text-[#DDDDDD] leading-snug">{tpl.headline}</p>
-
-                        {isConfirming ? (
-                          <div className="p-2 bg-[#0D0D0D] border border-[#F0B429] rounded-[4px] space-y-2 font-mono text-[10px] animate-fadeIn">
-                            <div className="flex items-center justify-between">
-                              <span className="text-[#888888]">Delay:</span>
-                              <div className="flex items-center gap-1">
-                                <input
-                                  type="number"
-                                  min="0"
-                                  value={delaySeconds}
-                                  onChange={(e) => setDelaySeconds(parseInt(e.target.value, 10) || 60)}
-                                  className="w-12 h-5 bg-[#161616] border border-[#3A3A3A] text-center text-white rounded-[2px]"
-                                />
-                                <span className="text-[#888888]">sec</span>
-                              </div>
-                            </div>
-
-                            <div className="flex items-center justify-end gap-1.5 pt-1 border-t border-[#222222]">
-                              <button
-                                type="button"
-                                onClick={() => setInlineConfirmTplId(null)}
-                                className="px-2 py-0.5 text-[#888888] hover:text-white"
-                              >
-                                CANCEL
-                              </button>
-                              <button
-                                type="button"
-                                disabled={isTriggering}
-                                onClick={() => handleTriggerTemplate(tpl.id)}
-                                className="px-3 py-1 text-xs uppercase font-bold text-[#F0B429] border border-[#F0B429] bg-transparent hover:bg-[#F0B429]/10 rounded-[4px] transition-colors"
-                              >
-                                {isTriggering ? 'SENDING...' : 'CONFIRM SEND'}
-                              </button>
-                            </div>
-                          </div>
-                        ) : (
-                          <div className="flex items-center justify-between gap-1 pt-1 border-t border-[#222222]">
-                            <span className="text-[11px] text-[#3FB950] font-bold">+{tpl.effectPercent}%</span>
-                            {isSent ? (
-                              <span className="text-[10px] text-[#888888] font-bold">Sent</span>
-                            ) : (
-                              <button
-                                type="button"
-                                onClick={() => setInlineConfirmTplId(tpl.id)}
-                                className="px-3 py-1 text-xs uppercase font-bold text-[#F0B429] border border-[#F0B429] bg-transparent hover:bg-[#F0B429]/10 rounded-[4px] transition-colors"
-                              >
-                                SEND
-                              </button>
-                            )}
-                          </div>
-                        )}
-                      </div>
-                    );
-                  })}
-                </div>
-              </div>
-
-              {/* NEGATIVE */}
-              <div className="p-4 space-y-3">
-                <div className="text-[10px] uppercase tracking-[0.1em] text-[#F85149] font-bold border-b border-[#2A2A2A] pb-2">
-                  NEGATIVE ({filteredBadNews.length})
-                </div>
-
-                <div className="space-y-2.5 max-h-[420px] overflow-y-auto pr-1">
-                  {filteredBadNews.map((tpl) => {
-                    const isSent = usedTemplateIds.includes(tpl.id);
-                    const isConfirming = inlineConfirmTplId === tpl.id;
-                    const isTriggering = triggeringTemplateId === tpl.id;
-
-                    return (
-                      <div
-                        key={tpl.id}
-                        className={`p-2.5 bg-[#161616] border border-[#2A2A2A] rounded-[4px] space-y-2 transition-opacity ${
-                          isSent ? 'opacity-40' : ''
-                        }`}
-                      >
-                        <p className="text-[14px] font-normal text-[#DDDDDD] leading-snug">{tpl.headline}</p>
-
-                        {isConfirming ? (
-                          <div className="p-2 bg-[#0D0D0D] border border-[#F85149] rounded-[4px] space-y-2 font-mono text-[10px] animate-fadeIn">
-                            <div className="flex items-center justify-between">
-                              <span className="text-[#888888]">Delay:</span>
-                              <div className="flex items-center gap-1">
-                                <input
-                                  type="number"
-                                  min="0"
-                                  value={delaySeconds}
-                                  onChange={(e) => setDelaySeconds(parseInt(e.target.value, 10) || 60)}
-                                  className="w-12 h-5 bg-[#161616] border border-[#3A3A3A] text-center text-white rounded-[2px]"
-                                />
-                                <span className="text-[#888888]">sec</span>
-                              </div>
-                            </div>
-
-                            <div className="flex items-center justify-end gap-1.5 pt-1 border-t border-[#222222]">
-                              <button
-                                type="button"
-                                onClick={() => setInlineConfirmTplId(null)}
-                                className="px-2 py-0.5 text-[#888888] hover:text-white"
-                              >
-                                CANCEL
-                              </button>
-                              <button
-                                type="button"
-                                disabled={isTriggering}
-                                onClick={() => handleTriggerTemplate(tpl.id)}
-                                className="px-3 py-1 text-xs uppercase font-bold text-[#F85149] border border-[#F85149] bg-transparent hover:bg-[#F85149]/10 rounded-[4px] transition-colors"
-                              >
-                                {isTriggering ? 'SENDING...' : 'CONFIRM SEND'}
-                              </button>
-                            </div>
-                          </div>
-                        ) : (
-                          <div className="flex items-center justify-between gap-1 pt-1 border-t border-[#222222]">
-                            <span className="text-[11px] text-[#F85149] font-bold">{tpl.effectPercent}%</span>
-                            {isSent ? (
-                              <span className="text-[10px] text-[#888888] font-bold">Sent</span>
-                            ) : (
-                              <button
-                                type="button"
-                                onClick={() => setInlineConfirmTplId(tpl.id)}
-                                className="px-3 py-1 text-xs uppercase font-bold text-[#F85149] border border-[#F85149] bg-transparent hover:bg-[#F85149]/10 rounded-[4px] transition-colors"
-                              >
-                                SEND
-                              </button>
-                            )}
-                          </div>
-                        )}
-                      </div>
-                    );
-                  })}
-                </div>
-              </div>
-
-            </div>
-
-            {/* CUSTOM MANUAL NEWS BROADCAST */}
-            <div className="space-y-3 pt-3 border-t border-[#2A2A2A]">
-              <textarea
-                rows={2}
-                value={newsMessage}
-                onChange={(e) => setNewsMessage(e.target.value)}
-                placeholder="Type custom manual breaking news headline..."
-                className="w-full bg-[#111111] border border-[#2A2A2A] rounded-[4px] p-3 text-xs text-white placeholder-[#555555] focus:outline-none focus:border-[#F0B429] font-mono resize-none"
-              />
-              <div className="flex items-center justify-between gap-2">
-                <select
-                  value={selectedStockId}
-                  onChange={(e) => setSelectedStockId(e.target.value)}
-                  className="bg-[#111111] border border-[#2A2A2A] rounded-[4px] px-3 py-1.5 text-xs text-[#888888] font-mono"
-                >
-                  <option value="">Target: Whole Market</option>
-                  {stocks.map((s) => (
-                    <option key={s.id} value={s.id}>{s.symbol} — {s.name}</option>
-                  ))}
-                </select>
-
-                {!customNewsConfirm ? (
-                  <button
-                    type="button"
-                    disabled={!newsMessage.trim()}
-                    onClick={() => setCustomNewsConfirm(true)}
-                    className="px-4 py-1.5 text-xs uppercase font-bold text-[#F0B429] border border-[#F0B429] bg-transparent hover:bg-[#F0B429]/10 rounded-[4px] transition-colors disabled:opacity-50"
-                  >
-                    SEND
-                  </button>
-                ) : (
-                  <div className="flex items-center gap-2 font-mono text-[10px] bg-[#0D0D0D] border border-[#F0B429] p-2 rounded-[4px] animate-fadeIn">
-                    <span className="text-[#888888]">Delay:</span>
-                    <input
-                      type="number"
-                      min="0"
-                      value={delaySeconds}
-                      onChange={(e) => setDelaySeconds(parseInt(e.target.value, 10) || 60)}
-                      className="w-12 h-5 bg-[#161616] border border-[#3A3A3A] text-center text-white rounded-[2px]"
-                    />
-                    <span className="text-[#888888]">sec</span>
-                    <button
-                      type="button"
-                      onClick={() => setCustomNewsConfirm(false)}
-                      className="px-2 py-0.5 text-[#888888] hover:text-white"
-                    >
-                      CANCEL
-                    </button>
-                    <button
-                      type="button"
-                      disabled={sendingNews}
-                      onClick={handleSendNews}
-                      className="px-3 py-1 text-xs uppercase font-bold text-[#F0B429] border border-[#F0B429] bg-transparent hover:bg-[#F0B429]/10 rounded-[4px] transition-colors"
-                    >
-                      {sendingNews ? 'SENDING...' : 'CONFIRM SEND'}
-                    </button>
-                  </div>
-                )}
-              </div>
-            </div>
-
-          </div>
-
+      {/* ROW 1: SESSION SETUP / RUNNING SUMMARY */}
+      <section className="bg-[#1A1D27] border border-[#2D3142] rounded-lg p-4 sm:p-5 mb-6 shadow-lg">
+        <div className="text-[10px] uppercase font-mono tracking-[0.12em] text-[#7B82A0] font-bold mb-3 flex items-center justify-between">
+          <span>{isSessionRunning ? 'SESSION STATUS' : 'SESSION SETUP'}</span>
+          <span className="text-[9px] text-[#F0B429]">Phase 50 Admin Engine</span>
         </div>
 
-        {/* RIGHT COLUMN (60% / LG:COL-SPAN-7): STOCKS (TOP 60%) + LIVE ACTIVITY (BOTTOM 40%) */}
-        <div className="lg:col-span-7 p-6 space-y-6 font-mono">
-          
-          {/* STOCKS BLOCK (TOP 60%) */}
+        {!isSessionRunning ? (
           <div className="space-y-4">
-            <div className="flex items-center justify-between mt-5 mb-2">
-              <span className="text-[10px] uppercase tracking-[0.1em] text-[#555555] font-bold block">STOCKS (15 LISTINGS)</span>
-              <button
-                type="button"
-                onClick={() => setStockSortMode(stockSortMode === 'CHANGE' ? 'ALPHA' : 'CHANGE')}
-                className="text-[10px] uppercase font-mono text-[#888888] hover:text-white border border-[#3A3A3A] hover:bg-white/5 px-2.5 py-1 rounded-[4px] transition-colors"
-              >
-                {stockSortMode === 'CHANGE' ? 'Sort: Gainers Top' : 'Sort: Alphabetical A-Z'}
-              </button>
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+              
+              {/* 1. Duration */}
+              <div className="space-y-1.5">
+                <label className="text-xs text-[#7B82A0] font-medium block">Duration</label>
+                <div className="flex items-center gap-1.5">
+                  {[30, 60, 180].map((mins) => (
+                    <button
+                      key={mins}
+                      type="button"
+                      onClick={() => {
+                        setSessionDurationMins(mins);
+                        setCustomDurationInput('');
+                      }}
+                      className={`px-2.5 py-1 rounded-md text-xs font-mono font-bold transition-all ${
+                        sessionDurationMins === mins && !customDurationInput
+                          ? 'bg-[#F0B429] text-black'
+                          : 'bg-[#0F1117] text-[#7B82A0] hover:text-[#F0F2FF] border border-[#2D3142]'
+                      }`}
+                    >
+                      {mins >= 60 ? `${mins / 60}h` : `${mins}m`}
+                    </button>
+                  ))}
+                </div>
+                <input
+                  type="number"
+                  placeholder="Custom mins"
+                  value={customDurationInput}
+                  onChange={(e) => setCustomDurationInput(e.target.value)}
+                  className="w-full h-8 bg-[#0F1117] border border-[#2D3142] rounded-md px-2.5 text-xs text-[#F0F2FF] placeholder-[#7B82A0] font-mono focus:outline-none focus:border-[#F0B429]"
+                />
+              </div>
+
+              {/* 2. Auto-Liquidate Buffer */}
+              <div className="space-y-1.5">
+                <label className="text-xs text-[#7B82A0] font-medium block">Auto-Liquidate</label>
+                <div className="flex items-center gap-1.5">
+                  {[2, 5, 10].map((mins) => (
+                    <button
+                      key={mins}
+                      type="button"
+                      onClick={() => {
+                        setLiquidationBufferMins(mins);
+                        setCustomBufferInput('');
+                      }}
+                      className={`px-2.5 py-1 rounded-md text-xs font-mono font-bold transition-all ${
+                        liquidationBufferMins === mins && !customBufferInput
+                          ? 'bg-[#F0B429] text-black'
+                          : 'bg-[#0F1117] text-[#7B82A0] hover:text-[#F0F2FF] border border-[#2D3142]'
+                      }`}
+                    >
+                      {mins}m before end
+                    </button>
+                  ))}
+                </div>
+                <input
+                  type="number"
+                  placeholder="Custom mins"
+                  value={customBufferInput}
+                  onChange={(e) => setCustomBufferInput(e.target.value)}
+                  className="w-full h-8 bg-[#0F1117] border border-[#2D3142] rounded-md px-2.5 text-xs text-[#F0F2FF] placeholder-[#7B82A0] font-mono focus:outline-none focus:border-[#F0B429]"
+                />
+              </div>
+
+              {/* 3. Macro Cycle Interval */}
+              <div className="space-y-1.5">
+                <label className="text-xs text-[#7B82A0] font-medium block">Macro Cycle</label>
+                <div className="flex items-center gap-1.5">
+                  {[3, 5, 15].map((mins) => (
+                    <button
+                      key={mins}
+                      type="button"
+                      onClick={() => {
+                        setMacroCycleIntervalMins(mins);
+                        setCustomMacroInput('');
+                      }}
+                      className={`px-2.5 py-1 rounded-md text-xs font-mono font-bold transition-all ${
+                        macroCycleIntervalMins === mins && !customMacroInput
+                          ? 'bg-[#F0B429] text-black'
+                          : 'bg-[#0F1117] text-[#7B82A0] hover:text-[#F0F2FF] border border-[#2D3142]'
+                      }`}
+                    >
+                      Every {mins}m
+                    </button>
+                  ))}
+                </div>
+                <input
+                  type="number"
+                  placeholder="Custom mins"
+                  value={customMacroInput}
+                  onChange={(e) => setCustomMacroInput(e.target.value)}
+                  className="w-full h-8 bg-[#0F1117] border border-[#2D3142] rounded-md px-2.5 text-xs text-[#F0F2FF] placeholder-[#7B82A0] font-mono focus:outline-none focus:border-[#F0B429]"
+                />
+              </div>
+
+              {/* 4. Volatility */}
+              <div className="space-y-1.5">
+                <label className="text-xs text-[#7B82A0] font-medium block">Volatility</label>
+                <div className="flex items-center gap-1.5">
+                  {['LOW', 'MEDIUM', 'HIGH'].map((lvl) => (
+                    <button
+                      key={lvl}
+                      type="button"
+                      onClick={() => setVolatilityLevel(lvl)}
+                      className={`px-2.5 py-1 rounded-md text-xs font-mono font-bold transition-all ${
+                        volatilityLevel === lvl
+                          ? 'bg-[#F0B429] text-black'
+                          : 'bg-[#0F1117] text-[#7B82A0] hover:text-[#F0F2FF] border border-[#2D3142]'
+                      }`}
+                    >
+                      {lvl === 'MEDIUM' ? 'Med' : lvl}
+                    </button>
+                  ))}
+                </div>
+                {volatilityLevel === 'CUSTOM' ? (
+                  <input
+                    type="number"
+                    step="0.1"
+                    placeholder="Custom % range"
+                    value={volatilityCustomPercent}
+                    onChange={(e) => setVolatilityCustomPercent(e.target.value)}
+                    className="w-full h-8 bg-[#0F1117] border border-[#2D3142] rounded-md px-2.5 text-xs text-[#F0F2FF] placeholder-[#7B82A0] font-mono focus:outline-none focus:border-[#F0B429]"
+                  />
+                ) : (
+                  <button
+                    type="button"
+                    onClick={() => setVolatilityLevel('CUSTOM')}
+                    className="text-[10px] text-[#7B82A0] hover:text-[#F0B429] font-mono block mt-1 underline"
+                  >
+                    + Set Custom %
+                  </button>
+                )}
+              </div>
+
             </div>
 
-            {/* Scannable Stock Rows with Alternating Backgrounds (#111111 / #161616) & 44px Row Height */}
-            <div className="border border-[#2A2A2A] rounded-[4px] overflow-hidden">
-              {sortedStocks.map((s, idx) => {
-                const isUp = Number(s.percentChange) >= 0;
-                const isAdjusting = adjustingStockId === s.id;
-                const isConfirmingCustom = confirmStockAdj?.stockId === s.id;
-                const isRecentlyAdjusted = s.id === recentlyAdjustedStockId;
+            <button
+              type="button"
+              disabled={isStartingSession}
+              onClick={handleStartSession}
+              className="w-full h-[38px] bg-[#F0B429] hover:bg-[#d9a120] text-black font-bold uppercase tracking-wider text-xs rounded-lg transition-all shadow-md flex items-center justify-center gap-2"
+            >
+              <Play className="w-4 h-4" />
+              <span>{isStartingSession ? 'Starting Session...' : 'START SESSION'}</span>
+            </button>
+          </div>
+        ) : (
+          <div className="bg-[#0F1117] border border-[#2D3142] rounded-lg p-3.5 flex flex-wrap items-center justify-between gap-4 font-mono text-xs">
+            <div className="flex items-center gap-3">
+              <span className="flex h-2.5 w-2.5 relative">
+                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-[#22C55E] opacity-75"></span>
+                <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-[#22C55E]"></span>
+              </span>
+              <span className="font-extrabold text-[#22C55E]">● SESSION RUNNING</span>
+            </div>
+
+            <div className="flex flex-wrap items-center gap-4 text-[#7B82A0]">
+              <div>
+                <span>Auto-liquidate in: </span>
+                <span className="text-[#F0F2FF] font-bold">
+                  {adminSession.liquidationBufferMinutes || 5} min before end
+                </span>
+              </div>
+
+              <div>
+                <span>Macro cycle: </span>
+                <span className="text-[#F0F2FF] font-bold">
+                  {adminSession.macroCycleIntervalMinutes || 15} min
+                </span>
+              </div>
+
+              <div>
+                <span>Volatility: </span>
+                <span className="text-[#F0B429] font-bold uppercase">
+                  {adminSession.volatilityLevel || 'MEDIUM'}
+                </span>
+              </div>
+            </div>
+          </div>
+        )}
+      </section>
+
+      {/* ROW 2: TWO COLUMNS SIDE BY SIDE (NEWS 42% | STOCKS 58%) */}
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 mb-6">
+        
+        {/* Left Column (42%) — SEND NEWS */}
+        <div className="lg:col-span-5 bg-[#1A1D27] border border-[#2D3142] rounded-lg p-4 sm:p-5 shadow-lg flex flex-col">
+          <div className="text-[10px] uppercase font-mono tracking-[0.12em] text-[#7B82A0] font-bold mb-3 flex items-center justify-between">
+            <div className="flex items-center gap-1.5">
+              <Radio className="w-3.5 h-3.5 text-[#F0B429]" />
+              <span>SEND NEWS</span>
+            </div>
+            <span className="text-[10px] text-[#7B82A0] font-mono">
+              {templates.length} Templates Available
+            </span>
+          </div>
+
+          {/* Templates Grid (Positive / Negative sub-columns) */}
+          <div className="grid grid-cols-2 gap-3 flex-1 overflow-y-auto max-h-[380px] pr-1 mb-4">
+            {/* Positive Templates */}
+            <div className="space-y-2">
+              <div className="text-[10px] font-mono font-bold text-[#22C55E] border-b border-[#2D3142] pb-1 uppercase flex items-center gap-1">
+                <ThumbsUp className="w-3 h-3" />
+                <span>POSITIVE ({positiveTemplates.length})</span>
+              </div>
+
+              {positiveTemplates.map((t) => {
+                const isUsed = usedTemplateIds.includes(t.id);
+                const isConfirming = inlineConfirmTplId === t.id;
 
                 return (
-                  <div
-                    key={s.id}
-                    className={`border-b border-[#2A2A2A] last:border-b-0 ${
-                      idx % 2 === 0 ? 'bg-[#111111]' : 'bg-[#161616]'
-                    }`}
-                  >
-                    <div className="h-[44px] px-3.5 flex items-center justify-between gap-3 text-xs flex-wrap">
-                      {/* Stock Symbol (14px, weight 600) & Name (13px, weight 400, #888888) */}
-                      <div className="flex items-center gap-3 min-w-[170px]">
-                        <span className="text-[14px] font-bold text-white w-14">{s.symbol}</span>
-                        <span className="text-[13px] font-normal text-[#888888] truncate max-w-[130px]">{s.name}</span>
-                      </div>
-
-                      {/* Price (JetBrains Mono 15px, weight 500) & % Change (13px JetBrains Mono) with Flash */}
-                      <div
-                        className={`flex items-center gap-3 min-w-[140px] justify-end px-2 py-1 rounded-[2px] ${
-                          isRecentlyAdjusted ? 'bg-[#F0B429]/20 transition-colors duration-1000' : 'transition-colors duration-1000'
-                        }`}
-                      >
-                        <span className="font-mono text-[15px] font-medium text-white">{fmtMoney(s.currentPrice)} IC</span>
-                        <span className={`font-mono text-[13px] font-bold ${isUp ? 'text-[#3FB950]' : 'text-[#F85149]'}`}>
-                          {isUp ? `+${Number(s.percentChange || 0).toFixed(2)}%` : `${Number(s.percentChange || 0).toFixed(2)}%`}
-                        </span>
-                      </div>
-
-                      {/* Presets (28px height, 10px px, 1px solid #3A3A3A) & Custom APPLY */}
-                      <div className="flex items-center gap-1.5 flex-wrap">
+                  <div key={t.id} className="p-2 bg-[#0F1117] border border-[#2D3142] rounded-lg space-y-1 text-xs">
+                    <p className={`text-[11px] font-mono line-clamp-2 ${isUsed ? 'opacity-40 line-through text-[#7B82A0]' : 'text-[#F0F2FF]'}`}>
+                      {t.headline}
+                    </p>
+                    
+                    {!isConfirming ? (
+                      <div className="flex items-center justify-between pt-1">
+                        <span className="text-[9px] font-mono font-bold text-[#22C55E]">+{t.effectPercent}%</span>
                         <button
                           type="button"
-                          disabled={isAdjusting}
-                          onClick={() => handleAdjustPrice(s.id, 10)}
-                          className="h-[28px] px-2.5 text-xs font-bold rounded-[4px] border border-[#3A3A3A] text-white hover:bg-white/5 transition-colors"
+                          onClick={() => setInlineConfirmTplId(t.id)}
+                          className="px-2 py-0.5 bg-[#22C55E]/15 border border-[#22C55E]/30 text-[#22C55E] text-[10px] font-mono font-bold rounded hover:bg-[#22C55E]/30 transition-colors"
                         >
-                          +10%
-                        </button>
-                        <button
-                          type="button"
-                          disabled={isAdjusting}
-                          onClick={() => handleAdjustPrice(s.id, 25)}
-                          className="h-[28px] px-2.5 text-xs font-bold rounded-[4px] border border-[#3A3A3A] text-white hover:bg-white/5 transition-colors"
-                        >
-                          +25%
-                        </button>
-                        <button
-                          type="button"
-                          disabled={isAdjusting}
-                          onClick={() => handleAdjustPrice(s.id, -10)}
-                          className="h-[28px] px-2.5 text-xs font-bold rounded-[4px] border border-[#3A3A3A] text-white hover:bg-white/5 transition-colors"
-                        >
-                          -10%
-                        </button>
-                        <button
-                          type="button"
-                          disabled={isAdjusting}
-                          onClick={() => handleAdjustPrice(s.id, -25)}
-                          className="h-[28px] px-2.5 text-xs font-bold rounded-[4px] border border-[#3A3A3A] text-white hover:bg-white/5 transition-colors"
-                        >
-                          -25%
-                        </button>
-
-                        <input
-                          type="number"
-                          placeholder="%"
-                          value={customPercents[s.id] || ''}
-                          onChange={(e) => setCustomPercents({ ...customPercents, [s.id]: e.target.value })}
-                          className="w-12 h-[28px] bg-[#0D0D0D] border border-[#3A3A3A] rounded-[4px] px-1 text-center text-xs text-white focus:outline-none focus:border-[#F0B429]"
-                        />
-                        <button
-                          type="button"
-                          disabled={isAdjusting || !customPercents[s.id]}
-                          onClick={() => handleCustomApplyClick(s.id, s.symbol)}
-                          className="h-[28px] px-3 text-xs uppercase font-bold text-[#F0B429] border border-[#F0B429] bg-transparent hover:bg-[#F0B429]/10 rounded-[4px] transition-colors disabled:opacity-50"
-                        >
-                          APPLY
+                          SEND
                         </button>
                       </div>
-                    </div>
-
-                    {/* Inline Confirmation Drawer for Custom % Adjustment */}
-                    {isConfirmingCustom && (
-                      <div className="p-2.5 bg-[#0D0D0D] border-t border-[#F0B429] flex items-center justify-between text-xs animate-fadeIn">
-                        <span className="text-white font-bold">
-                          Move {confirmStockAdj.symbol} price by {confirmStockAdj.percent >= 0 ? '+' : ''}{confirmStockAdj.percent}%?
-                        </span>
-                        <div className="flex items-center gap-2">
+                    ) : (
+                      <div className="pt-1.5 border-t border-[#2D3142] space-y-1.5 animate-fadeIn font-mono">
+                        <div className="flex items-center justify-between text-[10px]">
+                          <span className="text-[#7B82A0]">Delay:</span>
+                          <input
+                            type="number"
+                            value={delaySeconds}
+                            onChange={(e) => setDelaySeconds(parseInt(e.target.value, 10) || 0)}
+                            className="w-12 h-5 bg-[#1A1D27] border border-[#2D3142] text-center rounded text-[10px] text-[#F0F2FF]"
+                          />
+                          <span className="text-[#7B82A0]">sec</span>
+                        </div>
+                        <div className="flex items-center gap-1">
                           <button
                             type="button"
-                            onClick={() => handleAdjustPrice(confirmStockAdj.stockId, confirmStockAdj.percent)}
-                            disabled={isAdjusting}
-                            className="px-3 py-1 text-xs uppercase font-bold text-[#F0B429] border border-[#F0B429] bg-transparent hover:bg-[#F0B429]/10 rounded-[4px] transition-colors"
+                            disabled={triggeringTemplateId === t.id}
+                            onClick={() => handleTriggerTemplate(t.id)}
+                            className="flex-1 py-1 bg-[#22C55E] text-black font-bold text-[9px] rounded uppercase hover:bg-[#1eb053]"
                           >
                             CONFIRM
                           </button>
                           <button
                             type="button"
-                            onClick={handleCancelCustomAdj}
-                            className="px-2.5 py-1 text-[#888888] hover:text-white"
+                            onClick={() => setInlineConfirmTplId(null)}
+                            className="px-1.5 py-1 bg-[#2D3142] text-[#7B82A0] hover:text-[#F0F2FF] font-bold text-[9px] rounded"
                           >
-                            CANCEL
+                            X
+                          </button>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+
+            {/* Negative Templates */}
+            <div className="space-y-2">
+              <div className="text-[10px] font-mono font-bold text-[#EF4444] border-b border-[#2D3142] pb-1 uppercase flex items-center gap-1">
+                <ThumbsDown className="w-3 h-3" />
+                <span>NEGATIVE ({negativeTemplates.length})</span>
+              </div>
+
+              {negativeTemplates.map((t) => {
+                const isUsed = usedTemplateIds.includes(t.id);
+                const isConfirming = inlineConfirmTplId === t.id;
+
+                return (
+                  <div key={t.id} className="p-2 bg-[#0F1117] border border-[#2D3142] rounded-lg space-y-1 text-xs">
+                    <p className={`text-[11px] font-mono line-clamp-2 ${isUsed ? 'opacity-40 line-through text-[#7B82A0]' : 'text-[#F0F2FF]'}`}>
+                      {t.headline}
+                    </p>
+
+                    {!isConfirming ? (
+                      <div className="flex items-center justify-between pt-1">
+                        <span className="text-[9px] font-mono font-bold text-[#EF4444]">{t.effectPercent}%</span>
+                        <button
+                          type="button"
+                          onClick={() => setInlineConfirmTplId(t.id)}
+                          className="px-2 py-0.5 bg-[#EF4444]/15 border border-[#EF4444]/30 text-[#EF4444] text-[10px] font-mono font-bold rounded hover:bg-[#EF4444]/30 transition-colors"
+                        >
+                          SEND
+                        </button>
+                      </div>
+                    ) : (
+                      <div className="pt-1.5 border-t border-[#2D3142] space-y-1.5 animate-fadeIn font-mono">
+                        <div className="flex items-center justify-between text-[10px]">
+                          <span className="text-[#7B82A0]">Delay:</span>
+                          <input
+                            type="number"
+                            value={delaySeconds}
+                            onChange={(e) => setDelaySeconds(parseInt(e.target.value, 10) || 0)}
+                            className="w-12 h-5 bg-[#1A1D27] border border-[#2D3142] text-center rounded text-[10px] text-[#F0F2FF]"
+                          />
+                          <span className="text-[#7B82A0]">sec</span>
+                        </div>
+                        <div className="flex items-center gap-1">
+                          <button
+                            type="button"
+                            disabled={triggeringTemplateId === t.id}
+                            onClick={() => handleTriggerTemplate(t.id)}
+                            className="flex-1 py-1 bg-[#EF4444] text-white font-bold text-[9px] rounded uppercase hover:bg-[#d93838]"
+                          >
+                            CONFIRM
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => setInlineConfirmTplId(null)}
+                            className="px-1.5 py-1 bg-[#2D3142] text-[#7B82A0] hover:text-[#F0F2FF] font-bold text-[9px] rounded"
+                          >
+                            X
                           </button>
                         </div>
                       </div>
@@ -1011,202 +814,372 @@ export function AdminDashboard() {
             </div>
           </div>
 
-          {/* LIVE ACTIVITY BLOCK (BOTTOM 40%) */}
-          <div className="space-y-5 pt-4 border-t border-[#2A2A2A]">
-            <div className="space-y-3">
-              <span className="text-[10px] uppercase tracking-[0.1em] text-[#555555] font-bold block mt-5 mb-2">LIVE ACTIVITY</span>
-              <div className="border border-[#2A2A2A] rounded-[4px] bg-[#111111] p-3.5 space-y-2 max-h-[240px] overflow-y-auto text-xs">
-                {liveTradeFeed.length === 0 ? (
-                  <div className="py-8 text-center text-[#666666] italic">
-                    Awaiting player trade activity...
-                  </div>
-                ) : (
-                  liveTradeFeed.map((trade) => {
-                    const borderLeftClass = trade.isBankrupt
-                      ? 'border-l-2 border-l-[#F85149]'
-                      : trade.isTopUp
-                      ? 'border-l-2 border-l-[#F0B429]'
-                      : trade.action === 'NEWS'
-                      ? 'border-l-2 border-l-[#888888]'
-                      : 'border-l-2 border-l-[#3FB950]';
+          {/* Custom Breaking News Input */}
+          <div className="pt-3 border-t border-[#2D3142] space-y-2 font-mono">
+            <div className="text-[10px] font-bold text-[#F0B429] uppercase">CUSTOM BREAKING NEWS</div>
+            <textarea
+              rows={2}
+              placeholder="Write custom market announcement..."
+              value={newsMessage}
+              onChange={(e) => setNewsMessage(e.target.value)}
+              className="w-full bg-[#0F1117] border border-[#2D3142] rounded-lg p-2 text-xs text-[#F0F2FF] placeholder-[#7B82A0] focus:outline-none focus:border-[#F0B429]"
+            />
 
-                    return (
-                      <div
-                        key={trade.id}
-                        className={`flex items-center justify-between px-3 py-2 bg-[#141414] ${borderLeftClass} rounded-[2px] text-[11px]`}
-                      >
-                        <div className="flex items-center gap-2">
-                          <button
-                            type="button"
-                            onClick={() => handleOpenTraderDetail(trade.traderId || trade.userId)}
-                            className="text-white font-semibold hover:underline cursor-pointer"
-                          >
-                            {trade.traderName}
-                          </button>
-                          {trade.isBankrupt ? (
-                            <span className="text-[#F85149] font-bold uppercase">went bankrupt</span>
-                          ) : trade.isTopUp ? (
-                            <span className="text-[#F0B429] font-bold">gave +{fmtMoney(trade.price)} IC</span>
-                          ) : (
-                            <span className={trade.action === 'BUY' ? 'text-[#3FB950]' : 'text-[#F85149]'}>
-                              {trade.action.toLowerCase()} {trade.quantity} shares {trade.symbol}
-                            </span>
-                          )}
-                        </div>
-                        <div className="flex items-center gap-4">
-                          <span className="text-white font-bold font-mono">
-                            {trade.isBankrupt ? '0 IC' : trade.isTopUp ? '—' : `${fmtMoney(trade.price * trade.quantity)} IC`}
-                          </span>
-                          <span className="text-[#555555] font-mono text-[11px]">{new Date(trade.timestamp).toLocaleTimeString()}</span>
-                        </div>
-                      </div>
-                    );
-                  })
-                )}
+            {!customNewsConfirm ? (
+              <button
+                type="button"
+                disabled={sendingNews || !newsMessage.trim()}
+                onClick={() => setCustomNewsConfirm(true)}
+                className="w-full py-1.5 bg-[#F0B429] text-black font-bold text-xs rounded-lg uppercase hover:bg-[#d9a120] transition-colors disabled:opacity-50"
+              >
+                SEND CUSTOM NEWS
+              </button>
+            ) : (
+              <div className="flex items-center gap-2 animate-fadeIn">
+                <button
+                  type="button"
+                  disabled={sendingNews}
+                  onClick={handleCustomNewsSend}
+                  className="flex-1 py-1.5 bg-[#22C55E] text-black font-bold text-xs rounded-lg uppercase hover:bg-[#1eb053]"
+                >
+                  CONFIRM BROADCAST
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setCustomNewsConfirm(false)}
+                  className="px-3 py-1.5 bg-[#2D3142] text-[#7B82A0] hover:text-[#F0F2FF] font-bold text-xs rounded-lg"
+                >
+                  CANCEL
+                </button>
               </div>
+            )}
+          </div>
+        </div>
+
+        {/* Right Column (58%) — STOCKS */}
+        <div className="lg:col-span-7 bg-[#1A1D27] border border-[#2D3142] rounded-lg p-4 sm:p-5 shadow-lg flex flex-col">
+          <div className="text-[10px] uppercase font-mono tracking-[0.12em] text-[#7B82A0] font-bold mb-3 flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <span>STOCKS ({stocks.length})</span>
+              <input
+                type="text"
+                placeholder="Filter stocks..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="h-6 bg-[#0F1117] border border-[#2D3142] rounded px-2 text-[10px] text-[#F0F2FF] placeholder-[#7B82A0] focus:outline-none"
+              />
             </div>
 
-            {/* Compact Leaderboard Rows with 1px Separator & Top 3 Amber Borders */}
-            <div className="space-y-3 border-t border-[#2A2A2A] pt-4 mt-4">
-              <span className="text-[10px] uppercase tracking-[0.1em] text-[#555555] font-bold block mb-2">COMPACT LEADERBOARD</span>
-              <div className="border border-[#2A2A2A] rounded-[4px] bg-[#111111] p-3.5 space-y-2 max-h-[200px] overflow-y-auto text-xs">
-                {leaderboard.length === 0 ? (
-                  <div className="py-6 text-center text-[#666666] italic">
-                    Loading standings...
-                  </div>
-                ) : (
-                  leaderboard.map((entry, idx) => {
-                    const isTop3 = idx < 3;
-                    const rankColor = idx === 0 ? 'text-[#F0B429]' : isTop3 ? 'text-white' : 'text-[#666666]';
-
-                    return (
-                      <div
-                        key={entry.id || idx}
-                        className={`flex items-center justify-between px-3 py-1.5 bg-[#141414] rounded-[2px] text-[11px] ${
-                          isTop3 ? 'border-l border-l-[#F0B429]' : ''
-                        }`}
-                      >
-                        <div className="flex items-center gap-3">
-                          <span className={`font-mono font-bold w-5 ${rankColor}`}>#{idx + 1}</span>
-                          <button
-                            type="button"
-                            onClick={() => handleOpenTraderDetail(entry.id)}
-                            className="text-white font-semibold hover:underline cursor-pointer"
-                          >
-                            {entry.name}
-                          </button>
-                        </div>
-                        <div className="flex items-center gap-4">
-                          <span className="text-[#3FB950] font-mono font-bold text-xs">
-                            {fmtMoney(entry.totalNetWorth || entry.portfolioValue)} IC
-                          </span>
-                          <button
-                            type="button"
-                            onClick={() => handleOpenTraderDetail(entry.id)}
-                            className="text-[10px] uppercase font-bold text-[#F0B429] border border-[#F0B429] bg-transparent hover:bg-[#F0B429]/10 rounded-[4px] px-2 py-0.5 transition-colors"
-                          >
-                            AUDIT
-                          </button>
-                        </div>
-                      </div>
-                    );
-                  })
-                )}
-              </div>
+            {/* Sort Toggle */}
+            <div className="flex items-center gap-1 bg-[#0F1117] border border-[#2D3142] rounded p-0.5 text-[10px]">
+              <button
+                type="button"
+                onClick={() => setStockSortMode('CHANGE')}
+                className={`px-2 py-0.5 rounded font-mono font-bold ${
+                  stockSortMode === 'CHANGE' ? 'bg-[#F0B429] text-black' : 'text-[#7B82A0] hover:text-[#F0F2FF]'
+                }`}
+              >
+                % Change ▼
+              </button>
+              <button
+                type="button"
+                onClick={() => setStockSortMode('ALPHA')}
+                className={`px-2 py-0.5 rounded font-mono font-bold ${
+                  stockSortMode === 'ALPHA' ? 'bg-[#F0B429] text-black' : 'text-[#7B82A0] hover:text-[#F0F2FF]'
+                }`}
+              >
+                A-Z
+              </button>
             </div>
-
           </div>
 
+          {/* Compact Stock Rows List */}
+          <div className="space-y-2 flex-1 overflow-y-auto max-h-[500px] pr-1">
+            {loadingStocks ? (
+              <div className="py-12 text-center text-[#7B82A0] text-xs font-mono">Loading stocks...</div>
+            ) : filteredAndSortedStocks.length === 0 ? (
+              <div className="py-12 text-center text-[#7B82A0] text-xs font-mono">No stocks found matching search.</div>
+            ) : (
+              filteredAndSortedStocks.map((s) => {
+                const isPos = (s.percentChange || 0) >= 0;
+                const isAdjusting = adjustingStockId === s.id;
+                const isConfirmingCustom = confirmStockAdj?.stockId === s.id;
+
+                return (
+                  <div
+                    key={s.id}
+                    className="p-2.5 bg-[#0F1117] border border-[#2D3142] rounded-lg hover:bg-[#1F2235] transition-colors space-y-2 font-mono"
+                  >
+                    <div className="flex items-center justify-between text-xs">
+                      <div className="flex items-center gap-2">
+                        <span className="font-extrabold text-[#F0F2FF]">{s.symbol}</span>
+                        <span className="text-[#7B82A0] text-[11px] hidden sm:inline">{s.name}</span>
+                      </div>
+
+                      <div className="flex items-center gap-3">
+                        <span className="font-bold text-[#F0F2FF]">{fmtMoney(s.currentPrice)} IC</span>
+                        <span className={`text-[11px] font-bold ${isPos ? 'text-[#22C55E]' : 'text-[#EF4444]'}`}>
+                          {isPos ? '▲+' : '▼'}{s.percentChange || 0}%
+                        </span>
+                      </div>
+                    </div>
+
+                    {/* Stock Price Adjustment Row */}
+                    <div className="flex items-center justify-between gap-1.5 pt-1.5 border-t border-[#2D3142]/60 text-[10px]">
+                      {/* Presets */}
+                      <div className="flex items-center gap-1">
+                        {[10, 25, -10, -25].map((pct) => (
+                          <button
+                            key={pct}
+                            disabled={isAdjusting}
+                            onClick={() => executeStockAdjust(s.id, pct)}
+                            className={`px-1.5 py-0.5 rounded font-bold transition-all ${
+                              pct > 0
+                                ? 'bg-[#22C55E]/15 border border-[#22C55E]/30 text-[#22C55E] hover:bg-[#22C55E]/30'
+                                : 'bg-[#EF4444]/15 border border-[#EF4444]/30 text-[#EF4444] hover:bg-[#EF4444]/30'
+                            }`}
+                          >
+                            {pct > 0 ? `+${pct}%` : `${pct}%`}
+                          </button>
+                        ))}
+                      </div>
+
+                      {/* Custom % Apply */}
+                      {!isConfirmingCustom ? (
+                        <div className="flex items-center gap-1">
+                          <input
+                            type="number"
+                            placeholder="___%"
+                            value={customPercents[s.id] || ''}
+                            onChange={(e) =>
+                              setCustomPercents({ ...customPercents, [s.id]: e.target.value })
+                            }
+                            className="w-14 h-5 bg-[#1A1D27] border border-[#2D3142] text-center rounded text-[10px] text-[#F0F2FF] focus:outline-none focus:border-[#F0B429]"
+                          />
+                          <button
+                            type="button"
+                            onClick={() => handleCustomApplyClick(s.id)}
+                            className="px-2 py-0.5 bg-[#F0B429]/20 border border-[#F0B429]/40 text-[#F0B429] font-bold rounded hover:bg-[#F0B429]/40 transition-colors"
+                          >
+                            APPLY
+                          </button>
+                        </div>
+                      ) : (
+                        <div className="flex items-center gap-1 animate-fadeIn">
+                          <span className="text-[#F0B429] font-bold">Apply {confirmStockAdj.percent}%?</span>
+                          <button
+                            type="button"
+                            onClick={() => executeStockAdjust(s.id, confirmStockAdj.percent)}
+                            className="px-2 py-0.5 bg-[#22C55E] text-black font-bold rounded uppercase hover:bg-[#1eb053]"
+                          >
+                            YES
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => setConfirmStockAdj(null)}
+                            className="px-1.5 py-0.5 bg-[#2D3142] text-[#7B82A0] hover:text-[#F0F2FF] font-bold rounded"
+                          >
+                            NO
+                          </button>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                );
+              })
+            )}
+          </div>
         </div>
 
       </div>
 
-      {/* Admin Break Setup Dialog */}
+      {/* ROW 3: TWO COLUMNS SIDE BY SIDE (LIVE ACTIVITY 42% | LEADERBOARD 58%) */}
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+        
+        {/* Left Column (42%) — LIVE ACTIVITY */}
+        <div className="lg:col-span-5 bg-[#1A1D27] border border-[#2D3142] rounded-lg p-4 sm:p-5 shadow-lg flex flex-col">
+          <div className="text-[10px] uppercase font-mono tracking-[0.12em] text-[#7B82A0] font-bold mb-3 flex items-center justify-between">
+            <div className="flex items-center gap-1.5">
+              <Activity className="w-3.5 h-3.5 text-[#F0B429]" />
+              <span>LIVE ACTIVITY STREAM</span>
+            </div>
+            <span className="text-[9px] text-[#7B82A0]">Real-time events</span>
+          </div>
+
+          <div className="space-y-2 flex-1 overflow-y-auto max-h-[350px] pr-1 font-mono text-xs">
+            {liveTradeFeed.length === 0 ? (
+              <div className="py-12 text-center text-[#7B82A0] text-xs italic">
+                Awaiting live trades & admin broadcasts...
+              </div>
+            ) : (
+              liveTradeFeed.map((item) => {
+                const borderClass = item.isBankrupt
+                  ? 'border-l-4 border-l-[#EF4444]'
+                  : item.isTopUp
+                  ? 'border-l-4 border-l-[#F0B429]'
+                  : 'border-l-4 border-l-[#22C55E]';
+
+                return (
+                  <div
+                    key={item.id}
+                    className={`p-2.5 bg-[#0F1117] border border-[#2D3142] ${borderClass} rounded-r-lg space-y-1`}
+                  >
+                    <div className="flex items-center justify-between text-[11px]">
+                      <span
+                        onClick={() => item.traderId && handleOpenTraderModal(item.traderId)}
+                        className="font-bold text-[#F0F2FF] hover:text-[#F0B429] cursor-pointer underline decoration-dotted"
+                      >
+                        {item.traderName || 'Trader'}
+                      </span>
+                      <span className="text-[10px] text-[#7B82A0]">
+                        {new Date(item.timestamp || Date.now()).toLocaleTimeString()}
+                      </span>
+                    </div>
+
+                    <div className="text-[11px] text-[#7B82A0]">
+                      {item.action || 'Trade executed'}: <span className="font-bold text-[#F0F2FF]">{item.quantity} {item.symbol}</span> @ <span className="font-bold text-[#22C55E]">{fmtMoney(item.price)} IC</span>
+                    </div>
+                  </div>
+                );
+              })
+            )}
+          </div>
+        </div>
+
+        {/* Right Column (58%) — LEADERBOARD */}
+        <div className="lg:col-span-7 bg-[#1A1D27] border border-[#2D3142] rounded-lg p-4 sm:p-5 shadow-lg flex flex-col">
+          <div className="text-[10px] uppercase font-mono tracking-[0.12em] text-[#7B82A0] font-bold mb-3 flex items-center justify-between">
+            <div className="flex items-center gap-1.5">
+              <Trophy className="w-3.5 h-3.5 text-[#F0B429]" />
+              <span>TOURNAMENT LEADERBOARD ({leaderboard.length})</span>
+            </div>
+            <button
+              type="button"
+              onClick={fetchLeaderboard}
+              disabled={loadingLeaderboard}
+              className="text-[10px] text-[#F0B429] hover:underline font-mono"
+            >
+              REFRESH
+            </button>
+          </div>
+
+          <div className="space-y-2 flex-1 overflow-y-auto max-h-[350px] pr-1 font-mono text-xs">
+            {loadingLeaderboard ? (
+              <div className="py-12 text-center text-[#7B82A0] text-xs">Loading standings...</div>
+            ) : leaderboard.length === 0 ? (
+              <div className="py-12 text-center text-[#7B82A0] text-xs italic">No active traders found.</div>
+            ) : (
+              leaderboard.map((entry) => {
+                const isTop1 = entry.rank === 1;
+                const isTop3 = entry.rank <= 3;
+
+                return (
+                  <div
+                    key={entry.id || entry.rank}
+                    className={`p-2.5 bg-[#0F1117] border ${
+                      isTop3 ? 'border-l-4 border-l-[#F0B429] border-[#2D3142]' : 'border-[#2D3142]'
+                    } rounded-lg flex items-center justify-between hover:bg-[#1F2235] transition-colors`}
+                  >
+                    <div className="flex items-center gap-3">
+                      <span className={`font-mono font-extrabold text-sm w-6 ${isTop1 ? 'text-[#F0B429]' : 'text-[#7B82A0]'}`}>
+                        #{entry.rank}
+                      </span>
+                      <div>
+                        <span className="font-bold text-[#F0F2FF] block text-xs">{entry.name}</span>
+                        <span className="text-[10px] text-[#7B82A0] block">{entry.email}</span>
+                      </div>
+                    </div>
+
+                    <div className="flex items-center gap-4">
+                      <div className="text-right">
+                        <span className="text-xs font-extrabold text-[#22C55E] block">
+                          {fmtMoney(entry.totalPortfolioValue)} IC
+                        </span>
+                        <span className="text-[9.5px] text-[#7B82A0] block">
+                          Cash: {fmtMoney(entry.walletBalance)} IC
+                        </span>
+                      </div>
+
+                      <button
+                        type="button"
+                        onClick={() => handleOpenTraderModal(entry.id)}
+                        className="px-2.5 py-1 bg-[#F0B429]/15 border border-[#F0B429]/30 text-[#F0B429] text-[10px] font-mono font-bold rounded hover:bg-[#F0B429]/30 transition-colors"
+                      >
+                        VIEW
+                      </button>
+                    </div>
+                  </div>
+                );
+              })
+            )}
+          </div>
+        </div>
+
+      </div>
+
+      {/* Break Modal */}
       {showBreakModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 font-mono animate-fadeIn">
-          <div className="w-full max-w-md bg-[#0D0D0D] border border-[#2A2A2A] rounded-[4px] p-5 space-y-4 text-white">
-            <div className="flex items-center justify-between border-b border-[#2A2A2A] pb-3">
-              <span className="text-[11px] uppercase tracking-[0.08em] text-[#666666]">START REFRESHMENT BREAK</span>
-              <button
-                type="button"
-                onClick={() => setShowBreakModal(false)}
-                className="text-[#888888] hover:text-white font-bold text-sm"
-              >
-                X
-              </button>
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 font-mono animate-fadeIn backdrop-blur-xs">
+          <div className="bg-[#1A1D27] border border-[#2D3142] rounded-lg p-6 max-w-md w-full space-y-4 text-[#F0F2FF] shadow-2xl">
+            <div className="flex items-center justify-between border-b border-[#2D3142] pb-3">
+              <h3 className="text-sm font-bold text-[#F0B429] uppercase flex items-center gap-1.5">
+                <Coffee className="w-4 h-4" />
+                <span>PAUSE TRADING FOR BREAK</span>
+              </h3>
+              <button onClick={() => setShowBreakModal(false)} className="text-[#7B82A0] hover:text-[#F0F2FF]">✕</button>
             </div>
 
-            <form onSubmit={handleStartBreak} className="space-y-4 text-xs">
+            <div className="space-y-3 text-xs">
               <div>
-                <label className="text-[10px] uppercase text-[#666666] block mb-2 font-bold">
-                  BREAK DURATION (MINUTES)
-                </label>
-                <div className="grid grid-cols-4 gap-2 mb-2">
-                  {[5, 10, 15, 20].map((m) => (
-                    <button
-                      key={m}
-                      type="button"
-                      onClick={() => setBreakMinutes(m)}
-                      className={`py-1.5 text-xs font-bold rounded-[4px] border transition-colors ${
-                        breakMinutes === m
-                          ? 'border-[#F0B429] text-[#F0B429]'
-                          : 'border-[#3A3A3A] text-white hover:bg-white/10'
-                      }`}
-                    >
-                      {m} Mins
-                    </button>
-                  ))}
-                </div>
+                <label className="text-[10px] text-[#7B82A0] uppercase block mb-1">Break Duration (Minutes):</label>
                 <input
                   type="number"
                   min="1"
                   max="60"
                   value={breakMinutes}
                   onChange={(e) => setBreakMinutes(parseInt(e.target.value, 10) || 10)}
-                  className="w-full px-3 py-2 bg-[#111111] border border-[#2A2A2A] rounded-[4px] text-xs text-white font-mono focus:outline-none focus:border-[#F0B429]"
-                  placeholder="Custom Minutes (e.g. 15)"
+                  className="w-full h-8 bg-[#0F1117] border border-[#2D3142] rounded-md px-2.5 text-xs text-[#F0F2FF] focus:outline-none focus:border-[#F0B429]"
                 />
               </div>
 
               <div>
-                <label className="text-[10px] uppercase text-[#666666] block mb-2 font-bold">
-                  TRADER ANNOUNCEMENT / NOTE
-                </label>
+                <label className="text-[10px] text-[#7B82A0] uppercase block mb-1">Break Announcement Note:</label>
                 <textarea
-                  rows="3"
+                  rows={3}
                   value={breakNote}
                   onChange={(e) => setBreakNote(e.target.value)}
-                  className="w-full px-3 py-2 bg-[#111111] border border-[#2A2A2A] rounded-[4px] text-xs font-mono text-white resize-none focus:outline-none focus:border-[#F0B429]"
-                  placeholder="e.g. Refreshment Break — Grab snacks, water, and take a quick rest!"
+                  className="w-full bg-[#0F1117] border border-[#2D3142] rounded-md p-2 text-xs text-[#F0F2FF] focus:outline-none focus:border-[#F0B429]"
                 />
               </div>
+            </div>
 
-              <div className="flex items-center gap-3 pt-2">
-                <button
-                  type="button"
-                  onClick={() => setShowBreakModal(false)}
-                  className="flex-1 py-2 text-xs font-bold rounded-[4px] border border-[#3A3A3A] text-[#888888] hover:text-white"
-                >
-                  CANCEL
-                </button>
-                <button
-                  type="submit"
-                  className="flex-1 py-2 text-xs font-bold uppercase rounded-[4px] border border-[#F0B429] text-[#F0B429] hover:bg-[#F0B429]/10"
-                >
-                  START {breakMinutes}M BREAK
-                </button>
-              </div>
-            </form>
+            <div className="flex items-center justify-end gap-2 pt-2 border-t border-[#2D3142]">
+              <button
+                type="button"
+                onClick={() => setShowBreakModal(false)}
+                className="px-3 py-1.5 rounded-lg bg-[#2D3142] text-[#7B82A0] hover:text-[#F0F2FF] text-xs font-bold"
+              >
+                CANCEL
+              </button>
+              <button
+                type="button"
+                onClick={handlePauseSession}
+                className="px-4 py-1.5 rounded-lg bg-[#F0B429] text-black text-xs font-bold uppercase hover:bg-[#d9a120]"
+              >
+                LOCK FLOOR & PAUSE
+              </button>
+            </div>
           </div>
         </div>
       )}
 
-      {/* Admin Trader Drill-Down Slide-Over Audit */}
+      {/* Admin Trader Drill-Down Slide-Over Modal */}
       <AdminTraderDetailModal
         traderId={selectedTraderId}
         isOpen={isTraderModalOpen}
         onClose={() => setIsTraderModalOpen(false)}
       />
+
     </div>
   );
 }

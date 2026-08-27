@@ -21,12 +21,16 @@ router.post('/admin/session/start', authenticateToken, requireAdmin, async (req,
     const durationMinutes = parseInt(req.body.durationMinutes, 10) || 180;
     const liquidationBufferMinutes = parseInt(req.body.liquidationBufferMinutes, 10) || 5;
     const macroCycleIntervalMinutes = parseInt(req.body.macroCycleIntervalMinutes, 10) || 15;
+    const volatilityLevel = req.body.volatilityLevel || 'MEDIUM';
+    const volatilityCustomPercent = req.body.volatilityCustomPercent ? parseFloat(req.body.volatilityCustomPercent) : null;
     const force = Boolean(req.body.force);
 
     const session = await startNewSession({
       durationMinutes,
       liquidationBufferMinutes,
       macroCycleIntervalMinutes,
+      volatilityLevel,
+      volatilityCustomPercent,
       force
     });
 

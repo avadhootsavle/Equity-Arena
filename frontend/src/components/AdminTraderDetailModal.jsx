@@ -126,22 +126,22 @@ export function AdminTraderDetailModal({ traderId, isOpen, onClose }) {
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-end bg-black/80 font-mono animate-fadeIn">
-      <div className="w-full max-w-2xl h-full bg-[#0D0D0D] border-l border-[#2A2A2A] p-6 space-y-6 overflow-y-auto relative text-white">
+    <div className="fixed inset-0 z-50 flex items-center justify-end bg-black/80 font-sans animate-fadeIn backdrop-blur-xs">
+      <div className="w-full max-w-2xl h-full bg-[#0F1117] border-l border-[#2D3142] p-6 space-y-6 overflow-y-auto relative text-[#F0F2FF]">
         
         {/* Toast Popup inside modal */}
         {toastMsg && (
-          <div className="p-3 bg-[#3FB950]/10 border border-[#3FB950] text-[#3FB950] rounded-[4px] text-xs font-bold flex items-center gap-2">
+          <div className="p-3 bg-[#22C55E]/10 border border-[#22C55E]/40 text-[#22C55E] rounded-lg text-xs font-bold flex items-center gap-2">
             <CheckCircle2 className="w-4 h-4 flex-shrink-0" />
             <span>{toastMsg}</span>
           </div>
         )}
 
         {/* Close Button & Header */}
-        <div className="flex items-center justify-between border-b border-[#2A2A2A] pb-4">
+        <div className="flex items-center justify-between border-b border-[#2D3142] pb-4">
           <div>
-            <div className="text-[11px] uppercase tracking-[0.08em] text-[#666666]">TRADER MONITORING AUDIT</div>
-            <h2 className="text-base font-bold text-white mt-0.5">
+            <div className="text-[10px] uppercase font-mono tracking-[0.12em] text-[#7B82A0]">TRADER MONITORING AUDIT</div>
+            <h2 className="text-lg font-extrabold text-[#F0F2FF] mt-0.5">
               {data?.trader?.name || 'Trader Audit'}
             </h2>
           </div>
@@ -177,7 +177,7 @@ export function AdminTraderDetailModal({ traderId, isOpen, onClose }) {
           <div className="space-y-6 text-xs">
             
             {/* Top Metric Strip */}
-            <div className="grid grid-cols-3 gap-3 border border-[#2A2A2A] rounded-[4px] bg-[#111111] p-3">
+            <div className="grid grid-cols-3 gap-3 bg-[#1A1D27] border border-[#2D3142] rounded-lg p-3">
               <div>
                 <span className="text-[10px] uppercase text-[#666666] block">TRADER NAME</span>
                 <span className="text-sm font-bold text-white block truncate">{data.trader.name}</span>
@@ -259,7 +259,7 @@ export function AdminTraderDetailModal({ traderId, isOpen, onClose }) {
               </div>
 
               {data.holdings.length === 0 ? (
-                <div className="p-4 border border-[#2A2A2A] rounded-[4px] bg-[#111111] text-center text-[#666666] italic">
+                <div className="p-4 bg-[#1A1D27] border border-[#2D3142] rounded-lg text-center text-[#666666] italic">
                   No active stock positions held by this trader
                 </div>
               ) : (
@@ -378,7 +378,7 @@ export function AdminTraderDetailModal({ traderId, isOpen, onClose }) {
             {/* Transactions Section */}
             <div className="space-y-2">
               <div className="text-[11px] uppercase tracking-[0.08em] text-[#666666]">TRANSACTION HISTORY ({data.transactions.length})</div>
-              <div className="border border-[#2A2A2A] rounded-[4px] bg-[#111111] p-2 space-y-1.5 max-h-64 overflow-y-auto">
+              <div className="bg-[#1A1D27] border border-[#2D3142] rounded-lg p-2 space-y-1.5 max-h-64 overflow-y-auto">
                 {data.transactions.length === 0 ? (
                   <div className="py-4 text-center text-[#666666] italic">
                     No trades executed yet

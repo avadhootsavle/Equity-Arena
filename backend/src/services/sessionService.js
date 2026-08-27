@@ -7,6 +7,9 @@ const prisma = new PrismaClient();
 /**
  * Server-authoritative session state retriever
  */
+let activeVolatilityLevel = 'MEDIUM';
+let activeVolatilityCustomPercent = null;
+
 async function getCurrentSession() {
   let session = await prisma.session.findFirst({
     where: {
@@ -24,6 +27,8 @@ async function getCurrentSession() {
       durationMinutes: 180,
       liquidationBufferMinutes: 5,
       macroCycleIntervalMinutes: 15,
+      volatilityLevel: activeVolatilityLevel,
+      volatilityCustomPercent: activeVolatilityCustomPercent,
       isLiquidated: false,
       isTradingLocked: true,
       isPaused: false,
@@ -52,6 +57,8 @@ async function getCurrentSession() {
       breakRemainingSeconds,
       breakDurationMinutes: session.breakDurationMinutes || 10,
       breakNote: session.breakNote || "☕ Refreshment Break — Grab snacks, water, and take a quick rest!",
+      volatilityLevel: activeVolatilityLevel,
+      volatilityCustomPercent: activeVolatilityCustomPercent,
       isLiquidated: false,
       isTradingLocked: true,
       isPaused: true
@@ -69,6 +76,8 @@ async function getCurrentSession() {
     breakRemainingSeconds: 0,
     breakDurationMinutes: session.breakDurationMinutes || 10,
     breakNote: session.breakNote || '',
+    volatilityLevel: activeVolatilityLevel,
+    volatilityCustomPercent: activeVolatilityCustomPercent,
     isLiquidated,
     isTradingLocked,
     isPaused: false
@@ -116,14 +125,21 @@ async function startNewSession(options = {}) {
   let durationMins = 180;
   let bufferMins = 5;
   let macroMins = 15;
+  let volLevel = 'MEDIUM';
+  let volCustomPct = null;
 
   if (typeof options === 'object' && options !== null) {
     if (options.durationMinutes !== undefined) durationMins = parseInt(options.durationMinutes, 10) || 180;
     if (options.liquidationBufferMinutes !== undefined) bufferMins = parseInt(options.liquidationBufferMinutes, 10) || 5;
     if (options.macroCycleIntervalMinutes !== undefined) macroMins = parseInt(options.macroCycleIntervalMinutes, 10) || 15;
+    if (options.volatilityLevel !== undefined) volLevel = options.volatilityLevel || 'MEDIUM';
+    if (options.volatilityCustomPercent !== undefined) volCustomPct = options.volatilityCustomPercent || null;
   } else if (typeof options === 'number') {
     durationMins = options * 60;
   }
+
+  activeVolatilityLevel = volLevel;
+  activeVolatilityCustomPercent = volCustomPct;
 
   const now = new Date();
   const endTime = new Date(now.getTime() + durationMins * 60 * 1000);
@@ -154,11 +170,14 @@ async function startNewSession(options = {}) {
 
   const remainingSeconds = Math.floor((endTime.getTime() - now.getTime()) / 1000);
 
-  // Dynamically update market ticker macro cycle base interval
+  // Dynamically update market ticker macro cycle base interval & volatility
   try {
-    const { setBaseMacroIntervalMinutes } = require('./marketTicker');
+    const { setBaseMacroIntervalMinutes, setSessionVolatility } = require('./marketTicker');
     if (typeof setBaseMacroIntervalMinutes === 'function') {
       setBaseMacroIntervalMinutes(macroMins);
+    }
+    if (typeof setSessionVolatility === 'function') {
+      setSessionVolatility(volLevel, volCustomPct);
     }
   } catch (err) {
     // Ignore fallback
@@ -171,6 +190,8 @@ async function startNewSession(options = {}) {
     durationMinutes: durationMins,
     liquidationBufferMinutes: bufferMins,
     macroCycleIntervalMinutes: macroMins,
+    volatilityLevel: volLevel,
+    volatilityCustomPercent: volCustomPct,
     status: 'ACTIVE',
     remainingSeconds
   });
@@ -178,6 +199,8 @@ async function startNewSession(options = {}) {
   return {
     ...newSession,
     remainingSeconds,
+    volatilityLevel: volLevel,
+    volatilityCustomPercent: volCustomPct,
     isLiquidated: false,
     isTradingLocked: false,
     isPaused: false
