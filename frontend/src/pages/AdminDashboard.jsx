@@ -296,7 +296,7 @@ export function AdminDashboard() {
           force: true
         })
       });
-      adminSession.refetchSession();
+      adminSession?.refetchSession?.();
       showToast(`Started ${duration}-minute session (Auto-liquidate: ${buffer}m, Macro: ${macro}m, Volatility: ${volatilityLevel})!`, 'success');
     } catch (err) {
       showToast(err.message || 'Failed to start session', 'error');
@@ -314,7 +314,7 @@ export function AdminDashboard() {
           note: breakNote
         })
       });
-      adminSession.refetchSession();
+      adminSession?.refetchSession?.();
       setShowBreakModal(false);
       showToast(`Market paused for ${breakMinutes}-minute break!`, 'success');
     } catch (err) {
@@ -325,7 +325,7 @@ export function AdminDashboard() {
   const handleResumeSession = async () => {
     try {
       await apiFetch('/admin/session/resume', { method: 'POST' });
-      adminSession.refetchSession();
+      adminSession?.refetchSession?.();
       showToast('Market resumed! Trading unlocked.', 'success');
     } catch (err) {
       showToast(err.message || 'Failed to resume session', 'error');
@@ -336,7 +336,7 @@ export function AdminDashboard() {
     if (!window.confirm('Are you sure you want to end the current trading session? All remaining positions will lock.')) return;
     try {
       await apiFetch('/admin/session/stop', { method: 'POST' });
-      adminSession.refetchSession();
+      adminSession?.refetchSession?.();
       showToast('Trading session stopped. Market closed.', 'success');
     } catch (err) {
       showToast(err.message || 'Failed to stop session', 'error');
