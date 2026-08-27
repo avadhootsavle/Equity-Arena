@@ -1,17 +1,37 @@
 import React, { useState, useEffect } from 'react';
 import { apiFetch } from '../services/api';
-import { RefreshCw, AlertCircle } from 'lucide-react';
+import { RefreshCw, AlertCircle, CheckCircle2 } from 'lucide-react';
+
+const fmtMoney = (n, d = 2) =>
+  Number(n || 0).toLocaleString('en-US', {
+    minimumFractionDigits: d,
+    maximumFractionDigits: d
+  });
 
 export function AdminTraderDetailModal({ traderId, isOpen, onClose }) {
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const [toastMsg, setToastMsg] = useState('');
+
+  // Top-Up state
+  const [topUpAmount, setTopUpAmount] = useState('');
+  const [isTopUpLoading, setIsTopUpLoading] = useState(false);
+
+  // Stock adjustment state
+  const [customPercents, setCustomPercents] = useState({});
+  const [adjustingStockId, setAdjustingStockId] = useState(null);
 
   useEffect(() => {
     if (traderId && isOpen) {
       fetchTraderDetail(traderId);
     }
   }, [traderId, isOpen]);
+
+  const showToast = (msg) => {
+    setToastMsg(msg);
+    setTimeout(() => setToastMsg(''), 4000);
+  };
 
   const fetchTraderDetail = async (id) => {
     setLoading(true);
@@ -26,12 +46,61 @@ export function AdminTraderDetailModal({ traderId, isOpen, onClose }) {
     }
   };
 
+  // Fix 4: Admin manual top-up handler
+  const handleGiveTopUp = async () => {
+    const amount = parseFloat(topUpAmount);
+    if (isNaN(amount) || amount <= 0) return;
+
+    setIsTopUpLoading(true);
+    try {
+      const res = await apiFetch(`/admin/trader/${traderId}/topup`, {
+        method: 'POST',
+        body: JSON.stringify({ amount })
+      });
+
+      showToast(res.message || `Added ${amount.toLocaleString()} IC to wallet`);
+      setTopUpAmount('');
+      fetchTraderDetail(traderId);
+    } catch (err) {
+      setError(err.message || 'Failed to top-up wallet');
+    } finally {
+      setIsTopUpLoading(false);
+    }
+  };
+
+  // Fix 2: Global stock adjustment inside trader detail view
+  const handleAdjustStockPrice = async (stockId, percent) => {
+    setAdjustingStockId(stockId);
+    try {
+      const res = await apiFetch(`/admin/stock/${stockId}/adjust`, {
+        method: 'POST',
+        body: JSON.stringify({ percent })
+      });
+      const sign = percent >= 0 ? '+' : '';
+      showToast(`${res.stock.symbol} adjusted ${sign}${percent}% → ${res.stock.currentPrice.toFixed(2)} IC`);
+      setCustomPercents((prev) => ({ ...prev, [stockId]: '' }));
+      fetchTraderDetail(traderId);
+    } catch (err) {
+      setError(err.message || 'Failed to adjust stock price');
+    } finally {
+      setAdjustingStockId(null);
+    }
+  };
+
   if (!isOpen) return null;
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-end bg-black/80 font-mono animate-fadeIn">
       <div className="w-full max-w-2xl h-full bg-[#0D0D0D] border-l border-[#2A2A2A] p-6 space-y-6 overflow-y-auto relative text-white">
         
+        {/* Toast Popup inside modal */}
+        {toastMsg && (
+          <div className="p-3 bg-[#3FB950]/10 border border-[#3FB950] text-[#3FB950] rounded-[4px] text-xs font-bold flex items-center gap-2">
+            <CheckCircle2 className="w-4 h-4 flex-shrink-0" />
+            <span>{toastMsg}</span>
+          </div>
+        )}
+
         {/* Close Button & Header */}
         <div className="flex items-center justify-between border-b border-[#2A2A2A] pb-4">
           <div>
@@ -82,59 +151,135 @@ export function AdminTraderDetailModal({ traderId, isOpen, onClose }) {
               <div>
                 <span className="text-[10px] uppercase text-[#666666] block">CASH BALANCE</span>
                 <span className="text-sm font-bold text-[#3FB950] block mt-0.5">
-                  {data.trader.walletBalance.toLocaleString('en-US', { minimumFractionDigits: 2 })} IC
+                  {fmtMoney(data.trader.walletBalance)} IC
                 </span>
               </div>
 
               <div>
                 <span className="text-[10px] uppercase text-[#666666] block">PORTFOLIO NET WORTH</span>
                 <span className="text-sm font-bold text-white block mt-0.5">
-                  {data.trader.totalPortfolioValue.toLocaleString('en-US', { minimumFractionDigits: 2 })} IC
+                  {fmtMoney(data.trader.totalPortfolioValue)} IC
                 </span>
               </div>
             </div>
 
-            {/* Holdings Section */}
-            <div className="space-y-2">
-              <div className="text-[11px] uppercase tracking-[0.08em] text-[#666666]">ACTIVE HOLDINGS ({data.holdings.length})</div>
-              <div className="border border-[#2A2A2A] rounded-[4px] overflow-hidden">
-                <table className="w-full text-left border-collapse text-xs">
-                  <thead>
-                    <tr className="border-b border-[#2A2A2A] bg-[#111111] text-[#666666] uppercase text-[10px]">
-                      <th className="py-2 px-3">Stock</th>
-                      <th className="py-2 px-3 text-right">Shares</th>
-                      <th className="py-2 px-3 text-right">Avg Buy</th>
-                      <th className="py-2 px-3 text-right">P/L</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-[#1F1F1F]">
-                    {data.holdings.length === 0 ? (
-                      <tr>
-                        <td colSpan={4} className="py-4 text-center text-[#666666] italic">
-                          No active stock positions held
-                        </td>
-                      </tr>
-                    ) : (
-                      data.holdings.map((h) => {
-                        const isPos = h.unrealizedPL >= 0;
-                        return (
-                          <tr key={h.id} className="hover:bg-[#161616]">
-                            <td className="py-2 px-3">
-                              <span className="font-bold text-white">{h.symbol}</span>
-                              <span className="text-[10px] text-[#888888] ml-2">{h.name}</span>
-                            </td>
-                            <td className="py-2 px-3 text-right text-white">{h.quantity}</td>
-                            <td className="py-2 px-3 text-right text-[#888888]">{h.avgBuyPrice.toFixed(2)} IC</td>
-                            <td className={`py-2 px-3 text-right font-bold ${isPos ? 'text-[#3FB950]' : 'text-[#F85149]'}`}>
-                              {isPos ? '+' : ''}{h.unrealizedPL.toFixed(2)} IC
-                            </td>
-                          </tr>
-                        );
-                      })
-                    )}
-                  </tbody>
-                </table>
+            {/* FIX 4: MANUAL IC TOP-UP CONTROL */}
+            <div className="p-3 bg-[#111111] border border-[#2A2A2A] rounded-[4px] flex items-center justify-between gap-3 flex-wrap">
+              <span className="text-[11px] font-mono font-bold text-[#F0B429] uppercase">GIVE EXTRA COINS:</span>
+              <div className="flex items-center gap-2 flex-1 justify-end">
+                <input
+                  type="number"
+                  min="1"
+                  placeholder="Amount in IC"
+                  value={topUpAmount}
+                  onChange={(e) => setTopUpAmount(e.target.value)}
+                  className="w-36 h-[32px] bg-[#0D0D0D] border border-[#3A3A3A] rounded-[4px] px-2.5 text-xs text-white focus:outline-none focus:border-[#F0B429]"
+                />
+                <button
+                  type="button"
+                  disabled={isTopUpLoading || !topUpAmount || parseFloat(topUpAmount) <= 0}
+                  onClick={handleGiveTopUp}
+                  className="h-[32px] px-4 text-xs uppercase font-bold text-[#F0B429] border border-[#F0B429] rounded-[4px] hover:bg-[#F0B429]/10 transition-colors disabled:opacity-50"
+                >
+                  {isTopUpLoading ? 'GIVING...' : 'GIVE'}
+                </button>
               </div>
+            </div>
+
+            {/* FIX 2: ACTIVE HOLDINGS WITH PER-HOLDING PRICE CONTROLS & P/L */}
+            <div className="space-y-2">
+              <div className="text-[11px] uppercase tracking-[0.08em] text-[#666666]">
+                ACTIVE HOLDINGS & STOCK PRICE CONTROLS ({data.holdings.length})
+              </div>
+
+              {data.holdings.length === 0 ? (
+                <div className="p-4 border border-[#2A2A2A] rounded-[4px] bg-[#111111] text-center text-[#666666] italic">
+                  No active stock positions held by this trader
+                </div>
+              ) : (
+                <div className="space-y-2">
+                  {data.holdings.map((h) => {
+                    const isPos = h.unrealizedPL >= 0;
+                    const isAdjusting = adjustingStockId === h.stockId;
+
+                    return (
+                      <div key={h.id} className="p-3 bg-[#111111] border border-[#2A2A2A] rounded-[4px] space-y-2">
+                        {/* Holding Row */}
+                        <div className="flex items-center justify-between text-xs">
+                          <div>
+                            <span className="font-bold text-white text-sm mr-2">{h.symbol}</span>
+                            <span className="text-[#888888] text-[11px]">{h.name}</span>
+                          </div>
+                          <div className="text-right">
+                            <span className="text-white font-bold">{h.quantity} shares @ {fmtMoney(h.currentPrice)} IC</span>
+                            <span className="block text-[10px] text-[#888888]">Avg Cost: {fmtMoney(h.avgBuyPrice)} IC</span>
+                          </div>
+                        </div>
+
+                        {/* P/L Metrics for this trader on this stock */}
+                        <div className="flex items-center justify-between text-[11px] font-mono border-t border-[#1F1F1F] pt-2">
+                          <span className="text-[#666666]">Holding P/L:</span>
+                          <span className={`font-bold ${isPos ? 'text-[#3FB950]' : 'text-[#F85149]'}`}>
+                            {isPos ? `+${fmtMoney(h.unrealizedPL)}` : fmtMoney(h.unrealizedPL)} IC
+                          </span>
+                        </div>
+
+                        {/* Direct Stock Adjustment Controls inside Trader Detail View */}
+                        <div className="flex items-center gap-1.5 flex-wrap pt-1">
+                          <span className="text-[10px] uppercase text-[#666666] mr-1">ADJUST PRICE:</span>
+                          <button
+                            type="button"
+                            disabled={isAdjusting}
+                            onClick={() => handleAdjustStockPrice(h.stockId, 10)}
+                            className="h-[26px] px-2 text-[10px] font-bold rounded-[4px] border border-[#3A3A3A] text-white hover:bg-white/10"
+                          >
+                            +10%
+                          </button>
+                          <button
+                            type="button"
+                            disabled={isAdjusting}
+                            onClick={() => handleAdjustStockPrice(h.stockId, 25)}
+                            className="h-[26px] px-2 text-[10px] font-bold rounded-[4px] border border-[#3A3A3A] text-white hover:bg-white/10"
+                          >
+                            +25%
+                          </button>
+                          <button
+                            type="button"
+                            disabled={isAdjusting}
+                            onClick={() => handleAdjustStockPrice(h.stockId, -10)}
+                            className="h-[26px] px-2 text-[10px] font-bold rounded-[4px] border border-[#3A3A3A] text-white hover:bg-white/10"
+                          >
+                            -10%
+                          </button>
+                          <button
+                            type="button"
+                            disabled={isAdjusting}
+                            onClick={() => handleAdjustStockPrice(h.stockId, -25)}
+                            className="h-[26px] px-2 text-[10px] font-bold rounded-[4px] border border-[#3A3A3A] text-white hover:bg-white/10"
+                          >
+                            -25%
+                          </button>
+                          <input
+                            type="number"
+                            placeholder="%"
+                            value={customPercents[h.stockId] || ''}
+                            onChange={(e) => setCustomPercents({ ...customPercents, [h.stockId]: e.target.value })}
+                            className="w-12 h-[26px] bg-[#0D0D0D] border border-[#3A3A3A] rounded-[4px] px-1 text-center text-[10px] text-white focus:outline-none focus:border-[#F0B429]"
+                          />
+                          <button
+                            type="button"
+                            disabled={isAdjusting || !customPercents[h.stockId]}
+                            onClick={() => handleAdjustStockPrice(h.stockId, parseFloat(customPercents[h.stockId]))}
+                            className="h-[26px] px-2 text-[10px] font-bold uppercase rounded-[4px] border border-[#F0B429] text-[#F0B429] hover:bg-[#F0B429]/10"
+                          >
+                            APPLY
+                          </button>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
             </div>
 
             {/* Transactions Section */}
@@ -148,17 +293,23 @@ export function AdminTraderDetailModal({ traderId, isOpen, onClose }) {
                 ) : (
                   data.transactions.map((tx) => {
                     const isBuy = tx.type === 'BUY';
+                    const isBonus = tx.quantity === 0;
+
                     return (
                       <div key={tx.id} className="p-2 bg-[#161616] border border-[#2A2A2A] rounded-[4px] flex items-center justify-between text-xs">
                         <div className="flex items-center gap-2">
-                          <span className={`text-[10px] font-bold ${isBuy ? 'text-[#3FB950]' : 'text-[#F85149]'}`}>
-                            {tx.type}
+                          <span className={`text-[10px] font-bold ${isBonus ? 'text-[#F0B429]' : isBuy ? 'text-[#3FB950]' : 'text-[#F85149]'}`}>
+                            {isBonus ? 'BONUS CREDIT' : tx.type}
                           </span>
-                          <span className="font-bold text-white">{tx.stock?.symbol || 'STOCK'}</span>
-                          <span className="text-[#888888] text-[10px]">({tx.quantity} shares @ {tx.price.toFixed(2)} IC)</span>
+                          {!isBonus && <span className="font-bold text-white">{tx.stock?.symbol || 'STOCK'}</span>}
+                          {isBonus ? (
+                            <span className="text-white font-bold">Bonus credit: +{fmtMoney(tx.price)} IC from admin</span>
+                          ) : (
+                            <span className="text-[#888888] text-[10px]">({tx.quantity} shares @ {fmtMoney(tx.price)} IC)</span>
+                          )}
                         </div>
                         <div className="text-right">
-                          <span className="font-bold text-white">{(tx.quantity * tx.price).toFixed(2)} IC</span>
+                          <span className="font-bold text-white">{fmtMoney(isBonus ? tx.price : tx.quantity * tx.price)} IC</span>
                           <span className="text-[10px] text-[#666666] ml-2">{new Date(tx.timestamp).toLocaleTimeString()}</span>
                         </div>
                       </div>

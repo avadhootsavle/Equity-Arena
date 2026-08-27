@@ -1,10 +1,11 @@
 const express = require('express');
 const { PrismaClient } = require('@prisma/client');
 const { authenticateToken, requireAdmin } = require('../middleware/authMiddleware');
-const { emitStockUpdate, emitNewsBroadcast } = require('../socket');
+const { emitStockUpdate, emitNewsBroadcast, emitPortfolioUpdate, emitActivityLog } = require('../socket');
 const { checkAndExecuteLimitOrders } = require('../services/orderService');
 const { applyNewsImpact, steerMacroMoveForNews } = require('../services/marketTicker');
 const { getUsedTemplateIds, markTemplateUsed } = require('../services/sessionService');
+const { checkAllTradersBankruptcy, checkTraderBankruptcy } = require('../services/bankruptcyService');
 
 const router = express.Router();
 const prisma = new PrismaClient();
@@ -135,6 +136,9 @@ router.post('/stock/:id/adjust', async (req, res) => {
 
     // Check limit order execution
     await checkAndExecuteLimitOrders(updatedStock.id, newPrice);
+
+    // Check bankruptcy for all active traders
+    await checkAllTradersBankruptcy();
 
     return res.json({
       message: 'Stock price updated successfully',
@@ -402,6 +406,74 @@ router.get('/stock-holdings', async (req, res) => {
   } catch (err) {
     console.error('Get stock holdings error:', err);
     return res.status(500).json({ error: 'Failed to fetch stock holdings' });
+  }
+});
+
+// POST /admin/trader/:id/topup — Admin manual IC top-up for a specific trader
+router.post('/trader/:id/topup', async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { amount } = req.body;
+
+    const parsedAmount = parseFloat(amount);
+    if (isNaN(parsedAmount) || parsedAmount <= 0) {
+      return res.status(400).json({ error: 'Top-up amount must be a positive number' });
+    }
+
+    const user = await prisma.user.findUnique({ where: { id } });
+    if (!user) {
+      return res.status(404).json({ error: 'Trader not found' });
+    }
+
+    // Update trader's wallet balance
+    const updatedUser = await prisma.user.update({
+      where: { id },
+      data: {
+        walletBalance: { increment: parsedAmount }
+      }
+    });
+
+    // Create bonus transaction record
+    const firstStock = await prisma.stock.findFirst();
+    if (firstStock) {
+      await prisma.transaction.create({
+        data: {
+          userId: id,
+          stockId: firstStock.id,
+          type: 'BUY',
+          quantity: 0,
+          price: parsedAmount
+        }
+      });
+    }
+
+    const traderName = user.name || user.email.split('@')[0];
+
+    // Emit live portfolio update to trader's room
+    emitPortfolioUpdate(id, {
+      walletBalance: Math.round(updatedUser.walletBalance * 100) / 100,
+      availableWalletBalance: Math.round(updatedUser.walletBalance * 100) / 100
+    });
+
+    // Emit activity log to admin live activity stream
+    emitActivityLog({
+      id: Date.now() + Math.random(),
+      traderName,
+      action: 'BONUS TOP-UP',
+      quantity: 0,
+      symbol: 'IC',
+      price: parsedAmount,
+      timestamp: Date.now(),
+      isTopUp: true
+    });
+
+    return res.json({
+      message: `Added ${parsedAmount.toLocaleString()} IC to ${traderName}'s wallet`,
+      walletBalance: Math.round(updatedUser.walletBalance * 100) / 100
+    });
+  } catch (err) {
+    console.error('Admin trader top-up error:', err);
+    return res.status(500).json({ error: 'Failed to process trader top-up' });
   }
 });
 

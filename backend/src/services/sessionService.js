@@ -1,5 +1,6 @@
 const { PrismaClient } = require('@prisma/client');
 const { getIo } = require('../socket');
+const { clearBankruptTraders } = require('./bankruptcyService');
 
 const prisma = new PrismaClient();
 
@@ -127,8 +128,9 @@ async function startNewSession(options = {}) {
   const now = new Date();
   const endTime = new Date(now.getTime() + durationMins * 60 * 1000);
 
-  // Clear used news template tracking for the fresh session
+  // Clear used news template tracking and bankruptcy logs for fresh session
   resetUsedTemplates();
+  clearBankruptTraders();
 
   // End any previous active or liquidating or paused sessions
   await prisma.session.updateMany({

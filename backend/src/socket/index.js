@@ -131,11 +131,29 @@ function emitPortfolioUpdate(userId, portfolioData) {
   }
 }
 
+function emitBankruptAlert(data) {
+  try {
+    if (io) io.to('traders').emit('bankrupt:alert', data);
+  } catch (err) {
+    console.error('[Socket emitBankruptAlert error]:', err.message);
+  }
+}
+
+function emitActivityLog(data) {
+  try {
+    if (io) io.to('traders').emit('activity:log', data);
+  } catch (err) {
+    console.error('[Socket emitActivityLog error]:', err.message);
+  }
+}
+
 module.exports = {
   initSocket,
   getIo,
   emitStockUpdate,
   emitStocksBatchUpdate,
   emitNewsBroadcast,
-  emitPortfolioUpdate
+  emitPortfolioUpdate,
+  emitBankruptAlert,
+  emitActivityLog
 };

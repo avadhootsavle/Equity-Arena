@@ -319,6 +319,12 @@ export function TraderDashboard() {
       pushToast('Market is back! Trading has resumed.', 'success', 'Market Unlocked');
     };
 
+    const handleBankruptAlert = (data) => {
+      if (user?.id && data?.userId !== user.id) {
+        pushToast(`${data.traderName || 'A trader'} has gone bankrupt`, 'warning', 'Bankruptcy Alert');
+      }
+    };
+
     socket.on('connect', handleConnect);
     socket.on('stock:update', handleStockUpdate);
     socket.on('news:broadcast', handleNews);
@@ -326,6 +332,7 @@ export function TraderDashboard() {
     socket.on('order:executed', handleOrderExecuted);
     socket.on('break:ended', handleBreakEnded);
     socket.on('session:resumed', handleBreakEnded);
+    socket.on('bankrupt:alert', handleBankruptAlert);
 
     return () => {
       socket.off('connect', handleConnect);
@@ -335,9 +342,10 @@ export function TraderDashboard() {
       socket.off('order:executed', handleOrderExecuted);
       socket.off('break:ended', handleBreakEnded);
       socket.off('session:resumed', handleBreakEnded);
+      socket.off('bankrupt:alert', handleBankruptAlert);
       flashTimers.forEach((t) => clearTimeout(t));
     };
-  }, [socket, fetchStocks, fetchPortfolio, fetchNewsFeed, pushToast]);
+  }, [socket, user, fetchStocks, fetchPortfolio, fetchNewsFeed, pushToast]);
 
   /* ---------------------------------------------------------------
      Derived values

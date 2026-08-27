@@ -6,6 +6,7 @@ const { emitPortfolioUpdate } = require('../socket');
 const { getUserAvailableBalance, getUserAvailableHolding } = require('../services/orderService');
 const { getCurrentSession } = require('../services/sessionService');
 const { getUserPortfolio } = require('../services/portfolioService');
+const { checkTraderBankruptcy } = require('../services/bankruptcyService');
 
 const router = express.Router();
 const prisma = new PrismaClient();
@@ -120,6 +121,7 @@ router.post('/trade/buy', authenticateToken, tradeRateLimiter, async (req, res) 
     // Fetch updated portfolio and emit to user's private socket room
     const portfolio = await getUserPortfolio(userId);
     emitPortfolioUpdate(userId, portfolio);
+    await checkTraderBankruptcy(userId);
 
     return res.json({
       message: 'Buy order executed successfully',
@@ -216,6 +218,7 @@ router.post('/trade/sell', authenticateToken, tradeRateLimiter, async (req, res)
     // Fetch updated portfolio and emit to user's private socket room
     const portfolio = await getUserPortfolio(userId);
     emitPortfolioUpdate(userId, portfolio);
+    await checkTraderBankruptcy(userId);
 
     return res.json({
       message: 'Sell order executed successfully',

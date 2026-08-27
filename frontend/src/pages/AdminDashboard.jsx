@@ -62,7 +62,8 @@ export function AdminDashboard() {
   const [templates, setTemplates] = useState([]);
   const [usedTemplateIds, setUsedTemplateIds] = useState([]);
   const [inlineConfirmTplId, setInlineConfirmTplId] = useState(null);
-  const [delaySeconds, setDelaySeconds] = useState(30);
+  const [customNewsConfirm, setCustomNewsConfirm] = useState(false);
+  const [delaySeconds, setDelaySeconds] = useState(60);
   const [triggeringTemplateId, setTriggeringTemplateId] = useState(null);
 
   // 20-minute recurring news reminder timer (1200 seconds)
@@ -268,16 +269,41 @@ export function AdminDashboard() {
       ].slice(0, 30));
     };
 
+    const handleBankruptAlert = (data) => {
+      showToast(`${data.traderName || 'A trader'} has gone bankrupt — total value: 0 IC`, 'error');
+      setLiveTradeFeed((prev) => [
+        {
+          id: Date.now() + Math.random(),
+          traderName: data.traderName || 'Trader',
+          action: 'BANKRUPT',
+          quantity: 0,
+          symbol: 'BUST',
+          price: data.totalValue || 0,
+          timestamp: data.timestamp || Date.now(),
+          isBankrupt: true
+        },
+        ...prev
+      ].slice(0, 30));
+    };
+
+    const handleActivityLog = (data) => {
+      setLiveTradeFeed((prev) => [data, ...prev].slice(0, 30));
+    };
+
     socket.on('connect', handleConnect);
     socket.on('stock:update', handleStockUpdate);
     socket.on('trade:executed', handleTradeExecuted);
     socket.on('order:executed', handleTradeExecuted);
+    socket.on('bankrupt:alert', handleBankruptAlert);
+    socket.on('activity:log', handleActivityLog);
 
     return () => {
       socket.off('connect', handleConnect);
       socket.off('stock:update', handleStockUpdate);
       socket.off('trade:executed', handleTradeExecuted);
       socket.off('order:executed', handleTradeExecuted);
+      socket.off('bankrupt:alert', handleBankruptAlert);
+      socket.off('activity:log', handleActivityLog);
     };
   }, [socket]);
 
@@ -302,7 +328,7 @@ export function AdminDashboard() {
   };
 
   const handleSendNews = async (e) => {
-    e.preventDefault();
+    if (e) e.preventDefault();
     if (!newsMessage.trim()) return;
 
     setSendingNews(true);
@@ -311,13 +337,15 @@ export function AdminDashboard() {
         method: 'POST',
         body: JSON.stringify({
           message: newsMessage.trim(),
-          stockId: selectedStockId || undefined
+          stockId: selectedStockId || undefined,
+          delaySeconds: parseInt(delaySeconds, 10) || 60
         })
       });
 
       setRecentNews((prev) => [data.news, ...prev]);
       setNewsMessage('');
       setSelectedStockId('');
+      setCustomNewsConfirm(false);
       resetNewsTimer();
       showToast('News broadcasted to all connected traders!');
     } catch (err) {
@@ -334,7 +362,7 @@ export function AdminDashboard() {
         method: 'POST',
         body: JSON.stringify({
           templateId,
-          delaySeconds: parseInt(delaySeconds, 10) || 30
+          delaySeconds: parseInt(delaySeconds, 10) || 60
         })
       });
 
@@ -523,7 +551,9 @@ export function AdminDashboard() {
               <div className="space-y-2 max-h-[380px] overflow-y-auto pr-1">
                 {filteredGoodNews.map((tpl) => {
                   const isSent = usedTemplateIds.includes(tpl.id);
+                  const isConfirming = inlineConfirmTplId === tpl.id;
                   const isTriggering = triggeringTemplateId === tpl.id;
+
                   return (
                     <div
                       key={tpl.id}
@@ -531,26 +561,58 @@ export function AdminDashboard() {
                         isSent ? 'opacity-40' : ''
                       }`}
                     >
-                      <p className="text-[11px] text-white leading-snug line-clamp-2">{tpl.headline}</p>
-                      <div className="flex items-center justify-between gap-1 pt-1 border-t border-[#222222]">
-                        <span className="text-[9px] text-[#3FB950] font-bold">+{tpl.effectPercent}</span>
-                        <div className="flex items-center gap-1">
-                          <input
-                            type="number"
-                            value={delaySeconds}
-                            onChange={(e) => setDelaySeconds(parseInt(e.target.value, 10) || 30)}
-                            className="w-8 h-5 bg-[#0D0D0D] border border-[#3A3A3A] rounded-[2px] text-[10px] text-center text-white"
-                          />
-                          <button
-                            type="button"
-                            onClick={() => handleTriggerTemplate(tpl.id)}
-                            disabled={isTriggering}
-                            className="px-2 py-0.5 text-[10px] uppercase font-bold text-[#F0B429] hover:bg-[#F0B429]/10 rounded-[2px] border border-[#F0B429] transition-colors"
-                          >
-                            {isTriggering ? 'SENDING...' : 'SEND'}
-                          </button>
+                      <p className="text-[11px] text-white leading-snug">{tpl.headline}</p>
+
+                      {isConfirming ? (
+                        <div className="p-2 bg-[#0D0D0D] border border-[#F0B429] rounded-[4px] space-y-2 font-mono text-[10px] animate-fadeIn">
+                          <div className="flex items-center justify-between">
+                            <span className="text-[#888888]">Delay:</span>
+                            <div className="flex items-center gap-1">
+                              <input
+                                type="number"
+                                min="0"
+                                value={delaySeconds}
+                                onChange={(e) => setDelaySeconds(parseInt(e.target.value, 10) || 60)}
+                                className="w-12 h-5 bg-[#161616] border border-[#3A3A3A] text-center text-white rounded-[2px]"
+                              />
+                              <span className="text-[#888888]">sec</span>
+                            </div>
+                          </div>
+
+                          <div className="flex items-center justify-end gap-1.5 pt-1 border-t border-[#222222]">
+                            <button
+                              type="button"
+                              onClick={() => setInlineConfirmTplId(null)}
+                              className="px-2 py-0.5 text-[#888888] hover:text-white"
+                            >
+                              CANCEL
+                            </button>
+                            <button
+                              type="button"
+                              disabled={isTriggering}
+                              onClick={() => handleTriggerTemplate(tpl.id)}
+                              className="px-2.5 py-0.5 uppercase font-bold text-[#F0B429] border border-[#F0B429] hover:bg-[#F0B429]/10 rounded-[2px]"
+                            >
+                              {isTriggering ? 'SENDING...' : 'CONFIRM SEND'}
+                            </button>
+                          </div>
                         </div>
-                      </div>
+                      ) : (
+                        <div className="flex items-center justify-between gap-1 pt-1 border-t border-[#222222]">
+                          <span className="text-[9px] text-[#3FB950] font-bold">+{tpl.effectPercent}%</span>
+                          {isSent ? (
+                            <span className="text-[10px] text-[#888888] font-bold">Sent</span>
+                          ) : (
+                            <button
+                              type="button"
+                              onClick={() => setInlineConfirmTplId(tpl.id)}
+                              className="px-2.5 py-0.5 text-[10px] uppercase font-bold text-[#F0B429] border border-[#F0B429] hover:bg-[#F0B429]/10 rounded-[2px] transition-colors"
+                            >
+                              SEND
+                            </button>
+                          )}
+                        </div>
+                      )}
                     </div>
                   );
                 })}
@@ -566,7 +628,9 @@ export function AdminDashboard() {
               <div className="space-y-2 max-h-[380px] overflow-y-auto pr-1">
                 {filteredBadNews.map((tpl) => {
                   const isSent = usedTemplateIds.includes(tpl.id);
+                  const isConfirming = inlineConfirmTplId === tpl.id;
                   const isTriggering = triggeringTemplateId === tpl.id;
+
                   return (
                     <div
                       key={tpl.id}
@@ -574,26 +638,58 @@ export function AdminDashboard() {
                         isSent ? 'opacity-40' : ''
                       }`}
                     >
-                      <p className="text-[11px] text-white leading-snug line-clamp-2">{tpl.headline}</p>
-                      <div className="flex items-center justify-between gap-1 pt-1 border-t border-[#222222]">
-                        <span className="text-[9px] text-[#F85149] font-bold">{tpl.effectPercent}</span>
-                        <div className="flex items-center gap-1">
-                          <input
-                            type="number"
-                            value={delaySeconds}
-                            onChange={(e) => setDelaySeconds(parseInt(e.target.value, 10) || 30)}
-                            className="w-8 h-5 bg-[#0D0D0D] border border-[#3A3A3A] rounded-[2px] text-[10px] text-center text-white"
-                          />
-                          <button
-                            type="button"
-                            onClick={() => handleTriggerTemplate(tpl.id)}
-                            disabled={isTriggering}
-                            className="px-2 py-0.5 text-[10px] uppercase font-bold text-[#F85149] hover:bg-[#F85149]/10 rounded-[2px] border border-[#F85149] transition-colors"
-                          >
-                            {isTriggering ? 'SENDING...' : 'SEND'}
-                          </button>
+                      <p className="text-[11px] text-white leading-snug">{tpl.headline}</p>
+
+                      {isConfirming ? (
+                        <div className="p-2 bg-[#0D0D0D] border border-[#F85149] rounded-[4px] space-y-2 font-mono text-[10px] animate-fadeIn">
+                          <div className="flex items-center justify-between">
+                            <span className="text-[#888888]">Delay:</span>
+                            <div className="flex items-center gap-1">
+                              <input
+                                type="number"
+                                min="0"
+                                value={delaySeconds}
+                                onChange={(e) => setDelaySeconds(parseInt(e.target.value, 10) || 60)}
+                                className="w-12 h-5 bg-[#161616] border border-[#3A3A3A] text-center text-white rounded-[2px]"
+                              />
+                              <span className="text-[#888888]">sec</span>
+                            </div>
+                          </div>
+
+                          <div className="flex items-center justify-end gap-1.5 pt-1 border-t border-[#222222]">
+                            <button
+                              type="button"
+                              onClick={() => setInlineConfirmTplId(null)}
+                              className="px-2 py-0.5 text-[#888888] hover:text-white"
+                            >
+                              CANCEL
+                            </button>
+                            <button
+                              type="button"
+                              disabled={isTriggering}
+                              onClick={() => handleTriggerTemplate(tpl.id)}
+                              className="px-2.5 py-0.5 uppercase font-bold text-[#F85149] border border-[#F85149] hover:bg-[#F85149]/10 rounded-[2px]"
+                            >
+                              {isTriggering ? 'SENDING...' : 'CONFIRM SEND'}
+                            </button>
+                          </div>
                         </div>
-                      </div>
+                      ) : (
+                        <div className="flex items-center justify-between gap-1 pt-1 border-t border-[#222222]">
+                          <span className="text-[9px] text-[#F85149] font-bold">{tpl.effectPercent}%</span>
+                          {isSent ? (
+                            <span className="text-[10px] text-[#888888] font-bold">Sent</span>
+                          ) : (
+                            <button
+                              type="button"
+                              onClick={() => setInlineConfirmTplId(tpl.id)}
+                              className="px-2.5 py-0.5 text-[10px] uppercase font-bold text-[#F85149] border border-[#F85149] hover:bg-[#F85149]/10 rounded-[2px] transition-colors"
+                            >
+                              SEND
+                            </button>
+                          )}
+                        </div>
+                      )}
                     </div>
                   );
                 })}
@@ -602,8 +698,8 @@ export function AdminDashboard() {
 
           </div>
 
-          {/* CUSTOM MANUAL NEWS BROADCAST */}
-          <form onSubmit={handleSendNews} className="space-y-2 pt-2 border-t border-[#2A2A2A]">
+          {/* CUSTOM MANUAL NEWS BROADCAST WITH INLINE CONFIRM */}
+          <div className="space-y-2 pt-2 border-t border-[#2A2A2A]">
             <textarea
               rows={2}
               value={newsMessage}
@@ -622,15 +718,46 @@ export function AdminDashboard() {
                   <option key={s.id} value={s.id}>{s.symbol} — {s.name}</option>
                 ))}
               </select>
-              <button
-                type="submit"
-                disabled={sendingNews || !newsMessage.trim()}
-                className="px-4 py-1 text-xs uppercase font-bold text-[#F0B429] border border-[#F0B429] rounded-[4px] hover:bg-[#F0B429]/10 transition-colors disabled:opacity-50"
-              >
-                {sendingNews ? 'SENDING...' : 'BROADCAST NEWS'}
-              </button>
+
+              {!customNewsConfirm ? (
+                <button
+                  type="button"
+                  disabled={!newsMessage.trim()}
+                  onClick={() => setCustomNewsConfirm(true)}
+                  className="px-4 py-1 text-xs uppercase font-bold text-[#F0B429] border border-[#F0B429] rounded-[4px] hover:bg-[#F0B429]/10 transition-colors disabled:opacity-50"
+                >
+                  SEND
+                </button>
+              ) : (
+                <div className="flex items-center gap-2 font-mono text-[10px] bg-[#0D0D0D] border border-[#F0B429] p-1.5 rounded-[4px] animate-fadeIn">
+                  <span className="text-[#888888]">Delay:</span>
+                  <input
+                    type="number"
+                    min="0"
+                    value={delaySeconds}
+                    onChange={(e) => setDelaySeconds(parseInt(e.target.value, 10) || 60)}
+                    className="w-12 h-5 bg-[#161616] border border-[#3A3A3A] text-center text-white rounded-[2px]"
+                  />
+                  <span className="text-[#888888]">sec</span>
+                  <button
+                    type="button"
+                    onClick={() => setCustomNewsConfirm(false)}
+                    className="px-2 py-0.5 text-[#888888] hover:text-white"
+                  >
+                    CANCEL
+                  </button>
+                  <button
+                    type="button"
+                    disabled={sendingNews}
+                    onClick={handleSendNews}
+                    className="px-3 py-0.5 text-[10px] uppercase font-bold text-[#F0B429] border border-[#F0B429] rounded-[2px] hover:bg-[#F0B429]/10"
+                  >
+                    {sendingNews ? 'SENDING...' : 'CONFIRM SEND'}
+                  </button>
+                </div>
+              )}
             </div>
-          </form>
+          </div>
         </div>
 
         {/* ====================================================================== */}
@@ -753,12 +880,20 @@ export function AdminDashboard() {
                   <div key={trade.id} className="flex items-center justify-between py-1 border-b border-[#1A1A1A] last:border-b-0 text-[11px]">
                     <div className="flex items-center gap-2">
                       <span className="text-white font-bold">{trade.traderName}</span>
-                      <span className={trade.action === 'BUY' ? 'text-[#3FB950]' : 'text-[#F85149]'}>
-                        {trade.action.toLowerCase()} {trade.quantity} {trade.symbol}
-                      </span>
+                      {trade.isBankrupt ? (
+                        <span className="text-[#F85149] font-bold uppercase">has gone bankrupt</span>
+                      ) : trade.isTopUp ? (
+                        <span className="text-[#F0B429] font-bold">received +{fmtMoney(trade.price)} IC bonus</span>
+                      ) : (
+                        <span className={trade.action === 'BUY' ? 'text-[#3FB950]' : 'text-[#F85149]'}>
+                          {trade.action.toLowerCase()} {trade.quantity} {trade.symbol}
+                        </span>
+                      )}
                     </div>
                     <div className="flex items-center gap-3">
-                      <span className="text-white font-bold">{fmtMoney(trade.price * trade.quantity)} IC</span>
+                      <span className="text-white font-bold">
+                        {trade.isBankrupt ? '0.00 IC' : trade.isTopUp ? `+${fmtMoney(trade.price)} IC` : `${fmtMoney(trade.price * trade.quantity)} IC`}
+                      </span>
                       <span className="text-[#666666] text-[10px]">{new Date(trade.timestamp).toLocaleTimeString()}</span>
                     </div>
                   </div>
