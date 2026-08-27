@@ -298,6 +298,9 @@ export function AdminDashboard() {
     };
   }, [socket]);
 
+  /* Recently adjusted stock flash state */
+  const [recentlyAdjustedStockId, setRecentlyAdjustedStockId] = useState(null);
+
   /* End Session inline confirmation state */
   const [confirmEndSession, setConfirmEndSession] = useState(false);
   const [endSessionTimer, setEndSessionTimer] = useState(null);
@@ -356,6 +359,11 @@ export function AdminDashboard() {
       const sign = percent >= 0 ? '+' : '';
       showToast(`${data.stock.symbol} adjusted ${sign}${percent}% → ${data.stock.currentPrice.toFixed(2)} IC`);
       setCustomPercents((prev) => ({ ...prev, [stockId]: '' }));
+      
+      // Trigger price cell highlight flash
+      setRecentlyAdjustedStockId(stockId);
+      setTimeout(() => setRecentlyAdjustedStockId(null), 1000);
+
       fetchStockHoldings();
       fetchLeaderboard();
     } catch (err) {
@@ -465,7 +473,7 @@ export function AdminDashboard() {
       )}
 
       {/* TOP BAR (FULL WIDTH, MINIMAL) */}
-      <header className="border-b border-[#2A2A2A] bg-[#111111] px-6 py-3 flex items-center justify-between font-mono text-xs flex-wrap gap-4 sticky top-0 z-40">
+      <header className="border-b border-[#2A2A2A] bg-[#111111] px-6 py-3.5 flex items-center justify-between font-mono text-xs flex-wrap gap-4 sticky top-0 z-40">
         {/* Left: App Title */}
         <div className="flex items-center gap-3">
           <span className="font-extrabold uppercase tracking-[0.12em] text-white text-xs">EQUITY ARENA</span>
@@ -473,10 +481,14 @@ export function AdminDashboard() {
           <span className="text-[#F0B429] font-bold text-[11px]">ADMIN</span>
         </div>
 
-        {/* Center: Session Status & Timer */}
+        {/* Center: Session Status & Timer with Pulsing Green Dot */}
         <div className="flex items-center gap-3">
           {adminSession?.status === 'ACTIVE' ? (
             <div className="flex items-center gap-2">
+              <span className="relative flex h-2 w-2">
+                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-[#3FB950] opacity-75"></span>
+                <span className="relative inline-flex rounded-full h-2 w-2 bg-[#3FB950]"></span>
+              </span>
               <span className="text-[#3FB950] font-bold">Session running —</span>
               <GameClock sessionData={adminSession} />
             </div>
@@ -498,7 +510,7 @@ export function AdminDashboard() {
                 <button
                   type="button"
                   onClick={handleResumeSession}
-                  className="px-3 py-1 text-xs font-bold uppercase tracking-wider rounded-[4px] border border-white text-white hover:bg-white/10 transition-colors"
+                  className="px-3 py-1 text-xs font-bold uppercase tracking-wider rounded-[4px] border border-white text-white hover:bg-white/5 transition-colors"
                 >
                   RESUME SESSION
                 </button>
@@ -506,7 +518,7 @@ export function AdminDashboard() {
                 <button
                   type="button"
                   onClick={() => setShowBreakModal(true)}
-                  className="px-3 py-1 text-xs font-bold uppercase tracking-wider rounded-[4px] border border-white text-white hover:bg-white/10 transition-colors"
+                  className="px-3 py-1 text-xs font-bold uppercase tracking-wider rounded-[4px] border border-white text-white hover:bg-white/5 transition-colors"
                 >
                   BREAK
                 </button>
@@ -521,12 +533,12 @@ export function AdminDashboard() {
                   END SESSION
                 </button>
               ) : (
-                <div className="flex items-center gap-2 bg-[#0D0D0D] border border-[#F85149] px-2 py-0.5 rounded-[4px] animate-fadeIn">
+                <div className="flex items-center gap-2 bg-[#0D0D0D] border border-[#F85149] px-2.5 py-1 rounded-[4px] animate-fadeIn">
                   <span className="text-[#F85149] font-bold text-[11px]">End the session now? All trading will stop. →</span>
                   <button
                     type="button"
                     onClick={handleStopSession}
-                    className="px-2 py-0.5 text-xs font-bold uppercase border border-[#F85149] text-[#F85149] hover:bg-[#F85149]/10 rounded-[2px]"
+                    className="px-2.5 py-0.5 text-xs font-bold uppercase border border-[#F85149] text-[#F85149] hover:bg-[#F85149]/10 rounded-[2px]"
                   >
                     YES, END
                   </button>
@@ -553,30 +565,30 @@ export function AdminDashboard() {
         </div>
       </header>
 
-      {/* TWO-COLUMN SIDE-BY-SIDE LAYOUT (FULL HEIGHT) */}
+      {/* TWO-COLUMN SIDE-BY-SIDE LAYOUT (FULL HEIGHT WITH 24px BREATHING ROOM & 1px DIVIDER) */}
       <div className="grid grid-cols-1 lg:grid-cols-12 min-h-[calc(100vh-49px)]">
 
         {/* LEFT COLUMN (40% / LG:COL-SPAN-5): SESSION CONTROL + SEND NEWS */}
-        <div className="lg:col-span-5 border-r border-[#2A2A2A] p-5 space-y-5 font-mono">
+        <div className="lg:col-span-5 border-r border-[#2A2A2A] p-6 space-y-6 font-mono">
           
           {/* SESSION BLOCK (TOP OF LEFT COLUMN) */}
-          <div className="border border-[#2A2A2A] rounded-[4px] bg-[#111111] p-4 space-y-3">
-            <div className="text-[11px] uppercase tracking-[0.08em] text-[#666666]">SESSION CONTROL</div>
+          <div className="border border-[#2A2A2A] rounded-[4px] bg-[#111111] p-5 space-y-4">
+            <span className="text-[10px] uppercase tracking-[0.1em] text-[#555555] font-bold block mb-2">SESSION CONTROL</span>
 
             {!isSessionRunning ? (
-              <div className="space-y-3">
+              <div className="space-y-4">
                 <div className="flex items-center justify-between gap-2 flex-wrap">
                   <span className="text-xs text-[#888888]">Duration:</span>
-                  <div className="flex items-center gap-1.5 flex-wrap">
+                  <div className="flex items-center gap-2 flex-wrap">
                     {[30, 60, 180].map((m) => (
                       <button
                         key={m}
                         type="button"
                         onClick={() => setSessionDurationMins(m)}
-                        className={`px-2.5 py-1 text-xs font-bold rounded-[4px] border transition-colors ${
+                        className={`px-3 py-1.5 text-xs font-bold rounded-[4px] border transition-colors ${
                           sessionDurationMins === m
-                            ? 'border-[#F0B429] text-[#F0B429]'
-                            : 'border-[#3A3A3A] text-white hover:bg-white/10'
+                            ? 'border-[#F0B429] text-[#F0B429] bg-[#F0B429]/10'
+                            : 'border-[#3A3A3A] text-white hover:bg-white/5'
                         }`}
                       >
                         {m}m
@@ -587,17 +599,18 @@ export function AdminDashboard() {
                       min="1"
                       value={sessionDurationMins}
                       onChange={(e) => setSessionDurationMins(parseInt(e.target.value, 10) || 180)}
-                      className="w-16 h-[26px] bg-[#0D0D0D] border border-[#3A3A3A] rounded-[4px] px-1 text-center text-xs text-white focus:outline-none focus:border-[#F0B429]"
+                      className="w-16 h-[30px] bg-[#0D0D0D] border border-[#3A3A3A] rounded-[4px] px-1 text-center text-xs text-white focus:outline-none focus:border-[#F0B429]"
                       placeholder="custom"
                     />
                   </div>
                 </div>
 
+                {/* Filled Amber START SESSION Button (Prominent) */}
                 <button
                   type="button"
                   onClick={() => handleStartNewSession()}
                   disabled={isStartingSession}
-                  className="w-full py-2 text-xs font-bold uppercase tracking-wider rounded-[4px] border border-[#F0B429] text-[#F0B429] hover:bg-[#F0B429]/10 transition-colors disabled:opacity-50"
+                  className="w-full h-[36px] bg-[#F0B429] hover:bg-[#d9a120] text-black font-bold uppercase tracking-wider text-xs rounded-[4px] transition-colors disabled:opacity-50"
                 >
                   {isStartingSession ? 'STARTING...' : 'START SESSION'}
                 </button>
@@ -610,7 +623,7 @@ export function AdminDashboard() {
                 </div>
                 <div className="flex items-center gap-2 text-[10px] text-[#888888]">
                   <span>Reminder:</span>
-                  <span className={`font-bold ${reminderSeconds < 180 ? 'text-[#F0B429]' : 'text-white'}`}>
+                  <span className={`font-bold ${reminderSeconds <= 120 ? 'text-[#F0B429]' : 'text-white'}`}>
                     {Math.floor(reminderSeconds / 60).toString().padStart(2, '0')}:{(reminderSeconds % 60).toString().padStart(2, '0')}
                   </span>
                   <button type="button" onClick={resetNewsTimer} className="hover:text-white ml-1">RESET</button>
@@ -620,13 +633,13 @@ export function AdminDashboard() {
           </div>
 
           {/* NEWS BLOCK (REST OF LEFT COLUMN) */}
-          <div className="space-y-3">
-            <div className="flex items-center justify-between">
-              <span className="text-[11px] uppercase tracking-[0.08em] text-[#666666]">SEND NEWS</span>
+          <div className="space-y-4">
+            <div className="flex items-center justify-between mt-5 mb-2">
+              <span className="text-[10px] uppercase tracking-[0.1em] text-[#555555] font-bold block">SEND NEWS</span>
               <select
                 value={newsCompanyFilter}
                 onChange={(e) => setNewsCompanyFilter(e.target.value)}
-                className="bg-[#111111] border border-[#2A2A2A] rounded-[4px] px-2 py-0.5 text-[10px] text-[#888888] font-mono"
+                className="bg-[#111111] border border-[#2A2A2A] rounded-[4px] px-2.5 py-1 text-[11px] text-[#888888] font-mono"
               >
                 <option value="ALL">All 15 Companies</option>
                 {Object.values(SECTOR_TO_STOCK_MAP).map((s) => (
@@ -639,12 +652,12 @@ export function AdminDashboard() {
             <div className="grid grid-cols-2 border border-[#2A2A2A] rounded-[4px] bg-[#111111] overflow-hidden">
               
               {/* POSITIVE */}
-              <div className="p-3 border-r border-[#2A2A2A] space-y-2">
-                <div className="text-[10px] uppercase tracking-[0.08em] text-[#3FB950] font-bold border-b border-[#2A2A2A] pb-1.5">
+              <div className="p-4 border-r border-[#2A2A2A] space-y-3">
+                <div className="text-[10px] uppercase tracking-[0.1em] text-[#3FB950] font-bold border-b border-[#2A2A2A] pb-2">
                   POSITIVE ({filteredGoodNews.length})
                 </div>
 
-                <div className="space-y-2 max-h-[420px] overflow-y-auto pr-1">
+                <div className="space-y-2.5 max-h-[420px] overflow-y-auto pr-1">
                   {filteredGoodNews.map((tpl) => {
                     const isSent = usedTemplateIds.includes(tpl.id);
                     const isConfirming = inlineConfirmTplId === tpl.id;
@@ -653,11 +666,11 @@ export function AdminDashboard() {
                     return (
                       <div
                         key={tpl.id}
-                        className={`p-2 bg-[#161616] border border-[#2A2A2A] rounded-[4px] space-y-1.5 transition-opacity ${
+                        className={`p-2.5 bg-[#161616] border border-[#2A2A2A] rounded-[4px] space-y-2 transition-opacity ${
                           isSent ? 'opacity-40' : ''
                         }`}
                       >
-                        <p className="text-[11px] text-white leading-snug">{tpl.headline}</p>
+                        <p className="text-[14px] font-normal text-[#DDDDDD] leading-snug">{tpl.headline}</p>
 
                         {isConfirming ? (
                           <div className="p-2 bg-[#0D0D0D] border border-[#F0B429] rounded-[4px] space-y-2 font-mono text-[10px] animate-fadeIn">
@@ -687,7 +700,7 @@ export function AdminDashboard() {
                                 type="button"
                                 disabled={isTriggering}
                                 onClick={() => handleTriggerTemplate(tpl.id)}
-                                className="px-2.5 py-0.5 uppercase font-bold text-[#F0B429] border border-[#F0B429] hover:bg-[#F0B429]/10 rounded-[2px]"
+                                className="px-3 py-1 text-xs uppercase font-bold text-[#F0B429] border border-[#F0B429] bg-transparent hover:bg-[#F0B429]/10 rounded-[4px] transition-colors"
                               >
                                 {isTriggering ? 'SENDING...' : 'CONFIRM SEND'}
                               </button>
@@ -695,14 +708,14 @@ export function AdminDashboard() {
                           </div>
                         ) : (
                           <div className="flex items-center justify-between gap-1 pt-1 border-t border-[#222222]">
-                            <span className="text-[9px] text-[#3FB950] font-bold">+{tpl.effectPercent}%</span>
+                            <span className="text-[11px] text-[#3FB950] font-bold">+{tpl.effectPercent}%</span>
                             {isSent ? (
                               <span className="text-[10px] text-[#888888] font-bold">Sent</span>
                             ) : (
                               <button
                                 type="button"
                                 onClick={() => setInlineConfirmTplId(tpl.id)}
-                                className="px-2.5 py-0.5 text-[10px] uppercase font-bold text-[#F0B429] border border-[#F0B429] hover:bg-[#F0B429]/10 rounded-[2px] transition-colors"
+                                className="px-3 py-1 text-xs uppercase font-bold text-[#F0B429] border border-[#F0B429] bg-transparent hover:bg-[#F0B429]/10 rounded-[4px] transition-colors"
                               >
                                 SEND
                               </button>
@@ -716,12 +729,12 @@ export function AdminDashboard() {
               </div>
 
               {/* NEGATIVE */}
-              <div className="p-3 space-y-2">
-                <div className="text-[10px] uppercase tracking-[0.08em] text-[#F85149] font-bold border-b border-[#2A2A2A] pb-1.5">
+              <div className="p-4 space-y-3">
+                <div className="text-[10px] uppercase tracking-[0.1em] text-[#F85149] font-bold border-b border-[#2A2A2A] pb-2">
                   NEGATIVE ({filteredBadNews.length})
                 </div>
 
-                <div className="space-y-2 max-h-[420px] overflow-y-auto pr-1">
+                <div className="space-y-2.5 max-h-[420px] overflow-y-auto pr-1">
                   {filteredBadNews.map((tpl) => {
                     const isSent = usedTemplateIds.includes(tpl.id);
                     const isConfirming = inlineConfirmTplId === tpl.id;
@@ -730,11 +743,11 @@ export function AdminDashboard() {
                     return (
                       <div
                         key={tpl.id}
-                        className={`p-2 bg-[#161616] border border-[#2A2A2A] rounded-[4px] space-y-1.5 transition-opacity ${
+                        className={`p-2.5 bg-[#161616] border border-[#2A2A2A] rounded-[4px] space-y-2 transition-opacity ${
                           isSent ? 'opacity-40' : ''
                         }`}
                       >
-                        <p className="text-[11px] text-white leading-snug">{tpl.headline}</p>
+                        <p className="text-[14px] font-normal text-[#DDDDDD] leading-snug">{tpl.headline}</p>
 
                         {isConfirming ? (
                           <div className="p-2 bg-[#0D0D0D] border border-[#F85149] rounded-[4px] space-y-2 font-mono text-[10px] animate-fadeIn">
@@ -764,7 +777,7 @@ export function AdminDashboard() {
                                 type="button"
                                 disabled={isTriggering}
                                 onClick={() => handleTriggerTemplate(tpl.id)}
-                                className="px-2.5 py-0.5 uppercase font-bold text-[#F85149] border border-[#F85149] hover:bg-[#F85149]/10 rounded-[2px]"
+                                className="px-3 py-1 text-xs uppercase font-bold text-[#F85149] border border-[#F85149] bg-transparent hover:bg-[#F85149]/10 rounded-[4px] transition-colors"
                               >
                                 {isTriggering ? 'SENDING...' : 'CONFIRM SEND'}
                               </button>
@@ -772,14 +785,14 @@ export function AdminDashboard() {
                           </div>
                         ) : (
                           <div className="flex items-center justify-between gap-1 pt-1 border-t border-[#222222]">
-                            <span className="text-[9px] text-[#F85149] font-bold">{tpl.effectPercent}%</span>
+                            <span className="text-[11px] text-[#F85149] font-bold">{tpl.effectPercent}%</span>
                             {isSent ? (
                               <span className="text-[10px] text-[#888888] font-bold">Sent</span>
                             ) : (
                               <button
                                 type="button"
                                 onClick={() => setInlineConfirmTplId(tpl.id)}
-                                className="px-2.5 py-0.5 text-[10px] uppercase font-bold text-[#F85149] border border-[#F85149] hover:bg-[#F85149]/10 rounded-[2px] transition-colors"
+                                className="px-3 py-1 text-xs uppercase font-bold text-[#F85149] border border-[#F85149] bg-transparent hover:bg-[#F85149]/10 rounded-[4px] transition-colors"
                               >
                                 SEND
                               </button>
@@ -795,19 +808,19 @@ export function AdminDashboard() {
             </div>
 
             {/* CUSTOM MANUAL NEWS BROADCAST */}
-            <div className="space-y-2 pt-2 border-t border-[#2A2A2A]">
+            <div className="space-y-3 pt-3 border-t border-[#2A2A2A]">
               <textarea
                 rows={2}
                 value={newsMessage}
                 onChange={(e) => setNewsMessage(e.target.value)}
                 placeholder="Type custom manual breaking news headline..."
-                className="w-full bg-[#111111] border border-[#2A2A2A] rounded-[4px] p-2.5 text-xs text-white placeholder-[#555555] focus:outline-none focus:border-[#F0B429] font-mono resize-none"
+                className="w-full bg-[#111111] border border-[#2A2A2A] rounded-[4px] p-3 text-xs text-white placeholder-[#555555] focus:outline-none focus:border-[#F0B429] font-mono resize-none"
               />
               <div className="flex items-center justify-between gap-2">
                 <select
                   value={selectedStockId}
                   onChange={(e) => setSelectedStockId(e.target.value)}
-                  className="bg-[#111111] border border-[#2A2A2A] rounded-[4px] px-2.5 py-1 text-xs text-[#888888] font-mono"
+                  className="bg-[#111111] border border-[#2A2A2A] rounded-[4px] px-3 py-1.5 text-xs text-[#888888] font-mono"
                 >
                   <option value="">Target: Whole Market</option>
                   {stocks.map((s) => (
@@ -820,12 +833,12 @@ export function AdminDashboard() {
                     type="button"
                     disabled={!newsMessage.trim()}
                     onClick={() => setCustomNewsConfirm(true)}
-                    className="px-4 py-1 text-xs uppercase font-bold text-[#F0B429] border border-[#F0B429] rounded-[4px] hover:bg-[#F0B429]/10 transition-colors disabled:opacity-50"
+                    className="px-4 py-1.5 text-xs uppercase font-bold text-[#F0B429] border border-[#F0B429] bg-transparent hover:bg-[#F0B429]/10 rounded-[4px] transition-colors disabled:opacity-50"
                   >
                     SEND
                   </button>
                 ) : (
-                  <div className="flex items-center gap-2 font-mono text-[10px] bg-[#0D0D0D] border border-[#F0B429] p-1.5 rounded-[4px] animate-fadeIn">
+                  <div className="flex items-center gap-2 font-mono text-[10px] bg-[#0D0D0D] border border-[#F0B429] p-2 rounded-[4px] animate-fadeIn">
                     <span className="text-[#888888]">Delay:</span>
                     <input
                       type="number"
@@ -846,7 +859,7 @@ export function AdminDashboard() {
                       type="button"
                       disabled={sendingNews}
                       onClick={handleSendNews}
-                      className="px-3 py-0.5 text-[10px] uppercase font-bold text-[#F0B429] border border-[#F0B429] rounded-[2px] hover:bg-[#F0B429]/10"
+                      className="px-3 py-1 text-xs uppercase font-bold text-[#F0B429] border border-[#F0B429] bg-transparent hover:bg-[#F0B429]/10 rounded-[4px] transition-colors"
                     >
                       {sendingNews ? 'SENDING...' : 'CONFIRM SEND'}
                     </button>
@@ -860,52 +873,62 @@ export function AdminDashboard() {
         </div>
 
         {/* RIGHT COLUMN (60% / LG:COL-SPAN-7): STOCKS (TOP 60%) + LIVE ACTIVITY (BOTTOM 40%) */}
-        <div className="lg:col-span-7 p-5 space-y-6 font-mono">
+        <div className="lg:col-span-7 p-6 space-y-6 font-mono">
           
           {/* STOCKS BLOCK (TOP 60%) */}
-          <div className="space-y-3">
-            <div className="flex items-center justify-between">
-              <span className="text-[11px] uppercase tracking-[0.08em] text-[#666666]">STOCKS (15 LISTINGS)</span>
+          <div className="space-y-4">
+            <div className="flex items-center justify-between mt-5 mb-2">
+              <span className="text-[10px] uppercase tracking-[0.1em] text-[#555555] font-bold block">STOCKS (15 LISTINGS)</span>
               <button
                 type="button"
                 onClick={() => setStockSortMode(stockSortMode === 'CHANGE' ? 'ALPHA' : 'CHANGE')}
-                className="text-[10px] uppercase font-mono text-[#888888] hover:text-white border border-[#3A3A3A] px-2.5 py-0.5 rounded-[4px] transition-colors"
+                className="text-[10px] uppercase font-mono text-[#888888] hover:text-white border border-[#3A3A3A] hover:bg-white/5 px-2.5 py-1 rounded-[4px] transition-colors"
               >
                 {stockSortMode === 'CHANGE' ? 'Sort: Gainers Top' : 'Sort: Alphabetical A-Z'}
               </button>
             </div>
 
-            {/* Stock Rows with Alternating Backgrounds (#111111 / #161616) */}
+            {/* Scannable Stock Rows with Alternating Backgrounds (#111111 / #161616) & 44px Row Height */}
             <div className="border border-[#2A2A2A] rounded-[4px] overflow-hidden">
               {sortedStocks.map((s, idx) => {
                 const isUp = Number(s.percentChange) >= 0;
                 const isAdjusting = adjustingStockId === s.id;
                 const isConfirmingCustom = confirmStockAdj?.stockId === s.id;
+                const isRecentlyAdjusted = s.id === recentlyAdjustedStockId;
 
                 return (
-                  <div key={s.id} className={`border-b border-[#2A2A2A] last:border-b-0 ${idx % 2 === 0 ? 'bg-[#111111]' : 'bg-[#161616]'}`}>
-                    <div className="p-2.5 flex items-center justify-between gap-3 text-xs flex-wrap">
-                      {/* Stock Symbol & Name */}
-                      <div className="flex items-center gap-3 min-w-[160px]">
-                        <span className="font-bold text-white w-12">{s.symbol}</span>
-                        <span className="text-[#888888] text-[11px] truncate max-w-[110px]">{s.name}</span>
+                  <div
+                    key={s.id}
+                    className={`border-b border-[#2A2A2A] last:border-b-0 ${
+                      idx % 2 === 0 ? 'bg-[#111111]' : 'bg-[#161616]'
+                    }`}
+                  >
+                    <div className="h-[44px] px-3.5 flex items-center justify-between gap-3 text-xs flex-wrap">
+                      {/* Stock Symbol (14px, weight 600) & Name (13px, weight 400, #888888) */}
+                      <div className="flex items-center gap-3 min-w-[170px]">
+                        <span className="text-[14px] font-bold text-white w-14">{s.symbol}</span>
+                        <span className="text-[13px] font-normal text-[#888888] truncate max-w-[130px]">{s.name}</span>
                       </div>
 
-                      {/* Price & % Change */}
-                      <div className="flex items-center gap-3 min-w-[130px] justify-end">
-                        <span className="text-white font-bold">{fmtMoney(s.currentPrice)} IC</span>
-                        <span className={`font-bold ${isUp ? 'text-[#3FB950]' : 'text-[#F85149]'}`}>
+                      {/* Price (JetBrains Mono 15px, weight 500) & % Change (13px JetBrains Mono) with Flash */}
+                      <div
+                        className={`flex items-center gap-3 min-w-[140px] justify-end px-2 py-1 rounded-[2px] ${
+                          isRecentlyAdjusted ? 'bg-[#F0B429]/20 transition-colors duration-1000' : 'transition-colors duration-1000'
+                        }`}
+                      >
+                        <span className="font-mono text-[15px] font-medium text-white">{fmtMoney(s.currentPrice)} IC</span>
+                        <span className={`font-mono text-[13px] font-bold ${isUp ? 'text-[#3FB950]' : 'text-[#F85149]'}`}>
                           {isUp ? `+${Number(s.percentChange || 0).toFixed(2)}%` : `${Number(s.percentChange || 0).toFixed(2)}%`}
                         </span>
                       </div>
 
-                      {/* Preset Buttons (Fire IMMEDIATELY) & Custom APPLY */}
-                      <div className="flex items-center gap-1 flex-wrap">
+                      {/* Presets (28px height, 10px px, 1px solid #3A3A3A) & Custom APPLY */}
+                      <div className="flex items-center gap-1.5 flex-wrap">
                         <button
                           type="button"
                           disabled={isAdjusting}
                           onClick={() => handleAdjustPrice(s.id, 10)}
-                          className="h-[28px] px-2 text-[10px] font-bold rounded-[4px] border border-[#3A3A3A] text-white hover:bg-white/10 transition-colors"
+                          className="h-[28px] px-2.5 text-xs font-bold rounded-[4px] border border-[#3A3A3A] text-white hover:bg-white/5 transition-colors"
                         >
                           +10%
                         </button>
@@ -913,7 +936,7 @@ export function AdminDashboard() {
                           type="button"
                           disabled={isAdjusting}
                           onClick={() => handleAdjustPrice(s.id, 25)}
-                          className="h-[28px] px-2 text-[10px] font-bold rounded-[4px] border border-[#3A3A3A] text-white hover:bg-white/10 transition-colors"
+                          className="h-[28px] px-2.5 text-xs font-bold rounded-[4px] border border-[#3A3A3A] text-white hover:bg-white/5 transition-colors"
                         >
                           +25%
                         </button>
@@ -921,7 +944,7 @@ export function AdminDashboard() {
                           type="button"
                           disabled={isAdjusting}
                           onClick={() => handleAdjustPrice(s.id, -10)}
-                          className="h-[28px] px-2 text-[10px] font-bold rounded-[4px] border border-[#3A3A3A] text-white hover:bg-white/10 transition-colors"
+                          className="h-[28px] px-2.5 text-xs font-bold rounded-[4px] border border-[#3A3A3A] text-white hover:bg-white/5 transition-colors"
                         >
                           -10%
                         </button>
@@ -929,7 +952,7 @@ export function AdminDashboard() {
                           type="button"
                           disabled={isAdjusting}
                           onClick={() => handleAdjustPrice(s.id, -25)}
-                          className="h-[28px] px-2 text-[10px] font-bold rounded-[4px] border border-[#3A3A3A] text-white hover:bg-white/10 transition-colors"
+                          className="h-[28px] px-2.5 text-xs font-bold rounded-[4px] border border-[#3A3A3A] text-white hover:bg-white/5 transition-colors"
                         >
                           -25%
                         </button>
@@ -945,7 +968,7 @@ export function AdminDashboard() {
                           type="button"
                           disabled={isAdjusting || !customPercents[s.id]}
                           onClick={() => handleCustomApplyClick(s.id, s.symbol)}
-                          className="h-[28px] px-2 text-[10px] font-bold uppercase rounded-[4px] border border-[#F0B429] text-[#F0B429] hover:bg-[#F0B429]/10 transition-colors disabled:opacity-50"
+                          className="h-[28px] px-3 text-xs uppercase font-bold text-[#F0B429] border border-[#F0B429] bg-transparent hover:bg-[#F0B429]/10 rounded-[4px] transition-colors disabled:opacity-50"
                         >
                           APPLY
                         </button>
@@ -954,7 +977,7 @@ export function AdminDashboard() {
 
                     {/* Inline Confirmation Drawer for Custom % Adjustment */}
                     {isConfirmingCustom && (
-                      <div className="p-2 bg-[#0D0D0D] border-t border-[#F0B429] flex items-center justify-between text-xs animate-fadeIn">
+                      <div className="p-2.5 bg-[#0D0D0D] border-t border-[#F0B429] flex items-center justify-between text-xs animate-fadeIn">
                         <span className="text-white font-bold">
                           Move {confirmStockAdj.symbol} price by {confirmStockAdj.percent >= 0 ? '+' : ''}{confirmStockAdj.percent}%?
                         </span>
@@ -963,14 +986,14 @@ export function AdminDashboard() {
                             type="button"
                             onClick={() => handleAdjustPrice(confirmStockAdj.stockId, confirmStockAdj.percent)}
                             disabled={isAdjusting}
-                            className="px-3 py-0.5 uppercase font-bold text-[#F0B429] border border-[#F0B429] rounded-[4px] hover:bg-[#F0B429]/10"
+                            className="px-3 py-1 text-xs uppercase font-bold text-[#F0B429] border border-[#F0B429] bg-transparent hover:bg-[#F0B429]/10 rounded-[4px] transition-colors"
                           >
                             CONFIRM
                           </button>
                           <button
                             type="button"
                             onClick={handleCancelCustomAdj}
-                            className="px-2 py-0.5 text-[#888888] hover:text-white"
+                            className="px-2.5 py-1 text-[#888888] hover:text-white"
                           >
                             CANCEL
                           </button>
@@ -984,80 +1007,105 @@ export function AdminDashboard() {
           </div>
 
           {/* LIVE ACTIVITY BLOCK (BOTTOM 40%) */}
-          <div className="space-y-4 pt-2 border-t border-[#2A2A2A]">
-            <div className="space-y-2">
-              <span className="text-[11px] uppercase tracking-[0.08em] text-[#666666]">LIVE ACTIVITY</span>
-              <div className="border border-[#2A2A2A] rounded-[4px] bg-[#111111] p-3 space-y-1.5 max-h-[220px] overflow-y-auto text-xs">
+          <div className="space-y-5 pt-4 border-t border-[#2A2A2A]">
+            <div className="space-y-3">
+              <span className="text-[10px] uppercase tracking-[0.1em] text-[#555555] font-bold block mt-5 mb-2">LIVE ACTIVITY</span>
+              <div className="border border-[#2A2A2A] rounded-[4px] bg-[#111111] p-3.5 space-y-2 max-h-[240px] overflow-y-auto text-xs">
                 {liveTradeFeed.length === 0 ? (
-                  <div className="py-6 text-center text-[#666666] italic">
+                  <div className="py-8 text-center text-[#666666] italic">
                     Awaiting player trade activity...
                   </div>
                 ) : (
-                  liveTradeFeed.map((trade) => (
-                    <div key={trade.id} className="flex items-center justify-between py-1 border-b border-[#1A1A1A] last:border-b-0 text-[11px]">
-                      <div className="flex items-center gap-2">
-                        <button
-                          type="button"
-                          onClick={() => handleOpenTraderDetail(trade.traderId || trade.userId)}
-                          className="text-white font-bold hover:text-[#F0B429] underline decoration-dotted"
-                        >
-                          {trade.traderName}
-                        </button>
-                        {trade.isBankrupt ? (
-                          <span className="text-[#F85149] font-bold uppercase">went bankrupt</span>
-                        ) : trade.isTopUp ? (
-                          <span className="text-[#F0B429] font-bold">gave +{fmtMoney(trade.price)} IC</span>
-                        ) : (
-                          <span className={trade.action === 'BUY' ? 'text-[#3FB950]' : 'text-[#F85149]'}>
-                            {trade.action.toLowerCase()} {trade.quantity} shares {trade.symbol}
+                  liveTradeFeed.map((trade) => {
+                    const borderLeftClass = trade.isBankrupt
+                      ? 'border-l-2 border-l-[#F85149]'
+                      : trade.isTopUp
+                      ? 'border-l-2 border-l-[#F0B429]'
+                      : trade.action === 'NEWS'
+                      ? 'border-l-2 border-l-[#888888]'
+                      : 'border-l-2 border-l-[#3FB950]';
+
+                    return (
+                      <div
+                        key={trade.id}
+                        className={`flex items-center justify-between px-3 py-2 bg-[#141414] ${borderLeftClass} rounded-[2px] text-[11px]`}
+                      >
+                        <div className="flex items-center gap-2">
+                          <button
+                            type="button"
+                            onClick={() => handleOpenTraderDetail(trade.traderId || trade.userId)}
+                            className="text-white font-semibold hover:underline cursor-pointer"
+                          >
+                            {trade.traderName}
+                          </button>
+                          {trade.isBankrupt ? (
+                            <span className="text-[#F85149] font-bold uppercase">went bankrupt</span>
+                          ) : trade.isTopUp ? (
+                            <span className="text-[#F0B429] font-bold">gave +{fmtMoney(trade.price)} IC</span>
+                          ) : (
+                            <span className={trade.action === 'BUY' ? 'text-[#3FB950]' : 'text-[#F85149]'}>
+                              {trade.action.toLowerCase()} {trade.quantity} shares {trade.symbol}
+                            </span>
+                          )}
+                        </div>
+                        <div className="flex items-center gap-4">
+                          <span className="text-white font-bold font-mono">
+                            {trade.isBankrupt ? '0 IC' : trade.isTopUp ? '—' : `${fmtMoney(trade.price * trade.quantity)} IC`}
                           </span>
-                        )}
+                          <span className="text-[#555555] font-mono text-[11px]">{new Date(trade.timestamp).toLocaleTimeString()}</span>
+                        </div>
                       </div>
-                      <div className="flex items-center gap-3">
-                        <span className="text-white font-bold">
-                          {trade.isBankrupt ? '0 IC' : trade.isTopUp ? '—' : `${fmtMoney(trade.price * trade.quantity)} IC`}
-                        </span>
-                        <span className="text-[#666666] text-[10px]">{new Date(trade.timestamp).toLocaleTimeString()}</span>
-                      </div>
-                    </div>
-                  ))
+                    );
+                  })
                 )}
               </div>
             </div>
 
-            {/* Compact Leaderboard Rows Below Live Feed */}
-            <div className="space-y-2">
-              <span className="text-[11px] uppercase tracking-[0.08em] text-[#666666]">COMPACT LEADERBOARD</span>
-              <div className="border border-[#2A2A2A] rounded-[4px] bg-[#111111] p-3 space-y-1.5 max-h-[180px] overflow-y-auto text-xs">
+            {/* Compact Leaderboard Rows with 1px Separator & Top 3 Amber Borders */}
+            <div className="space-y-3 border-t border-[#2A2A2A] pt-4 mt-4">
+              <span className="text-[10px] uppercase tracking-[0.1em] text-[#555555] font-bold block mb-2">COMPACT LEADERBOARD</span>
+              <div className="border border-[#2A2A2A] rounded-[4px] bg-[#111111] p-3.5 space-y-2 max-h-[200px] overflow-y-auto text-xs">
                 {leaderboard.length === 0 ? (
-                  <div className="py-4 text-center text-[#666666] italic">
+                  <div className="py-6 text-center text-[#666666] italic">
                     Loading standings...
                   </div>
                 ) : (
-                  leaderboard.map((entry, idx) => (
-                    <div key={entry.id || idx} className="flex items-center justify-between py-1 border-b border-[#1A1A1A] last:border-b-0 text-[11px]">
-                      <div className="flex items-center gap-3">
-                        <span className="text-[#888888] font-bold w-5">#{idx + 1}</span>
-                        <button
-                          type="button"
-                          onClick={() => handleOpenTraderDetail(entry.id)}
-                          className="text-white font-bold hover:text-[#F0B429]"
-                        >
-                          {entry.name}
-                        </button>
+                  leaderboard.map((entry, idx) => {
+                    const isTop3 = idx < 3;
+                    const rankColor = idx === 0 ? 'text-[#F0B429]' : isTop3 ? 'text-white' : 'text-[#666666]';
+
+                    return (
+                      <div
+                        key={entry.id || idx}
+                        className={`flex items-center justify-between px-3 py-1.5 bg-[#141414] rounded-[2px] text-[11px] ${
+                          isTop3 ? 'border-l border-l-[#F0B429]' : ''
+                        }`}
+                      >
+                        <div className="flex items-center gap-3">
+                          <span className={`font-mono font-bold w-5 ${rankColor}`}>#{idx + 1}</span>
+                          <button
+                            type="button"
+                            onClick={() => handleOpenTraderDetail(entry.id)}
+                            className="text-white font-semibold hover:underline cursor-pointer"
+                          >
+                            {entry.name}
+                          </button>
+                        </div>
+                        <div className="flex items-center gap-4">
+                          <span className="text-[#3FB950] font-mono font-bold text-xs">
+                            {fmtMoney(entry.totalNetWorth || entry.portfolioValue)} IC
+                          </span>
+                          <button
+                            type="button"
+                            onClick={() => handleOpenTraderDetail(entry.id)}
+                            className="text-[10px] uppercase font-bold text-[#F0B429] border border-[#F0B429] bg-transparent hover:bg-[#F0B429]/10 rounded-[4px] px-2 py-0.5 transition-colors"
+                          >
+                            AUDIT
+                          </button>
+                        </div>
                       </div>
-                      <div className="flex items-center gap-4">
-                        <span className="text-[#3FB950] font-bold">{fmtMoney(entry.totalNetWorth || entry.portfolioValue)} IC</span>
-                        <button
-                          type="button"
-                          onClick={() => handleOpenTraderDetail(entry.id)}
-                          className="text-[10px] uppercase font-bold text-[#F0B429] border border-[#F0B429] rounded-[4px] px-2 py-0.5 hover:bg-[#F0B429]/10 transition-colors"
-                        >
-                          AUDIT
-                        </button>
-                      </div>
-                    </div>
-                  ))
+                    );
+                  })
                 )}
               </div>
             </div>
