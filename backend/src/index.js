@@ -9,6 +9,13 @@ const { initSocket } = require('./socket');
 const { startMarketTicker } = require('./services/marketTicker');
 const { ensureNewsTemplatesSeeded } = require('./services/newsService');
 
+// Startup Environment Variables Audit & Validation
+const requiredEnvVars = ['DATABASE_URL', 'JWT_SECRET'];
+const missingEnvVars = requiredEnvVars.filter((key) => !process.env[key]);
+if (missingEnvVars.length > 0) {
+  console.warn(`[CONFIG WARNING]: Missing required environment variables in .env: ${missingEnvVars.join(', ')}`);
+}
+
 // Top-level process safety nets to prevent backend crashes on stray errors
 process.on('uncaughtException', (err) => {
   console.error('[CRITICAL UNCAUGHT EXCEPTION]:', err?.stack || err?.message || err);

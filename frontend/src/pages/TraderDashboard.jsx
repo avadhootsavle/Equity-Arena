@@ -20,7 +20,6 @@ import { ToastStack } from '../components/ToastStack';
 import { StockDetailModal } from '../components/StockDetailModal';
 import { OnboardingTour } from '../components/OnboardingTour';
 import { NewsToast } from '../components/NewsToast';
-import { TradeFeedbackOverlay } from '../components/TradeFeedbackOverlay';
 import { playNewsChime } from '../services/soundService';
 
 import {
@@ -308,10 +307,6 @@ export function TraderDashboard() {
     };
 
     const handleOrderExecuted = (alert) => {
-      setFeedbackOverlay({
-        status: 'success',
-        message: alert?.message || 'Limit order executed'
-      });
       pushToast(alert?.message || 'Limit order executed', 'success', 'Order filled');
       fetchPortfolio();
     };
@@ -352,6 +347,8 @@ export function TraderDashboard() {
      Part 2: Wallet balance count-up animation on IC Top-Up
      --------------------------------------------------------------- */
   useEffect(() => {
+    let animId = null;
+
     if (portfolio?.walletBalance !== undefined) {
       const newBal = portfolio.walletBalance;
       const oldBal = prevWalletRef.current;
@@ -372,15 +369,19 @@ export function TraderDashboard() {
           const current = startVal + (endVal - startVal) * easeProgress;
           setAnimatedWalletBalance(current);
           if (progress < 1) {
-            requestAnimationFrame(step);
+            animId = requestAnimationFrame(step);
           } else {
             setAnimatedWalletBalance(null);
           }
         };
-        requestAnimationFrame(step);
+        animId = requestAnimationFrame(step);
       }
       prevWalletRef.current = newBal;
     }
+
+    return () => {
+      if (animId) cancelAnimationFrame(animId);
+    };
   }, [portfolio?.walletBalance, pushToast]);
 
   /* ---------------------------------------------------------------
@@ -489,10 +490,6 @@ export function TraderDashboard() {
           data.transaction?.totalCost ??
           Math.round(execPrice * quantity * 100) / 100;
 
-        setFeedbackOverlay({
-          status: 'success',
-          message: `${side === 'BUY' ? 'Bought' : 'Sold'} ${quantity} ${activeStock.symbol}`
-        });
         pushToast(
           `${side === 'BUY' ? 'Bought' : 'Sold'} ${quantity} ${activeStock.symbol} @ ${fmtMoney(
             execPrice

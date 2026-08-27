@@ -278,7 +278,12 @@ export function AdminDashboard() {
     };
 
     const handleActivityLog = (data) => {
-      setLiveTradeFeed((prev) => [data, ...prev].slice(0, 30));
+      if (!data) return;
+      const itemWithId = {
+        ...data,
+        id: data.id || (Date.now() + Math.random())
+      };
+      setLiveTradeFeed((prev) => [itemWithId, ...prev].slice(0, 30));
     };
 
     socket.on('connect', handleConnect);

@@ -3,10 +3,10 @@ import { apiFetch } from '../services/api';
 import { useSocket } from '../context/SocketContext';
 import { Clock, AlertTriangle, ShieldCheck } from 'lucide-react';
 
-export function SessionCountdown({ onSessionUpdate }) {
+export function SessionCountdown({ onSessionUpdate, initialSession }) {
   const { socket } = useSocket();
-  const [session, setSession] = useState(null);
-  const [remainingSeconds, setRemainingSeconds] = useState(0);
+  const [session, setSession] = useState(initialSession || null);
+  const [remainingSeconds, setRemainingSeconds] = useState(initialSession?.remainingSeconds || 0);
 
   const onSessionUpdateRef = React.useRef(onSessionUpdate);
   useEffect(() => {
@@ -25,12 +25,17 @@ export function SessionCountdown({ onSessionUpdate }) {
   }, []);
 
   useEffect(() => {
-    fetchSession();
+    if (initialSession) {
+      setSession(initialSession);
+      setRemainingSeconds(initialSession.remainingSeconds || 0);
+    } else {
+      fetchSession();
+    }
 
     // Re-sync with server every 20 seconds to prevent clock drift
     const syncInterval = setInterval(fetchSession, 20000);
     return () => clearInterval(syncInterval);
-  }, [fetchSession]);
+  }, [fetchSession, initialSession]);
 
   // Client-side 1-second countdown tick (decoupled from remainingSeconds to tick smoothly every 1000ms)
   useEffect(() => {
