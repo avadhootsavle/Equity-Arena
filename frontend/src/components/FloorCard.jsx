@@ -1,5 +1,6 @@
 import React, { memo, useMemo, useState } from 'react';
 import { TrendingUp, TrendingDown, Check, Zap } from 'lucide-react';
+import { StockSparkline } from './StockSparkline';
 
 const fmtMoney = (n, d = 2) =>
   Number(n || 0).toLocaleString('en-US', {
@@ -265,7 +266,7 @@ export const FloorCard = memo(function FloorCard({
         </span>
 
         {/* Price + % Change Badge */}
-        <span className="flex items-baseline justify-between gap-2 my-3.5">
+        <span className="flex items-baseline justify-between gap-2 my-2">
           <span
             className={`text-2xl font-mono font-extrabold theme-text-main leading-none ${priceClass}`}
           >
@@ -291,6 +292,9 @@ export const FloorCard = memo(function FloorCard({
             )}
           </span>
         </span>
+
+        {/* Live 48px Sparkline + 15M High/Low/Range Stats */}
+        <StockSparkline stockId={stock.id} currentPrice={stock.currentPrice} index={index} />
 
         {/* Footer stats: Sector & Day Range */}
         <span className="flex items-center justify-between pt-2.5 border-t theme-border text-[10px] font-mono theme-text-dim">
