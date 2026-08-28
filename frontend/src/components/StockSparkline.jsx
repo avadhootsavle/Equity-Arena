@@ -105,7 +105,7 @@ export const StockSparkline = memo(function StockSparkline({
   }, [history, currentPrice]);
 
   // Generate SVG Path & Area Coordinates
-  const height = 48;
+  const height = 36;
   const viewBoxWidth = 260;
 
   const { pathD, areaD, coords } = useMemo(() => {
@@ -182,7 +182,7 @@ export const StockSparkline = memo(function StockSparkline({
         onMouseLeave={handleMouseLeave}
         onTouchMove={handleMouseMove}
         onTouchEnd={handleMouseLeave}
-        className="relative w-full h-[48px] bg-[#0F1117]/60 border border-[#2D3142]/40 rounded-lg overflow-hidden cursor-crosshair group"
+        className="relative w-full h-[36px] bg-[#0F1117]/60 border border-[#2D3142]/40 rounded-lg overflow-hidden cursor-crosshair group"
       >
         {loading ? (
           <div className="absolute inset-0 flex items-center justify-center text-[9px] font-mono text-[#7B82A0] animate-pulse">
@@ -265,18 +265,18 @@ export const StockSparkline = memo(function StockSparkline({
       </div>
 
       {/* 15M Rolling Stats Row (HIGH / LOW / RANGE) */}
-      <div className="flex items-center justify-between px-0.5 text-[11px] font-mono text-[#7B82A0]">
+      <div className="flex items-center justify-between px-0.5 text-[10px] font-mono text-[#7B82A0]">
         <div className="flex items-center gap-1">
-          <span className="text-[11px] font-normal uppercase text-[#7B82A0]">HIGH</span>
-          <span className="text-[13px] font-semibold font-mono text-[#F0F2FF]">{fmtMoney(high)}</span>
+          <span className="text-[10px] font-semibold uppercase text-[#7B82A0]">HIGH</span>
+          <span className="text-[11.5px] font-bold font-mono text-[#F0F2FF]">{fmtMoney(high)}</span>
         </div>
         <div className="flex items-center gap-1">
-          <span className="text-[11px] font-normal uppercase text-[#7B82A0]">LOW</span>
-          <span className="text-[13px] font-semibold font-mono text-[#F0F2FF]">{fmtMoney(low)}</span>
+          <span className="text-[10px] font-semibold uppercase text-[#7B82A0]">LOW</span>
+          <span className="text-[11.5px] font-bold font-mono text-[#F0F2FF]">{fmtMoney(low)}</span>
         </div>
         <div className="flex items-center gap-1">
-          <span className="text-[11px] font-normal uppercase text-[#7B82A0]">RANGE</span>
-          <span className="text-[13px] font-semibold font-mono text-[#F0F2FF]">{fmtMoney(range)}</span>
+          <span className="text-[10px] font-semibold uppercase text-[#7B82A0]">RANGE</span>
+          <span className="text-[11.5px] font-bold font-mono text-[#F0F2FF]">{fmtMoney(range)}</span>
         </div>
       </div>
     </div>

@@ -213,7 +213,7 @@ export const FloorCard = memo(function FloorCard({
           ? { borderColor: 'color-mix(in srgb, var(--accent) 55%, transparent)' }
           : null)
       }}
-      className={`floor-card animate-card-rise surface p-4 flex flex-col justify-between ${
+      className={`floor-card animate-card-rise surface p-3.5 flex flex-col justify-between ${
         isUp ? 'is-up' : 'is-down'
       } ${flashClass}`}
     >
@@ -232,7 +232,7 @@ export const FloorCard = memo(function FloorCard({
         <span className="flex items-start justify-between gap-2">
           <span className="flex items-center gap-2 min-w-0">
             <span
-              className="w-7 h-7 rounded-lg flex items-center justify-center text-[10px] font-mono font-extrabold flex-shrink-0 shadow-sm"
+              className="w-6 h-6 rounded-md flex items-center justify-center text-[10px] font-mono font-extrabold flex-shrink-0 shadow-sm"
               style={{
                 backgroundColor: `color-mix(in srgb, ${accent} 18%, transparent)`,
                 color: accent
@@ -241,10 +241,10 @@ export const FloorCard = memo(function FloorCard({
               {stock.symbol?.slice(0, 2)}
             </span>
             <span className="min-w-0 block">
-              <span className="block text-[17px] font-medium theme-text-main leading-tight">
+              <span className="block text-[14px] sm:text-[15px] font-bold theme-text-main leading-tight">
                 {stock.name || stock.symbol}
               </span>
-              <span className="block text-[12px] font-normal theme-text-dim leading-tight mt-0.5">
+              <span className="block text-[11px] font-mono theme-text-dim leading-tight mt-0.5">
                 {stock.symbol}
               </span>
             </span>
@@ -252,28 +252,28 @@ export const FloorCard = memo(function FloorCard({
 
           {owned > 0 && (
             <span
-              className="px-2 py-0.5 rounded text-[10px] font-mono font-bold flex items-center gap-1 flex-shrink-0"
+              className="px-2 py-0.5 rounded text-[9.5px] font-mono font-bold flex items-center gap-1 flex-shrink-0"
               style={{
                 backgroundColor:
                   'color-mix(in srgb, var(--accent) 15%, transparent)',
                 color: 'var(--accent)'
               }}
             >
-              <Check className="w-3.5 h-3.5" />
+              <Check className="w-3 h-3" />
               {owned}
             </span>
           )}
         </span>
 
         {/* Price + % Change Badge */}
-        <span className="flex items-baseline justify-between gap-2 my-2.5">
+        <span className="flex items-baseline justify-between gap-2 my-2">
           <span
-            className={`text-[26px] font-mono font-semibold theme-text-main leading-none whitespace-nowrap ${priceClass}`}
+            className={`text-[20px] sm:text-[22px] font-mono font-bold theme-text-main leading-none whitespace-nowrap ${priceClass}`}
           >
             {fmtMoney(stock.currentPrice)} IC
           </span>
           <span
-            className="flex items-center gap-1 px-2 py-1 rounded text-[13px] font-mono font-medium"
+            className="flex items-center gap-1 px-2 py-0.5 rounded text-[11.5px] font-mono font-bold"
             style={{
               color: accent,
               backgroundColor: `color-mix(in srgb, ${accent} 15%, transparent)`
@@ -281,23 +281,23 @@ export const FloorCard = memo(function FloorCard({
           >
             {isUp ? (
               <>
-                <TrendingUp className="w-3.5 h-3.5" />
+                <TrendingUp className="w-3 h-3" />
                 <span>Up {Math.abs(percentChange).toFixed(2)}%</span>
               </>
             ) : (
               <>
-                <TrendingDown className="w-3.5 h-3.5" />
+                <TrendingDown className="w-3 h-3" />
                 <span>Down {Math.abs(percentChange).toFixed(2)}%</span>
               </>
             )}
           </span>
         </span>
 
-        {/* Live 48px Sparkline + 15M High/Low/Range Stats */}
+        {/* Live 36px Sparkline + 15M High/Low/Range Stats */}
         <StockSparkline stockId={stock.id} currentPrice={stock.currentPrice} index={index} />
 
         {/* Footer stats: Sector & Day Range */}
-        <span className="flex items-center justify-between pt-2.5 border-t theme-border text-[12px] font-mono theme-text-dim">
+        <span className="flex items-center justify-between pt-2 border-t theme-border text-[10.5px] font-mono theme-text-dim">
           <span className="uppercase tracking-wide font-normal theme-text-dim whitespace-nowrap">
             {stock.sector}
           </span>
@@ -309,7 +309,7 @@ export const FloorCard = memo(function FloorCard({
       </button>
 
       {/* Mode 1 & Mode 2 Trade Actions */}
-      <div className="space-y-2 mt-3 pt-2.5 border-t theme-border font-mono" onClick={(e) => e.stopPropagation()}>
+      <div className="space-y-1.5 mt-2.5 pt-2 border-t theme-border font-mono" onClick={(e) => e.stopPropagation()}>
         {/* Mode 1: Quick Buy & Quick Sell (Instant Execution) */}
         <div className="flex items-center gap-1.5">
           {/* Stepper controls */}
@@ -320,7 +320,7 @@ export const FloorCard = memo(function FloorCard({
                 e.stopPropagation();
                 setCardQty((prev) => String(Math.max(1, (parseInt(prev, 10) || 1) - 1)));
               }}
-              className="w-[30px] h-[40px] rounded-lg border theme-border theme-bg-card hover:theme-bg-card-hover font-black text-sm theme-text-main flex items-center justify-center transition-all active:scale-95 shadow-sm"
+              className="w-[26px] h-[34px] rounded-lg border theme-border theme-bg-card hover:theme-bg-card-hover font-black text-xs theme-text-main flex items-center justify-center transition-all active:scale-95 shadow-sm"
               title="Decrease quantity by 1"
             >
               −
@@ -334,7 +334,7 @@ export const FloorCard = memo(function FloorCard({
               onClick={(e) => e.stopPropagation()}
               onChange={(e) => setCardQty(e.target.value)}
               title="Quantity to trade"
-              className="w-[44px] h-[40px] rounded-lg border theme-border theme-bg-input px-0.5 text-center text-xs font-bold theme-text-main focus:outline-none focus:border-[var(--accent)]"
+              className="w-[36px] h-[34px] rounded-lg border theme-border theme-bg-input px-0.5 text-center text-xs font-bold theme-text-main focus:outline-none focus:border-[var(--accent)]"
             />
 
             <button
@@ -343,7 +343,7 @@ export const FloorCard = memo(function FloorCard({
                 e.stopPropagation();
                 setCardQty((prev) => String((parseInt(prev, 10) || 1) + 1));
               }}
-              className="w-[30px] h-[40px] rounded-lg border theme-border theme-bg-card hover:theme-bg-card-hover font-black text-sm theme-text-main flex items-center justify-center transition-all active:scale-95 shadow-sm"
+              className="w-[26px] h-[34px] rounded-lg border theme-border theme-bg-card hover:theme-bg-card-hover font-black text-xs theme-text-main flex items-center justify-center transition-all active:scale-95 shadow-sm"
               title="Increase quantity by 1"
             >
               +
@@ -356,7 +356,7 @@ export const FloorCard = memo(function FloorCard({
             onClick={(e) => handleQuickTrade(e, 'BUY')}
             disabled={isTradingLocked}
             title={isTradingLocked ? 'Trading locked' : `Instant Quick Buy ${cardQty} ${stock.symbol}`}
-            className="card-action card-action-buy text-[13px] font-semibold min-h-[40px] px-2 flex-1 flex items-center justify-center gap-1 shadow-md uppercase tracking-wider"
+            className="card-action card-action-buy text-[12px] font-bold min-h-[34px] px-2 flex-1 flex items-center justify-center gap-1 shadow-md uppercase tracking-wider rounded-lg"
           >
             <span>BUY ⚡</span>
           </button>
@@ -372,7 +372,7 @@ export const FloorCard = memo(function FloorCard({
                 ? `No ${stock.symbol} shares to sell`
                 : `Instant Quick Sell ${availableToSell} available`
             }
-            className="card-action card-action-sell text-[13px] font-semibold min-h-[40px] px-2 flex-1 flex items-center justify-center gap-1 shadow-md uppercase tracking-wider"
+            className="card-action card-action-sell text-[12px] font-bold min-h-[34px] px-2 flex-1 flex items-center justify-center gap-1 shadow-md uppercase tracking-wider rounded-lg"
           >
             <span>SELL</span>
           </button>
@@ -383,7 +383,7 @@ export const FloorCard = memo(function FloorCard({
           <button
             type="button"
             onClick={(e) => handleNormalTrade(e, 'BUY')}
-            className="flex-1 py-1.5 px-2 rounded-lg border theme-border theme-bg-card hover:theme-bg-card-hover text-[13px] font-normal theme-text-main flex items-center justify-center gap-1 transition-all active:scale-95 min-h-[36px]"
+            className="flex-1 py-1 px-2 rounded-lg border theme-border theme-bg-card hover:theme-bg-card-hover text-[11px] font-semibold theme-text-main flex items-center justify-center gap-1 transition-all active:scale-95 min-h-[30px]"
             title="Open review panel to inspect cost or place target limit order"
           >
             <span>Normal Buy</span>
@@ -392,7 +392,7 @@ export const FloorCard = memo(function FloorCard({
           <button
             type="button"
             onClick={(e) => handleNormalTrade(e, 'SELL')}
-            className="flex-1 py-1.5 px-2 rounded-lg border theme-border theme-bg-card hover:theme-bg-card-hover text-[13px] font-normal theme-text-main flex items-center justify-center gap-1 transition-all active:scale-95 min-h-[36px]"
+            className="flex-1 py-1 px-2 rounded-lg border theme-border theme-bg-card hover:theme-bg-card-hover text-[11px] font-semibold theme-text-main flex items-center justify-center gap-1 transition-all active:scale-95 min-h-[30px]"
             title="Open review panel to sell shares or set sell limit order"
           >
             <span>Normal Sell</span>

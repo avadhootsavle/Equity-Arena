@@ -896,8 +896,8 @@ export function TraderDashboard() {
                   <div
                     className={
                       floorView === 'grid'
-                        ? 'grid grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-3'
-                        : 'grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 xl:grid-cols-8 gap-2'
+                        ? 'grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-3.5'
+                        : 'grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 xl:grid-cols-6 gap-2.5'
                     }
                   >
                     {filteredStocks.map((stock, i) => (
