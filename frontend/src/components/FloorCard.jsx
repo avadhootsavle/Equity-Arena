@@ -241,7 +241,7 @@ export const FloorCard = memo(function FloorCard({
               {stock.symbol?.slice(0, 2)}
             </span>
             <span className="min-w-0 block">
-              <span className="block text-[13px] font-semibold theme-text-main leading-tight truncate max-w-[130px]">
+              <span className="block text-[12px] font-bold theme-text-main leading-tight">
                 {stock.name || stock.symbol}
               </span>
               <span className="block text-[10px] font-mono theme-text-dim leading-tight mt-0.5">
@@ -268,7 +268,7 @@ export const FloorCard = memo(function FloorCard({
         {/* Price + % Change Badge */}
         <span className="flex items-baseline justify-between gap-2 my-2">
           <span
-            className={`text-2xl font-mono font-extrabold theme-text-main leading-none ${priceClass}`}
+            className={`text-xl sm:text-2xl font-mono font-extrabold theme-text-main leading-none whitespace-nowrap ${priceClass}`}
           >
             {fmtMoney(stock.currentPrice)} IC
           </span>
@@ -298,7 +298,7 @@ export const FloorCard = memo(function FloorCard({
 
         {/* Footer stats: Sector & Day Range */}
         <span className="flex items-center justify-between pt-2.5 border-t theme-border text-[10px] font-mono theme-text-dim">
-          <span className="uppercase tracking-wide font-semibold truncate max-w-[80px]">
+          <span className="uppercase tracking-wide font-semibold whitespace-nowrap">
             {stock.sector}
           </span>
           <span>
@@ -358,8 +358,7 @@ export const FloorCard = memo(function FloorCard({
             title={isTradingLocked ? 'Trading locked' : `Instant Quick Buy ${cardQty} ${stock.symbol}`}
             className="card-action card-action-buy text-[11px] font-black min-h-[40px] px-2 flex-1 flex items-center justify-center gap-1 shadow-md uppercase tracking-wider"
           >
-            <Zap className="w-3.5 h-3.5 fill-current" />
-            <span>QUICK BUY</span>
+            <span>BUY ⚡</span>
           </button>
 
           <button
@@ -375,7 +374,7 @@ export const FloorCard = memo(function FloorCard({
             }
             className="card-action card-action-sell text-[11px] font-black min-h-[40px] px-2 flex-1 flex items-center justify-center gap-1 shadow-md uppercase tracking-wider"
           >
-            <span>QUICK SELL</span>
+            <span>SELL</span>
           </button>
         </div>
 

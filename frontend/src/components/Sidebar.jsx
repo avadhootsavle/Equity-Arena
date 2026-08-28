@@ -5,14 +5,13 @@ import {
   Wallet,
   ClipboardList,
   Newspaper,
-  TrendingUp,
-  Trophy
+  TrendingUp
 } from 'lucide-react';
 
 export const NAV_ITEMS = [
   { key: 'DASHBOARD', label: 'Market', Icon: LayoutDashboard },
   { key: 'PORTFOLIO', label: 'My Stocks', Icon: Wallet },
-  { key: 'ORDERS', label: 'Orders', Icon: ClipboardList },
+  { key: 'ORDERS', label: 'Limit Orders', Icon: ClipboardList },
   { key: 'NEWS', label: 'News', Icon: Newspaper }
 ];
 
@@ -46,7 +45,7 @@ export function Sidebar({ activeTab, setActiveTab, counts = {} }) {
       </div>
 
       {/* Navigation */}
-      <nav className="flex-1 px-2.5 py-3 space-y-0.5 overflow-y-auto">
+      <nav className="flex-1 px-2.5 py-3 space-y-1 overflow-y-auto">
         {NAV_ITEMS.map(({ key, label, Icon }) => {
           const active = activeTab === key;
           const badge = counts[key];
@@ -57,31 +56,33 @@ export function Sidebar({ activeTab, setActiveTab, counts = {} }) {
               type="button"
               onClick={() => setActiveTab(key)}
               aria-current={active ? 'page' : undefined}
-              className={`relative w-full flex items-center gap-2.5 px-2.5 py-2 rounded-md text-[12px] font-medium transition-all group ${
+              className={`relative w-full flex items-center gap-2.5 px-3 py-2.5 rounded-lg text-[12.5px] font-bold transition-all group ${
                 active
-                  ? 'theme-text-main'
+                  ? 'theme-text-main font-black'
                   : 'theme-text-muted hover:theme-text-main hover:theme-bg-card-hover'
               }`}
               style={
                 active
                   ? {
                       backgroundColor:
-                        'color-mix(in srgb, var(--accent) 11%, transparent)'
+                        'color-mix(in srgb, var(--accent) 15%, transparent)',
+                      color: 'var(--accent)',
+                      border: '1px solid color-mix(in srgb, var(--accent) 30%, transparent)'
                     }
                   : undefined
               }
             >
               {/* Active rail indicator */}
               <span
-                className="absolute left-0 top-1/2 -translate-y-1/2 w-[2.5px] rounded-r-full transition-all duration-200"
+                className="absolute left-0 top-1/2 -translate-y-1/2 w-[3px] rounded-r-full transition-all duration-200"
                 style={{
-                  height: active ? '60%' : '0%',
+                  height: active ? '70%' : '0%',
                   backgroundColor: 'var(--accent)'
                 }}
               />
               <Icon
                 className="w-4 h-4 flex-shrink-0 transition-transform group-hover:scale-110"
-                style={active ? { color: 'var(--accent)' } : undefined}
+                style={{ color: active ? 'var(--accent)' : 'var(--text-dim)' }}
               />
               <span className="flex-1 text-left">{label}</span>
 
@@ -90,7 +91,7 @@ export function Sidebar({ activeTab, setActiveTab, counts = {} }) {
                   className="px-1.5 py-0.5 rounded text-[9px] font-mono font-bold"
                   style={{
                     backgroundColor:
-                      'color-mix(in srgb, var(--accent) 16%, transparent)',
+                      'color-mix(in srgb, var(--accent) 20%, transparent)',
                     color: 'var(--accent)'
                   }}
                 >
@@ -102,34 +103,15 @@ export function Sidebar({ activeTab, setActiveTab, counts = {} }) {
         })}
       </nav>
 
-      {/* Footer: connection + house tip */}
-      <div className="px-2.5 pb-3 space-y-2">
-        <div className="flex items-center gap-1.5 px-2.5 py-1.5 text-[10px] font-mono">
-          <span
-            className={`w-1.5 h-1.5 rounded-full ${isConnected ? 'animate-live-pulse' : ''}`}
-            style={{
-              backgroundColor: isConnected ? 'var(--gain-green)' : 'var(--loss-red)',
-              color: isConnected ? 'var(--gain-green)' : 'var(--loss-red)'
-            }}
-          />
-          <span className="theme-text-dim">
-            {isConnected ? 'Live book connected' : 'Reconnecting…'}
-          </span>
-        </div>
-
-        <div className="surface-panel px-3 py-2.5">
-          <div
-            className="flex items-center gap-1.5 text-[10px] font-heading font-bold uppercase tracking-wider"
-            style={{ color: 'var(--accent)' }}
-          >
-            <TrendingUp className="w-3 h-3" />
-            Trade. Build. Win.
+      {/* Connection status indicator (only shown if disconnected) */}
+      {!isConnected && (
+        <div className="px-3 pb-3">
+          <div className="flex items-center gap-1.5 px-2.5 py-1.5 text-[10px] font-mono rounded bg-rose-500/10 border border-rose-500/30 text-rose-400">
+            <span className="w-1.5 h-1.5 rounded-full bg-rose-500 animate-pulse" />
+            <span>Reconnecting to market...</span>
           </div>
-          <p className="text-[9.5px] theme-text-dim leading-snug mt-1">
-            One session, one shot. Build your portfolio value before time expires.
-          </p>
         </div>
-      </div>
+      )}
     </aside>
   );
 }
@@ -152,7 +134,7 @@ export function MobileNav({ activeTab, setActiveTab, counts = {} }) {
             style={{ color: active ? 'var(--accent)' : 'var(--text-dim)' }}
           >
             <Icon className="w-[18px] h-[18px]" />
-            <span className="text-[9.5px] font-medium">{label}</span>
+            <span className="text-[9.5px] font-bold">{label}</span>
             {badge > 0 && (
               <span
                 className="absolute top-1.5 right-[22%] px-1 rounded text-[8px] font-mono font-bold"
