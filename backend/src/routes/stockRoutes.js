@@ -181,10 +181,13 @@ router.get('/news', authenticateToken, async (req, res) => {
 // GET /leaderboard/public (Public Read-Only Standings for Projectors & Audience — No Auth Required)
 router.get('/leaderboard/public', async (req, res) => {
   try {
-    const traders = await prisma.user.findMany({
+    const rawTraders = await prisma.user.findMany({
       where: {
         role: 'TRADER',
-        isTestAccount: false
+        isTestAccount: false,
+        NOT: {
+          name: { contains: 'Multi-Tab' }
+        }
       },
       include: {
         holdings: {
@@ -197,6 +200,15 @@ router.get('/leaderboard/public', async (req, res) => {
       }
     });
 
+    // Deduplicate by user ID
+    const userMap = new Map();
+    for (const trader of rawTraders) {
+      if (!userMap.has(trader.id)) {
+        userMap.set(trader.id, trader);
+      }
+    }
+    const traders = Array.from(userMap.values());
+
     const leaderboard = traders.map((trader) => {
       const holdingsValue = trader.holdings.reduce((sum, h) => {
         return sum + (h.quantity * (h.stock?.currentPrice || 0));
@@ -206,6 +218,7 @@ router.get('/leaderboard/public', async (req, res) => {
       const returnPercent = Math.round((((totalValue - 20000) / 20000) * 100) * 10) / 10;
 
       return {
+        id: trader.id,
         name: trader.name || trader.email.split('@')[0],
         totalValue,
         returnPercent

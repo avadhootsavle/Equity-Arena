@@ -25,6 +25,7 @@ async function runMultiTabSyncTest() {
         email: testEmail,
         passwordHash: 'hash',
         role: 'TRADER',
+        isTestAccount: true,
         walletBalance: 20000.00
       }
     });

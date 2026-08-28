@@ -180,14 +180,29 @@ function emitPublicLeaderboardUpdate(data) {
 async function broadcastPublicLeaderboard() {
   try {
     if (!io) return;
-    const traders = await prisma.user.findMany({
-      where: { role: 'TRADER', isTestAccount: false },
+    const rawTraders = await prisma.user.findMany({
+      where: {
+        role: 'TRADER',
+        isTestAccount: false,
+        NOT: {
+          name: { contains: 'Multi-Tab' }
+        }
+      },
       include: {
         holdings: {
           include: { stock: { select: { currentPrice: true } } }
         }
       }
     });
+
+    // Deduplicate by user ID
+    const userMap = new Map();
+    for (const trader of rawTraders) {
+      if (!userMap.has(trader.id)) {
+        userMap.set(trader.id, trader);
+      }
+    }
+    const traders = Array.from(userMap.values());
 
     const leaderboard = traders.map((trader) => {
       const holdingsValue = trader.holdings.reduce((sum, h) => {
@@ -198,6 +213,7 @@ async function broadcastPublicLeaderboard() {
       const returnPercent = Math.round((((totalValue - 20000) / 20000) * 100) * 10) / 10;
 
       return {
+        id: trader.id,
         name: trader.name || trader.email.split('@')[0],
         totalValue,
         returnPercent
