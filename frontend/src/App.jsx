@@ -8,6 +8,7 @@ import { ProtectedRoute } from './components/ProtectedRoute';
 import { Login } from './pages/Login';
 import { AdminDashboard } from './pages/AdminDashboard';
 import { TraderDashboard } from './pages/TraderDashboard';
+import { PublicLeaderboardPage } from './pages/PublicLeaderboardPage';
 
 export function App() {
   return (
@@ -17,6 +18,10 @@ export function App() {
           <SocketProvider>
             <Router>
               <Routes>
+                {/* Public Live Leaderboard for Teachers & Audience (No Login Required) */}
+                <Route path="/board" element={<PublicLeaderboardPage />} />
+                <Route path="/leaderboard-live" element={<PublicLeaderboardPage />} />
+
                 {/* Single Unified Login Page for Everyone */}
                 <Route path="/login" element={<Login />} />
 

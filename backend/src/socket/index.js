@@ -33,8 +33,17 @@ function initSocket(server) {
     try {
       const token = socket.handshake.auth?.token || 
                     socket.handshake.headers?.authorization?.replace('Bearer ', '');
-      
+      const isPublic = socket.handshake.auth?.isPublic || socket.handshake.query?.isPublic === 'true';
+
       if (!token) {
+        if (isPublic) {
+          socket.user = {
+            userId: 'PUBLIC_' + Math.random().toString(36).substring(2, 9),
+            role: 'PUBLIC',
+            name: 'Public Audience Viewer'
+          };
+          return next();
+        }
         return next(new Error('Authentication token missing'));
       }
 
@@ -57,6 +66,14 @@ function initSocket(server) {
 
       next();
     } catch (err) {
+      if (socket.handshake.auth?.isPublic || socket.handshake.query?.isPublic === 'true') {
+        socket.user = {
+          userId: 'PUBLIC_' + Math.random().toString(36).substring(2, 9),
+          role: 'PUBLIC',
+          name: 'Public Audience Viewer'
+        };
+        return next();
+      }
       return next(new Error('Authentication failed: Invalid token'));
     }
   });
@@ -66,11 +83,16 @@ function initSocket(server) {
       const { userId, role, name } = socket.user || {};
       console.log(`[Socket] Client connected: ${name || 'User'} (${userId}) [Role: ${role}]`);
 
-      // All authenticated clients join the shared 'traders' room
-      socket.join('traders');
+      if (role === 'PUBLIC') {
+        // Public viewers join ONLY the read-only 'public-leaderboard' room
+        socket.join('public-leaderboard');
+      } else {
+        // All authenticated clients join the shared 'traders' room
+        socket.join('traders');
 
-      // Each user joins their private room 'user:{userId}'
-      if (userId) socket.join(`user:${userId}`);
+        // Each user joins their private room 'user:{userId}'
+        if (userId) socket.join(`user:${userId}`);
+      }
 
       socket.on('error', (err) => {
         console.warn(`[Socket Error] Client ${name || 'User'} (${userId}):`, err?.message || err);
@@ -147,6 +169,54 @@ function emitActivityLog(data) {
   }
 }
 
+function emitPublicLeaderboardUpdate(data) {
+  try {
+    if (io) io.to('public-leaderboard').emit('leaderboard:update', data);
+  } catch (err) {
+    console.error('[Socket emitPublicLeaderboardUpdate error]:', err.message);
+  }
+}
+
+async function broadcastPublicLeaderboard() {
+  try {
+    if (!io) return;
+    const traders = await prisma.user.findMany({
+      where: { role: 'TRADER', isTestAccount: false },
+      include: {
+        holdings: {
+          include: { stock: { select: { currentPrice: true } } }
+        }
+      }
+    });
+
+    const leaderboard = traders.map((trader) => {
+      const holdingsValue = trader.holdings.reduce((sum, h) => {
+        return sum + (h.quantity * (h.stock?.currentPrice || 0));
+      }, 0);
+
+      const totalValue = Math.round((trader.walletBalance + holdingsValue) * 100) / 100;
+      const returnPercent = Math.round((((totalValue - 20000) / 20000) * 100) * 10) / 10;
+
+      return {
+        name: trader.name || trader.email.split('@')[0],
+        totalValue,
+        returnPercent
+      };
+    });
+
+    leaderboard.sort((a, b) => b.totalValue - a.totalValue);
+
+    const rankedLeaderboard = leaderboard.map((item, index) => ({
+      rank: index + 1,
+      ...item
+    }));
+
+    emitPublicLeaderboardUpdate(rankedLeaderboard);
+  } catch (err) {
+    console.error('[broadcastPublicLeaderboard error]:', err.message);
+  }
+}
+
 module.exports = {
   initSocket,
   getIo,
@@ -155,5 +225,7 @@ module.exports = {
   emitNewsBroadcast,
   emitPortfolioUpdate,
   emitBankruptAlert,
-  emitActivityLog
+  emitActivityLog,
+  emitPublicLeaderboardUpdate,
+  broadcastPublicLeaderboard
 };

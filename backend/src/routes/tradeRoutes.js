@@ -2,7 +2,7 @@ const express = require('express');
 const { PrismaClient } = require('@prisma/client');
 const { authenticateToken } = require('../middleware/authMiddleware');
 const { tradeRateLimiter } = require('../middleware/rateLimiter');
-const { emitPortfolioUpdate } = require('../socket');
+const { emitPortfolioUpdate, broadcastPublicLeaderboard } = require('../socket');
 const { getUserAvailableBalance, getUserAvailableHolding } = require('../services/orderService');
 const { getCurrentSession } = require('../services/sessionService');
 const { getUserPortfolio } = require('../services/portfolioService');
@@ -121,6 +121,7 @@ router.post('/trade/buy', authenticateToken, tradeRateLimiter, async (req, res) 
     // Fetch updated portfolio and emit to user's private socket room
     const portfolio = await getUserPortfolio(userId);
     emitPortfolioUpdate(userId, portfolio);
+    broadcastPublicLeaderboard();
     await checkTraderBankruptcy(userId);
 
     return res.json({
@@ -218,6 +219,7 @@ router.post('/trade/sell', authenticateToken, tradeRateLimiter, async (req, res)
     // Fetch updated portfolio and emit to user's private socket room
     const portfolio = await getUserPortfolio(userId);
     emitPortfolioUpdate(userId, portfolio);
+    broadcastPublicLeaderboard();
     await checkTraderBankruptcy(userId);
 
     return res.json({

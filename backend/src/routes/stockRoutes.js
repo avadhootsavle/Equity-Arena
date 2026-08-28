@@ -178,6 +178,54 @@ router.get('/news', authenticateToken, async (req, res) => {
   }
 });
 
+// GET /leaderboard/public (Public Read-Only Standings for Projectors & Audience — No Auth Required)
+router.get('/leaderboard/public', async (req, res) => {
+  try {
+    const traders = await prisma.user.findMany({
+      where: {
+        role: 'TRADER',
+        isTestAccount: false
+      },
+      include: {
+        holdings: {
+          include: {
+            stock: {
+              select: { currentPrice: true }
+            }
+          }
+        }
+      }
+    });
+
+    const leaderboard = traders.map((trader) => {
+      const holdingsValue = trader.holdings.reduce((sum, h) => {
+        return sum + (h.quantity * (h.stock?.currentPrice || 0));
+      }, 0);
+
+      const totalValue = Math.round((trader.walletBalance + holdingsValue) * 100) / 100;
+      const returnPercent = Math.round((((totalValue - 20000) / 20000) * 100) * 10) / 10;
+
+      return {
+        name: trader.name || trader.email.split('@')[0],
+        totalValue,
+        returnPercent
+      };
+    });
+
+    leaderboard.sort((a, b) => b.totalValue - a.totalValue);
+
+    const rankedLeaderboard = leaderboard.map((item, index) => ({
+      rank: index + 1,
+      ...item
+    }));
+
+    return res.json(rankedLeaderboard);
+  } catch (err) {
+    console.error('Get public leaderboard error:', err);
+    return res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
 // GET /leaderboard (Live Tournament Standings for Traders & Admin)
 router.get('/leaderboard', authenticateToken, async (req, res) => {
   try {

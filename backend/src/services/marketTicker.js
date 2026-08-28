@@ -1,5 +1,5 @@
 const { PrismaClient } = require('@prisma/client');
-const { emitStockUpdate, emitStocksBatchUpdate } = require('../socket');
+const { emitStockUpdate, emitStocksBatchUpdate, broadcastPublicLeaderboard } = require('../socket');
 const config = require('../config/marketConfig');
 const { checkAndExecuteLimitOrders } = require('./orderService');
 const { checkSessionTimers } = require('./sessionService');
@@ -266,6 +266,7 @@ async function tickMarket() {
 
     // Batched Socket Broadcast (Single WebSocket Message to Room)
     emitStocksBatchUpdate(batchSocketUpdates);
+    broadcastPublicLeaderboard();
 
     // Also fire individual updates for legacy listeners and limit order execution
     for (const update of batchSocketUpdates) {
