@@ -58,8 +58,6 @@ function getStockState(stockId) {
     const baseDrift = (Math.random() - 0.5) * 0.03;
     const baseVol = 0.10 + Math.random() * 0.10;
     const offsetMs = Math.floor(Math.random() * 900000);
-    const now = Date.now();
-    const initialStaggerMs = Math.floor(Math.random() * 4000);
 
     stockStates.set(stockId, {
       targetDrift: baseDrift,
@@ -69,9 +67,8 @@ function getStockState(stockId) {
       newsDriftBonus: 0,
       newsVolBonus: 0,
       lastReturn: 0,
-      lastMacroTime: now - offsetMs,
+      lastMacroTime: Date.now() - offsetMs,
       nextMacroIntervalMs: getNextMacroIntervalMs(),
-      nextTickTime: now + initialStaggerMs,
       pendingMacroSteer: null,
       macroRampActive: false,
       macroRampStep: 0,
@@ -112,8 +109,6 @@ async function steerMacroMoveForNews(stockEffects, delaySeconds = 30) {
 
         // Accelerate next macro move to trigger in delaySeconds
         state.lastMacroTime = now - state.nextMacroIntervalMs + (delaySeconds * 1000);
-        // Force next tick to occur within 1-2 seconds
-        state.nextTickTime = now + Math.floor(1000 + Math.random() * 1000);
       }
     }
   } catch (err) {
@@ -122,11 +117,11 @@ async function steerMacroMoveForNews(stockEffects, delaySeconds = 30) {
 }
 
 /**
- * Perform market ticks using Dual-Layer Quant Engine:
- * - Staggered & randomized tick timing per stock (stocks update independently at random seconds)
- * @param {boolean} forceAll If true, forces all stocks to tick immediately (useful for tests/resets)
+ * Perform a single background tick using Dual-Layer Quant Market Engine:
+ * Layer 1: Continuous 1-2% GBM noise + Volatility Clustering + Sector Correlation
+ * Layer 2: Independent 15-Minute Jittered Macro Volatility Swings (Capped at 99 IC)
  */
-async function tickMarket(forceAll = false) {
+async function tickMarket() {
   if (!config.TICKER_ENABLED) return;
 
   try {
@@ -150,14 +145,6 @@ async function tickMarket(forceAll = false) {
 
     for (const stock of stocks) {
       const state = getStockState(stock.id);
-
-      // Unless forceAll is set, only tick stocks whose randomized nextTickTime has arrived
-      if (!forceAll && state.nextTickTime && now < state.nextTickTime) {
-        continue;
-      }
-
-      // Schedule next tick time for this stock (randomized interval between 1.5s and 5.5s)
-      state.nextTickTime = now + Math.floor(1500 + Math.random() * 4000);
 
       // Phase 20b/23 Macro Move Trigger Check
       const timeSinceLastMacro = now - state.lastMacroTime;
@@ -293,8 +280,8 @@ async function tickMarket(forceAll = false) {
 
 function startMarketTicker() {
   if (tickerInterval) return;
-  console.log(`📈 Dual-Layer Quant Market Ticker started (Randomized Independent Stock Ticks)`);
-  tickerInterval = setInterval(() => tickMarket(false), 600);
+  console.log(`📈 Dual-Layer Quant Market Ticker started (Continuous GBM + Multi-Tier Macro Swings [Low: 30-100 IC, Mid: 100-500 IC, High: 1,000-4,000 IC])`);
+  tickerInterval = setInterval(tickMarket, config.TICKER_INTERVAL_MS || config.TICK_INTERVAL_MS);
 }
 
 function stopMarketTicker() {
