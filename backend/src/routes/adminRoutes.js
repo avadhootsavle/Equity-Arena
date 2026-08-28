@@ -256,11 +256,55 @@ router.post('/news', async (req, res) => {
 // GET /admin/news-templates
 router.get('/news-templates', async (req, res) => {
   try {
-    const templates = await prisma.newsTemplate.findMany({
-      orderBy: { createdAt: 'asc' }
+    const [templates, stocks] = await Promise.all([
+      prisma.newsTemplate.findMany({ orderBy: { createdAt: 'asc' } }),
+      prisma.stock.findMany({ select: { id: true, symbol: true, name: true, sector: true } })
+    ]);
+
+    const sectorMap = {};
+    const symbolMap = {};
+    for (const s of stocks) {
+      sectorMap[s.sector.toLowerCase().trim()] = s;
+      symbolMap[s.symbol.toUpperCase().trim()] = s;
+    }
+
+    const templatesWithEffects = templates.map((tpl) => {
+      let rawEffects = [];
+      if (tpl.stockEffects) {
+        try {
+          rawEffects = JSON.parse(tpl.stockEffects);
+        } catch (e) {
+          rawEffects = [{ sector: tpl.sector, effectPercent: tpl.effectPercent }];
+        }
+      } else {
+        rawEffects = [{ sector: tpl.sector, effectPercent: tpl.effectPercent }];
+      }
+
+      const resolvedTargets = rawEffects.map((eff) => {
+        let matchedStock = null;
+        if (eff.symbol) {
+          matchedStock = symbolMap[eff.symbol.toUpperCase().trim()];
+        }
+        if (!matchedStock && eff.sector) {
+          matchedStock = sectorMap[eff.sector.toLowerCase().trim()];
+        }
+
+        return {
+          sector: eff.sector || matchedStock?.sector || tpl.sector,
+          stockName: matchedStock ? matchedStock.name : (eff.sector || tpl.sector),
+          symbol: matchedStock ? matchedStock.symbol : '',
+          effectPercent: eff.effectPercent !== undefined ? eff.effectPercent : tpl.effectPercent
+        };
+      });
+
+      return {
+        ...tpl,
+        targetStocks: resolvedTargets
+      };
     });
+
     const usedTemplateIds = getUsedTemplateIds();
-    return res.json({ templates, usedTemplateIds, pendingDelayedNews });
+    return res.json({ templates: templatesWithEffects, usedTemplateIds, pendingDelayedNews });
   } catch (err) {
     console.error('Get news templates error:', err);
     return res.status(500).json({ error: 'Internal server error' });

@@ -430,7 +430,7 @@ export function AdminDashboard() {
           {isSessionRunning && (
             <>
               <span className="text-[#2D3142]">|</span>
-              <GameClock session={adminSession} />
+              <GameClock sessionData={adminSession} size="sm" title="REMAINING" />
             </>
           )}
         </div>
@@ -633,18 +633,21 @@ export function AdminDashboard() {
             </button>
           </div>
         ) : (
-          <div className="bg-[#0F1117] border border-[#2D3142] rounded-lg p-3.5 flex flex-wrap items-center justify-between gap-4 font-mono text-xs">
-            <div className="flex items-center gap-3">
-              <span className="flex h-2.5 w-2.5 relative">
-                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-[#22C55E] opacity-75"></span>
-                <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-[#22C55E]"></span>
-              </span>
-              <span className="font-extrabold text-[#22C55E]">● SESSION RUNNING</span>
+          <div className="bg-[#0F1117] border border-[#2D3142] rounded-lg p-4 flex flex-wrap items-center justify-between gap-4 font-mono text-xs">
+            <div className="flex items-center gap-4">
+              <div className="flex items-center gap-2">
+                <span className="flex h-2.5 w-2.5 relative">
+                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-[#22C55E] opacity-75"></span>
+                  <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-[#22C55E]"></span>
+                </span>
+                <span className="font-extrabold text-[#22C55E]">● SESSION RUNNING</span>
+              </div>
+              <GameClock sessionData={adminSession} size="md" title="SESSION COUNTDOWN" />
             </div>
 
             <div className="flex flex-wrap items-center gap-4 text-[#7B82A0]">
               <div>
-                <span>Auto-liquidate in: </span>
+                <span>Auto-liquidate: </span>
                 <span className="text-[#F0F2FF] font-bold">
                   {adminSession.liquidationBufferMinutes || 5} min before end
                 </span>
@@ -695,20 +698,44 @@ export function AdminDashboard() {
               {positiveTemplates.map((t) => {
                 const isUsed = usedTemplateIds.includes(t.id);
                 const isConfirming = inlineConfirmTplId === t.id;
+                const targets = t.targetStocks && t.targetStocks.length > 0
+                  ? t.targetStocks
+                  : [{ stockName: t.sector, symbol: '', effectPercent: t.effectPercent }];
 
                 return (
-                  <div key={t.id} className="p-2 bg-[#0F1117] border border-[#2D3142] rounded-lg space-y-1 text-xs">
+                  <div key={t.id} className="p-2 bg-[#0F1117] border border-[#2D3142] rounded-lg space-y-1.5 text-xs">
                     <p className={`text-[11px] font-mono line-clamp-2 ${isUsed ? 'opacity-40 line-through text-[#7B82A0]' : 'text-[#F0F2FF]'}`}>
                       {t.headline}
                     </p>
-                    
+
+                    {/* Affected Target Stocks List */}
+                    <div className="space-y-1 my-1">
+                      {targets.map((tgt, idx) => {
+                        const isUp = tgt.effectPercent >= 0;
+                        return (
+                          <div
+                            key={idx}
+                            className={`text-[9.5px] font-mono px-1.5 py-0.5 rounded border flex items-center justify-between font-bold ${
+                              isUp
+                                ? 'bg-[#22C55E]/10 border-[#22C55E]/30 text-[#22C55E]'
+                                : 'bg-[#EF4444]/10 border-[#EF4444]/30 text-[#EF4444]'
+                            }`}
+                          >
+                            <span className="truncate mr-1">→ {tgt.stockName} {tgt.symbol ? `(${tgt.symbol})` : ''}</span>
+                            <span className="shrink-0 font-extrabold">
+                              {isUp ? '▲ +' : '▼ '}{tgt.effectPercent}%
+                            </span>
+                          </div>
+                        );
+                      })}
+                    </div>
+
                     {!isConfirming ? (
-                      <div className="flex items-center justify-between pt-1">
-                        <span className="text-[9px] font-mono font-bold text-[#22C55E]">+{t.effectPercent}%</span>
+                      <div className="flex items-center justify-end pt-0.5">
                         <button
                           type="button"
                           onClick={() => setInlineConfirmTplId(t.id)}
-                          className="px-2 py-0.5 bg-[#22C55E]/15 border border-[#22C55E]/30 text-[#22C55E] text-[10px] font-mono font-bold rounded hover:bg-[#22C55E]/30 transition-colors"
+                          className="px-2.5 py-0.5 bg-[#22C55E]/15 border border-[#22C55E]/30 text-[#22C55E] text-[10px] font-mono font-bold rounded hover:bg-[#22C55E]/30 transition-colors"
                         >
                           SEND
                         </button>
@@ -759,20 +786,44 @@ export function AdminDashboard() {
               {negativeTemplates.map((t) => {
                 const isUsed = usedTemplateIds.includes(t.id);
                 const isConfirming = inlineConfirmTplId === t.id;
+                const targets = t.targetStocks && t.targetStocks.length > 0
+                  ? t.targetStocks
+                  : [{ stockName: t.sector, symbol: '', effectPercent: t.effectPercent }];
 
                 return (
-                  <div key={t.id} className="p-2 bg-[#0F1117] border border-[#2D3142] rounded-lg space-y-1 text-xs">
+                  <div key={t.id} className="p-2 bg-[#0F1117] border border-[#2D3142] rounded-lg space-y-1.5 text-xs">
                     <p className={`text-[11px] font-mono line-clamp-2 ${isUsed ? 'opacity-40 line-through text-[#7B82A0]' : 'text-[#F0F2FF]'}`}>
                       {t.headline}
                     </p>
 
+                    {/* Affected Target Stocks List */}
+                    <div className="space-y-1 my-1">
+                      {targets.map((tgt, idx) => {
+                        const isUp = tgt.effectPercent >= 0;
+                        return (
+                          <div
+                            key={idx}
+                            className={`text-[9.5px] font-mono px-1.5 py-0.5 rounded border flex items-center justify-between font-bold ${
+                              isUp
+                                ? 'bg-[#22C55E]/10 border-[#22C55E]/30 text-[#22C55E]'
+                                : 'bg-[#EF4444]/10 border-[#EF4444]/30 text-[#EF4444]'
+                            }`}
+                          >
+                            <span className="truncate mr-1">→ {tgt.stockName} {tgt.symbol ? `(${tgt.symbol})` : ''}</span>
+                            <span className="shrink-0 font-extrabold">
+                              {isUp ? '▲ +' : '▼ '}{tgt.effectPercent}%
+                            </span>
+                          </div>
+                        );
+                      })}
+                    </div>
+
                     {!isConfirming ? (
-                      <div className="flex items-center justify-between pt-1">
-                        <span className="text-[9px] font-mono font-bold text-[#EF4444]">{t.effectPercent}%</span>
+                      <div className="flex items-center justify-end pt-0.5">
                         <button
                           type="button"
                           onClick={() => setInlineConfirmTplId(t.id)}
-                          className="px-2 py-0.5 bg-[#EF4444]/15 border border-[#EF4444]/30 text-[#EF4444] text-[10px] font-mono font-bold rounded hover:bg-[#EF4444]/30 transition-colors"
+                          className="px-2.5 py-0.5 bg-[#EF4444]/15 border border-[#EF4444]/30 text-[#EF4444] text-[10px] font-mono font-bold rounded hover:bg-[#EF4444]/30 transition-colors"
                         >
                           SEND
                         </button>
