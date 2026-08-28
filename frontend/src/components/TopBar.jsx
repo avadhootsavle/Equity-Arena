@@ -195,29 +195,27 @@ export function TopBar({
           {muted ? <VolumeX className="w-3.5 h-3.5" /> : <Volume2 className="w-3.5 h-3.5" />}
         </button>
 
-        {/* Guide */}
-        {onOpenTour && (
-          <button
-            type="button"
-            onClick={onOpenTour}
-            title="Open the beginner trading guide"
-            aria-label="Open the beginner trading guide"
-            className="hidden sm:flex w-[32px] h-[32px] rounded-md border theme-border theme-bg-input items-center justify-center theme-text-muted hover:theme-text-main transition-colors"
-          >
-            <HelpCircle className="w-3.5 h-3.5" />
-          </button>
-        )}
-
         {/* Theme */}
         <ThemeToggle />
 
         {/* User */}
         <div className="flex items-center gap-2 pl-2.5 ml-0.5 border-l theme-border">
-          <div className="hidden sm:block text-right">
-            <div className="text-[11px] font-medium theme-text-main leading-tight max-w-[110px] truncate">
+          <div
+            className="w-7 h-7 rounded-full flex items-center justify-center font-mono font-black text-xs shadow-sm flex-shrink-0"
+            style={{
+              backgroundColor: 'color-mix(in srgb, var(--accent) 18%, transparent)',
+              border: '1px solid color-mix(in srgb, var(--accent) 38%, transparent)',
+              color: 'var(--accent)'
+            }}
+            title={user?.name || user?.email || 'Trader'}
+          >
+            {(user?.name?.[0] || user?.email?.[0] || 'T').toUpperCase()}
+          </div>
+          <div className="hidden sm:block text-left">
+            <div className="text-[11px] font-bold theme-text-main leading-tight max-w-[110px] truncate">
               {user?.name || user?.email?.split('@')[0] || 'Trader'}
             </div>
-            <div className="text-[9px] theme-text-dim font-mono leading-tight flex items-center gap-0.5 justify-end">
+            <div className="text-[9px] theme-text-dim font-mono leading-tight flex items-center gap-0.5">
               {user?.role === 'ADMIN' && <ShieldCheck className="w-2.5 h-2.5" />}
               {user?.role === 'ADMIN' ? 'Admin' : 'Trader'}
             </div>
@@ -228,7 +226,7 @@ export function TopBar({
             onClick={logout}
             title="Log out"
             aria-label="Log out"
-            className="w-[32px] h-[32px] rounded-md border theme-border theme-bg-input flex items-center justify-center transition-colors hover:brightness-110"
+            className="w-[32px] h-[32px] rounded-md border theme-border theme-bg-input flex items-center justify-center transition-colors hover:brightness-110 ml-1"
             style={{ color: 'var(--loss-red)' }}
           >
             <LogOut className="w-3.5 h-3.5" />

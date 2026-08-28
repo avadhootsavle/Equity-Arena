@@ -1322,9 +1322,6 @@ function NewsTab({ news, loading, onRefresh }) {
               <p className="text-[12px] theme-text-main leading-relaxed">
                 {item.message}
               </p>
-              <div className="text-[9px] font-mono theme-text-dim">
-                Broadcast #{news.length - i}
-              </div>
             </article>
           ))
         )}

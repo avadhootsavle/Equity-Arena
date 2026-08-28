@@ -552,10 +552,10 @@ export function StockDetailModal({
 
                 <div className="flex items-center justify-between mt-2 text-[10px] font-mono">
                   <span className="theme-text-dim">
-                    {stats.prints.toLocaleString()} prints in view
+                    {stats.prints.toLocaleString()} data points
                   </span>
                   <span className="theme-text-dim">
-                    Window move{' '}
+                    Price moved{' '}
                     <strong
                       style={{
                         color:
@@ -565,7 +565,7 @@ export function StockDetailModal({
                       }}
                     >
                       {stats.windowMove >= 0 ? '+' : ''}
-                      {stats.windowMove.toFixed(2)}%
+                      {stats.windowMove.toFixed(2)}% in this view
                     </strong>
                   </span>
                 </div>
@@ -588,7 +588,7 @@ export function StockDetailModal({
                   },
                   {
                     label: `${timeframe} volume`,
-                    value: `${fmtCompact(stats.volume)} shrs`,
+                    value: `${stats.volume >= 1000000 ? (stats.volume / 1000000).toFixed(2) + 'M' : Math.round(stats.volume).toLocaleString('en-US')} shares`,
                     color: 'var(--text-main)',
                     Icon: BarChart2
                   }
@@ -943,7 +943,7 @@ export function StockDetailModal({
                   ) : (
                     <>
                       <ShoppingBag className="w-4 h-4" />
-                      EXECUTE {mode} ORDER ({parsedQty} @ {fmtMoney(currentPrice)} IC)
+                      {mode === 'BUY' ? 'BUY' : 'SELL'} {parsedQty} {parsedQty === 1 ? 'share' : 'shares'} @ {fmtMoney(currentPrice)} IC
                     </>
                   )}
                 </button>
