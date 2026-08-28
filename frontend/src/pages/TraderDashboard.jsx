@@ -138,7 +138,24 @@ export function TraderDashboard() {
   const fetchStocks = useCallback(async () => {
     try {
       const data = await apiFetch('/stocks');
-      setStocks(Array.isArray(data) ? data : []);
+      if (Array.isArray(data)) {
+        setStocks((prev) => {
+          if (!prev || prev.length === 0) return data;
+          return data.map((newStock) => {
+            const existing = prev.find((s) => s.id === newStock.id);
+            if (!existing) return newStock;
+            if (
+              existing.currentPrice === newStock.currentPrice &&
+              existing.percentChange === newStock.percentChange &&
+              existing.name === newStock.name &&
+              existing.sector === newStock.sector
+            ) {
+              return existing;
+            }
+            return { ...existing, ...newStock };
+          });
+        });
+      }
       setLastRefresh(Date.now());
     } catch (err) {
       pushToast(err.message || 'Failed to load the market', 'error', 'Market feed');

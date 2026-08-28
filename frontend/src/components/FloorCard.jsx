@@ -401,4 +401,17 @@ export const FloorCard = memo(function FloorCard({
       </div>
     </div>
   );
+},
+(prev, next) => {
+  return (
+    prev.stock?.id === next.stock?.id &&
+    prev.stock?.currentPrice === next.stock?.currentPrice &&
+    prev.stock?.percentChange === next.stock?.percentChange &&
+    prev.holding?.quantity === next.holding?.quantity &&
+    prev.holding?.availableQuantity === next.holding?.availableQuantity &&
+    prev.flash === next.flash &&
+    prev.variant === next.variant &&
+    prev.isActive === next.isActive &&
+    prev.isTradingLocked === next.isTradingLocked
+  );
 });
