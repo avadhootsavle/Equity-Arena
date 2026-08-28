@@ -831,7 +831,7 @@ export function TraderDashboard() {
                     </h3>
                     <p className="text-[11px] theme-text-muted mt-0.5">
                       Tap any stock to see its chart, or use Buy and Sell right on the card
-                      {searchQuery && ` · searching “${searchQuery}”`}
+                      {searchQuery && ` · searching "${searchQuery}"`}
                     </p>
                   </div>
 
@@ -890,7 +890,7 @@ export function TraderDashboard() {
                   </div>
                 ) : filteredStocks.length === 0 ? (
                   <div className="surface py-12 text-center text-[11px] font-mono theme-text-dim">
-                    No stock matches “{searchQuery}”. Try a different name.
+                    No stock matches &ldquo;{searchQuery}&rdquo;. Try a different name.
                   </div>
                 ) : (
                   <div
@@ -918,7 +918,6 @@ export function TraderDashboard() {
                   </div>
                 )}
               </Reveal>
-
             </>
           )}
 
@@ -926,19 +925,19 @@ export function TraderDashboard() {
           {activeTab === 'PORTFOLIO' && (
             <div className="space-y-5 font-mono">
               <div className="surface p-5 rounded-2xl border theme-border shadow-xl space-y-4">
-                <h3 className="text-base font-extrabold theme-text-main">Your Money Overview</h3>
+                <h3 className="text-[18px] font-semibold theme-text-main">Your Money Overview</h3>
                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                  <div className="p-3.5 rounded-xl theme-bg-card border theme-border">
-                    <span className="text-[10px] theme-text-dim block font-bold uppercase tracking-wider">Available Cash</span>
-                    <span className="text-xl font-black text-amber-400">{fmtMoney(availableCash)} IC</span>
+                  <div className="p-4 rounded-xl theme-bg-card border theme-border">
+                    <span className="text-[12px] theme-text-dim block font-mono font-bold uppercase tracking-wider">Available Cash</span>
+                    <span className="text-[22px] font-semibold font-mono text-amber-400">{fmtMoney(availableCash)} IC</span>
                   </div>
-                  <div className="p-3.5 rounded-xl theme-bg-card border theme-border">
-                    <span className="text-[10px] theme-text-dim block font-bold uppercase tracking-wider">Money in Stocks</span>
-                    <span className="text-xl font-black theme-text-main">{fmtMoney(liveHoldingsValue)} IC</span>
+                  <div className="p-4 rounded-xl theme-bg-card border theme-border">
+                    <span className="text-[12px] theme-text-dim block font-mono font-bold uppercase tracking-wider">Money in Stocks</span>
+                    <span className="text-[22px] font-semibold font-mono theme-text-main">{fmtMoney(liveHoldingsValue)} IC</span>
                   </div>
-                  <div className="p-3.5 rounded-xl theme-bg-card border theme-border">
-                    <span className="text-[10px] theme-text-dim block font-bold uppercase tracking-wider">Total Profit / Loss</span>
-                    <span className={`text-xl font-black ${totalProfit >= 0 ? 'text-emerald-400' : 'text-rose-400'}`}>
+                  <div className="p-4 rounded-xl theme-bg-card border theme-border">
+                    <span className="text-[12px] theme-text-dim block font-mono font-bold uppercase tracking-wider">Total Profit / Loss</span>
+                    <span className={`text-[22px] font-semibold font-mono ${totalProfit >= 0 ? 'text-emerald-400' : 'text-rose-400'}`}>
                       {totalProfit >= 0 ? `You're up ${fmtMoney(totalProfit)} IC` : `You're down ${fmtMoney(Math.abs(totalProfit))} IC`}
                     </span>
                   </div>
@@ -972,8 +971,6 @@ export function TraderDashboard() {
           )}
         </main>
       </div>
-
-      {/* ---------------- Overlays ---------------- */}
 
       {/* ---------------- Overlays ---------------- */}
       <BackToTopButton />
@@ -1069,7 +1066,7 @@ function NewsPanel({ news, loading, onRefresh, onViewAll }) {
   return (
     <div className="surface flex flex-col" style={{ boxShadow: 'var(--card-shadow)' }}>
       <div className="flex items-center justify-between px-3.5 py-3 border-b theme-border">
-        <h3 className="text-[12px] font-heading font-bold theme-text-main flex items-center gap-1.5">
+        <h3 className="text-[13px] font-heading font-bold theme-text-main flex items-center gap-1.5">
           <Newspaper className="w-3.5 h-3.5" style={{ color: 'var(--accent)' }} />
           Market news
         </h3>
@@ -1085,7 +1082,7 @@ function NewsPanel({ news, loading, onRefresh, onViewAll }) {
           <button
             type="button"
             onClick={onViewAll}
-            className="text-[10px] font-mono transition-colors hover:underline"
+            className="text-[11px] font-mono transition-colors hover:underline"
             style={{ color: 'var(--accent)' }}
           >
             View all
@@ -1096,7 +1093,7 @@ function NewsPanel({ news, loading, onRefresh, onViewAll }) {
       <div className="flex-1 p-2.5 space-y-2 max-h-[380px] overflow-y-auto">
         {news.length === 0 ? (
           <div className="h-full min-h-[120px] flex items-center justify-center text-center px-4">
-            <p className="text-[10.5px] theme-text-dim leading-relaxed">
+            <p className="text-[12px] theme-text-dim leading-relaxed">
               Nothing on the wire yet. When the desk breaks a story, prices move
               within seconds.
             </p>
@@ -1105,12 +1102,12 @@ function NewsPanel({ news, loading, onRefresh, onViewAll }) {
           news.slice(0, 12).map((item, i) => (
             <article
               key={item.id || i}
-              className="surface-panel px-2.5 py-2 space-y-1 animate-card-rise"
+              className="surface-panel px-3 py-2.5 space-y-1 animate-card-rise"
               style={{ animationDelay: `${Math.min(i * 35, 300)}ms` }}
             >
-              <div className="flex items-center justify-between text-[9px] font-mono">
+              <div className="flex items-center justify-between text-[11px] font-mono">
                 <span
-                  className="font-bold uppercase tracking-widest"
+                  className="font-semibold uppercase tracking-widest"
                   style={{ color: 'var(--accent)' }}
                 >
                   ● Analyst wire
@@ -1121,7 +1118,7 @@ function NewsPanel({ news, loading, onRefresh, onViewAll }) {
                   })}
                 </span>
               </div>
-              <p className="text-[11px] theme-text-main leading-snug">{item.message}</p>
+              <p className="text-[13px] theme-text-main leading-snug">{item.message}</p>
             </article>
           ))
         )}
@@ -1141,16 +1138,16 @@ function OrdersTab({ portfolio, cancellingOrderId, onCancel, onEdit }) {
       <Reveal as="section" className="surface" style={{ boxShadow: 'var(--card-shadow)' }}>
         <div className="flex flex-wrap items-center justify-between gap-2 px-4 py-3.5 border-b theme-border">
           <div>
-            <h3 className="text-[15px] font-heading font-bold theme-text-main flex items-center gap-2">
+            <h3 className="text-[17px] font-semibold theme-text-main flex items-center gap-2">
               <Clock className="w-4 h-4" style={{ color: 'var(--accent)' }} />
               Waiting Orders
             </h3>
-            <p className="text-[11px] theme-text-muted mt-0.5">
+            <p className="text-[14px] theme-text-muted mt-0.5">
               These buy or sell on their own as soon as the stock hits your price
             </p>
           </div>
           <span
-            className="px-2.5 py-1 rounded text-[11px] font-semibold flex-shrink-0"
+            className="px-2.5 py-1 rounded text-[12px] font-semibold flex-shrink-0"
             style={{
               backgroundColor: 'color-mix(in srgb, var(--accent) 13%, transparent)',
               color: 'var(--accent)'
@@ -1167,10 +1164,10 @@ function OrdersTab({ portfolio, cancellingOrderId, onCancel, onEdit }) {
                 className="w-7 h-7 mx-auto mb-2.5"
                 style={{ color: 'var(--text-dim)' }}
               />
-              <div className="text-[13px] theme-text-main font-semibold">
+              <div className="text-[15px] theme-text-main font-semibold">
                 No waiting orders
               </div>
-              <div className="text-[11.5px] theme-text-muted mt-1 max-w-[340px] mx-auto">
+              <div className="text-[14px] theme-text-muted mt-1 max-w-[340px] mx-auto">
                 Open any stock, switch to <strong>Limit Order</strong>, and pick the price
                 you want. We'll buy or sell for you when it gets there.
               </div>
@@ -1188,7 +1185,7 @@ function OrdersTab({ portfolio, cancellingOrderId, onCancel, onEdit }) {
                 >
                   <div className="flex items-center gap-3 min-w-0">
                     <span
-                      className="px-2 py-0.5 rounded text-[10.5px] font-bold flex-shrink-0"
+                      className="px-2 py-0.5 rounded text-[12px] font-bold flex-shrink-0"
                       style={{
                         backgroundColor: `color-mix(in srgb, ${color} 15%, transparent)`,
                         color
@@ -1197,13 +1194,13 @@ function OrdersTab({ portfolio, cancellingOrderId, onCancel, onEdit }) {
                       {isBuy ? 'Will buy' : 'Will sell'}
                     </span>
                     <div className="min-w-0">
-                      <div className="text-[13px] font-semibold theme-text-main">
+                      <div className="text-[15px] font-semibold theme-text-main">
                         {order.stock?.symbol || 'Stock'}
-                        <span className="theme-text-dim font-normal text-[11px] ml-1.5">
+                        <span className="theme-text-dim font-normal text-[13px] ml-1.5">
                           {order.stock?.name || ''}
                         </span>
                       </div>
-                      <div className="text-[11px] theme-text-muted mt-0.5">
+                      <div className="text-[13px] theme-text-muted mt-0.5">
                         {order.quantity} {order.quantity === 1 ? 'share' : 'shares'} when the
                         price reaches{' '}
                         <strong className="font-mono" style={{ color: 'var(--accent)' }}>
@@ -1218,7 +1215,7 @@ function OrdersTab({ portfolio, cancellingOrderId, onCancel, onEdit }) {
                       type="button"
                       onClick={() => onEdit(order)}
                       disabled={cancellingOrderId === order.id}
-                      className="flex items-center gap-1.5 px-3 py-1.5 rounded-md text-[11.5px] font-semibold transition-colors disabled:opacity-50"
+                      className="flex items-center gap-1.5 px-3 py-1.5 rounded-md text-[13px] font-semibold transition-colors disabled:opacity-50"
                       style={{
                         backgroundColor:
                           'color-mix(in srgb, var(--accent) 12%, transparent)',
@@ -1233,7 +1230,7 @@ function OrdersTab({ portfolio, cancellingOrderId, onCancel, onEdit }) {
                       type="button"
                       onClick={() => onCancel(order.id)}
                       disabled={cancellingOrderId === order.id}
-                      className="flex items-center gap-1.5 px-3 py-1.5 rounded-md text-[11.5px] font-semibold transition-colors disabled:opacity-50"
+                      className="flex items-center gap-1.5 px-3 py-1.5 rounded-md text-[13px] font-semibold transition-colors disabled:opacity-50"
                       style={{
                         backgroundColor:
                           'color-mix(in srgb, var(--loss-red) 12%, transparent)',
@@ -1270,11 +1267,11 @@ function NewsTab({ news, loading, onRefresh }) {
     <div className="surface" style={{ boxShadow: 'var(--card-shadow)' }}>
       <div className="flex items-center justify-between px-4 py-3.5 border-b theme-border">
         <div>
-          <h3 className="text-[13px] font-heading font-bold theme-text-main flex items-center gap-1.5">
+          <h3 className="text-[18px] font-semibold theme-text-main flex items-center gap-1.5">
             <Newspaper className="w-4 h-4" style={{ color: 'var(--accent)' }} />
             Analyst wire
           </h3>
-          <p className="text-[10px] theme-text-dim mt-0.5">
+          <p className="text-[14px] theme-text-dim mt-0.5">
             Every broadcast this session — sector headlines move prices within seconds
           </p>
         </div>
@@ -1283,28 +1280,28 @@ function NewsTab({ news, loading, onRefresh }) {
           type="button"
           onClick={onRefresh}
           disabled={loading}
-          className="flex items-center gap-1.5 px-2.5 h-[30px] rounded-md border theme-border theme-bg-input text-[11px] font-heading font-bold theme-text-muted hover:theme-text-main transition-colors disabled:opacity-50"
+          className="flex items-center gap-1.5 px-3 h-[32px] rounded-md border theme-border theme-bg-input text-[13px] font-medium theme-text-muted hover:theme-text-main transition-colors disabled:opacity-50"
         >
-          <RefreshCw className={`w-3 h-3 ${loading ? 'animate-spin' : ''}`} />
+          <RefreshCw className={`w-3.5 h-3.5 ${loading ? 'animate-spin' : ''}`} />
           Refresh
         </button>
       </div>
 
-      <div className="p-3 space-y-2">
+      <div className="p-4 space-y-3">
         {news.length === 0 ? (
-          <div className="py-16 text-center text-[11px] font-mono theme-text-dim">
+          <div className="py-16 text-center text-[15px] font-mono theme-text-dim">
             No broadcasts recorded yet.
           </div>
         ) : (
           news.map((item, i) => (
             <article
               key={item.id || i}
-              className="surface-panel px-3.5 py-3 space-y-1.5 animate-card-rise transition-colors hover:theme-bg-card-hover"
+              className="surface-panel px-4 py-3.5 space-y-2 animate-card-rise transition-colors hover:theme-bg-card-hover"
               style={{ animationDelay: `${Math.min(i * 30, 400)}ms` }}
             >
-              <div className="flex items-center justify-between gap-2 text-[9px] font-mono">
+              <div className="flex items-center justify-between gap-2 text-[12px] font-mono">
                 <span
-                  className="px-1.5 py-0.5 rounded font-extrabold uppercase tracking-widest"
+                  className="px-2 py-0.5 rounded text-[11px] font-mono font-semibold uppercase tracking-widest"
                   style={{
                     backgroundColor:
                       'color-mix(in srgb, var(--accent) 14%, transparent)',
@@ -1313,13 +1310,13 @@ function NewsTab({ news, loading, onRefresh }) {
                 >
                   Financial wire
                 </span>
-                <span className="theme-text-dim">
+                <span className="theme-text-dim text-[12px]">
                   {new Date(item.timestamp || Date.now()).toLocaleString('en-IN', {
                     hour12: false
                   })}
                 </span>
               </div>
-              <p className="text-[12px] theme-text-main leading-relaxed">
+              <p className="text-[15px] font-normal leading-relaxed theme-text-main">
                 {item.message}
               </p>
             </article>

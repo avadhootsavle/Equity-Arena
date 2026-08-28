@@ -148,7 +148,7 @@ export function TopBar({
 
         {/* Market open / closed */}
         <div
-          className="hidden md:flex items-center gap-1.5 px-2 py-1 rounded-md border text-[10px] font-mono font-bold"
+          className="hidden md:flex items-center gap-1.5 px-2.5 py-1 rounded-md border text-[12px] font-medium"
           style={{
             borderColor: `color-mix(in srgb, ${
               marketOpen ? 'var(--gain-green)' : 'var(--loss-red)'
@@ -168,16 +168,16 @@ export function TopBar({
 
         {/* Wallet */}
         <div
-          className="flex items-center gap-1.5 px-2.5 h-[32px] rounded-md border transition-all"
+          className="flex items-center gap-1.5 px-3 h-[34px] rounded-md border transition-all"
           style={{
             borderColor: 'color-mix(in srgb, var(--accent) 28%, transparent)',
             backgroundColor: 'color-mix(in srgb, var(--accent) 9%, transparent)'
           }}
           title={lockedFunds > 0 ? `${fmtMoney(lockedFunds)} IC reserved in open orders` : 'Available cash'}
         >
-          <Wallet className="w-3.5 h-3.5 flex-shrink-0" style={{ color: 'var(--accent)' }} />
+          <Wallet className="w-4 h-4 flex-shrink-0" style={{ color: 'var(--accent)' }} />
           <span
-            className="text-[11px] font-mono font-extrabold whitespace-nowrap"
+            className="text-[15px] font-mono font-semibold whitespace-nowrap"
             style={{ color: 'var(--accent)' }}
           >
             <AnimatedNumber value={walletBalance} decimals={2} duration={500} suffix=" IC" />

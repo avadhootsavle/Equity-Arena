@@ -32,12 +32,12 @@ export function LiveTickerMarquee({ stocks, onSelectStock }) {
                 <div
                   key={`${s.id}-${idx}`}
                   onClick={() => onSelectStock && onSelectStock(s)}
-                  className="inline-flex items-center gap-2 cursor-pointer hover:opacity-80 transition-opacity text-xs select-none"
+                  className="inline-flex items-center gap-2 cursor-pointer hover:opacity-80 transition-opacity select-none"
                 >
-                  <span className="font-bold font-mono theme-text-main">{s.symbol}</span>
-                  <span className="font-mono theme-text-muted font-medium">{s.currentPrice.toFixed(2)} IC</span>
+                  <span className="text-[13px] font-semibold font-mono theme-text-main">{s.symbol}</span>
+                  <span className="text-[13px] font-mono theme-text-muted">{s.currentPrice.toFixed(2)} IC</span>
                   <span
-                    className="inline-flex items-center text-[10px] font-extrabold font-mono px-1.5 py-0.2 rounded"
+                    className="inline-flex items-center text-[12px] font-medium font-mono px-1.5 py-0.5 rounded"
                     style={{
                       color: isPositive ? 'var(--gain-green)' : 'var(--loss-red)',
                       backgroundColor: `color-mix(in srgb, ${

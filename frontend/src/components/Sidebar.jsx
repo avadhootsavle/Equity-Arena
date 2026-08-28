@@ -34,10 +34,10 @@ export function Sidebar({ activeTab, setActiveTab, counts = {} }) {
             <TrendingUp className="w-4 h-4" />
           </div>
           <div className="min-w-0">
-            <h1 className="text-[13px] font-heading font-extrabold uppercase tracking-[0.08em] theme-text-main leading-tight">
+            <h1 className="text-[15px] font-bold uppercase tracking-[0.08em] theme-text-main leading-tight">
               Equity Arena
             </h1>
-            <p className="text-[9px] theme-text-dim font-mono leading-tight">
+            <p className="text-[11px] theme-text-dim font-mono leading-tight">
               India Stock Exchange
             </p>
           </div>
@@ -56,10 +56,10 @@ export function Sidebar({ activeTab, setActiveTab, counts = {} }) {
               type="button"
               onClick={() => setActiveTab(key)}
               aria-current={active ? 'page' : undefined}
-              className={`relative w-full flex items-center gap-2.5 px-3 py-2.5 rounded-lg text-[12.5px] font-bold transition-all group ${
+              className={`relative w-full flex items-center gap-2.5 px-3 py-2.5 rounded-lg text-[15px] transition-all group ${
                 active
-                  ? 'theme-text-main font-black'
-                  : 'theme-text-muted hover:theme-text-main hover:theme-bg-card-hover'
+                  ? 'theme-text-main font-semibold'
+                  : 'theme-text-muted font-medium hover:theme-text-main hover:theme-bg-card-hover'
               }`}
               style={
                 active

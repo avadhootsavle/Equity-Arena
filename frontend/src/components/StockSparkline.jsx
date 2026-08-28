@@ -265,18 +265,18 @@ export const StockSparkline = memo(function StockSparkline({
       </div>
 
       {/* 15M Rolling Stats Row (HIGH / LOW / RANGE) */}
-      <div className="flex items-center justify-between px-1 text-[9.5px] font-mono text-[#7B82A0]">
+      <div className="flex items-center justify-between px-0.5 text-[11px] font-mono text-[#7B82A0]">
         <div className="flex items-center gap-1">
-          <span className="font-bold text-[#7B82A0]">HIGH</span>
-          <span className="font-extrabold text-[#F0F2FF]">{fmtMoney(high)}</span>
+          <span className="text-[11px] font-normal uppercase text-[#7B82A0]">HIGH</span>
+          <span className="text-[13px] font-semibold font-mono text-[#F0F2FF]">{fmtMoney(high)}</span>
         </div>
         <div className="flex items-center gap-1">
-          <span className="font-bold text-[#7B82A0]">LOW</span>
-          <span className="font-extrabold text-[#F0F2FF]">{fmtMoney(low)}</span>
+          <span className="text-[11px] font-normal uppercase text-[#7B82A0]">LOW</span>
+          <span className="text-[13px] font-semibold font-mono text-[#F0F2FF]">{fmtMoney(low)}</span>
         </div>
         <div className="flex items-center gap-1">
-          <span className="font-bold text-[#7B82A0]">RANGE</span>
-          <span className="font-extrabold text-[#F0F2FF]">{fmtMoney(range)}</span>
+          <span className="text-[11px] font-normal uppercase text-[#7B82A0]">RANGE</span>
+          <span className="text-[13px] font-semibold font-mono text-[#F0F2FF]">{fmtMoney(range)}</span>
         </div>
       </div>
     </div>

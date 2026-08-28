@@ -91,7 +91,8 @@
 }
 
 @layer base {
-  body {
+  html, body {
+    font-size: 16px;
     font-family: 'IBM Plex Sans', system-ui, sans-serif;
     background-color: var(--bg-main);
     color: var(--text-main);

@@ -56,11 +56,11 @@ function Segment({ value, label, urgent, size, isPaused }) {
   return (
     <div className="flex flex-col items-center">
       <div
-        className="rounded-lg flex items-center justify-center tabular-nums font-mono font-extrabold"
+        className="rounded-lg flex items-center justify-center tabular-nums font-mono font-bold"
         style={{
-          minWidth: big ? 54 : 42,
-          padding: big ? '6px 8px' : '4px 6px',
-          fontSize: big ? 30 : 22,
+          minWidth: big ? 68 : 56,
+          padding: big ? '8px 12px' : '6px 10px',
+          fontSize: big ? 40 : 32,
           lineHeight: 1,
           color: isPaused ? 'var(--accent)' : urgent ? 'var(--loss-red)' : 'var(--text-main)',
           backgroundColor: isPaused
@@ -83,7 +83,7 @@ function Segment({ value, label, urgent, size, isPaused }) {
         {value}
       </div>
       <span
-        className="text-[8.5px] font-mono tracking-[0.18em] mt-1"
+        className="text-[12px] font-mono uppercase tracking-[0.18em] mt-1.5"
         style={{ color: isPaused ? 'var(--accent)' : urgent ? 'var(--loss-red)' : 'var(--text-dim)' }}
       >
         {label}
@@ -133,7 +133,7 @@ export function GameClock({ sessionData, size = 'md', title = 'TIME LEFT' }) {
           animate={{ opacity: 1, y: 0 }}
           exit={{ opacity: 0, y: 4 }}
           transition={{ duration: 0.25 }}
-          className="text-[9px] font-heading font-bold tracking-[0.2em] mb-1.5 font-mono"
+          className="text-[12px] font-mono uppercase tracking-[0.2em] mb-1.5"
           style={{ color: isPaused ? 'var(--accent)' : urgent ? 'var(--loss-red)' : 'var(--text-dim)' }}
         >
           {isPaused ? 'MARKET ON BREAK' : isOver ? 'GAME OVER' : isFinalStretch ? 'FINAL MINUTES' : title}

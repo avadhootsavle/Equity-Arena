@@ -636,7 +636,7 @@ export function StockDetailModal({
                         }
                       }}
                       aria-pressed={active}
-                      className="flex items-center justify-center gap-1.5 h-[32px] rounded text-[11px] font-heading font-bold transition-colors"
+                      className="flex items-center justify-center gap-1.5 h-[34px] rounded text-[14px] font-medium transition-colors"
                       style={
                         active
                           ? {
@@ -653,7 +653,7 @@ export function StockDetailModal({
                 })}
               </div>
 
-              <p className="text-[10px] theme-text-dim font-mono leading-snug">
+              <p className="text-[11px] theme-text-dim font-mono leading-snug">
                 {isLimit
                   ? 'Pre-books an order that fills automatically when your target price prints. Cash or shares stay reserved until then.'
                   : 'Fills right now at the live market price.'}
@@ -673,14 +673,14 @@ export function StockDetailModal({
                     setError('');
                   }}
                   aria-pressed={isBuy}
-                  className="flex items-center justify-center gap-1.5 h-[36px] rounded text-[11.5px] font-heading font-extrabold transition-colors"
+                  className="flex items-center justify-center gap-1.5 h-[38px] rounded text-[14px] font-semibold transition-colors"
                   style={
                     isBuy
                       ? { backgroundColor: 'var(--gain-green)', color: '#fff' }
                       : { color: 'var(--text-muted)' }
                   }
                 >
-                  <ArrowUpRight className="w-3.5 h-3.5" />
+                  <ArrowUpRight className="w-4 h-4" />
                   BUY SHARES
                 </button>
                 <button
@@ -690,14 +690,14 @@ export function StockDetailModal({
                     setError('');
                   }}
                   aria-pressed={!isBuy}
-                  className="flex items-center justify-center gap-1.5 h-[36px] rounded text-[11.5px] font-heading font-extrabold transition-colors"
+                  className="flex items-center justify-center gap-1.5 h-[38px] rounded text-[14px] font-semibold transition-colors"
                   style={
                     !isBuy
                       ? { backgroundColor: 'var(--loss-red)', color: '#fff' }
                       : { color: 'var(--text-muted)' }
                   }
                 >
-                  <ArrowDownRight className="w-3.5 h-3.5" />
+                  <ArrowDownRight className="w-4 h-4" />
                   SELL SHARES
                 </button>
               </div>
@@ -709,7 +709,7 @@ export function StockDetailModal({
                     <div className="flex items-center justify-between">
                       <label
                         htmlFor="target-price"
-                        className="text-[10px] font-mono uppercase tracking-widest"
+                        className="text-[11px] font-mono uppercase tracking-widest"
                         style={{ color: 'var(--accent)' }}
                       >
                         Target price
@@ -717,7 +717,7 @@ export function StockDetailModal({
                       <button
                         type="button"
                         onClick={() => setTargetPrice(currentPrice.toFixed(2))}
-                        className="text-[10px] font-mono theme-text-dim hover:theme-text-main transition-colors"
+                        className="text-[11px] font-mono theme-text-dim hover:theme-text-main transition-colors"
                       >
                         Use spot {fmtMoney(currentPrice)}
                       </button>
@@ -730,13 +730,13 @@ export function StockDetailModal({
                       required
                       value={targetPrice}
                       onChange={(e) => setTargetPrice(e.target.value)}
-                      className="w-full h-[36px] rounded-md border theme-bg-input px-3 text-[13px] font-mono font-bold theme-text-main focus:outline-none"
+                      className="w-full h-[38px] rounded-md border theme-bg-input px-3 text-[14px] font-mono font-bold theme-text-main focus:outline-none"
                       style={{
                         borderColor:
                           'color-mix(in srgb, var(--accent) 45%, transparent)'
                       }}
                     />
-                    <p className="text-[10px] font-mono theme-text-dim leading-snug">
+                    <p className="text-[11px] font-mono theme-text-dim leading-snug">
                       {limitHint}
                     </p>
                   </div>
@@ -747,7 +747,7 @@ export function StockDetailModal({
                   <div className="flex items-center justify-between">
                     <label
                       htmlFor="order-qty"
-                      className="text-[10px] font-mono uppercase tracking-widest theme-text-dim"
+                      className="text-[11px] font-mono uppercase tracking-widest theme-text-dim"
                     >
                       Quantity (shares)
                     </label>
@@ -757,7 +757,7 @@ export function StockDetailModal({
                           key={n}
                           type="button"
                           onClick={() => setQuantity(String(n))}
-                          className="px-1.5 h-[20px] rounded border theme-border text-[9.5px] font-mono theme-text-muted hover:theme-text-main transition-colors"
+                          className="px-2 h-[22px] rounded border theme-border text-[13px] font-medium theme-text-muted hover:theme-text-main transition-colors"
                         >
                           {n}
                         </button>
@@ -770,7 +770,7 @@ export function StockDetailModal({
                             ? 'Largest quantity your cash covers'
                             : 'All available shares'
                         }
-                        className="px-1.5 h-[20px] rounded text-[9.5px] font-mono font-bold transition-colors"
+                        className="px-2 h-[22px] rounded text-[13px] font-medium transition-colors"
                         style={{
                           backgroundColor:
                             'color-mix(in srgb, var(--accent) 16%, transparent)',
@@ -789,7 +789,7 @@ export function StockDetailModal({
                         setQuantity((q) => String(Math.max(1, (parseInt(q, 10) || 1) - 1)))
                       }
                       aria-label="Decrease quantity"
-                      className="w-9 h-[36px] rounded-md border theme-border theme-bg-input theme-text-main font-bold hover:theme-bg-card-hover transition-colors"
+                      className="w-9 h-[38px] rounded-md border theme-border theme-bg-input theme-text-main font-bold hover:theme-bg-card-hover transition-colors"
                     >
                       −
                     </button>
@@ -801,7 +801,7 @@ export function StockDetailModal({
                       required
                       value={quantity}
                       onChange={(e) => setQuantity(e.target.value)}
-                      className="flex-1 h-[36px] rounded-md border theme-border theme-bg-input px-3 text-center text-[13px] font-mono font-bold theme-text-main focus:outline-none"
+                      className="flex-1 h-[38px] rounded-md border theme-border theme-bg-input px-3 text-center text-[14px] font-mono font-bold theme-text-main focus:outline-none"
                     />
                     <button
                       type="button"
@@ -809,7 +809,7 @@ export function StockDetailModal({
                         setQuantity((q) => String((parseInt(q, 10) || 0) + 1))
                       }
                       aria-label="Increase quantity"
-                      className="w-9 h-[36px] rounded-md border theme-border theme-bg-input theme-text-main font-bold hover:theme-bg-card-hover transition-colors"
+                      className="w-9 h-[38px] rounded-md border theme-border theme-bg-input theme-text-main font-bold hover:theme-bg-card-hover transition-colors"
                     >
                       +
                     </button>
@@ -820,7 +820,7 @@ export function StockDetailModal({
                 <div className="surface-panel p-3 space-y-2">
                   <div className="flex items-start justify-between gap-3">
                     <div>
-                      <div className="text-[9px] font-mono uppercase tracking-widest theme-text-dim">
+                      <div className="text-[11px] font-mono uppercase tracking-widest theme-text-dim">
                         {isBuy
                           ? isLimit
                             ? 'Cash reserved'
@@ -829,11 +829,8 @@ export function StockDetailModal({
                           ? 'Expected proceeds'
                           : 'Total proceeds'}
                       </div>
-                      {/* Label states the direction; the figure stays positive
-                          and takes the colour of the side you're trading, so a
-                          buy total matches the green BUY SHARES button. */}
                       <div
-                        className="text-[15px] font-mono font-extrabold mt-0.5"
+                        className="text-[20px] font-mono font-semibold mt-0.5"
                         style={{ color: isBuy ? 'var(--gain-green)' : 'var(--loss-red)' }}
                       >
                         {fmtMoney(orderTotal)} IC
@@ -841,17 +838,17 @@ export function StockDetailModal({
                     </div>
 
                     <div className="text-right">
-                      <div className="text-[9px] font-mono uppercase tracking-widest theme-text-dim">
+                      <div className="text-[11px] font-mono uppercase tracking-widest theme-text-dim">
                         {isBuy ? 'Available cash' : 'Available shares'}
                       </div>
-                      <div className="text-[12px] font-mono font-bold theme-text-main mt-0.5">
+                      <div className="text-[15px] font-mono font-semibold theme-text-main mt-0.5">
                         {isBuy
                           ? `${fmtMoney(availWallet)} IC`
                           : `${availableQty} share${availableQty === 1 ? '' : 's'}`}
                       </div>
                       {(isBuy ? balanceInfo.lockedFunds > 0 : lockedQty > 0) && (
                         <div
-                          className="text-[9px] font-mono mt-0.5"
+                          className="text-[11px] font-mono mt-0.5"
                           style={{ color: 'var(--accent)' }}
                         >
                           {isBuy
@@ -863,7 +860,7 @@ export function StockDetailModal({
                   </div>
 
                   {ownedQty > 0 && (
-                    <div className="pt-2 border-t theme-border flex justify-between text-[10px] font-mono">
+                    <div className="pt-2 border-t theme-border flex justify-between text-[11px] font-mono">
                       <span className="theme-text-dim">Your position</span>
                       <span className="theme-text-main font-bold">
                         {ownedQty} @ avg {fmtMoney(userHolding?.avgBuyPrice || 0)} IC
@@ -875,7 +872,7 @@ export function StockDetailModal({
                 {/* Messages */}
                 {notice && (
                   <div
-                    className="flex items-start gap-2 p-2.5 rounded-md text-[10.5px] font-mono leading-snug"
+                    className="flex items-start gap-2 p-2.5 rounded-md text-[11px] font-mono leading-snug"
                     style={{
                       backgroundColor:
                         'color-mix(in srgb, var(--gain-green) 12%, transparent)',
@@ -891,7 +888,7 @@ export function StockDetailModal({
 
                 {error && (
                   <div
-                    className="flex items-start gap-2 p-2.5 rounded-md text-[10.5px] font-mono leading-snug animate-error-shake"
+                    className="flex items-start gap-2 p-2.5 rounded-md text-[11px] font-mono leading-snug animate-error-shake"
                     style={{
                       backgroundColor:
                         'color-mix(in srgb, var(--loss-red) 12%, transparent)',
@@ -906,7 +903,7 @@ export function StockDetailModal({
                 )}
 
                 {blockReason && !error && (
-                  <div className="flex items-start gap-2 p-2.5 rounded-md text-[10.5px] font-mono leading-snug surface-panel theme-text-muted">
+                  <div className="flex items-start gap-2 p-2.5 rounded-md text-[11px] font-mono leading-snug surface-panel theme-text-muted">
                     {isTradingLocked ? (
                       <Ban className="w-3.5 h-3.5 flex-shrink-0 mt-px" />
                     ) : (
@@ -920,7 +917,7 @@ export function StockDetailModal({
                 <button
                   type="submit"
                   disabled={!canSubmit}
-                  className="w-full h-[42px] rounded-md text-[11.5px] font-heading font-extrabold text-white flex items-center justify-center gap-2 transition-all active:scale-[0.98] disabled:opacity-40 disabled:cursor-not-allowed"
+                  className="w-full h-[44px] rounded-md text-[15px] font-semibold text-white flex items-center justify-center gap-2 transition-all active:scale-[0.98] disabled:opacity-40 disabled:cursor-not-allowed"
                   style={{
                     backgroundColor: isLimit
                       ? 'var(--accent)'
