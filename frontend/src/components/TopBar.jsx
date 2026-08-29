@@ -113,35 +113,12 @@ export function TopBar({
   return (
     <header className="sticky top-0 z-30 border-b theme-border theme-bg-rail">
       <div className="flex items-center gap-3 px-3 sm:px-5 h-[54px]">
-        {/* Search */}
-        <div className="relative flex-1 max-w-[320px]">
-          <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 theme-text-dim pointer-events-none" />
-          <input
-            ref={searchRef}
-            type="text"
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            placeholder="Search stocks, sectors…"
-            aria-label="Search stocks and sectors"
-            className="w-full h-[32px] rounded-md border theme-border theme-bg-input pl-8 pr-14 text-[12px] theme-text-main placeholder:theme-text-dim focus:outline-none transition-colors"
-            style={{ caretColor: 'var(--accent)' }}
-            onFocus={(e) => (e.target.style.borderColor = 'var(--accent)')}
-            onBlur={(e) => (e.target.style.borderColor = 'var(--border-card)')}
-          />
-          {searchQuery ? (
-            <button
-              type="button"
-              onClick={() => setSearchQuery('')}
-              aria-label="Clear search"
-              className="absolute right-2 top-1/2 -translate-y-1/2 p-0.5 rounded theme-text-dim hover:theme-text-main"
-            >
-              <X className="w-3.5 h-3.5" />
-            </button>
-          ) : (
-            <kbd className="absolute right-2 top-1/2 -translate-y-1/2 px-1.5 py-0.5 rounded text-[9px] font-mono theme-text-dim border theme-border hidden sm:block">
-              /
-            </kbd>
-          )}
+        {/* Brand / Exchange Status Badge */}
+        <div className="flex items-center gap-2">
+          <span className="w-2.5 h-2.5 rounded-full bg-[#10B981] animate-ping" />
+          <span className="text-xs font-mono font-bold tracking-wider uppercase text-[#F0B429]">
+            EQUITY ARENA · LIVE EXCHANGE
+          </span>
         </div>
 
         <div className="flex-1" />
