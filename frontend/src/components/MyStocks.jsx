@@ -217,14 +217,21 @@ export function MyStocks({ holdings = [], stocks = [], onSell, onShowChart, onNa
                       <span className="block text-[10px] text-[#6B7280] dark:text-[#7B82A0] font-normal">IC</span>
                     </td>
 
-                    {/* Sell Button */}
+                    {/* Sell Button with Profit/Loss Color Bifurcation */}
                     <td className="px-4 py-3 text-right">
                       <button
                         type="button"
                         onClick={() => r.stock && onSell?.(r.stock, 'SELL')}
-                        className="bg-[#DC2626] hover:bg-[#B91C1C] text-white text-xs font-bold px-3.5 py-1.5 rounded-lg shadow-sm transition-all hover:scale-[1.03] active:scale-[0.97] uppercase cursor-pointer"
+                        className={`text-white text-xs font-bold px-3.5 py-1.5 rounded-lg shadow-sm transition-all hover:scale-[1.03] active:scale-[0.97] uppercase cursor-pointer ${
+                          r.gain > 0
+                            ? 'bg-[#16A34A] hover:bg-[#15803D] hover:shadow-[0_0_10px_rgba(22,163,74,0.4)]'
+                            : r.gain < 0
+                            ? 'bg-[#DC2626] hover:bg-[#B91C1C] hover:shadow-[0_0_10px_rgba(220,38,38,0.4)]'
+                            : 'bg-[#DC2626] hover:bg-[#B91C1C]'
+                        }`}
+                        title={r.gain > 0 ? `Sell now to lock in +${fmt(r.gain)} IC profit!` : r.gain < 0 ? `Sell now with -${fmt(Math.abs(r.gain))} IC loss` : 'Sell stock'}
                       >
-                        Sell
+                        {r.gain > 0 ? 'Sell (+Profit) 📈' : r.gain < 0 ? 'Sell (-Loss) 📉' : 'Sell'}
                       </button>
                     </td>
                   </tr>

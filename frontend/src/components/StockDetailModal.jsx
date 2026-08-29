@@ -274,6 +274,13 @@ export function StockDetailModal({
   const unitPrice = isLimit ? parsedTargetPrice : currentPrice;
   const orderTotal = Math.round(parsedQty * unitPrice * 100) / 100;
 
+  const avgBuyPrice = userHolding?.avgBuyPrice || 0;
+  const priceDiffPerShare = avgBuyPrice > 0 ? unitPrice - avgBuyPrice : 0;
+  const isProfitableSell = !isBuy && avgBuyPrice > 0 && priceDiffPerShare > 0;
+  const isLossSell = !isBuy && avgBuyPrice > 0 && priceDiffPerShare < 0;
+  const totalSellPnL = priceDiffPerShare * parsedQty;
+  const sellPnLPct = avgBuyPrice > 0 ? (priceDiffPerShare / avgBuyPrice) * 100 : 0;
+
   // Max the trader could transact given cash / available shares
   const maxQty = isBuy
     ? Math.floor(availWallet / (unitPrice || 1))
@@ -690,12 +697,15 @@ export function StockDetailModal({
                   className="flex items-center justify-center gap-1.5 h-[38px] rounded text-[14px] font-semibold transition-colors"
                   style={
                     !isBuy
-                      ? { backgroundColor: 'var(--loss-red)', color: '#fff' }
+                      ? {
+                          backgroundColor: isProfitableSell ? '#16A34A' : isLossSell ? '#DC2626' : 'var(--loss-red)',
+                          color: '#fff'
+                        }
                       : { color: 'var(--text-muted)' }
                   }
                 >
                   <ArrowDownRight className="w-4 h-4" />
-                  SELL SHARES
+                  {isProfitableSell ? 'SELL SHARES (📈 PROFIT)' : isLossSell ? 'SELL SHARES (📉 LOSS)' : 'SELL SHARES'}
                 </button>
               </div>
 
@@ -828,7 +838,13 @@ export function StockDetailModal({
                       </div>
                       <div
                         className="text-[20px] font-mono font-semibold mt-0.5"
-                        style={{ color: isBuy ? 'var(--gain-green)' : 'var(--loss-red)' }}
+                        style={{
+                          color: isBuy
+                            ? 'var(--gain-green)'
+                            : isProfitableSell
+                            ? '#22C55E'
+                            : 'var(--loss-red)'
+                        }}
                       >
                         {fmtMoney(orderTotal)} IC
                       </div>
@@ -857,11 +873,35 @@ export function StockDetailModal({
                   </div>
 
                   {ownedQty > 0 && (
-                    <div className="pt-2 border-t theme-border flex justify-between text-[11px] font-mono">
-                      <span className="theme-text-dim">Your position</span>
-                      <span className="theme-text-main font-bold">
-                        {ownedQty} @ avg {fmtMoney(userHolding?.avgBuyPrice || 0)} IC
-                      </span>
+                    <div className="pt-2 border-t theme-border space-y-1.5 text-[11px] font-mono">
+                      <div className="flex justify-between">
+                        <span className="theme-text-dim">Your position</span>
+                        <span className="theme-text-main font-bold">
+                          {ownedQty} @ avg {fmtMoney(userHolding?.avgBuyPrice || 0)} IC
+                        </span>
+                      </div>
+
+                      {/* Profit / Loss Sell Preview Callout Banner */}
+                      {!isBuy && (
+                        <div className={`p-2 rounded font-mono text-[11px] font-bold flex items-center justify-between transition-all ${
+                          isProfitableSell
+                            ? 'bg-emerald-500/15 text-emerald-400 border border-emerald-500/30'
+                            : isLossSell
+                            ? 'bg-rose-500/15 text-rose-400 border border-rose-500/30'
+                            : 'bg-gray-500/10 text-gray-400 border border-gray-500/20'
+                        }`}>
+                          <span>
+                            {isProfitableSell ? '📈 PROFIT PREVIEW:' : isLossSell ? '📉 LOSS PREVIEW:' : 'EVEN PREVIEW:'}
+                          </span>
+                          <span>
+                            {isProfitableSell
+                              ? `+${fmtMoney(totalSellPnL)} IC (+${sellPnLPct.toFixed(2)}%)`
+                              : isLossSell
+                              ? `-${fmtMoney(Math.abs(totalSellPnL))} IC (-${Math.abs(sellPnLPct).toFixed(2)}%)`
+                              : '0.00 IC'}
+                          </span>
+                        </div>
+                      )}
                     </div>
                   )}
                 </div>
@@ -914,14 +954,18 @@ export function StockDetailModal({
                 <button
                   type="submit"
                   disabled={!canSubmit}
-                  className="w-full h-[44px] rounded-md text-[15px] font-semibold text-white flex items-center justify-center gap-2 transition-all active:scale-[0.98] disabled:opacity-40 disabled:cursor-not-allowed"
+                  className="w-full h-[44px] rounded-md text-[15px] font-semibold text-white flex items-center justify-center gap-2 transition-all active:scale-[0.98] disabled:opacity-40 disabled:cursor-not-allowed shadow-md"
                   style={{
                     backgroundColor: isLimit
-                      ? 'var(--accent)'
+                      ? isProfitableSell
+                        ? '#16A34A'
+                        : 'var(--accent)'
                       : isBuy
                       ? 'var(--gain-green)'
+                      : isProfitableSell
+                      ? '#16A34A'
                       : 'var(--loss-red)',
-                    color: isLimit ? '#0B0E14' : '#fff'
+                    color: isLimit && !isProfitableSell ? '#0B0E14' : '#fff'
                   }}
                 >
                   {loadingTrade ? (
@@ -937,7 +981,7 @@ export function StockDetailModal({
                   ) : (
                     <>
                       <ShoppingBag className="w-4 h-4" />
-                      {mode === 'BUY' ? 'BUY' : 'SELL'} {parsedQty} {parsedQty === 1 ? 'share' : 'shares'} @ {fmtMoney(currentPrice)} IC
+                      {mode === 'BUY' ? 'BUY' : isProfitableSell ? 'SELL AT PROFIT 📈' : 'SELL'} {parsedQty} {parsedQty === 1 ? 'share' : 'shares'} @ {fmtMoney(currentPrice)} IC
                     </>
                   )}
                 </button>

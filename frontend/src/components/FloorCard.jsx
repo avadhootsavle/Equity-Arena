@@ -119,6 +119,10 @@ export const FloorCard = memo(function FloorCard({
   };
 
   const canSell = availableToSell > 0 && !isTradingLocked;
+  const avgBuyPrice = holding?.avgBuyPrice || 0;
+  const isProfitableSell = holding && owned > 0 && avgBuyPrice > 0 && stock?.currentPrice > avgBuyPrice;
+  const isLossSell = holding && owned > 0 && avgBuyPrice > 0 && stock?.currentPrice < avgBuyPrice;
+  const priceDiffPerShare = avgBuyPrice > 0 ? (stock?.currentPrice || 0) - avgBuyPrice : 0;
 
   /* ---------------- Compact variant ---------------- */
   if (variant === 'compact') {
@@ -199,9 +203,11 @@ export const FloorCard = memo(function FloorCard({
             type="button"
             onClick={(e) => handleQuickTrade(e, 'SELL')}
             disabled={!canSell}
-            className="bg-[#B91C1C] hover:bg-[#991B1B] text-white text-xs font-bold px-2.5 py-1.5 rounded-lg shadow uppercase disabled:opacity-40"
+            className={`text-white text-xs font-bold px-2.5 py-1.5 rounded-lg shadow uppercase disabled:opacity-40 transition-all ${
+              isProfitableSell ? 'bg-[#16A34A] hover:bg-[#15803D]' : 'bg-[#B91C1C] hover:bg-[#991B1B]'
+            }`}
           >
-            Sell
+            {isProfitableSell ? 'Sell 📈' : 'Sell'}
           </button>
         </div>
       </div>
@@ -262,13 +268,20 @@ export const FloorCard = memo(function FloorCard({
             <span
               className="px-2 py-0.5 rounded text-[9.5px] font-mono font-bold flex items-center gap-1 flex-shrink-0"
               style={{
-                backgroundColor:
-                  'color-mix(in srgb, var(--accent) 15%, transparent)',
-                color: 'var(--accent)'
+                backgroundColor: isProfitableSell
+                  ? 'rgba(34, 197, 94, 0.15)'
+                  : isLossSell
+                  ? 'rgba(239, 68, 68, 0.15)'
+                  : 'color-mix(in srgb, var(--accent) 15%, transparent)',
+                color: isProfitableSell
+                  ? '#22C55E'
+                  : isLossSell
+                  ? '#EF4444'
+                  : 'var(--accent)'
               }}
             >
               <Check className="w-3 h-3" />
-              {owned}
+              {owned} {isProfitableSell ? '(+PROFIT)' : isLossSell ? '(-LOSS)' : ''}
             </span>
           )}
         </span>
@@ -380,11 +393,19 @@ export const FloorCard = memo(function FloorCard({
                 ? 'Trading locked'
                 : availableToSell === 0
                 ? `No ${stock.symbol} shares to sell`
+                : isProfitableSell
+                ? `Sell at PROFIT (+${fmtMoney(priceDiffPerShare)} IC/share)`
+                : isLossSell
+                ? `Sell at LOSS (-${fmtMoney(Math.abs(priceDiffPerShare))} IC/share)`
                 : `Instant Quick Sell ${availableToSell} available`
             }
-            className="bg-[#B91C1C] hover:bg-[#991B1B] hover:shadow-[0_0_12px_rgba(185,28,28,0.4)] text-white text-[12px] font-bold min-h-[34px] px-2 flex-1 flex items-center justify-center gap-1 shadow-md uppercase tracking-wider rounded-lg transition-all active:scale-95 disabled:opacity-50"
+            className={`text-white text-[12px] font-bold min-h-[34px] px-2 flex-1 flex items-center justify-center gap-1 shadow-md uppercase tracking-wider rounded-lg transition-all active:scale-95 disabled:opacity-50 ${
+              isProfitableSell
+                ? 'bg-[#16A34A] hover:bg-[#15803D] hover:shadow-[0_0_12px_rgba(22,163,74,0.4)]'
+                : 'bg-[#B91C1C] hover:bg-[#991B1B] hover:shadow-[0_0_12px_rgba(185,28,28,0.4)]'
+            }`}
           >
-            <span>SELL</span>
+            <span>{isProfitableSell ? 'SELL 📈' : 'SELL'}</span>
           </button>
         </div>
 
@@ -402,10 +423,16 @@ export const FloorCard = memo(function FloorCard({
           <button
             type="button"
             onClick={(e) => handleNormalTrade(e, 'SELL')}
-            className="flex-1 py-1 px-2 rounded-[10px] border border-[#CBD5E1] dark:border-[#2D3142] bg-transparent hover:bg-slate-100 dark:hover:bg-[#1E2333] text-[11px] font-semibold text-[#64748B] dark:text-[#94A3B8] flex items-center justify-center gap-1 transition-all active:scale-95 min-h-[30px]"
-            title="Review & set price"
+            className={`flex-1 py-1 px-2 rounded-[10px] border bg-transparent hover:bg-slate-100 dark:hover:bg-[#1E2333] text-[11px] font-semibold flex items-center justify-center gap-1 transition-all active:scale-95 min-h-[30px] ${
+              isProfitableSell
+                ? 'border-[#22C55E]/60 text-[#22C55E]'
+                : isLossSell
+                ? 'border-[#EF4444]/60 text-[#EF4444]'
+                : 'border-[#CBD5E1] dark:border-[#2D3142] text-[#64748B] dark:text-[#94A3B8]'
+            }`}
+            title={isProfitableSell ? 'Normal Sell (In Profit)' : 'Normal Sell'}
           >
-            <span>Normal Sell</span>
+            <span>{isProfitableSell ? 'Normal Sell 📈' : 'Normal Sell'}</span>
           </button>
         </div>
       </div>
