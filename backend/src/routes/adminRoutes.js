@@ -1,7 +1,7 @@
 const express = require('express');
 const { PrismaClient } = require('@prisma/client');
 const { authenticateToken, requireAdmin } = require('../middleware/authMiddleware');
-const { emitStockUpdate, emitNewsBroadcast, emitPortfolioUpdate, emitActivityLog } = require('../socket');
+const { emitStockUpdate, emitNewsBroadcast, emitPortfolioUpdate, emitActivityLog, broadcastPublicLeaderboard } = require('../socket');
 const { checkAndExecuteLimitOrders } = require('../services/orderService');
 const { applyNewsImpact, steerMacroMoveForNews } = require('../services/marketTicker');
 const { getUsedTemplateIds, markTemplateUsed } = require('../services/sessionService');
@@ -140,6 +140,9 @@ router.post('/stock/:id/adjust', async (req, res) => {
     // Check bankruptcy for all active traders
     await checkAllTradersBankruptcy();
 
+    // Broadcast updated leaderboard standings to all clients & admin
+    broadcastPublicLeaderboard();
+
     return res.json({
       message: 'Stock price updated successfully',
       stock: updatedStock,
@@ -199,6 +202,9 @@ router.post('/market/adjust-all', async (req, res) => {
       await checkAndExecuteLimitOrders(updatedStock.id, newPrice);
       updatedStocks.push(updatedStock);
     }
+
+    // Broadcast updated leaderboard standings to all clients & admin
+    broadcastPublicLeaderboard();
 
     return res.json({
       message: `Adjusted all ${updatedStocks.length} stocks by ${parsedPercent >= 0 ? '+' : ''}${parsedPercent}%`,
@@ -510,6 +516,9 @@ router.post('/trader/:id/topup', async (req, res) => {
       timestamp: Date.now(),
       isTopUp: true
     });
+
+    // Broadcast updated leaderboard standings to all clients & admin
+    broadcastPublicLeaderboard();
 
     return res.json({
       message: `Added ${parsedAmount.toLocaleString()} IC to ${traderName}'s wallet`,

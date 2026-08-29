@@ -157,12 +157,19 @@ export function AdminDashboard() {
       setLiveTradeFeed((prev) => [itemWithId, ...prev].slice(0, 30));
     };
 
+    const handleLeaderboardUpdate = (updatedLb) => {
+      if (Array.isArray(updatedLb)) {
+        setLeaderboard(updatedLb);
+      }
+    };
+
     socket.on('connect', handleConnect);
     socket.on('stock:update', handleStockUpdate);
     socket.on('trade:executed', handleTradeExecuted);
     socket.on('order:executed', handleTradeExecuted);
     socket.on('bankrupt:alert', handleBankruptAlert);
     socket.on('activity:log', handleActivityLog);
+    socket.on('leaderboard:update', handleLeaderboardUpdate);
 
     return () => {
       socket.off('connect', handleConnect);
@@ -171,6 +178,7 @@ export function AdminDashboard() {
       socket.off('order:executed', handleTradeExecuted);
       socket.off('bankrupt:alert', handleBankruptAlert);
       socket.off('activity:log', handleActivityLog);
+      socket.off('leaderboard:update', handleLeaderboardUpdate);
     };
   }, [socket]);
 

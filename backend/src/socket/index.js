@@ -171,7 +171,9 @@ function emitActivityLog(data) {
 
 function emitPublicLeaderboardUpdate(data) {
   try {
-    if (io) io.to('public-leaderboard').emit('leaderboard:update', data);
+    if (io) {
+      io.emit('leaderboard:update', data);
+    }
   } catch (err) {
     console.error('[Socket emitPublicLeaderboardUpdate error]:', err.message);
   }
@@ -215,6 +217,11 @@ async function broadcastPublicLeaderboard() {
       return {
         id: trader.id,
         name: trader.name || trader.email.split('@')[0],
+        email: trader.email,
+        walletBalance: Math.round(trader.walletBalance * 100) / 100,
+        holdingsValue: Math.round(holdingsValue * 100) / 100,
+        totalPortfolioValue: totalValue,
+        totalNetWorth: totalValue,
         totalValue,
         returnPercent
       };
