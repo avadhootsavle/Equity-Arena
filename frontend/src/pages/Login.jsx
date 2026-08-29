@@ -179,7 +179,9 @@ export function Login() {
 
               <div className="space-y-0 leading-none">
                 <h1
-                  className="text-6xl lg:text-[76px] font-black tracking-tight text-white uppercase drop-shadow-[0_0_30px_rgba(240,180,41,0.35)]"
+                  className={`text-6xl lg:text-[76px] font-black tracking-tight uppercase ${
+                    isDark ? 'text-white drop-shadow-[0_0_30px_rgba(240,180,41,0.35)]' : 'text-[#1A1D27]'
+                  }`}
                   style={{ fontFamily: 'Space Grotesk, sans-serif' }}
                 >
                   EQUITY
@@ -192,17 +194,17 @@ export function Login() {
                 </h1>
               </div>
 
-              <p className="text-[18px] text-[#7B82A0] font-normal">
+              <p className={`text-[18px] font-normal ${isDark ? 'text-[#7B82A0]' : 'text-[#374151]'}`}>
                 Trade. Think. Win.
               </p>
 
-              <p className="text-[15px] text-[#94A3B8] font-normal leading-relaxed max-w-md">
+              <p className={`text-[15px] font-normal leading-relaxed max-w-md ${isDark ? 'text-[#94A3B8]' : 'text-[#4B5563]'}`}>
                 15 Indian stocks. 20,000 IC to start. One session to prove yourself.
               </p>
             </div>
 
             {/* Bottom Stats Row */}
-            <div className="pt-8 border-t border-[#2D3142]/50 text-[12px] font-mono font-bold text-[#7B82A0] uppercase tracking-[0.15em] flex items-center gap-3 relative z-10">
+            <div className={`pt-8 border-t ${isDark ? 'border-[#2D3142]/50 text-[#7B82A0]' : 'border-[#CBD5E1] text-[#6B7280]'} text-[12px] font-mono font-bold uppercase tracking-[0.15em] flex items-center gap-3 relative z-10`}>
               <span>15 STOCKS</span>
               <span className="text-[#F0B429]">•</span>
               <span>3 HOURS</span>
@@ -228,7 +230,7 @@ export function Login() {
               <span className={isDark ? 'text-white' : 'text-[#1A1D27]'}>EQUITY </span>
               <span className="text-[#F0B429]">ARENA</span>
             </h1>
-            <p className="text-sm text-[#7B82A0]">Trade. Think. Win.</p>
+            <p className={`text-sm ${isDark ? 'text-[#7B82A0]' : 'text-[#374151]'}`}>Trade. Think. Win.</p>
           </div>
 
           {/* ================= RIGHT COLUMN: FORM PANEL ================= */}
