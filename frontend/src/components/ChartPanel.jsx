@@ -209,7 +209,8 @@ export function ChartPanel({
       : (selected.currentPrice * percentChange) / 100;
 
   const [quickQty, setQuickQty] = useState('1');
-  const canSell = ownedQuantity > 0 && !isTradingLocked;
+  const parsedQuickQty = Math.max(1, parseInt(quickQty, 10) || 1);
+  const canQuickSell = ownedQuantity > 0 && !isTradingLocked && ownedQuantity >= parsedQuickQty;
   const activeTf = TIMEFRAMES.find((t) => t.key === timeframe) || TIMEFRAMES[0];
 
   const handleQuick = (side) => {
@@ -325,17 +326,25 @@ export function ChartPanel({
                 <button
                   type="button"
                   onClick={() => handleQuick('SELL')}
-                  disabled={!canSell}
+                  disabled={!canQuickSell}
                   title={
                     isTradingLocked
                       ? 'Trading is locked — session is not running'
                       : ownedQuantity === 0
                       ? `You hold no ${selected.symbol} shares to sell`
-                      : `Instant Quick Sell ${quickQty} ${selected.symbol}`
+                      : parsedQuickQty > ownedQuantity
+                      ? `Cannot quick-sell ${parsedQuickQty} shares — you only own ${ownedQuantity} available ${
+                          ownedQuantity === 1 ? 'share' : 'shares'
+                        }`
+                      : `Instant Quick Sell ${parsedQuickQty} ${selected.symbol}`
                   }
-                  className="min-h-[44px] px-4 bg-[var(--loss-red)] hover:brightness-110 text-white font-extrabold text-xs uppercase tracking-wider rounded-lg transition-all active:scale-95 disabled:opacity-40 disabled:cursor-not-allowed shadow-md flex items-center gap-1.5"
+                  className={`min-h-[44px] px-4 font-extrabold text-xs uppercase tracking-wider rounded-lg transition-all active:scale-95 flex items-center gap-1.5 ${
+                    !canQuickSell
+                      ? 'bg-slate-700/60 dark:bg-[#1E2333] text-slate-400 dark:text-[#64748B] border border-slate-700/40 cursor-not-allowed opacity-50 shadow-none'
+                      : 'bg-[var(--loss-red)] hover:brightness-110 text-white shadow-md'
+                  }`}
                 >
-                  {!canSell ? <Lock className="w-4 h-4" /> : <Zap className="w-4 h-4 fill-current" />}
+                  {!canQuickSell ? <Lock className="w-4 h-4" /> : <Zap className="w-4 h-4 fill-current" />}
                   <span>QUICK SELL</span>
                 </button>
               </div>

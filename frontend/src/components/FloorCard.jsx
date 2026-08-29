@@ -118,7 +118,8 @@ export const FloorCard = memo(function FloorCard({
     }
   };
 
-  const canSell = availableToSell > 0 && !isTradingLocked;
+  const parsedCardQty = Math.max(1, parseInt(cardQty, 10) || 1);
+  const canQuickSell = availableToSell > 0 && !isTradingLocked && availableToSell >= parsedCardQty;
   const avgBuyPrice = holding?.avgBuyPrice || 0;
   const isProfitableSell = holding && owned > 0 && avgBuyPrice > 0 && stock?.currentPrice > avgBuyPrice;
   const isLossSell = holding && owned > 0 && avgBuyPrice > 0 && stock?.currentPrice < avgBuyPrice;
@@ -202,9 +203,13 @@ export const FloorCard = memo(function FloorCard({
           <button
             type="button"
             onClick={(e) => handleQuickTrade(e, 'SELL')}
-            disabled={!canSell}
-            className={`text-white text-xs font-bold px-2.5 py-1.5 rounded-lg shadow uppercase disabled:opacity-40 transition-all ${
-              isProfitableSell ? 'bg-[#16A34A] hover:bg-[#15803D]' : 'bg-[#B91C1C] hover:bg-[#991B1B]'
+            disabled={!canQuickSell}
+            className={`text-xs font-bold px-2.5 py-1.5 rounded-lg uppercase transition-all ${
+              !canQuickSell
+                ? 'bg-slate-700/60 dark:bg-[#1E2333] text-slate-400 dark:text-[#64748B] border border-slate-700/40 cursor-not-allowed opacity-50 shadow-none'
+                : isProfitableSell
+                ? 'bg-[#16A34A] hover:bg-[#15803D] text-white shadow-sm'
+                : 'bg-[#B91C1C] hover:bg-[#991B1B] text-white shadow-sm'
             }`}
           >
             Sell
@@ -387,22 +392,22 @@ export const FloorCard = memo(function FloorCard({
           <button
             type="button"
             onClick={(e) => handleQuickTrade(e, 'SELL')}
-            disabled={!canSell}
+            disabled={!canQuickSell}
             title={
               isTradingLocked
                 ? 'Trading locked'
                 : availableToSell === 0
-                ? `No ${stock.symbol} shares to sell`
-                : isProfitableSell
-                ? `Sell at PROFIT (+${fmtMoney(priceDiffPerShare)} IC/share)`
-                : isLossSell
-                ? `Sell at LOSS (-${fmtMoney(Math.abs(priceDiffPerShare))} IC/share)`
-                : `Instant Quick Sell ${availableToSell} available`
+                ? `No ${stock.symbol} shares available to sell`
+                : parsedCardQty > availableToSell
+                ? `Cannot sell ${parsedCardQty} shares — you only own ${availableToSell} available`
+                : `Instant Quick Sell ${parsedCardQty} ${stock.symbol}`
             }
-            className={`text-white text-[12px] font-bold min-h-[34px] px-2 flex-1 flex items-center justify-center gap-1 shadow-md uppercase tracking-wider rounded-lg transition-all active:scale-95 disabled:opacity-50 ${
-              isProfitableSell
-                ? 'bg-[#16A34A] hover:bg-[#15803D] hover:shadow-[0_0_12px_rgba(22,163,74,0.4)]'
-                : 'bg-[#B91C1C] hover:bg-[#991B1B] hover:shadow-[0_0_12px_rgba(185,28,28,0.4)]'
+            className={`text-[12px] font-bold min-h-[34px] px-2 flex-1 flex items-center justify-center gap-1 uppercase tracking-wider rounded-lg transition-all active:scale-95 ${
+              !canQuickSell
+                ? 'bg-slate-700/60 dark:bg-[#1E2333] text-slate-400 dark:text-[#64748B] border border-slate-700/40 cursor-not-allowed opacity-50 shadow-none'
+                : isProfitableSell
+                ? 'bg-[#16A34A] hover:bg-[#15803D] text-white shadow-[0_0_12px_rgba(22,163,74,0.4)]'
+                : 'bg-[#B91C1C] hover:bg-[#991B1B] text-white shadow-[0_0_12px_rgba(185,28,28,0.4)]'
             }`}
           >
             <span>SELL</span>
