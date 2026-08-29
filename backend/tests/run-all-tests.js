@@ -7,6 +7,7 @@ const { runSessionLockTests } = require('./06-session-lock.test');
 const { runSyncConsistencyTests } = require('./07-sync-consistency.test');
 const { runLeaderboardTests } = require('./08-leaderboard.test');
 const { runMultiTabSyncTest } = require('./09-multi-tab-sync.test');
+const { runPortfolioPnLMathTests } = require('./10-portfolio-pnl-math.test');
 
 async function runFullTestSuite() {
   console.log('\n======================================================================');
@@ -26,7 +27,8 @@ async function runFullTestSuite() {
     { name: '6. Admin Session & Trading Lock', fn: runSessionLockTests },
     { name: '7. Admin vs Trader Sync Consistency', fn: runSyncConsistencyTests },
     { name: '8. Tournament Leaderboard & Filtering', fn: runLeaderboardTests },
-    { name: '9. Multi-Tab Real-Time Sync', fn: runMultiTabSyncTest }
+    { name: '9. Multi-Tab Real-Time Sync', fn: runMultiTabSyncTest },
+    { name: '10. Portfolio & P&L Math Engine', fn: runPortfolioPnLMathTests }
   ];
 
   for (const suite of suites) {

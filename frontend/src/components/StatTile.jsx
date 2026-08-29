@@ -60,7 +60,8 @@ export function StatTile({
   tone = 'neutral', // 'neutral' | 'up' | 'down' | 'gold'
   Icon,
   spark,
-  hint
+  hint,
+  tooltip
 }) {
   const { theme } = useTheme();
   const isDark = theme === 'dark';
@@ -95,9 +96,19 @@ export function StatTile({
       }}
     >
       <div className="flex items-start justify-between gap-2">
-        <span className="text-[11px] font-mono font-bold uppercase tracking-[0.12em] text-[#7B82A0] dark:text-[#7B82A0]">
-          {label}
-        </span>
+        <div className="flex items-center gap-1.5 min-w-0">
+          <span className="text-[11px] font-mono font-bold uppercase tracking-[0.12em] text-[#7B82A0] dark:text-[#7B82A0] truncate">
+            {label}
+          </span>
+          {tooltip && (
+            <span
+              className="inline-flex items-center justify-center w-4 h-4 rounded-full bg-gray-200 dark:bg-[#2D3142] text-gray-700 dark:text-[#F0F2FF] text-[10px] font-bold cursor-help flex-shrink-0"
+              title={tooltip}
+            >
+              ?
+            </span>
+          )}
+        </div>
         {Icon && <Icon className="w-[18px] h-[18px] flex-shrink-0 text-[#7B82A0] dark:text-[#64748B]" />}
       </div>
 

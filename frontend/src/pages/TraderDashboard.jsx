@@ -3,6 +3,7 @@ import { useAuth } from '../context/AuthContext';
 import { useSocket } from '../context/SocketContext';
 import { apiFetch } from '../services/api';
 import { useSession } from '../hooks/useSession';
+import { calculatePortfolio, formatCurrency, formatPnL, STARTING_BALANCE } from '../lib/portfolio';
 
 import { Sidebar, MobileNav } from '../components/Sidebar';
 import { TopBar } from '../components/TopBar';
@@ -420,41 +421,17 @@ export function TraderDashboard() {
 
 
 
-  const liveHoldingsValue = useMemo(
-    () =>
-      (portfolio.holdings || []).reduce((sum, h) => {
-        const s = stocks.find((st) => st.id === h.stockId);
-        return sum + h.quantity * (s?.currentPrice || h.currentPrice || 0);
-      }, 0),
-    [portfolio.holdings, stocks]
+  /* Centralized portfolio P&L metrics using lib/portfolio.js */
+  const metrics = useMemo(
+    () => calculatePortfolio(portfolio, stocks),
+    [portfolio, stocks]
   );
 
-  const netWorth = availableCash + liveHoldingsValue + (portfolio.lockedFunds || 0);
-
-  /* Real overall result: money already banked from selling PLUS what open
-     positions are worth right now.
-
-     The backend also returns a totalProfit, but that is a snapshot taken at
-     the last /portfolio fetch, while stock prices keep ticking over the
-     socket. Reading it directly left this figure frozen at an old price while
-     every other tile moved, so the dashboard contradicted itself. realizedPL
-     is historical and therefore safe to take from the snapshot; the unrealised
-     half is recomputed from live prices. */
-  const startingBalance = portfolio.startingBalance ?? 0;
-
-  const holdingsCost = useMemo(
-    () =>
-      (portfolio.holdings || []).reduce(
-        (sum, h) => sum + h.quantity * (h.avgBuyPrice || 0),
-        0
-      ),
-    [portfolio.holdings]
-  );
-
-  const liveUnrealizedPL = liveHoldingsValue - holdingsCost;
-  const totalProfit = (portfolio.realizedPL ?? 0) + liveUnrealizedPL;
-  const totalProfitPercent =
-    startingBalance > 0 ? (totalProfit / startingBalance) * 100 : 0;
+  const liveHoldingsValue = metrics.invested;
+  const netWorth = metrics.portfolioValue;
+  const startingBalance = metrics.startingBalance;
+  const totalProfit = metrics.totalPnL;
+  const totalProfitPercent = metrics.totalPnLPercent;
 
 
 
@@ -643,23 +620,10 @@ export function TraderDashboard() {
               {stocks.length} stocks to trade. Buy low, sell high, grow your cash.
             </p>
 
-            {/* One plain sentence so the score is obvious at a glance */}
-            {startingBalance > 0 && (
-              <p className="text-[12.5px] theme-text-main mt-2">
-                You started with{' '}
-                <strong className="font-mono">{fmtMoney(startingBalance)} IC</strong> and now
-                have <strong className="font-mono">{fmtMoney(netWorth)} IC</strong> —{' '}
-                <strong
-                  style={{
-                    color: totalProfit >= 0 ? 'var(--gain-green)' : 'var(--loss-red)'
-                  }}
-                >
-                  {totalProfit >= 0 ? 'up' : 'down'} {fmtMoney(Math.abs(totalProfit))} IC
-                  {' '}({Math.abs(totalProfitPercent).toFixed(1)}%)
-                </strong>
-                .
-              </p>
-            )}
+            <p className="text-[13px] theme-text-main mt-2">
+              You started with <strong className="font-mono">20,000 IP</strong>. You now have{' '}
+              <strong className="font-mono">{fmtMoney(netWorth)} IP</strong>.
+            </p>
           </div>
 
           {/* ---------------- Session status banner ---------------- */}
@@ -687,9 +651,9 @@ export function TraderDashboard() {
 
                   {/* Admin's Custom Note Banner */}
                   {sessionData?.breakNote && (
-                    <div className="p-3.5 rounded-xl bg-amber-500/10 border border-amber-500/30 flex items-start gap-2.5 text-xs text-amber-200">
-                      <span className="font-extrabold text-amber-400 uppercase tracking-wider flex-shrink-0">ANNOUNCEMENT:</span>
-                      <span className="font-bold leading-relaxed">{sessionData.breakNote}</span>
+                    <div className="p-3.5 rounded-xl bg-amber-500/10 border border-amber-500/30 text-amber-300 text-xs font-mono">
+                      <span className="font-bold uppercase text-amber-400 block mb-1">📢 Admin Announcement:</span>
+                      {sessionData.breakNote}
                     </div>
                   )}
 
@@ -701,17 +665,12 @@ export function TraderDashboard() {
                   </div>
                 </div>
               ) : !sessionData?.id || sessionData?.status === 'NOT_STARTED' ? (
-                <div className="p-4 rounded-xl border border-indigo-500/50 bg-indigo-500/10 text-indigo-400 animate-fadeIn shadow-lg flex items-center justify-between font-mono">
+                <div className="p-4 rounded-2xl border border-amber-500/40 theme-bg-card text-amber-400 animate-pulse flex items-center justify-between font-mono">
                   <div className="flex items-center gap-3">
-                    <Lock className="w-6 h-6 text-indigo-400 flex-shrink-0" />
-                    <div>
-                      <div className="text-sm font-extrabold block">MARKET IS CLOSED</div>
-                      <div className="text-xs text-indigo-300/80">The 3-hour trading session has not been started yet. Waiting for Admin to open the market floor.</div>
-                    </div>
+                    <span className="w-3 h-3 rounded-full bg-amber-400 animate-ping" />
+                    <span className="font-bold text-sm">MARKET SESSION LOCKED</span>
                   </div>
-                  <span className="px-3 py-1 rounded bg-indigo-500 text-white font-black text-xs uppercase tracking-wider flex-shrink-0">
-                    MARKET CLOSED
-                  </span>
+                  <span className="text-xs text-amber-300">Trading opens when admin starts the session</span>
                 </div>
               ) : sessionData?.status === 'LIQUIDATING' ? (
                 <div className="p-4 rounded-xl border border-amber-500/50 bg-amber-500/10 text-amber-400 animate-fadeIn shadow-lg flex items-center justify-between font-mono">
@@ -753,47 +712,43 @@ export function TraderDashboard() {
               {/* ---------------- Money tiles ---------------- */}
               <Reveal className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4" delay={0.05}>
                 <StatTile
-                  label="Total worth"
+                  label="Total Money"
                   value={netWorth}
-                  suffix=" IC"
+                  suffix=" IP"
                   tone="gold"
                   Icon={Wallet}
-                  hint={
-                    (portfolio.lockedFunds || 0) > 0
-                      ? `cash + stocks (incl. ${fmtMoney(portfolio.lockedFunds)} IC held for orders)`
-                      : 'your cash plus your stocks'
-                  }
+                  hint={`You started with 20,000 IP. You now have ${fmtMoney(netWorth)} IP.`}
                 />
                 <StatTile
-                  label={totalProfit >= 0 ? 'Total profit' : 'Total loss'}
+                  label={totalProfit >= 0 ? 'Total Profit' : 'Total Loss'}
                   value={Math.abs(totalProfit)}
-                  prefix={totalProfit >= 0 ? '+' : '-'}
-                  suffix=" IC"
+                  prefix={totalProfit >= 0 ? '+' : '−'}
+                  suffix=" IP"
                   tone={totalProfit >= 0 ? 'up' : 'down'}
                   Icon={totalProfit >= 0 ? TrendingUp : TrendingDown}
-                  hint={`you started with ${fmtMoney(startingBalance)} IC`}
+                  hint={`You started with 20,000 IP. You now have ${fmtMoney(netWorth)} IP.`}
                   delta={totalProfitPercent}
                 />
                 <StatTile
-                  label="Money in stocks"
+                  label="Money in Stocks"
                   value={liveHoldingsValue}
-                  suffix=" IC"
+                  suffix=" IP"
                   tone="neutral"
                   Icon={Layers}
-                  hint={`across ${portfolio.holdings?.length || 0} ${
+                  hint={`Across ${portfolio.holdings?.length || 0} ${
                     (portfolio.holdings?.length || 0) === 1 ? 'stock' : 'stocks'
                   }`}
                 />
                 <StatTile
-                  label="Cash to spend"
+                  label="Cash Left"
                   value={availableCash}
-                  suffix=" IC"
+                  suffix=" IP"
                   tone="neutral"
                   Icon={PieChart}
                   hint={
                     portfolio.lockedFunds > 0
-                      ? `${fmtMoney(portfolio.lockedFunds)} IC held for your waiting orders`
-                      : 'ready to buy'
+                      ? `${fmtMoney(portfolio.lockedFunds)} IP held for waiting orders`
+                      : 'Ready to buy stocks'
                   }
                 />
               </Reveal>
