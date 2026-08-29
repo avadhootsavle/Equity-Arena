@@ -197,7 +197,7 @@ export const FloorCard = memo(function FloorCard({
             disabled={isTradingLocked}
             className="bg-[#16A34A] hover:bg-[#15803D] text-white text-xs font-bold px-2.5 py-1.5 rounded-lg shadow uppercase"
           >
-            Buy ⚡
+            Buy
           </button>
           <button
             type="button"
@@ -207,7 +207,7 @@ export const FloorCard = memo(function FloorCard({
               isProfitableSell ? 'bg-[#16A34A] hover:bg-[#15803D]' : 'bg-[#B91C1C] hover:bg-[#991B1B]'
             }`}
           >
-            {isProfitableSell ? 'Sell 📈' : 'Sell'}
+            {isProfitableSell ? 'Sell (+Profit)' : 'Sell'}
           </button>
         </div>
       </div>
@@ -381,7 +381,7 @@ export const FloorCard = memo(function FloorCard({
             title={isTradingLocked ? 'Trading locked' : `Instant Quick Buy ${cardQty} ${stock.symbol}`}
             className="bg-[#16A34A] hover:bg-[#15803D] hover:shadow-[0_0_12px_rgba(22,163,74,0.4)] text-white text-[12px] font-bold min-h-[34px] px-2 flex-1 flex items-center justify-center gap-1 shadow-md uppercase tracking-wider rounded-lg transition-all active:scale-95 disabled:opacity-50"
           >
-            <span>BUY ⚡</span>
+            <span>BUY</span>
           </button>
 
           <button
@@ -405,7 +405,7 @@ export const FloorCard = memo(function FloorCard({
                 : 'bg-[#B91C1C] hover:bg-[#991B1B] hover:shadow-[0_0_12px_rgba(185,28,28,0.4)]'
             }`}
           >
-            <span>{isProfitableSell ? 'SELL 📈' : 'SELL'}</span>
+            <span>{isProfitableSell ? 'SELL (+PROFIT)' : 'SELL'}</span>
           </button>
         </div>
 
@@ -432,7 +432,7 @@ export const FloorCard = memo(function FloorCard({
             }`}
             title={isProfitableSell ? 'Normal Sell (In Profit)' : 'Normal Sell'}
           >
-            <span>{isProfitableSell ? 'Normal Sell 📈' : 'Normal Sell'}</span>
+            <span>Normal Sell</span>
           </button>
         </div>
       </div>

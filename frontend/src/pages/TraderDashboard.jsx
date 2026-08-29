@@ -652,7 +652,7 @@ export function TraderDashboard() {
                   {/* Admin's Custom Note Banner */}
                   {sessionData?.breakNote && (
                     <div className="p-3.5 rounded-xl bg-amber-500/10 border border-amber-500/30 text-amber-300 text-xs font-mono">
-                      <span className="font-bold uppercase text-amber-400 block mb-1">📢 Admin Announcement:</span>
+                      <span className="font-bold uppercase text-amber-400 block mb-1">Admin Announcement:</span>
                       {sessionData.breakNote}
                     </div>
                   )}
@@ -797,39 +797,6 @@ export function TraderDashboard() {
                   </div>
 
                   <div className="flex items-center gap-2">
-                    <div
-                      className="inline-flex items-center gap-0.5 p-0.5 rounded-md border theme-border"
-                      style={{ backgroundColor: 'var(--bg-input)' }}
-                      role="group"
-                      aria-label="Card size"
-                    >
-                      {[
-                        { key: 'compact', Icon: List, label: 'Small cards' },
-                        { key: 'grid', Icon: LayoutGrid, label: 'Big cards' }
-                      ].map(({ key, Icon, label }) => (
-                        <button
-                          key={key}
-                          type="button"
-                          onClick={() => setFloorView(key)}
-                          title={label}
-                          aria-label={label}
-                          aria-pressed={floorView === key}
-                          className="w-[26px] h-[24px] rounded flex items-center justify-center transition-colors"
-                          style={
-                            floorView === key
-                              ? {
-                                  backgroundColor:
-                                    'color-mix(in srgb, var(--accent) 18%, transparent)',
-                                  color: 'var(--accent)'
-                                }
-                              : { color: 'var(--text-dim)' }
-                          }
-                        >
-                          <Icon className="w-3.5 h-3.5" />
-                        </button>
-                      ))}
-                    </div>
-
                     <button
                       type="button"
                       onClick={fetchStocks}
@@ -844,23 +811,17 @@ export function TraderDashboard() {
                 </div>
 
                 {loadingStocks ? (
-                  <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-3">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-4">
                     {[...Array(8)].map((_, i) => (
-                      <div key={i} className="h-[148px] rounded-lg animate-shimmer" />
+                      <div key={i} className="h-[200px] rounded-xl animate-shimmer" />
                     ))}
                   </div>
                 ) : filteredStocks.length === 0 ? (
-                  <div className="surface py-12 text-center text-[11px] font-mono theme-text-dim">
+                  <div className="surface py-12 text-center text-[11px] font-mono theme-text-dim rounded-xl">
                     No stock matches &ldquo;{searchQuery}&rdquo;. Try a different name.
                   </div>
                 ) : (
-                  <div
-                    className={
-                      floorView === 'grid'
-                        ? 'grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-3.5'
-                        : 'grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 xl:grid-cols-6 gap-2.5'
-                    }
-                  >
+                  <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-4">
                     {filteredStocks.map((stock, i) => (
                       <FloorCard
                         key={stock.id}
@@ -868,7 +829,7 @@ export function TraderDashboard() {
                         holding={holdingFor(stock.id)}
                         index={i}
                         flash={stockFlashes[stock.id]}
-                        variant={floorView === 'grid' ? 'grid' : 'compact'}
+                        variant="grid"
                         isActive={stock.id === chartStock?.id}
                         isTradingLocked={isTradingLocked}
                         onSelect={handleSelectFromFloor}

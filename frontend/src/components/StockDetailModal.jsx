@@ -705,7 +705,7 @@ export function StockDetailModal({
                   }
                 >
                   <ArrowDownRight className="w-4 h-4" />
-                  {isProfitableSell ? 'SELL SHARES (📈 PROFIT)' : isLossSell ? 'SELL SHARES (📉 LOSS)' : 'SELL SHARES'}
+                  {isProfitableSell ? 'SELL SHARES (+PROFIT)' : isLossSell ? 'SELL SHARES (-LOSS)' : 'SELL SHARES'}
                 </button>
               </div>
 
@@ -891,7 +891,7 @@ export function StockDetailModal({
                             : 'bg-gray-500/10 text-gray-400 border border-gray-500/20'
                         }`}>
                           <span>
-                            {isProfitableSell ? '📈 PROFIT PREVIEW:' : isLossSell ? '📉 LOSS PREVIEW:' : 'EVEN PREVIEW:'}
+                            {isProfitableSell ? 'PROFIT PREVIEW:' : isLossSell ? 'LOSS PREVIEW:' : 'EVEN PREVIEW:'}
                           </span>
                           <span>
                             {isProfitableSell
@@ -981,7 +981,7 @@ export function StockDetailModal({
                   ) : (
                     <>
                       <ShoppingBag className="w-4 h-4" />
-                      {mode === 'BUY' ? 'BUY' : isProfitableSell ? 'SELL AT PROFIT 📈' : 'SELL'} {parsedQty} {parsedQty === 1 ? 'share' : 'shares'} @ {fmtMoney(currentPrice)} IC
+                      {mode === 'BUY' ? 'BUY' : isProfitableSell ? 'SELL AT PROFIT' : 'SELL'} {parsedQty} {parsedQty === 1 ? 'share' : 'shares'} @ {fmtMoney(currentPrice)} IC
                     </>
                   )}
                 </button>
