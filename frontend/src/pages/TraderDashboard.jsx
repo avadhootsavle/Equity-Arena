@@ -498,7 +498,12 @@ export function TraderDashboard() {
           `Quick ${side.toLowerCase()} filled`
         );
 
-        if (data.user) {
+        if (data.portfolio) {
+          setPortfolio((prev) => ({
+            ...prev,
+            ...data.portfolio
+          }));
+        } else if (data.user) {
           setPortfolio((prev) => ({
             ...prev,
             walletBalance: data.user.walletBalance,
@@ -990,7 +995,7 @@ export function TraderDashboard() {
         onSuccess={(message, updated) => {
           pushToast(message, 'success', 'Order confirmed');
           if (updated) setPortfolio((prev) => ({ ...prev, ...updated }));
-          else fetchPortfolio();
+          fetchPortfolio();
         }}
         isTradingLocked={isTradingLocked}
       />
