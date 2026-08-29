@@ -1,5 +1,6 @@
 import React, { memo, useState, useEffect, useRef, useMemo } from 'react';
 import { apiFetch } from '../services/api';
+import { useTheme } from '../context/ThemeContext';
 
 const fmtMoney = (n, d = 2) =>
   Number(n || 0).toLocaleString('en-US', {
@@ -8,7 +9,7 @@ const fmtMoney = (n, d = 2) =>
   });
 
 /**
- * 48px SVG Sparkline Chart + 15M Rolling High/Low/Range Stats
+ * 36px SVG Sparkline Chart + 15M Rolling High/Low/Range Stats
  */
 export const StockSparkline = memo(function StockSparkline({
   stockId,
@@ -20,6 +21,9 @@ export const StockSparkline = memo(function StockSparkline({
   const [loading, setLoading] = useState(true);
   const [hoverIndex, setHoverIndex] = useState(null);
   const containerRef = useRef(null);
+
+  const { theme } = useTheme();
+  const isDark = theme === 'dark';
 
   // Staggered fetch on mount (3-4 cards per batch to avoid backend hit)
   useEffect(() => {
@@ -173,16 +177,21 @@ export const StockSparkline = memo(function StockSparkline({
 
   const activePoint = hoverIndex !== null && coords[hoverIndex] ? coords[hoverIndex] : null;
 
+  const sparkBg = isUp
+    ? (isDark ? 'rgba(34,197,94,0.05)' : 'rgba(22,163,74,0.06)')
+    : (isDark ? 'rgba(239,68,68,0.05)' : 'rgba(220,38,38,0.06)');
+
   return (
     <div className="w-full space-y-1.5 my-2">
-      {/* 48px Sparkline Container */}
+      {/* 36px Sparkline Container */}
       <div
         ref={containerRef}
         onMouseMove={handleMouseMove}
         onMouseLeave={handleMouseLeave}
         onTouchMove={handleMouseMove}
         onTouchEnd={handleMouseLeave}
-        className="relative w-full h-[36px] bg-transparent border theme-border rounded-lg overflow-hidden cursor-crosshair group"
+        className="relative w-full h-[36px] border theme-border rounded-lg overflow-hidden cursor-crosshair group transition-colors"
+        style={{ backgroundColor: sparkBg }}
       >
         {loading ? (
           <div className="absolute inset-0 flex items-center justify-center text-[9px] font-mono text-[#7B82A0] animate-pulse">
@@ -205,12 +214,12 @@ export const StockSparkline = memo(function StockSparkline({
               {/* Area Fill */}
               <path d={areaD} fill={`url(#${gradientId})`} />
 
-              {/* Line Path */}
+              {/* Line Path - 2px Thick */}
               <path
                 d={pathD}
                 fill="none"
                 stroke={strokeColor}
-                strokeWidth="1.8"
+                strokeWidth="2"
                 strokeLinecap="round"
                 strokeLinejoin="round"
               />
@@ -243,7 +252,7 @@ export const StockSparkline = memo(function StockSparkline({
             {/* Hover Tooltip Overlay */}
             {activePoint && (
               <div
-                className="absolute top-1 z-10 px-2 py-0.5 rounded bg-[#1A1D27] border border-[#2D3142] text-[9.5px] font-mono font-bold text-[#F0F2FF] shadow-lg pointer-events-[#none] transform -translate-x-1/2 whitespace-nowrap"
+                className="absolute top-1 z-10 px-2 py-0.5 rounded bg-[#1A1D27] border border-[#2D3142] text-[9.5px] font-mono font-bold text-[#F0F2FF] shadow-lg pointer-events-none transform -translate-x-1/2 whitespace-nowrap"
                 style={{
                   left: `${Math.max(15, Math.min(85, (activePoint.x / viewBoxWidth) * 100))}%`
                 }}
@@ -267,16 +276,22 @@ export const StockSparkline = memo(function StockSparkline({
       {/* 15M Rolling Stats Row (HIGH / LOW / RANGE) */}
       <div className="flex items-center justify-between px-0.5 text-[10px] font-mono theme-text-dim">
         <div className="flex items-center gap-1">
-          <span className="text-[10px] font-semibold uppercase theme-text-dim">HIGH</span>
-          <span className="text-[11.5px] font-bold font-mono text-[#16A34A]">{fmtMoney(high)}</span>
+          <span className="text-[10px] font-semibold uppercase text-[#7B82A0]">HIGH</span>
+          <span className={`text-[14px] font-semibold font-mono ${isDark ? 'text-[#4ADE80]' : 'text-[#16A34A]'}`}>
+            {fmtMoney(high)}
+          </span>
         </div>
         <div className="flex items-center gap-1">
-          <span className="text-[10px] font-semibold uppercase theme-text-dim">LOW</span>
-          <span className="text-[11.5px] font-bold font-mono text-[#DC2626]">{fmtMoney(low)}</span>
+          <span className="text-[10px] font-semibold uppercase text-[#7B82A0]">LOW</span>
+          <span className={`text-[14px] font-semibold font-mono ${isDark ? 'text-[#F87171]' : 'text-[#DC2626]'}`}>
+            {fmtMoney(low)}
+          </span>
         </div>
         <div className="flex items-center gap-1">
-          <span className="text-[10px] font-semibold uppercase theme-text-dim">RANGE</span>
-          <span className="text-[11.5px] font-bold font-mono theme-text-main">{fmtMoney(range)}</span>
+          <span className="text-[10px] font-semibold uppercase text-[#7B82A0]">RANGE</span>
+          <span className={`text-[14px] font-semibold font-mono ${isDark ? 'text-white' : 'text-[#374151]'}`}>
+            {fmtMoney(range)}
+          </span>
         </div>
       </div>
     </div>

@@ -120,82 +120,82 @@ export const FloorCard = memo(function FloorCard({
   if (variant === 'compact') {
     return (
       <div
-        style={{
-          animationDelay: `${Math.min(index * 28, 420)}ms`,
-          ...(isActive
-            ? { borderColor: 'color-mix(in srgb, var(--accent) 55%, transparent)' }
-            : null)
-        }}
-        className={`floor-card animate-card-rise surface p-2.5 flex flex-col justify-between ${
+        className={`floor-card animate-card-rise p-3 rounded-xl border border-l-2 ${
+          isUp ? 'border-l-[#22C55E]' : 'border-l-[#EF4444]'
+        } flex items-center justify-between gap-3 ${
           isUp ? 'is-up' : 'is-down'
         } ${flashClass}`}
+        style={{
+          background: isDark
+            ? 'linear-gradient(135deg, #1A1D27 0%, #141720 100%)'
+            : '#FFFFFF',
+          boxShadow: isDark
+            ? undefined
+            : '0 2px 8px rgba(0,0,0,0.08), 0 1px 2px rgba(0,0,0,0.04)'
+        }}
       >
-        <CardBackdrop accent={accent} intensity={intensity} streakCount={3} />
-        <span className="card-sheen" />
+        <CardBackdrop accent={accent} intensity={intensity} streakCount={2} />
 
         <button
           type="button"
-          className="card-open flex-1 flex flex-col justify-between"
           onClick={() => onSelect?.(stock)}
-          aria-label={`Open ${stock.symbol} chart, ${fmtMoney(stock.currentPrice)} IC, ${
-            isUp ? 'up' : 'down'
-          } ${Math.abs(percentChange).toFixed(2)} percent`}
+          className="flex-1 flex items-center justify-between min-w-0 text-left cursor-pointer"
         >
-          <span className="flex items-center justify-between gap-1">
-            <span className="text-[10px] font-mono font-bold theme-text-muted truncate">
-              {stock.symbol}
+          <span className="flex items-center gap-2.5 min-w-0">
+            <span
+              className="w-[36px] h-[36px] rounded-lg flex items-center justify-center text-[12px] font-mono font-extrabold flex-shrink-0 shadow-sm border"
+              style={{
+                borderColor: isUp ? '#22C55E' : '#EF4444',
+                backgroundColor: `color-mix(in srgb, ${accent} 15%, transparent)`,
+                color: accent
+              }}
+            >
+              {stock.symbol?.slice(0, 2)}
             </span>
-            {owned > 0 && (
-              <span
-                className="w-1.5 h-1.5 rounded-full flex-shrink-0"
-                style={{ backgroundColor: 'var(--accent)' }}
-                title={`${owned} owned`}
-              />
-            )}
+            <span className="min-w-0">
+              <span className="block text-[15px] font-bold theme-text-main truncate">
+                {stock.name || stock.symbol}
+              </span>
+              <span className="block text-[11px] font-mono text-[#6B7280] dark:text-[#7B82A0]">
+                {stock.symbol}
+              </span>
+            </span>
           </span>
 
-          <span
-            className={`block text-sm font-mono font-extrabold theme-text-main my-1 ${priceClass}`}
-          >
-            {fmtMoney(stock.currentPrice, stock.currentPrice >= 1000 ? 1 : 2)}
-          </span>
-
-          <span
-            className="block text-[9px] font-mono font-bold px-1 py-0.5 rounded text-center"
-            style={{
-              color: accent,
-              backgroundColor: `color-mix(in srgb, ${accent} 13%, transparent)`
-            }}
-          >
-            {isUp ? '+' : ''}
-            {percentChange.toFixed(2)}%
+          <span className="text-right flex-shrink-0 ml-2">
+            <span className={`block text-[16px] font-bold font-mono ${isDark ? 'text-white' : 'text-[#0F172A]'}`}>
+              {fmtMoney(stock.currentPrice)} IC
+            </span>
+            <span
+              className={`inline-flex items-center gap-1 text-[11px] font-mono font-semibold px-2 py-0.5 rounded-full ${
+                isUp
+                  ? isDark
+                    ? 'bg-[#14532D] text-[#4ADE80]'
+                    : 'bg-[#DCFCE7] text-[#16A34A] border border-[#BBF7D0]'
+                  : isDark
+                  ? 'bg-[#7F1D1D] text-[#F87171]'
+                  : 'bg-[#FEE2E2] text-[#DC2626] border border-[#FECACA]'
+              }`}
+            >
+              <span>{isUp ? '▲' : '▼'} {Math.abs(percentChange).toFixed(2)}%</span>
+            </span>
           </span>
         </button>
 
-        <div className="flex items-center gap-1 mt-2">
+        <div className="flex items-center gap-1 flex-shrink-0" onClick={(e) => e.stopPropagation()}>
           <button
             type="button"
             onClick={(e) => handleQuickTrade(e, 'BUY')}
             disabled={isTradingLocked}
-            title={isTradingLocked ? 'Trading locked' : `Buy ${stock.symbol}`}
-            className="card-action card-action-buy"
-            style={{ height: '22px', fontSize: '9.5px' }}
+            className="bg-[#16A34A] hover:bg-[#15803D] text-white text-xs font-bold px-2.5 py-1.5 rounded-lg shadow uppercase"
           >
-            Buy
+            Buy ⚡
           </button>
           <button
             type="button"
             onClick={(e) => handleQuickTrade(e, 'SELL')}
             disabled={!canSell}
-            title={
-              isTradingLocked
-                ? 'Trading locked'
-                : availableToSell === 0
-                ? `No ${stock.symbol} shares to sell`
-                : `Sell ${stock.symbol}`
-            }
-            className="card-action card-action-sell"
-            style={{ height: '22px', fontSize: '9.5px' }}
+            className="bg-[#B91C1C] hover:bg-[#991B1B] text-white text-xs font-bold px-2.5 py-1.5 rounded-lg shadow uppercase disabled:opacity-40"
           >
             Sell
           </button>
@@ -209,42 +209,46 @@ export const FloorCard = memo(function FloorCard({
     <div
       style={{
         animationDelay: `${Math.min(index * 40, 520)}ms`,
-        ...(isActive
-          ? { borderColor: 'color-mix(in srgb, var(--accent) 55%, transparent)' }
-          : null)
+        background: isDark
+          ? 'linear-gradient(135deg, #1A1D27 0%, #141720 100%)'
+          : '#FFFFFF',
+        boxShadow: isDark
+          ? undefined
+          : '0 2px 8px rgba(0,0,0,0.08), 0 1px 2px rgba(0,0,0,0.04)'
       }}
-      className={`floor-card animate-card-rise surface p-3.5 flex flex-col justify-between ${
-        isUp ? 'is-up' : 'is-down'
-      } ${flashClass}`}
+      className={`floor-card animate-card-rise p-3.5 flex flex-col justify-between rounded-xl border border-l-2 ${
+        isUp ? 'border-l-[#22C55E]' : 'border-l-[#EF4444]'
+      } ${isUp ? 'is-up' : 'is-down'} ${flashClass}`}
     >
       <CardBackdrop accent={accent} intensity={intensity} />
       <span className="card-sheen" />
 
       <button
         type="button"
-        className="card-open flex-1 flex flex-col justify-between"
+        className="card-open flex-1 flex flex-col justify-between text-left"
         onClick={() => onSelect?.(stock)}
         aria-label={`Open ${stock.symbol} ${stock.name} chart, ${fmtMoney(
           stock.currentPrice
         )} IC, ${isUp ? 'up' : 'down'} ${Math.abs(percentChange).toFixed(2)} percent`}
       >
-        {/* Top strip: ticker badge + name + owned pill */}
+        {/* Top strip: 36px ticker badge + 16px name + owned pill */}
         <span className="flex items-start justify-between gap-2">
-          <span className="flex items-center gap-2 min-w-0">
+          <span className="flex items-center gap-2.5 min-w-0">
             <span
-              className="w-6 h-6 rounded-md flex items-center justify-center text-[10px] font-mono font-extrabold flex-shrink-0 shadow-sm"
+              className="w-[36px] h-[36px] rounded-lg flex items-center justify-center text-[12px] font-mono font-extrabold flex-shrink-0 shadow-sm border"
               style={{
-                backgroundColor: `color-mix(in srgb, ${accent} 18%, transparent)`,
+                borderColor: isUp ? '#22C55E' : '#EF4444',
+                backgroundColor: `color-mix(in srgb, ${accent} 15%, transparent)`,
                 color: accent
               }}
             >
               {stock.symbol?.slice(0, 2)}
             </span>
             <span className="min-w-0 block">
-              <span className="block text-[14px] sm:text-[15px] font-bold theme-text-main leading-tight">
+              <span className="block text-[16px] font-semibold theme-text-main leading-tight truncate">
                 {stock.name || stock.symbol}
               </span>
-              <span className="block text-[11px] font-mono theme-text-dim leading-tight mt-0.5">
+              <span className="block text-[11px] font-mono text-[#6B7280] dark:text-[#7B82A0] leading-tight mt-0.5">
                 {stock.symbol}
               </span>
             </span>
@@ -265,31 +269,33 @@ export const FloorCard = memo(function FloorCard({
           )}
         </span>
 
-        {/* Price + % Change Badge */}
-        <span className="flex items-baseline justify-between gap-2 my-2">
-          <span
-            className={`text-[20px] sm:text-[22px] font-mono font-bold theme-text-main leading-none whitespace-nowrap ${priceClass}`}
-          >
-            {fmtMoney(stock.currentPrice)} IC
+        {/* 30px Price + % Change Badge */}
+        <span className="flex items-baseline justify-between gap-2 my-2.5">
+          <span className="flex items-baseline">
+            <span
+              className={`text-[30px] font-bold font-mono leading-none whitespace-nowrap ${
+                isDark ? 'text-white' : 'text-[#0F172A]'
+              }`}
+            >
+              {fmtMoney(stock.currentPrice)}
+            </span>
+            <span className="text-[16px] font-mono text-[#7B82A0] dark:text-[#7B82A0] font-normal ml-1">
+              IC
+            </span>
           </span>
+
           <span
-            className="flex items-center gap-1 px-2 py-0.5 rounded text-[11.5px] font-mono font-bold"
-            style={{
-              color: accent,
-              backgroundColor: `color-mix(in srgb, ${accent} 15%, transparent)`
-            }}
+            className={`flex items-center gap-1 px-2.5 py-1 rounded-full text-[12px] font-mono font-semibold ${
+              isUp
+                ? isDark
+                  ? 'bg-[#14532D] text-[#4ADE80]'
+                  : 'bg-[#DCFCE7] text-[#16A34A] border border-[#BBF7D0]'
+                : isDark
+                ? 'bg-[#7F1D1D] text-[#F87171]'
+                : 'bg-[#FEE2E2] text-[#DC2626] border border-[#FECACA]'
+            }`}
           >
-            {isUp ? (
-              <>
-                <TrendingUp className="w-3 h-3" />
-                <span>Up {Math.abs(percentChange).toFixed(2)}%</span>
-              </>
-            ) : (
-              <>
-                <TrendingDown className="w-3 h-3" />
-                <span>Down {Math.abs(percentChange).toFixed(2)}%</span>
-              </>
-            )}
+            <span>{isUp ? '▲' : '▼'} {Math.abs(percentChange).toFixed(2)}%</span>
           </span>
         </span>
 
@@ -297,8 +303,8 @@ export const FloorCard = memo(function FloorCard({
         <StockSparkline stockId={stock.id} currentPrice={stock.currentPrice} index={index} />
 
         {/* Footer stats: Sector & Day Range */}
-        <span className="flex items-center justify-between pt-2 border-t theme-border text-[10.5px] font-mono theme-text-dim">
-          <span className="uppercase tracking-wide font-normal theme-text-dim whitespace-nowrap">
+        <span className="flex items-center justify-between pt-2 border-t theme-border text-[10.5px] font-mono text-[#6B7280] dark:text-[#7B82A0]">
+          <span className="uppercase tracking-wide font-normal whitespace-nowrap">
             {stock.sector}
           </span>
           <span>
@@ -356,7 +362,7 @@ export const FloorCard = memo(function FloorCard({
             onClick={(e) => handleQuickTrade(e, 'BUY')}
             disabled={isTradingLocked}
             title={isTradingLocked ? 'Trading locked' : `Instant Quick Buy ${cardQty} ${stock.symbol}`}
-            className="bg-[#16A34A] hover:bg-[#15803D] text-white text-[12px] font-bold min-h-[34px] px-2 flex-1 flex items-center justify-center gap-1 shadow-md uppercase tracking-wider rounded-lg transition-colors active:scale-95 disabled:opacity-50"
+            className="bg-[#16A34A] hover:bg-[#15803D] hover:shadow-[0_0_12px_rgba(22,163,74,0.4)] text-white text-[12px] font-bold min-h-[34px] px-2 flex-1 flex items-center justify-center gap-1 shadow-md uppercase tracking-wider rounded-lg transition-all active:scale-95 disabled:opacity-50"
           >
             <span>BUY ⚡</span>
           </button>
@@ -372,7 +378,7 @@ export const FloorCard = memo(function FloorCard({
                 ? `No ${stock.symbol} shares to sell`
                 : `Instant Quick Sell ${availableToSell} available`
             }
-            className="bg-[#DC2626] hover:bg-[#B91C1C] text-white text-[12px] font-bold min-h-[34px] px-2 flex-1 flex items-center justify-center gap-1 shadow-md uppercase tracking-wider rounded-lg transition-colors active:scale-95 disabled:opacity-50"
+            className="bg-[#B91C1C] hover:bg-[#991B1B] hover:shadow-[0_0_12px_rgba(185,28,28,0.4)] text-white text-[12px] font-bold min-h-[34px] px-2 flex-1 flex items-center justify-center gap-1 shadow-md uppercase tracking-wider rounded-lg transition-all active:scale-95 disabled:opacity-50"
           >
             <span>SELL</span>
           </button>
@@ -383,7 +389,7 @@ export const FloorCard = memo(function FloorCard({
           <button
             type="button"
             onClick={(e) => handleNormalTrade(e, 'BUY')}
-            className="flex-1 py-1 px-2 rounded-lg border theme-border theme-bg-card hover:theme-bg-card-hover text-[11px] font-semibold theme-text-main flex items-center justify-center gap-1 transition-all active:scale-95 min-h-[30px] shadow-sm"
+            className="flex-1 py-1 px-2 rounded-[10px] border border-[#CBD5E1] dark:border-[#2D3142] bg-transparent hover:bg-slate-100 dark:hover:bg-[#1E2333] text-[11px] font-semibold text-[#64748B] dark:text-[#94A3B8] flex items-center justify-center gap-1 transition-all active:scale-95 min-h-[30px]"
             title="Review & set price"
           >
             <span>Normal Buy</span>
@@ -392,7 +398,7 @@ export const FloorCard = memo(function FloorCard({
           <button
             type="button"
             onClick={(e) => handleNormalTrade(e, 'SELL')}
-            className="flex-1 py-1 px-2 rounded-lg border theme-border theme-bg-card hover:theme-bg-card-hover text-[11px] font-semibold theme-text-main flex items-center justify-center gap-1 transition-all active:scale-95 min-h-[30px] shadow-sm"
+            className="flex-1 py-1 px-2 rounded-[10px] border border-[#CBD5E1] dark:border-[#2D3142] bg-transparent hover:bg-slate-100 dark:hover:bg-[#1E2333] text-[11px] font-semibold text-[#64748B] dark:text-[#94A3B8] flex items-center justify-center gap-1 transition-all active:scale-95 min-h-[30px]"
             title="Review & set price"
           >
             <span>Normal Sell</span>
