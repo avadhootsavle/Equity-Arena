@@ -796,23 +796,23 @@
 }
 
 .card-action-buy {
-  color: var(--gain-green);
-  border-color: color-mix(in srgb, var(--gain-green) 35%, transparent);
-  background-color: color-mix(in srgb, var(--gain-green) 12%, transparent);
+  color: #ffffff;
+  border-color: #16A34A;
+  background-color: #16A34A;
 }
 .card-action-buy:hover:not(:disabled) {
-  background-color: var(--gain-green);
-  color: #fff;
+  background-color: #15803D;
+  color: #ffffff;
 }
 
 .card-action-sell {
-  color: var(--loss-red);
-  border-color: color-mix(in srgb, var(--loss-red) 35%, transparent);
-  background-color: color-mix(in srgb, var(--loss-red) 12%, transparent);
+  color: #ffffff;
+  border-color: #DC2626;
+  background-color: #DC2626;
 }
 .card-action-sell:hover:not(:disabled) {
-  background-color: var(--loss-red);
-  color: #fff;
+  background-color: #B91C1C;
+  color: #ffffff;
 }
 
 @media (prefers-reduced-motion: reduce) {

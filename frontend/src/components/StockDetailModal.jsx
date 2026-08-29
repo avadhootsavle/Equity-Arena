@@ -550,10 +550,7 @@ export function StockDetailModal({
                   />
                 )}
 
-                <div className="flex items-center justify-between mt-2 text-[10px] font-mono">
-                  <span className="theme-text-dim">
-                    {stats.prints.toLocaleString()} data points
-                  </span>
+                <div className="flex items-center justify-end mt-2 text-[10px] font-mono">
                   <span className="theme-text-dim">
                     Price moved{' '}
                     <strong

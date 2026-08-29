@@ -537,11 +537,12 @@ export function TraderDashboard() {
     // Must match the tab key below — 'MARKET' matched no block, so clicking a
     // card blanked the whole page instead of loading the chart.
     setActiveTab('DASHBOARD');
-    // Bring the chart into view when picking from a long floor list
+    // Smoothly scroll to the chart at top of viewport immediately
     requestAnimationFrame(() => {
+      window.scrollTo({ top: 0, behavior: 'smooth' });
       document
         .getElementById('main-chart')
-        ?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        ?.scrollIntoView({ behavior: 'smooth', block: 'start' });
     });
   }, []);
 
@@ -718,7 +719,7 @@ export function TraderDashboard() {
                     <AlertTriangle className="w-6 h-6 text-amber-400 flex-shrink-0 animate-pulse" />
                     <div>
                       <div className="text-sm font-extrabold block">AUTO-LIQUIDATION SWEEP IN PROGRESS</div>
-                      <div className="text-xs text-amber-300/80">Final 5 minutes before session close: all open stock positions are being converted to cash.</div>
+                      <div className="text-xs text-amber-300/80">Market closing soon — your stocks are being sold automatically.</div>
                     </div>
                   </div>
                   <span className="px-3 py-1 rounded bg-amber-500 text-slate-950 font-black text-xs uppercase tracking-wider flex-shrink-0">

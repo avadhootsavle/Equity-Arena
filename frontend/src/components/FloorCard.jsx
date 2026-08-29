@@ -356,7 +356,7 @@ export const FloorCard = memo(function FloorCard({
             onClick={(e) => handleQuickTrade(e, 'BUY')}
             disabled={isTradingLocked}
             title={isTradingLocked ? 'Trading locked' : `Instant Quick Buy ${cardQty} ${stock.symbol}`}
-            className="card-action card-action-buy text-[12px] font-bold min-h-[34px] px-2 flex-1 flex items-center justify-center gap-1 shadow-md uppercase tracking-wider rounded-lg"
+            className="bg-[#16A34A] hover:bg-[#15803D] text-white text-[12px] font-bold min-h-[34px] px-2 flex-1 flex items-center justify-center gap-1 shadow-md uppercase tracking-wider rounded-lg transition-colors active:scale-95 disabled:opacity-50"
           >
             <span>BUY ⚡</span>
           </button>
@@ -372,19 +372,19 @@ export const FloorCard = memo(function FloorCard({
                 ? `No ${stock.symbol} shares to sell`
                 : `Instant Quick Sell ${availableToSell} available`
             }
-            className="card-action card-action-sell text-[12px] font-bold min-h-[34px] px-2 flex-1 flex items-center justify-center gap-1 shadow-md uppercase tracking-wider rounded-lg"
+            className="bg-[#DC2626] hover:bg-[#B91C1C] text-white text-[12px] font-bold min-h-[34px] px-2 flex-1 flex items-center justify-center gap-1 shadow-md uppercase tracking-wider rounded-lg transition-colors active:scale-95 disabled:opacity-50"
           >
             <span>SELL</span>
           </button>
         </div>
 
-        {/* Mode 2: Normal Buy / Normal Sell (Review Panel & Limit Order Mode) */}
+        {/* Mode 2: Normal Trade Review & Limit Mode */}
         <div className="flex items-center gap-1.5 pt-0.5">
           <button
             type="button"
             onClick={(e) => handleNormalTrade(e, 'BUY')}
-            className="flex-1 py-1 px-2 rounded-lg border theme-border theme-bg-card hover:theme-bg-card-hover text-[11px] font-semibold theme-text-main flex items-center justify-center gap-1 transition-all active:scale-95 min-h-[30px]"
-            title="Open review panel to inspect cost or place target limit order"
+            className="flex-1 py-1 px-2 rounded-lg border theme-border theme-bg-card hover:theme-bg-card-hover text-[11px] font-semibold theme-text-main flex items-center justify-center gap-1 transition-all active:scale-95 min-h-[30px] shadow-sm"
+            title="Review & set price"
           >
             <span>Normal Buy</span>
           </button>
@@ -392,8 +392,8 @@ export const FloorCard = memo(function FloorCard({
           <button
             type="button"
             onClick={(e) => handleNormalTrade(e, 'SELL')}
-            className="flex-1 py-1 px-2 rounded-lg border theme-border theme-bg-card hover:theme-bg-card-hover text-[11px] font-semibold theme-text-main flex items-center justify-center gap-1 transition-all active:scale-95 min-h-[30px]"
-            title="Open review panel to sell shares or set sell limit order"
+            className="flex-1 py-1 px-2 rounded-lg border theme-border theme-bg-card hover:theme-bg-card-hover text-[11px] font-semibold theme-text-main flex items-center justify-center gap-1 transition-all active:scale-95 min-h-[30px] shadow-sm"
+            title="Review & set price"
           >
             <span>Normal Sell</span>
           </button>
