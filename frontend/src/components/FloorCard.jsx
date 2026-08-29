@@ -50,6 +50,9 @@ export const FloorCard = memo(function FloorCard({
   onQuickTrade,
   onNormalTrade
 }) {
+  const { theme } = useTheme();
+  const isDark = theme === 'dark';
+
   const percentChange = Number(stock?.percentChange) || 0;
   const isUp = percentChange >= 0;
   const owned = holding?.quantity || 0;
