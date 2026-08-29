@@ -705,7 +705,7 @@ export function StockDetailModal({
                   }
                 >
                   <ArrowDownRight className="w-4 h-4" />
-                  {isProfitableSell ? 'SELL SHARES (+PROFIT)' : isLossSell ? 'SELL SHARES (-LOSS)' : 'SELL SHARES'}
+                  SELL SHARES
                 </button>
               </div>
 
@@ -981,7 +981,7 @@ export function StockDetailModal({
                   ) : (
                     <>
                       <ShoppingBag className="w-4 h-4" />
-                      {mode === 'BUY' ? 'BUY' : isProfitableSell ? 'SELL AT PROFIT' : 'SELL'} {parsedQty} {parsedQty === 1 ? 'share' : 'shares'} @ {fmtMoney(currentPrice)} IC
+                      {mode === 'BUY' ? 'BUY' : 'SELL'} {parsedQty} {parsedQty === 1 ? 'share' : 'shares'} @ {fmtMoney(currentPrice)} IC
                     </>
                   )}
                 </button>

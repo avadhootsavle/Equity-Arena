@@ -231,7 +231,7 @@ export function MyStocks({ holdings = [], stocks = [], onSell, onShowChart, onNa
                         }`}
                         title={r.gain > 0 ? `Sell now to lock in +${fmt(r.gain)} IC profit!` : r.gain < 0 ? `Sell now with -${fmt(Math.abs(r.gain))} IC loss` : 'Sell stock'}
                       >
-                        {r.gain > 0 ? 'Sell (+Profit)' : r.gain < 0 ? 'Sell (-Loss)' : 'Sell'}
+                        Sell
                       </button>
                     </td>
                   </tr>

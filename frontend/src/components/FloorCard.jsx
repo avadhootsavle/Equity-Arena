@@ -207,7 +207,7 @@ export const FloorCard = memo(function FloorCard({
               isProfitableSell ? 'bg-[#16A34A] hover:bg-[#15803D]' : 'bg-[#B91C1C] hover:bg-[#991B1B]'
             }`}
           >
-            {isProfitableSell ? 'Sell (+Profit)' : 'Sell'}
+            Sell
           </button>
         </div>
       </div>
@@ -281,7 +281,7 @@ export const FloorCard = memo(function FloorCard({
               }}
             >
               <Check className="w-3 h-3" />
-              {owned} {isProfitableSell ? '(+PROFIT)' : isLossSell ? '(-LOSS)' : ''}
+              {owned}
             </span>
           )}
         </span>
@@ -405,7 +405,7 @@ export const FloorCard = memo(function FloorCard({
                 : 'bg-[#B91C1C] hover:bg-[#991B1B] hover:shadow-[0_0_12px_rgba(185,28,28,0.4)]'
             }`}
           >
-            <span>{isProfitableSell ? 'SELL (+PROFIT)' : 'SELL'}</span>
+            <span>SELL</span>
           </button>
         </div>
 
