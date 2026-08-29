@@ -1,6 +1,7 @@
 import React, { memo, useMemo, useState } from 'react';
 import { TrendingUp, TrendingDown, Check, Zap } from 'lucide-react';
 import { StockSparkline } from './StockSparkline';
+import { useTheme } from '../context/ThemeContext';
 
 const fmtMoney = (n, d = 2) =>
   Number(n || 0).toLocaleString('en-US', {
