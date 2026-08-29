@@ -264,13 +264,13 @@ export function AdminTraderDetailModal({ traderId, isOpen, onClose }) {
                 </div>
               ) : (
                 <div className="space-y-2">
-                  {data.holdings.map((h) => {
+                  {data.holdings.map((h, i) => {
                     const isPos = h.unrealizedPL >= 0;
                     const isAdjusting = adjustingStockId === h.stockId;
                     const isConfirmingCustom = confirmStockAdj?.stockId === h.stockId;
 
                     return (
-                      <div key={h.id} className="p-3 bg-[#111111] border border-[#2A2A2A] rounded-[4px] space-y-2 font-mono">
+                      <div key={h.id || h.stockId || `h-${i}`} className="p-3 bg-[#111111] border border-[#2A2A2A] rounded-[4px] space-y-2 font-mono">
                         {/* Holding Row */}
                         <div className="flex items-center justify-between text-xs">
                           <div>

@@ -79,7 +79,7 @@ export function MyTrades({ transactions = [], limit = 6, title = 'My Recent Trad
 
                 return (
                   <tr
-                    key={tx.id || i}
+                    key={tx.id || `trade-${i}`}
                     className="border-b theme-border last:border-0 theme-bg-card-hover transition-colors"
                   >
                     <td className="px-4 py-2.5">

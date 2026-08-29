@@ -714,7 +714,7 @@ export function AdminDashboard() {
                         const isUp = tgt.effectPercent >= 0;
                         return (
                           <div
-                            key={idx}
+                            key={tgt.symbol || tgt.stockName || `tgt-${idx}`}
                             className={`text-[9.5px] font-mono px-1.5 py-0.5 rounded border flex items-center justify-between font-bold ${
                               isUp
                                 ? 'bg-[#22C55E]/10 border-[#22C55E]/30 text-[#22C55E]'
@@ -802,7 +802,7 @@ export function AdminDashboard() {
                         const isUp = tgt.effectPercent >= 0;
                         return (
                           <div
-                            key={idx}
+                            key={tgt.symbol || tgt.stockName || `neg-tgt-${idx}`}
                             className={`text-[9.5px] font-mono px-1.5 py-0.5 rounded border flex items-center justify-between font-bold ${
                               isUp
                                 ? 'bg-[#22C55E]/10 border-[#22C55E]/30 text-[#22C55E]'

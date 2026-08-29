@@ -1107,7 +1107,7 @@ function NewsPanel({ news, loading, onRefresh, onViewAll }) {
         ) : (
           news.slice(0, 12).map((item, i) => (
             <article
-              key={item.id || i}
+              key={item.id || `news-widget-${item.timestamp || i}`}
               className="surface-panel px-3 py-2.5 space-y-1 animate-card-rise"
               style={{ animationDelay: `${Math.min(i * 35, 300)}ms` }}
             >
@@ -1301,7 +1301,7 @@ function NewsTab({ news, loading, onRefresh }) {
         ) : (
           news.map((item, i) => (
             <article
-              key={item.id || i}
+              key={item.id || `news-tab-${item.timestamp || i}`}
               className="surface-panel px-4 py-3.5 space-y-2 animate-card-rise transition-colors hover:theme-bg-card-hover"
               style={{ animationDelay: `${Math.min(i * 30, 400)}ms` }}
             >
