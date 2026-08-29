@@ -621,8 +621,8 @@ export function TraderDashboard() {
             </p>
 
             <p className="text-[13px] theme-text-main mt-2">
-              You started with <strong className="font-mono">20,000 IP</strong>. You now have{' '}
-              <strong className="font-mono">{fmtMoney(netWorth)} IP</strong>.
+              You started with <strong className="font-mono">20,000 IC</strong>. You now have{' '}
+              <strong className="font-mono">{fmtMoney(netWorth)} IC</strong>.
             </p>
           </div>
 
@@ -714,25 +714,25 @@ export function TraderDashboard() {
                 <StatTile
                   label="Total Money"
                   value={netWorth}
-                  suffix=" IP"
+                  suffix=" IC"
                   tone="gold"
                   Icon={Wallet}
-                  hint={`You started with 20,000 IP. You now have ${fmtMoney(netWorth)} IP.`}
+                  hint={`You started with 20,000 IC. You now have ${fmtMoney(netWorth)} IC.`}
                 />
                 <StatTile
                   label={totalProfit >= 0 ? 'Total Profit' : 'Total Loss'}
                   value={Math.abs(totalProfit)}
                   prefix={totalProfit >= 0 ? '+' : '−'}
-                  suffix=" IP"
+                  suffix=" IC"
                   tone={totalProfit >= 0 ? 'up' : 'down'}
                   Icon={totalProfit >= 0 ? TrendingUp : TrendingDown}
-                  hint={`You started with 20,000 IP. You now have ${fmtMoney(netWorth)} IP.`}
+                  hint={`You started with 20,000 IC. You now have ${fmtMoney(netWorth)} IC.`}
                   delta={totalProfitPercent}
                 />
                 <StatTile
                   label="Money in Stocks"
                   value={liveHoldingsValue}
-                  suffix=" IP"
+                  suffix=" IC"
                   tone="neutral"
                   Icon={Layers}
                   hint={`Across ${portfolio.holdings?.length || 0} ${
@@ -742,12 +742,12 @@ export function TraderDashboard() {
                 <StatTile
                   label="Cash Left"
                   value={availableCash}
-                  suffix=" IP"
+                  suffix=" IC"
                   tone="neutral"
                   Icon={PieChart}
                   hint={
                     portfolio.lockedFunds > 0
-                      ? `${fmtMoney(portfolio.lockedFunds)} IP held for waiting orders`
+                      ? `${fmtMoney(portfolio.lockedFunds)} IC held for waiting orders`
                       : 'Ready to buy stocks'
                   }
                 />

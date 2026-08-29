@@ -2,7 +2,7 @@
  * Centralized Portfolio & P&L Calculation Engine for Equity Arena
  * 
  * Rules & Invariants:
- * 1. Starting Balance: Fixed at 20,000 Ignite Points (IC / IP).
+ * 1. Starting Balance: Fixed at 20,000 Ignite Credits (IC).
  * 2. Total Money (Portfolio Value) = Cash Left + Money in Stocks (market value of all open positions).
  * 3. Total Profit = Total Money - Starting Balance (20,000).
  * 4. Total Profit % = (Total Profit / 20,000) * 100 (always against starting balance of 20,000).
@@ -117,6 +117,6 @@ export function formatPnL(amount, percent) {
     formattedPercent,
     textAmount: `${sign}${formattedAmount}`,
     textPercent: `${signPercent}${formattedPercent}%`,
-    fullText: `${sign}${formattedAmount} IP (${signPercent}${formattedPercent}%)`
+    fullText: `${sign}${formattedAmount} IC (${signPercent}${formattedPercent}%)`
   };
 }
