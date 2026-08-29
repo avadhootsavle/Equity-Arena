@@ -929,35 +929,62 @@ export function TraderDashboard() {
 
           {/* =============== PORTFOLIO TAB ("MY STOCKS") =============== */}
           {activeTab === 'PORTFOLIO' && (
-            <div className="space-y-5 font-mono">
-              <div className="surface p-5 rounded-2xl border theme-border shadow-xl space-y-4">
-                <h3 className="text-[18px] font-semibold theme-text-main">Your Money Overview</h3>
+            <div className="space-y-8">
+              {/* "Your Money Overview" section */}
+              <div className="space-y-3 border-b theme-border pb-8">
+                <h3 className="text-[18px] font-bold theme-text-main font-heading">
+                  Your Money Overview
+                </h3>
                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                  <div className="p-4 rounded-xl theme-bg-card border theme-border">
-                    <span className="text-[12px] theme-text-dim block font-mono font-bold uppercase tracking-wider">Available Cash</span>
-                    <span className="text-[22px] font-semibold font-mono text-amber-400">{fmtMoney(availableCash)} IC</span>
-                  </div>
-                  <div className="p-4 rounded-xl theme-bg-card border theme-border">
-                    <span className="text-[12px] theme-text-dim block font-mono font-bold uppercase tracking-wider">Money in Stocks</span>
-                    <span className="text-[22px] font-semibold font-mono theme-text-main">{fmtMoney(liveHoldingsValue)} IC</span>
-                  </div>
-                  <div className="p-4 rounded-xl theme-bg-card border theme-border">
-                    <span className="text-[12px] theme-text-dim block font-mono font-bold uppercase tracking-wider">Total Profit / Loss</span>
-                    <span className={`text-[22px] font-semibold font-mono ${totalProfit >= 0 ? 'text-emerald-400' : 'text-rose-400'}`}>
-                      {totalProfit >= 0 ? `You're up ${fmtMoney(totalProfit)} IC` : `You're down ${fmtMoney(Math.abs(totalProfit))} IC`}
-                    </span>
-                  </div>
+                  <StatTile
+                    label="AVAILABLE CASH"
+                    value={availableCash}
+                    suffix=" IC"
+                    tone="gold"
+                    Icon={Wallet}
+                    hint={
+                      portfolio.lockedFunds > 0
+                        ? `${fmtMoney(portfolio.lockedFunds)} IC locked in pending orders`
+                        : 'Cash ready to invest'
+                    }
+                  />
+                  <StatTile
+                    label="MONEY IN STOCKS"
+                    value={liveHoldingsValue}
+                    suffix=" IC"
+                    tone="neutral"
+                    Icon={Layers}
+                    hint={`Invested across ${portfolio.holdings?.length || 0} ${
+                      (portfolio.holdings?.length || 0) === 1 ? 'stock' : 'stocks'
+                    }`}
+                  />
+                  <StatTile
+                    label="TOTAL PROFIT / LOSS"
+                    value={totalProfit}
+                    prefix={totalProfit >= 0 ? '+' : ''}
+                    suffix=" IC"
+                    tone={totalProfit >= 0 ? 'up' : 'down'}
+                    Icon={totalProfit >= 0 ? TrendingUp : TrendingDown}
+                    hint={totalProfit >= 0 ? `You're up ${fmtMoney(totalProfit)} IC` : `You're down ${fmtMoney(Math.abs(totalProfit))} IC`}
+                  />
                 </div>
               </div>
 
-              <MyStocks
-                holdings={portfolio.holdings || []}
-                stocks={stocks}
-                onSell={handleOpenDetail}
-                onShowChart={handleSelectFromFloor}
-              />
+              {/* My Stocks Section */}
+              <div className="border-b theme-border pb-8">
+                <MyStocks
+                  holdings={portfolio.holdings || []}
+                  stocks={stocks}
+                  onSell={handleOpenDetail}
+                  onShowChart={handleSelectFromFloor}
+                  onNavigateMarket={() => setActiveTab('FLOOR')}
+                />
+              </div>
 
-              <MyTrades transactions={portfolio.transactions || []} limit={10} />
+              {/* My Recent Trades Section */}
+              <div>
+                <MyTrades transactions={portfolio.transactions || []} limit={10} />
+              </div>
             </div>
           )}
 

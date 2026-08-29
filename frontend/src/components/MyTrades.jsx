@@ -1,5 +1,6 @@
 import React from 'react';
 import { History } from 'lucide-react';
+import { useTheme } from '../context/ThemeContext';
 
 const fmt = (n, d = 2) =>
   Number(n || 0).toLocaleString('en-US', {
@@ -29,43 +30,49 @@ const when = (ts) => {
 };
 
 /* ------------------------------------------------------------------
-   My Recent Trades
+   My Recent Trades Component
    ------------------------------------------------------------------ */
 export function MyTrades({ transactions = [], limit = 6, title = 'My Recent Trades' }) {
+  const { theme } = useTheme();
+  const isDark = theme === 'dark';
   const rows = transactions.slice(0, limit);
 
   return (
-    <section className="surface overflow-hidden" style={{ boxShadow: 'var(--card-shadow)' }}>
-      <div className="px-4 py-3.5">
-        <h3 className="text-[15px] font-heading font-bold theme-text-main flex items-center gap-2">
-          <History className="w-4 h-4" style={{ color: 'var(--accent)' }} />
+    <section
+      className={`rounded-2xl border overflow-hidden ${
+        isDark ? 'bg-[#0F1117] border-[#2D3142]' : 'bg-white border-[#E2E6F0] shadow-sm'
+      }`}
+    >
+      <div className="px-5 py-4 border-b theme-border">
+        <h3 className="text-[18px] font-semibold theme-text-main flex items-center gap-2 font-heading">
+          <History className="w-5 h-5 text-[#F0B429]" />
           {title}
         </h3>
-        <p className="text-[11px] theme-text-muted mt-0.5">
+        <p className="text-[13px] text-[#6B7280] dark:text-[#7B82A0] mt-0.5">
           Every buy and sell you've made this game
         </p>
       </div>
 
       <div className="overflow-x-auto">
-        <table className="w-full text-[12px]">
+        <table className="w-full text-[13px] font-sans">
           <thead>
-            <tr className="theme-text-dim text-[11px] border-b theme-border whitespace-nowrap">
-              <th className="text-left font-normal px-4 py-2">Bought / Sold</th>
-              <th className="text-left font-normal px-3 py-2">Stock</th>
-              <th className="text-right font-normal px-3 py-2">Shares</th>
-              <th className="text-right font-normal px-3 py-2">Price each</th>
-              <th className="text-right font-normal px-3 py-2">Total</th>
-              <th className="text-right font-normal px-4 py-2">When</th>
+            <tr className="text-[#6B7280] dark:text-[#7B82A0] text-[11px] font-mono uppercase tracking-[0.08em] border-b theme-border whitespace-nowrap">
+              <th className="text-left font-semibold px-4 py-3">Bought / Sold</th>
+              <th className="text-left font-semibold px-3 py-3">Stock</th>
+              <th className="text-right font-semibold px-3 py-3">Shares</th>
+              <th className="text-right font-semibold px-3 py-3">Price each</th>
+              <th className="text-right font-semibold px-3 py-3">Total</th>
+              <th className="text-right font-semibold px-4 py-3">When</th>
             </tr>
           </thead>
-          <tbody>
+          <tbody className="divide-y theme-border">
             {rows.length === 0 ? (
               <tr>
-                <td colSpan={6} className="py-10 text-center">
-                  <div className="text-[13px] theme-text-main font-semibold">
+                <td colSpan={6} className="py-12 text-center">
+                  <div className="text-[14px] theme-text-main font-semibold">
                     No trades yet
                   </div>
-                  <div className="text-[11.5px] theme-text-muted mt-1">
+                  <div className="text-[12px] text-[#6B7280] dark:text-[#7B82A0] mt-1">
                     Your buys and sells will show up here
                   </div>
                 </td>
@@ -73,44 +80,44 @@ export function MyTrades({ transactions = [], limit = 6, title = 'My Recent Trad
             ) : (
               rows.map((tx, i) => {
                 const isBuy = tx.type === 'BUY';
-                const colour = isBuy ? 'var(--gain-green)' : 'var(--loss-red)';
                 const qty = tx.quantity || 0;
                 const price = tx.price || 0;
+                const isEven = i % 2 === 0;
 
                 return (
                   <tr
                     key={tx.id || `trade-${i}`}
-                    className="border-b theme-border last:border-0 theme-bg-card-hover transition-colors"
+                    className={`transition-colors ${
+                      isEven ? 'bg-transparent' : isDark ? 'bg-white/[0.015]' : 'bg-black/[0.015]'
+                    } hover:theme-bg-card-hover`}
                   >
-                    <td className="px-4 py-2.5">
+                    <td className="px-4 py-3.5">
                       <span
-                        className="px-2 py-0.5 rounded text-[10.5px] font-bold"
-                        style={{
-                          backgroundColor: `color-mix(in srgb, ${colour} 16%, transparent)`,
-                          color: colour
-                        }}
+                        className={`inline-block px-2.5 py-0.5 rounded-full text-[10px] font-mono font-bold uppercase shadow-sm ${
+                          isBuy ? 'bg-[#16A34A] text-white' : 'bg-[#DC2626] text-white'
+                        }`}
                       >
                         {isBuy ? 'Bought' : 'Sold'}
                       </span>
                     </td>
-                    <td className="px-3 py-2.5">
-                      <span className="block font-semibold theme-text-main leading-tight">
+                    <td className="px-3 py-3.5">
+                      <span className="block text-[15px] font-medium theme-text-main leading-tight">
                         {tx.stock?.name || tx.stock?.symbol || '—'}
                       </span>
-                      <span className="block text-[10px] font-mono theme-text-dim leading-tight mt-0.5">
+                      <span className="block text-[11px] font-mono text-[#6B7280] dark:text-[#7B82A0] mt-0.5">
                         {tx.stock?.symbol || ''}
                       </span>
                     </td>
-                    <td className="px-3 py-2.5 text-right font-mono theme-text-main">
+                    <td className="px-3 py-3.5 text-right font-mono text-[14px] font-bold theme-text-main">
                       {qty}
                     </td>
-                    <td className="px-3 py-2.5 text-right font-mono theme-text-main whitespace-nowrap">
-                      {fmt(price)} <span className="theme-text-dim">IC</span>
+                    <td className="px-3 py-3.5 text-right font-mono text-[14px] theme-text-main whitespace-nowrap">
+                      {fmt(price)} <span className="text-[10px] text-[#6B7280] dark:text-[#7B82A0]">IC</span>
                     </td>
-                    <td className="px-3 py-2.5 text-right font-mono font-semibold theme-text-main whitespace-nowrap">
-                      {fmt(qty * price)} <span className="theme-text-dim font-normal">IC</span>
+                    <td className="px-3 py-3.5 text-right font-mono text-[14px] font-bold theme-text-main whitespace-nowrap">
+                      {fmt(qty * price)} <span className="text-[10px] text-[#6B7280] dark:text-[#7B82A0] font-normal">IC</span>
                     </td>
-                    <td className="px-4 py-2.5 text-right font-mono theme-text-muted whitespace-nowrap">
+                    <td className="px-4 py-3.5 text-right font-mono text-[12px] text-[#6B7280] dark:text-[#7B82A0] whitespace-nowrap">
                       {when(tx.timestamp)}
                     </td>
                   </tr>

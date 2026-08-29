@@ -1,5 +1,6 @@
 import React, { useMemo } from 'react';
 import { AnimatedNumber } from './AnimatedNumber';
+import { useTheme } from '../context/ThemeContext';
 
 /** Flat sparkline rendered behind a stat value. */
 function TileSpark({ values = [], color }) {
@@ -61,30 +62,50 @@ export function StatTile({
   spark,
   hint
 }) {
+  const { theme } = useTheme();
+  const isDark = theme === 'dark';
+
   const color =
     tone === 'up'
-      ? 'var(--gain-green)'
+      ? isDark ? '#4ADE80' : '#16A34A'
       : tone === 'down'
-      ? 'var(--loss-red)'
+      ? isDark ? '#F87171' : '#DC2626'
       : tone === 'gold'
-      ? 'var(--accent)'
-      : 'var(--text-main)';
+      ? isDark ? '#F0B429' : '#D97706'
+      : isDark ? '#FFFFFF' : '#1A1D27';
+
+  const isGold = tone === 'gold';
 
   return (
     <div
-      className="surface px-4 py-4 flex flex-col justify-between transition-colors hover:theme-bg-card-hover"
-      style={{ boxShadow: 'var(--card-shadow)' }}
+      className={`p-4 rounded-xl border flex flex-col justify-between transition-all hover:scale-[1.01] ${
+        isDark ? 'border-[#2D3142]' : 'border-[#E2E6F0]'
+      }`}
+      style={{
+        background: isDark
+          ? 'linear-gradient(135deg, #1A1D27 0%, #141720 100%)'
+          : '#FFFFFF',
+        boxShadow: isGold
+          ? isDark
+            ? '0 4px 20px rgba(240,180,41,0.08)'
+            : '0 4px 16px rgba(217,119,6,0.12)'
+          : isDark
+          ? 'undefined'
+          : '0 2px 8px rgba(0,0,0,0.06)'
+      }}
     >
       <div className="flex items-start justify-between gap-2">
-        <span className="text-[11px] font-mono uppercase tracking-[0.12em] theme-text-dim">
+        <span className="text-[11px] font-mono font-bold uppercase tracking-[0.12em] text-[#7B82A0] dark:text-[#7B82A0]">
           {label}
         </span>
-        {Icon && <Icon className="w-[18px] h-[18px] flex-shrink-0" style={{ color }} />}
+        {Icon && <Icon className="w-[18px] h-[18px] flex-shrink-0 text-[#7B82A0] dark:text-[#64748B]" />}
       </div>
 
-      <div className="mt-2.5">
+      <div className="mt-3">
         <div
-          className="text-[26px] font-mono font-extrabold leading-none tracking-tight"
+          className={`${
+            isGold ? 'text-[28px] font-bold' : 'text-[24px] font-semibold'
+          } font-mono leading-none tracking-tight`}
           style={{ color }}
         >
           {typeof value === 'number' ? (
@@ -103,7 +124,7 @@ export function StatTile({
             {delta != null && (
               <span
                 style={{
-                  color: delta >= 0 ? 'var(--gain-green)' : 'var(--loss-red)'
+                  color: delta >= 0 ? (isDark ? '#4ADE80' : '#16A34A') : (isDark ? '#F87171' : '#DC2626')
                 }}
                 className="font-bold"
               >
@@ -112,7 +133,7 @@ export function StatTile({
                 {deltaLabel || '%'}
               </span>
             )}
-            {hint && <span className="theme-text-dim truncate">{hint}</span>}
+            {hint && <span className="text-[#7B82A0] dark:text-[#7B82A0] truncate">{hint}</span>}
           </div>
         )}
       </div>
