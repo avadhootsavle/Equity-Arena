@@ -203,16 +203,34 @@ export function Login() {
               {/* TAB BADGE: TRADER LOG IN & ADMIN */}
               <div className="flex items-center justify-between border-b border-[#2D3142]/60 pb-4 mb-6 font-mono">
                 <div className="flex items-center gap-2">
-                  <span className="bg-[#F0B429] text-black font-extrabold px-3.5 py-1.5 rounded-md text-xs uppercase tracking-wider shadow-sm inline-flex items-center gap-1.5">
-                    <Zap className="w-3.5 h-3.5 fill-black text-black" />
-                    <span>TRADER LOGIN</span>
+                  <span className={`font-extrabold px-3.5 py-1.5 rounded-md text-xs uppercase tracking-wider shadow-sm inline-flex items-center gap-1.5 ${
+                    activeTab === 'ADMIN'
+                      ? 'bg-[#EF4444] text-white'
+                      : 'bg-[#F0B429] text-black'
+                  }`}>
+                    {activeTab === 'ADMIN' ? (
+                      <>
+                        <Shield className="w-3.5 h-3.5 text-white" />
+                        <span>ADMIN LOGIN</span>
+                      </>
+                    ) : (
+                      <>
+                        <Zap className="w-3.5 h-3.5 fill-black text-black" />
+                        <span>TRADER LOGIN</span>
+                      </>
+                    )}
                   </span>
                 </div>
 
                 {isAdminUnlocked && (
                   <button
                     type="button"
-                    onClick={() => { setActiveTab(activeTab === 'ADMIN' ? 'TRADER_SIGNIN' : 'ADMIN'); setError(''); }}
+                    onClick={() => {
+                      setActiveTab(activeTab === 'ADMIN' ? 'TRADER_SIGNIN' : 'ADMIN');
+                      setError('');
+                      setEmail('');
+                      setPassword('');
+                    }}
                     className={`px-3 py-1.5 rounded-md text-xs font-extrabold uppercase tracking-wider transition-all cursor-pointer flex items-center gap-1.5 ${
                       activeTab === 'ADMIN'
                         ? 'bg-[#EF4444] text-white border border-[#EF4444]'
@@ -310,9 +328,10 @@ export function Login() {
                       <input
                         type="email"
                         required
+                        autoComplete="off"
                         value={email}
                         onChange={(e) => setEmail(e.target.value)}
-                        placeholder="avadhoot@krishna.kavya"
+                        placeholder="••••••••••••••••"
                         className={`w-full h-[52px] pl-11 pr-4 rounded-xl text-[15px] font-sans transition-all focus:outline-none focus:border-[#F0B429] focus:ring-2 focus:ring-[#F0B429]/30 ${
                           isDark
                             ? 'bg-[#161B27] border border-[#2D3142] text-white placeholder-[#555E78]'
