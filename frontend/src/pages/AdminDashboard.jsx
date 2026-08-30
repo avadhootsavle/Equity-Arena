@@ -782,17 +782,18 @@ export function AdminDashboard() {
             </div>
           )}
 
-          {adminSession.status === 'IDLE' && (
+          {(adminSession.status !== 'ACTIVE' && adminSession.status !== 'ON_BREAK') && (
             <div className="flex items-center gap-2">
               <span className="px-2 py-0.5 rounded bg-slate-800 text-slate-400 text-[11px] font-bold uppercase">
-                Session Idle
+                {adminSession.status === 'ENDED' ? 'Session Ended' : 'Session Ready'}
               </span>
               <button
                 type="button"
                 onClick={() => setShowSessionConfigModal(true)}
-                className="px-2.5 py-1 rounded bg-[#F0B429] hover:bg-[#d9a120] text-black font-extrabold text-[10px] uppercase transition-all shadow-sm cursor-pointer"
+                className="px-3 py-1 rounded bg-[#F0B429] hover:bg-[#d9a120] text-black font-extrabold text-xs uppercase transition-all shadow-md cursor-pointer animate-pulse-subtle flex items-center gap-1"
               >
-                + START SESSION
+                <Play className="w-3.5 h-3.5 fill-black" />
+                <span>START SESSION</span>
               </button>
             </div>
           )}
