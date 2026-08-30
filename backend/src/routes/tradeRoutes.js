@@ -82,9 +82,12 @@ router.post('/trade/buy', authenticateToken, tradeRateLimiter, async (req, res) 
       let holding;
       if (existingHolding) {
         const newQty = existingHolding.quantity + parsedQty;
-        const newAvgBuyPrice = Math.round(
-          (((existingHolding.quantity * existingHolding.avgBuyPrice) + (parsedQty * stock.currentPrice)) / newQty) * 100
-        ) / 100;
+        // Weighted-average cost basis. Deliberately NOT rounded to 2dp here:
+        // rounding the stored average on every buy compounds across purchases and
+        // understates the true cost basis (inflating reported profit). Rounding is
+        // applied only at display / payload time.
+        const newAvgBuyPrice =
+          ((existingHolding.quantity * existingHolding.avgBuyPrice) + (parsedQty * stock.currentPrice)) / newQty;
 
         holding = await tx.holding.update({
           where: { id: existingHolding.id },

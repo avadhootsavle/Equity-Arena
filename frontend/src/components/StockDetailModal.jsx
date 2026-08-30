@@ -214,9 +214,8 @@ export function StockDetailModal({
       return sinceStart.length >= 2 ? sinceStart : source.slice(-240);
     }
 
-    const cutoff = Date.now() - tf.minutes * 60_000;
-    const windowed = source.filter((h) => new Date(h.timestamp).getTime() >= cutoff);
-    return windowed.length >= 2 ? windowed : source.slice(-60);
+    // See TraderDashboard: a fixed slice(-60) fallback mislabels the span.
+    return windowed.length >= 2 ? windowed : source;
   }, [rawHistory, stock, timeframe, session?.startTime]);
 
   const stats = useMemo(() => {

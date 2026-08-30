@@ -9,7 +9,7 @@ const fmtMoney = (n, d = 2) =>
   });
 
 /**
- * 36px SVG Sparkline Chart + 15M Rolling High/Low/Range Stats
+ * 36px SVG Sparkline Chart + 15M Rolling High/Low Stats
  */
 export const StockSparkline = memo(function StockSparkline({
   stockId,
@@ -75,8 +75,8 @@ export const StockSparkline = memo(function StockSparkline({
     });
   }, [stockTick, currentPrice]);
 
-  // Compute 15M High, Low, Range, and Trend Color
-  const { points, high, low, range, isUp, startPrice, endPrice } = useMemo(() => {
+  // Compute 15M High, Low, and Trend Color
+  const { points, high, low, isUp, startPrice, endPrice } = useMemo(() => {
     const rawPrices = history.map((h) => Number(h.price)).filter(isFinite);
     
     if (rawPrices.length === 0) {
@@ -85,7 +85,6 @@ export const StockSparkline = memo(function StockSparkline({
         points: [p, p],
         high: p,
         low: p,
-        range: 0,
         isUp: true,
         startPrice: p,
         endPrice: p
@@ -101,7 +100,6 @@ export const StockSparkline = memo(function StockSparkline({
       points: rawPrices,
       high: highVal,
       low: lowVal,
-      range: Math.max(0, highVal - lowVal),
       isUp: last >= first,
       startPrice: first,
       endPrice: last
@@ -273,7 +271,7 @@ export const StockSparkline = memo(function StockSparkline({
         )}
       </div>
 
-      {/* 15M Rolling Stats Row (HIGH / LOW / RANGE) */}
+      {/* 15M Rolling Stats Row (HIGH / LOW) */}
       <div className="flex items-center justify-between px-0.5 text-[10px] font-mono theme-text-dim">
         <div className="flex items-center gap-1">
           <span className="text-[10px] font-semibold uppercase text-[#7B82A0]">HIGH</span>
@@ -285,12 +283,6 @@ export const StockSparkline = memo(function StockSparkline({
           <span className="text-[10px] font-semibold uppercase text-[#7B82A0]">LOW</span>
           <span className={`text-[14px] font-semibold font-mono ${isDark ? 'text-[#F87171]' : 'text-[#DC2626]'}`}>
             {fmtMoney(low)}
-          </span>
-        </div>
-        <div className="flex items-center gap-1">
-          <span className="text-[10px] font-semibold uppercase text-[#7B82A0]">RANGE</span>
-          <span className={`text-[14px] font-semibold font-mono ${isDark ? 'text-white' : 'text-[#374151]'}`}>
-            {fmtMoney(range)}
           </span>
         </div>
       </div>

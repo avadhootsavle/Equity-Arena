@@ -70,6 +70,21 @@ startMarketTicker();
 // Ensure analyst news templates are populated
 ensureNewsTemplatesSeeded();
 
+const distPath = path.join(__dirname, '../../frontend/dist');
+const hasClientBuild = fs.existsSync(distPath);
+
+// '/admin' is a client-side route as well as an API prefix. The admin router
+// applies requireAdmin to everything under it, so a browser refreshing /admin
+// would get 401 JSON instead of the SPA. Serve the page for that one exact
+// navigation; every /admin/* API path still goes to the router below.
+if (hasClientBuild) {
+  app.get('/admin', (req, res, next) => {
+    if (req.headers.authorization) return next();
+    res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
+    return res.sendFile(path.join(distPath, 'index.html'));
+  });
+}
+
 // API Routes
 app.use('/auth', authRoutes);
 app.use('/stocks', stockRoutes);

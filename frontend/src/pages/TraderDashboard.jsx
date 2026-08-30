@@ -192,11 +192,14 @@ export function TraderDashboard() {
     setChartStockId(leader?.id || stocks[0].id);
   }, [stocks, chartStockId]);
 
-  const fetchChartHistory = useCallback(async (stockId) => {
+  // The selected timeframe drives the request. This used to be hardcoded to
+  // '1D', so the 5M/15M/30M/1H buttons never changed the data that was fetched —
+  // they only trimmed a day's worth of ticks on the client.
+  const fetchChartHistory = useCallback(async (stockId, range) => {
     if (!stockId) return;
     setLoadingHistory(true);
     try {
-      const data = await apiFetch(`/stocks/${stockId}/history?range=1D`);
+      const data = await apiFetch(`/stocks/${stockId}/history?range=${range}`);
       setChartRaw(Array.isArray(data) ? data : []);
     } catch (err) {
       setChartRaw([]);
@@ -207,8 +210,8 @@ export function TraderDashboard() {
 
   useEffect(() => {
     if (!chartStock?.id) return;
-    fetchChartHistory(chartStock.id);
-  }, [chartStock?.id, fetchChartHistory]);
+    fetchChartHistory(chartStock.id, timeframe);
+  }, [chartStock?.id, timeframe, fetchChartHistory]);
 
   const chartHistory = useMemo(() => {
     const source = chartRaw.length > 1 ? chartRaw : chartStock?.priceHistories || [];
@@ -220,7 +223,10 @@ export function TraderDashboard() {
       (h) => new Date(h.timestamp).getTime() >= cutoff
     );
 
-    return windowed.length >= 2 ? windowed : source.slice(-60);
+    // Only fall back to the unwindowed tape when the window genuinely cannot be
+    // drawn. Falling back to a fixed slice(-60) rendered an arbitrary span under
+    // whichever timeframe label was selected, so the axis contradicted the button.
+    return windowed.length >= 2 ? windowed : source;
   }, [chartRaw, chartStock, timeframe]);
 
   /* ---------------------------------------------------------------
@@ -304,7 +310,23 @@ export function TraderDashboard() {
     };
 
     const handlePortfolioUpdate = (updated) => {
-      setPortfolio((prev) => ({ ...prev, ...updated }));
+      const { reason, topUpAmount, ...patch } = updated || {};
+
+      // Only an explicitly tagged admin credit shows the wallet-credit toast.
+      // Sell proceeds also raise the balance, and must not be attributed to the admin.
+      if (reason === 'ADMIN_TOPUP') {
+        const amount = Number(topUpAmount) || 0;
+        if (amount > 0) {
+          pushToast(
+            `Admin added ${amount.toLocaleString()} IC to your wallet`,
+            'success',
+            'Wallet Credit',
+            3000
+          );
+        }
+      }
+
+      setPortfolio((prev) => ({ ...prev, ...patch }));
     };
 
     const handleOrderExecuted = (alert) => {
@@ -345,7 +367,7 @@ export function TraderDashboard() {
   }, [socket, user, fetchStocks, fetchPortfolio, fetchNewsFeed, pushToast]);
 
   /* ---------------------------------------------------------------
-     Part 2: Wallet balance count-up animation on IC Top-Up
+     Part 2: Wallet balance count-up animation on any credit
      --------------------------------------------------------------- */
   useEffect(() => {
     let animId = null;
@@ -355,9 +377,9 @@ export function TraderDashboard() {
       const oldBal = prevWalletRef.current;
 
       if (oldBal !== null && oldBal !== undefined && newBal > oldBal) {
-        const diff = Math.round((newBal - oldBal) * 100) / 100;
-        pushToast(`Admin added ${diff.toLocaleString()} IC to your wallet`, 'success', 'Wallet Credit', 3000);
-
+        // Animate any balance increase (sale proceeds, admin credit, order fill).
+        // Attribution is NOT inferred here — the toast is raised by the socket
+        // handler for the event that actually caused the change.
         const startVal = oldBal;
         const endVal = newBal;
         const startTime = performance.now();
@@ -383,7 +405,7 @@ export function TraderDashboard() {
     return () => {
       if (animId) cancelAnimationFrame(animId);
     };
-  }, [portfolio?.walletBalance, pushToast]);
+  }, [portfolio?.walletBalance]);
 
   /* ---------------------------------------------------------------
      Derived values

@@ -500,9 +500,13 @@ router.post('/trader/:id/topup', async (req, res) => {
     const traderName = user.name || user.email.split('@')[0];
 
     // Emit live portfolio update to trader's room
+    // Tagged so the trader UI can attribute this credit to the admin. Without the
+    // tag the client can only guess from "balance went up", which mislabels sell proceeds.
     emitPortfolioUpdate(id, {
       walletBalance: Math.round(updatedUser.walletBalance * 100) / 100,
-      availableWalletBalance: Math.round(updatedUser.walletBalance * 100) / 100
+      availableWalletBalance: Math.round(updatedUser.walletBalance * 100) / 100,
+      reason: 'ADMIN_TOPUP',
+      topUpAmount: parsedAmount
     });
 
     // Emit activity log to admin live activity stream

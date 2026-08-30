@@ -1,0 +1,11 @@
+{
+  "watch": ["src"],
+  "ext": "js,mjs,cjs,json",
+  "ignore": [
+    "backups/*",
+    ".pgdata/*",
+    "tests/*",
+    "scripts/*",
+    "prisma/*"
+  ]
+}

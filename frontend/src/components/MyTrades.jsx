@@ -73,13 +73,19 @@ export function MyTrades({ transactions = [], limit = 10, title = 'My Recent Tra
               <th className="text-right font-semibold px-3 py-3">Shares</th>
               <th className="text-right font-semibold px-3 py-3">Price each</th>
               <th className="text-right font-semibold px-3 py-3">Total Amount</th>
+              <th
+                className="text-right font-semibold px-3 py-3"
+                title="Realized profit or loss on a sale, against the average price you paid for those shares."
+              >
+                Result
+              </th>
               <th className="text-right font-semibold px-4 py-3">When</th>
             </tr>
           </thead>
           <tbody className="divide-y theme-border">
             {displayedRows.length === 0 ? (
               <tr>
-                <td colSpan={6} className="py-12 text-center">
+                <td colSpan={7} className="py-12 text-center">
                   <div className="text-[14px] theme-text-main font-semibold">
                     No trades yet
                   </div>
@@ -95,6 +101,17 @@ export function MyTrades({ transactions = [], limit = 10, title = 'My Recent Tra
                 const qty = tx.quantity || 0;
                 const price = tx.price || 0;
                 const isEven = i % 2 === 0;
+
+                // Realized P/L is computed server-side from the full trade history
+                // and is a number only for sells; buys and top-ups carry null.
+                const realized =
+                  typeof tx.realizedPL === 'number' && Number.isFinite(tx.realizedPL)
+                    ? tx.realizedPL
+                    : null;
+                const realizedUp = realized !== null && realized >= 0;
+                const realizedColor = realizedUp
+                  ? isDark ? '#4ADE80' : '#16A34A'
+                  : isDark ? '#F87171' : '#DC2626';
 
                 return (
                   <tr
@@ -163,6 +180,19 @@ export function MyTrades({ transactions = [], limit = 10, title = 'My Recent Tra
                       ) : (
                         <span className="theme-text-main">
                           {fmt(qty * price)} <span className="text-[10px] text-[#6B7280] dark:text-[#7B82A0] font-normal">IC</span>
+                        </span>
+                      )}
+                    </td>
+
+                    {/* RESULT — realized P/L, sells only */}
+                    <td className="px-3 py-3.5 text-right font-mono text-[14px] font-bold whitespace-nowrap">
+                      {realized === null ? (
+                        <span className="text-[#6B7280] dark:text-[#7B82A0] font-normal">—</span>
+                      ) : (
+                        <span style={{ color: realizedColor }}>
+                          {realizedUp ? '+' : '\u2212'}
+                          {fmt(Math.abs(realized))}
+                          <span className="text-[10px] font-normal opacity-80"> IC</span>
                         </span>
                       )}
                     </td>

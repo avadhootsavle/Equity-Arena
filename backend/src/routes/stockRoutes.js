@@ -42,7 +42,10 @@ function aggregatePriceHistory(histories, bucketType) {
 
     if (!buckets[key]) {
       buckets[key] = {
-        sumPrice: 0,
+        open: item.price,
+        high: item.price,
+        low: item.price,
+        close: item.price,
         sumVolume: 0,
         count: 0,
         firstTimestamp: item.timestamp,
@@ -50,21 +53,36 @@ function aggregatePriceHistory(histories, bucketType) {
       };
     }
 
-    buckets[key].sumPrice += item.price;
-    buckets[key].sumVolume += (item.volume || 100);
-    buckets[key].count += 1;
-    buckets[key].lastTimestamp = item.timestamp;
+    const b = buckets[key];
+    // A price series must carry the bucket's CLOSE. Averaging the ticks invents
+    // a price that never traded and clips the real highs and lows, which both
+    // flattens the line and makes the OPEN/HIGH/LOW readout wrong.
+    b.close = item.price;
+    if (item.price > b.high) b.high = item.price;
+    if (item.price < b.low) b.low = item.price;
+    b.sumVolume += (item.volume || 100);
+    b.count += 1;
+    b.lastTimestamp = item.timestamp;
   }
 
-  return Object.keys(buckets).map((key) => {
-    const b = buckets[key];
-    const itemTime = isNaN(Number(key)) ? b.lastTimestamp : new Date(Number(key));
-    return {
-      price: Math.round((b.sumPrice / b.count) * 100) / 100,
-      volume: Math.round(b.sumVolume),
-      timestamp: itemTime
-    };
-  });
+  const round2 = (n) => Math.round(n * 100) / 100;
+
+  return Object.keys(buckets)
+    .map((key) => {
+      const b = buckets[key];
+      const itemTime = isNaN(Number(key)) ? b.lastTimestamp : new Date(Number(key));
+      return {
+        price: round2(b.close),
+        open: round2(b.open),
+        high: round2(b.high),
+        low: round2(b.low),
+        close: round2(b.close),
+        volume: Math.round(b.sumVolume),
+        timestamp: itemTime
+      };
+    })
+    // Object key order is insertion order for string keys, so sort explicitly.
+    .sort((a, b) => new Date(a.timestamp) - new Date(b.timestamp));
 }
 
 // GET /stocks
@@ -115,18 +133,22 @@ router.get('/:id/history', async (req, res) => {
     let startDate = new Date(0);
     let bucketType = 'RAW';
 
+    // Intraday ranges are served RAW. The ticker writes roughly one point every
+    // 6 seconds, so even a full hour is only ~600 samples — cheap to send and to
+    // draw. Bucketing these was throwing away the very detail that makes the
+    // line read like a real tape.
     if (range === '5M') {
-      startDate = new Date(now - 5 * 60 * 1000); // Last 5 minutes, 100% raw unaggregated ticks
+      startDate = new Date(now - 5 * 60 * 1000);
       bucketType = 'RAW';
     } else if (range === '15M' || !range) {
-      startDate = new Date(now - 15 * 60 * 1000); // Last 15 minutes, 15-second aggregated buckets
-      bucketType = '15SEC';
+      startDate = new Date(now - 15 * 60 * 1000);
+      bucketType = 'RAW';
     } else if (range === '30M') {
-      startDate = new Date(now - 30 * 60 * 1000); // Last 30 minutes, 1-minute aggregated buckets
-      bucketType = '1MIN';
+      startDate = new Date(now - 30 * 60 * 1000);
+      bucketType = 'RAW';
     } else if (range === '1H') {
-      startDate = new Date(now - 60 * 60 * 1000); // Last 60 minutes, 2-minute aggregated buckets
-      bucketType = '2MIN';
+      startDate = new Date(now - 60 * 60 * 1000);
+      bucketType = 'RAW';
     } else if (range === '1D') {
       startDate = new Date(now - 24 * 60 * 60 * 1000);
       bucketType = 'RAW';

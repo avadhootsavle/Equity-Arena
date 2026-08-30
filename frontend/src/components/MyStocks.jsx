@@ -55,6 +55,7 @@ export function MyStocks({ holdings = [], stocks = [], onSell, onShowChart, onNa
   );
 
   const totalWorth = rows.reduce((s, r) => s + r.worth, 0);
+  const totalInvested = rows.reduce((s, r) => s + r.paid, 0);
 
   return (
     <section
@@ -75,16 +76,27 @@ export function MyStocks({ holdings = [], stocks = [], onSell, onShowChart, onNa
           </div>
           <p className="text-[13px] text-[#6B7280] dark:text-[#7B82A0] mt-0.5">
             Everything you own right now. These numbers only count stocks you still hold.
+            Buy price is the average across all your buys.
           </p>
         </div>
 
         {rows.length > 0 && (
-          <div className="text-right font-mono">
-            <div className="text-[10px] text-[#7B82A0] uppercase tracking-wider font-semibold">
-              Worth now
+          <div className="flex items-center gap-6">
+            <div className="text-right font-mono">
+              <div className="text-[10px] text-[#7B82A0] uppercase tracking-wider font-semibold">
+                Invested
+              </div>
+              <div className="text-[18px] font-bold theme-text-main">
+                {fmt(totalInvested)} IC
+              </div>
             </div>
-            <div className="text-[18px] font-bold text-[#F0B429] dark:text-[#F0B429]">
-              {fmt(totalWorth)} IC
+            <div className="text-right font-mono">
+              <div className="text-[10px] text-[#7B82A0] uppercase tracking-wider font-semibold">
+                Worth now
+              </div>
+              <div className="text-[18px] font-bold text-[#F0B429] dark:text-[#F0B429]">
+                {fmt(totalWorth)} IC
+              </div>
             </div>
           </div>
         )}
@@ -119,7 +131,12 @@ export function MyStocks({ holdings = [], stocks = [], onSell, onShowChart, onNa
               <tr className="text-[#6B7280] dark:text-[#7B82A0] text-[11px] font-mono uppercase tracking-[0.08em] border-b theme-border whitespace-nowrap">
                 <th className="text-left font-semibold px-4 py-3">Stock</th>
                 <th className="text-right font-semibold px-3 py-3">Shares</th>
-                <th className="text-right font-semibold px-3 py-3">You paid</th>
+                <th
+                  className="text-right font-semibold px-3 py-3"
+                  title="Weighted average price per share across every buy you made for this stock."
+                >
+                  Avg buy price
+                </th>
                 <th className="text-right font-semibold px-3 py-3">Price now</th>
                 <th className="text-right font-semibold px-3 py-3">Profit / Loss</th>
                 <th className="text-right font-semibold px-3 py-3">Worth now</th>
@@ -185,10 +202,16 @@ export function MyStocks({ holdings = [], stocks = [], onSell, onShowChart, onNa
                       )}
                     </td>
 
-                    {/* Avg Buy Price */}
-                    <td className="px-3 py-3 text-right font-mono theme-text-main whitespace-nowrap">
+                    {/* Avg Buy Price (weighted across all buys) + total invested */}
+                    <td
+                      className="px-3 py-3 text-right font-mono theme-text-main whitespace-nowrap"
+                      title={`Average of ${r.quantity} share${r.quantity === 1 ? '' : 's'} \u2014 ${fmt(r.paid)} IC invested in total`}
+                    >
                       {fmt(r.avgBuyPrice)}
-                      <span className="block text-[10px] text-[#6B7280] dark:text-[#7B82A0]">IC</span>
+                      <span className="block text-[10px] text-[#6B7280] dark:text-[#7B82A0]">IC / share</span>
+                      <span className="block text-[10px] text-[#6B7280] dark:text-[#7B82A0] mt-0.5">
+                        {fmt(r.paid)} invested
+                      </span>
                     </td>
 
                     {/* Current Price */}

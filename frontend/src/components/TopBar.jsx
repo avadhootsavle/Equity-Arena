@@ -10,6 +10,7 @@ import {
   VolumeX,
   HelpCircle,
   LogOut,
+  BookOpen,
   Sun,
   Moon,
   ShieldCheck,
@@ -171,6 +172,24 @@ export function TopBar({
         >
           {muted ? <VolumeX className="w-3.5 h-3.5" /> : <Volume2 className="w-3.5 h-3.5" />}
         </button>
+
+        {/* Trader's Manual — reopens guide after first login */}
+        {onOpenTour && (
+          <button
+            type="button"
+            onClick={onOpenTour}
+            title="Open the Trader's Manual"
+            aria-label="Open the Trader's Manual"
+            className="flex w-[32px] h-[32px] rounded-md border items-center justify-center transition-colors cursor-pointer focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)]"
+            style={{
+              color: 'var(--accent)',
+              borderColor: 'color-mix(in srgb, var(--accent) 38%, transparent)',
+              backgroundColor: 'color-mix(in srgb, var(--accent) 12%, transparent)'
+            }}
+          >
+            <BookOpen className="w-3.5 h-3.5" />
+          </button>
+        )}
 
         {/* Theme */}
         <ThemeToggle />

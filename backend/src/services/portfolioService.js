@@ -4,6 +4,64 @@ const { getUserAvailableBalance, getUserAvailableHolding } = require('./orderSer
 const prisma = new PrismaClient();
 
 /**
+ * Realized profit/loss per SELL transaction, keyed by transaction id.
+ *
+ * There is no cost-basis column on Transaction, so the only correct source is a
+ * replay of the user's COMPLETE trade history: a sell's result depends on every
+ * buy that preceded it. This deliberately reads the whole log rather than the
+ * 20 rows the client is sent — replaying a truncated list would miss earlier
+ * buys and report wrong averages.
+ *
+ * The running average mirrors how Holding.avgBuyPrice is maintained: a buy
+ * re-weights the average, a sell realizes against it and leaves it unchanged.
+ */
+async function getRealizedPLByTransactionId(userId) {
+  const ordered = await prisma.transaction.findMany({
+    where: { userId },
+    orderBy: [{ timestamp: 'asc' }, { id: 'asc' }],
+    select: { id: true, stockId: true, type: true, quantity: true, price: true, timestamp: true }
+  });
+
+  // Same-timestamp ties: settle buys first, since shares must be held before they
+  // can be sold. Stable sort keeps the id ordering above for everything else.
+  ordered.sort((a, b) => {
+    const t = a.timestamp - b.timestamp;
+    if (t !== 0) return t;
+    if (a.type === b.type) return 0;
+    return a.type === 'BUY' ? -1 : 1;
+  });
+
+  const byId = new Map();
+  const book = new Map(); // stockId -> { qty, avgCost }
+
+  for (const tx of ordered) {
+    const qty = tx.quantity || 0;
+    // quantity === 0 rows are admin wallet top-ups, not trades.
+    if (qty <= 0) continue;
+
+    const pos = book.get(tx.stockId) || { qty: 0, avgCost: 0 };
+
+    if (tx.type === 'BUY') {
+      const newQty = pos.qty + qty;
+      pos.avgCost = newQty > 0 ? (pos.qty * pos.avgCost + qty * tx.price) / newQty : 0;
+      pos.qty = newQty;
+    } else {
+      // Only shares actually on the book have a known cost basis.
+      const sold = Math.min(qty, pos.qty);
+      if (sold > 0) {
+        byId.set(tx.id, Math.round(sold * (tx.price - pos.avgCost) * 100) / 100);
+      }
+      pos.qty -= sold; // average is unchanged by a sale
+      if (pos.qty === 0) pos.avgCost = 0;
+    }
+
+    book.set(tx.stockId, pos);
+  }
+
+  return byId;
+}
+
+/**
  * Helper to fetch complete portfolio data for a user, including available & locked balance math
  */
 async function getUserPortfolio(userId) {
@@ -62,8 +120,9 @@ async function getUserPortfolio(userId) {
   const totalUnrealizedPL = Math.round((totalHoldingsValue - totalHoldingsCost) * 100) / 100;
   const totalPortfolioValue = Math.round((user.walletBalance + totalHoldingsValue) * 100) / 100;
 
-  // Fetch recent transactions
-  const transactions = await prisma.transaction.findMany({
+  // Fetch recent transactions, annotated with realized P/L for sells
+  const realizedPLById = await getRealizedPLByTransactionId(userId);
+  const recentTransactions = await prisma.transaction.findMany({
     where: { userId },
     take: 20,
     orderBy: { timestamp: 'desc' },
@@ -73,6 +132,12 @@ async function getUserPortfolio(userId) {
       }
     }
   });
+
+  // realizedPL is null for buys and top-ups; a number only for sells.
+  const transactions = recentTransactions.map((t) => ({
+    ...t,
+    realizedPL: realizedPLById.has(t.id) ? realizedPLById.get(t.id) : null
+  }));
 
   // Fetch pending limit orders
   const pendingOrders = await prisma.order.findMany({
@@ -95,10 +160,11 @@ async function getUserPortfolio(userId) {
     totalPortfolioValue,
     holdings: formattedHoldings,
     transactions,
-    pendingOrders
+    orders: pendingOrders
   };
 }
 
 module.exports = {
-  getUserPortfolio
+  getUserPortfolio,
+  getRealizedPLByTransactionId
 };
