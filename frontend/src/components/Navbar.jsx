@@ -28,8 +28,8 @@ export function Navbar({ activeTab, setActiveTab, walletBalance, lockedFunds, ne
 
             {/* Left: Brand Identifier */}
             <div className="flex items-center gap-3">
-              <div className="p-2 rounded-[4px] bg-[#D4A017]/10 border border-[#D4A017]/40 text-[#D4A017] flex items-center justify-center">
-                <TrendingUp className="w-5 h-5" />
+              <div className="w-8 h-8 rounded-[6px] overflow-hidden flex items-center justify-center shrink-0">
+                <img src="/vite.svg" alt="Equity Arena Logo" className="w-8 h-8 object-cover" />
               </div>
               <div>
                 <div className="flex items-center gap-2">

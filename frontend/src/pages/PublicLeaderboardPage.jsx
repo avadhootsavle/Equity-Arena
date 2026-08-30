@@ -137,7 +137,7 @@ export function PublicLeaderboardPage() {
         {/* TOP BRAND & LIVE BAR */}
         <div className="max-w-6xl mx-auto pt-2 pb-6 flex items-center justify-between">
           <div className="text-[14px] font-mono font-bold uppercase tracking-[0.2em] text-[#F0B429] flex items-center gap-2">
-            <span>◆</span>
+            <img src="/vite.svg" alt="Equity Arena Logo" className="w-6 h-6 rounded-md shrink-0" />
             <span>EQUITY ARENA</span>
           </div>
 

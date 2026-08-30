@@ -864,7 +864,7 @@ export function AdminDashboard() {
         {/* Left: Logo + Live Status + Live Clock */}
         <div className="flex items-center gap-4">
           <div className="flex items-center gap-2">
-            <Shield className="w-4 h-4 text-[#F0B429]" />
+            <img src="/vite.svg" alt="Equity Arena Logo" className="w-6 h-6 rounded-md shrink-0" />
             <span className="font-bold text-white uppercase tracking-wider text-xs">
               EQUITY ARENA ADMIN
             </span>

@@ -106,10 +106,10 @@ export function Login() {
         <div className="flex items-center gap-3">
           <div
             onClick={handleSecretTriggerClick}
-            className="w-10 h-10 rounded-xl bg-[#F0B429] flex items-center justify-center shadow-lg shadow-[#F0B429]/20 cursor-pointer transition-transform hover:scale-105 active:scale-95"
+            className="w-10 h-10 rounded-xl flex items-center justify-center shadow-lg shadow-[#F0B429]/20 cursor-pointer transition-transform hover:scale-105 active:scale-95 overflow-hidden"
             title="Equity Arena"
           >
-            <Zap className="w-6 h-6 text-black fill-black" />
+            <img src="/vite.svg" alt="Equity Arena Logo" className="w-10 h-10 object-cover" />
           </div>
           <div>
             <h1 className="text-lg font-extrabold tracking-wider font-mono text-white">EQUITY ARENA</h1>

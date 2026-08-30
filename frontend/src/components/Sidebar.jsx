@@ -23,15 +23,8 @@ export function Sidebar({ activeTab, setActiveTab, counts = {} }) {
       {/* Brand */}
       <div className="px-4 py-4 border-b theme-border">
         <div className="flex items-center gap-2.5">
-          <div
-            className="w-8 h-8 rounded-md flex items-center justify-center flex-shrink-0"
-            style={{
-              backgroundColor: 'color-mix(in srgb, var(--accent) 14%, transparent)',
-              border: '1px solid color-mix(in srgb, var(--accent) 34%, transparent)',
-              color: 'var(--accent)'
-            }}
-          >
-            <TrendingUp className="w-4 h-4" />
+          <div className="w-8 h-8 rounded-md flex items-center justify-center shrink-0 overflow-hidden">
+            <img src="/vite.svg" alt="Equity Arena Logo" className="w-8 h-8 object-cover" />
           </div>
           <div className="min-w-0">
             <h1 className="text-[15px] font-bold uppercase tracking-[0.08em] theme-text-main leading-tight">
