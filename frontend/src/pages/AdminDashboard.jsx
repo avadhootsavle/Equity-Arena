@@ -45,6 +45,7 @@ export function AdminDashboard() {
   const [templates, setTemplates] = useState([]);
   const [loadingTemplates, setLoadingTemplates] = useState(true);
   const [usedTemplateIds, setUsedTemplateIds] = useState([]);
+  const [recentlySentTplIds, setRecentlySentTplIds] = useState([]);
   const [inlineConfirmTplId, setInlineConfirmTplId] = useState(null);
   const [customNewsConfirm, setCustomNewsConfirm] = useState(false);
   const [delaySeconds, setDelaySeconds] = useState(60);
@@ -326,6 +327,11 @@ export function AdminDashboard() {
       if (!usedTemplateIds.includes(templateId)) {
         setUsedTemplateIds((prev) => [...prev, templateId]);
       }
+      setRecentlySentTplIds((prev) => [...prev, templateId]);
+      setTimeout(() => {
+        setRecentlySentTplIds((prev) => prev.filter((id) => id !== templateId));
+      }, 3000);
+
       setInlineConfirmTplId(null);
     } catch (err) {
       showToast(err.message || 'Failed to broadcast news template', 'error');
@@ -598,6 +604,7 @@ export function AdminDashboard() {
               <div className="py-16 text-center text-[#7B82A0] text-xs font-mono italic">No templates found in this category.</div>
             ) : (
               activeTemplates.map((t) => {
+                const isRecentlySent = recentlySentTplIds.includes(t.id);
                 const isUsed = usedTemplateIds.includes(t.id);
                 const isConfirming = inlineConfirmTplId === t.id;
                 const targets = t.targetStocks && t.targetStocks.length > 0
@@ -609,45 +616,26 @@ export function AdminDashboard() {
                     key={t.id}
                     className={`p-2 rounded-lg border transition-all font-mono text-xs ${
                       isConfirming
-                        ? 'bg-[#0F1117] border-[#F0B429]/60 shadow-md'
+                        ? 'bg-[#0F1117] border-[#F0B429]/60 shadow-md space-y-2'
+                        : isRecentlySent
+                        ? 'bg-[#22C55E]/10 border-[#22C55E]/40 text-[#22C55E]'
                         : isUsed
                         ? 'bg-[#0F1117]/60 border-[#2D3142]/60 opacity-50'
                         : 'bg-[#0F1117] border-[#2D3142] hover:bg-[#161B27]'
                     }`}
                   >
-                    <div className="flex items-center justify-between gap-2">
-                      {/* 13px One-Line Truncated Headline */}
-                      <p
-                        className={`text-[13px] font-mono leading-snug truncate flex-1 ${
-                          isUsed ? 'line-through text-[#7B82A0]' : 'text-[#F0F2FF]'
-                        }`}
-                        title={t.headline}
-                      >
-                        {t.headline}
-                      </p>
+                    {/* Line 1: Headline + SEND button (Normal collapsed state) */}
+                    {!isConfirming && !isRecentlySent && (
+                      <div className="flex items-center justify-between gap-3 h-[28px]">
+                        <p
+                          className={`text-[13px] font-mono leading-snug truncate flex-1 ${
+                            isUsed ? 'line-through text-[#7B82A0]' : 'text-[#F0F2FF]'
+                          }`}
+                          title={t.headline}
+                        >
+                          {t.headline}
+                        </p>
 
-                      {/* Inline Target Stock Pill */}
-                      <div className="flex items-center gap-1 shrink-0">
-                        {targets.map((tgt, idx) => {
-                          const isUp = (tgt.effectPercent !== undefined ? tgt.effectPercent : t.effectPercent) >= 0;
-                          const pctVal = tgt.effectPercent !== undefined ? tgt.effectPercent : t.effectPercent;
-                          return (
-                            <span
-                              key={idx}
-                              className={`text-[10.5px] font-mono font-bold px-2 py-0.5 rounded-full border ${
-                                isUp
-                                  ? 'bg-[#22C55E]/15 border-[#22C55E]/30 text-[#22C55E]'
-                                  : 'bg-[#EF4444]/15 border-[#EF4444]/30 text-[#EF4444]'
-                              }`}
-                            >
-                              → {tgt.symbol || tgt.stockName} {isUp ? '▲+' : '▼'}{pctVal}%
-                            </span>
-                          );
-                        })}
-                      </div>
-
-                      {/* Amber SEND Button (28px height) */}
-                      {!isConfirming ? (
                         <button
                           type="button"
                           onClick={() => setInlineConfirmTplId(t.id)}
@@ -655,40 +643,79 @@ export function AdminDashboard() {
                         >
                           SEND
                         </button>
-                      ) : null}
-                    </div>
+                      </div>
+                    )}
 
-                    {/* Inline Delay & Confirm Row */}
+                    {/* Line 1: Headline when confirming */}
                     {isConfirming && (
-                      <div className="flex items-center justify-between pt-1.5 mt-1 border-t border-[#2D3142] text-[10.5px] font-mono animate-fadeIn">
-                        <div className="flex items-center gap-1.5">
-                          <span className="text-[#7B82A0]">Delay:</span>
-                          <input
-                            type="number"
-                            value={delaySeconds}
-                            onChange={(e) => setDelaySeconds(parseInt(e.target.value, 10) || 0)}
-                            className="w-12 h-6 bg-[#1A1D27] border border-[#2D3142] text-center rounded text-xs text-white focus:outline-none focus:border-[#F0B429]"
-                          />
-                          <span className="text-[#7B82A0]">sec</span>
+                      <p className="text-[13px] font-mono leading-snug text-[#F0F2FF]" title={t.headline}>
+                        {t.headline}
+                      </p>
+                    )}
+
+                    {/* Line 2 & 3 when confirming (Expanded State) */}
+                    {isConfirming && (
+                      <div className="pt-2 border-t border-[#2D3142] space-y-2 text-xs font-mono animate-fadeIn">
+                        {/* Affected Target Stocks List */}
+                        <div className="flex items-center gap-1.5 flex-wrap">
+                          <span className="text-[#7B82A0] text-[11px] font-bold">→ Affects:</span>
+                          {targets.map((tgt, idx) => {
+                            const pctVal = tgt.effectPercent !== undefined ? tgt.effectPercent : t.effectPercent;
+                            const isUp = (pctVal || 0) >= 0;
+                            return (
+                              <span
+                                key={idx}
+                                className={`text-[11px] font-mono font-bold px-2 py-0.5 rounded-full border ${
+                                  isUp
+                                    ? 'bg-[#22C55E]/15 border-[#22C55E]/30 text-[#22C55E]'
+                                    : 'bg-[#EF4444]/15 border-[#EF4444]/30 text-[#EF4444]'
+                                }`}
+                              >
+                                {tgt.stockName || tgt.symbol} {isUp ? '▲+' : '▼'}{pctVal}%
+                              </span>
+                            );
+                          })}
                         </div>
 
-                        <div className="flex items-center gap-1.5">
-                          <button
-                            type="button"
-                            disabled={triggeringTemplateId === t.id}
-                            onClick={() => handleTriggerTemplate(t.id)}
-                            className="h-6 px-3 bg-[#22C55E] text-black font-extrabold text-[10px] rounded uppercase hover:bg-[#1eb053] transition-colors cursor-pointer"
-                          >
-                            {triggeringTemplateId === t.id ? 'SENDING...' : 'CONFIRM SEND'}
-                          </button>
-                          <button
-                            type="button"
-                            onClick={() => setInlineConfirmTplId(null)}
-                            className="h-6 px-2 bg-[#2D3142] text-[#7B82A0] hover:text-white font-bold text-[10px] rounded cursor-pointer"
-                          >
-                            ✕
-                          </button>
+                        {/* Delay + Confirm Send + Cancel */}
+                        <div className="flex items-center justify-between gap-2 pt-1 border-t border-[#2D3142]/60">
+                          <div className="flex items-center gap-1.5 text-xs">
+                            <span className="text-[#7B82A0]">Delay:</span>
+                            <input
+                              type="number"
+                              value={delaySeconds}
+                              onChange={(e) => setDelaySeconds(parseInt(e.target.value, 10) || 0)}
+                              className="w-14 h-7 bg-[#1A1D27] border border-[#2D3142] text-center rounded text-xs text-white focus:outline-none focus:border-[#F0B429]"
+                            />
+                            <span className="text-[#7B82A0]">sec</span>
+                          </div>
+
+                          <div className="flex items-center gap-2">
+                            <button
+                              type="button"
+                              disabled={triggeringTemplateId === t.id}
+                              onClick={() => handleTriggerTemplate(t.id)}
+                              className="h-7 px-3.5 bg-[#F0B429] hover:bg-[#d9a120] text-black font-extrabold text-xs rounded-lg uppercase transition-all cursor-pointer shadow-sm"
+                            >
+                              {triggeringTemplateId === t.id ? 'SENDING...' : 'CONFIRM SEND'}
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => setInlineConfirmTplId(null)}
+                              className="h-7 px-2.5 bg-[#2D3142] text-[#7B82A0] hover:text-white font-bold text-xs rounded-lg cursor-pointer"
+                            >
+                              ✕ Cancel
+                            </button>
+                          </div>
                         </div>
+                      </div>
+                    )}
+
+                    {/* Brief "✓ Sent" Feedback banner */}
+                    {isRecentlySent && (
+                      <div className="flex items-center justify-between text-xs font-mono font-bold py-1 px-2">
+                        <span>✓ Sent to traders successfully!</span>
+                        <span className="text-[10px] opacity-75">Delay: {delaySeconds}s</span>
                       </div>
                     )}
                   </div>
