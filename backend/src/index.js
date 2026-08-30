@@ -59,7 +59,8 @@ app.use(cors({
   ]
 }));
 
-app.use(express.json());
+app.use(express.json({ limit: '50mb' }));
+app.use(express.urlencoded({ limit: '50mb', extended: true }));
 
 // Socket.io initialization
 initSocket(server);
@@ -89,6 +90,7 @@ if (hasClientBuild) {
 app.use('/auth', authRoutes);
 app.use('/stocks', stockRoutes);
 app.use('/admin', adminRoutes);
+app.use('/api/admin', adminRoutes); // Dual mount for /api/admin prefix compatibility
 app.use('/', tradeRoutes); // Mounts GET /portfolio, POST /trade/buy, POST /trade/sell
 app.use('/', orderRoutes); // Mounts POST /orders, DELETE /orders/:id, GET /orders
 app.use('/api', orderRoutes); // Dual mount for /api/orders prefix compatibility

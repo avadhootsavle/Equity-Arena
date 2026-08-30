@@ -488,10 +488,22 @@ export function AdminDashboard() {
     if (!uploadPreviewRows || uploadPreviewRows.length === 0) return;
     setUploadingRoster(true);
     try {
-      const res = await apiFetch('/admin/participants/upload', {
-        method: 'POST',
-        body: JSON.stringify({ rows: uploadPreviewRows })
-      });
+      let res;
+      try {
+        res = await apiFetch('/admin/participants/upload', {
+          method: 'POST',
+          body: JSON.stringify({ rows: uploadPreviewRows })
+        });
+      } catch (firstErr) {
+        if (firstErr.status === 404) {
+          res = await apiFetch('/api/admin/participants/upload', {
+            method: 'POST',
+            body: JSON.stringify({ rows: uploadPreviewRows })
+          });
+        } else {
+          throw firstErr;
+        }
+      }
 
       showToast(res.message || 'Roster imported successfully!', 'success');
       setShowUploadPreviewModal(false);
