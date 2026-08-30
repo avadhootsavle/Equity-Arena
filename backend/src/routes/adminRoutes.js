@@ -620,6 +620,7 @@ router.post(['/participants/upload', '/participants-upload', '/upload-participan
     }
 
     let createdCount = 0;
+    let updatedCount = 0;
     let skippedCount = 0;
 
     for (const rawRow of rows) {
@@ -637,7 +638,18 @@ router.post(['/participants/upload', '/participants-upload', '/upload-participan
         });
 
         if (existing) {
-          skippedCount++;
+          // Update existing user credentials and info
+          const passwordHash = await bcrypt.hash(parsed.phone, 10);
+          await prisma.user.update({
+            where: { id: existing.id },
+            data: {
+              name: parsed.name || existing.name,
+              phone: parsed.phone,
+              passwordHash,
+              isPreloaded: true
+            }
+          });
+          updatedCount++;
           continue;
         }
 
@@ -662,9 +674,14 @@ router.post(['/participants/upload', '/participants-upload', '/upload-participan
       }
     }
 
+    const message = createdCount > 0
+      ? `${createdCount} new participants created, ${updatedCount} updated in roster`
+      : `${updatedCount} participants updated in roster (all 45 already existed)`;
+
     return res.json({
-      message: `${createdCount} participants imported, ${skippedCount} skipped/duplicates`,
+      message,
       createdCount,
+      updatedCount,
       skippedCount
     });
   } catch (err) {
