@@ -13,12 +13,12 @@ router.post('/register', async (req, res) => {
   try {
     const { name, email, password } = req.body;
 
-    if (!name || !name.trim() || !email || !email.trim() || !password) {
-      return res.status(400).json({ error: 'Name, email, and password are required' });
+    if (!email || !email.trim() || !password) {
+      return res.status(400).json({ error: 'Email and password are required' });
     }
 
     const cleanEmail = email.trim().toLowerCase();
-    const cleanName = name.trim();
+    const cleanName = (name && name.trim()) ? name.trim() : cleanEmail.split('@')[0];
 
     const existingUser = await prisma.user.findUnique({ where: { email: cleanEmail } });
     if (existingUser) {
