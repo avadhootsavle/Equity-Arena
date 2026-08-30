@@ -324,14 +324,10 @@ export const FloorCard = memo(function FloorCard({
         {/* Live 36px Sparkline + 15M High/Low/Range Stats */}
         <StockSparkline stockId={stock.id} currentPrice={stock.currentPrice} index={index} />
 
-        {/* Footer stats: Sector & Day Range */}
+        {/* Footer stats: Sector */}
         <span className="flex items-center justify-between pt-2 border-t theme-border text-[10.5px] font-mono text-[#6B7280] dark:text-[#7B82A0]">
           <span className="uppercase tracking-wide font-normal whitespace-nowrap">
             {stock.sector}
-          </span>
-          <span>
-            Range {fmtMoney(dayLow, dayLow >= 1000 ? 0 : 2)}–
-            {fmtMoney(dayHigh, dayHigh >= 1000 ? 0 : 2)}
           </span>
         </span>
       </button>
