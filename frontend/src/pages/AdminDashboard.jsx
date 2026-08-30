@@ -62,6 +62,8 @@ export function AdminDashboard() {
   const [participantSearch, setParticipantSearch] = useState('');
   const [resetConfirmPartId, setResetConfirmPartId] = useState(null);
   const [resettingPartId, setResettingPartId] = useState(null);
+  const [showResetAllModal, setShowResetAllModal] = useState(false);
+  const [resettingAll, setResettingAll] = useState(false);
   
   const [showAddParticipantModal, setShowAddParticipantModal] = useState(false);
   const [newPartName, setNewPartName] = useState('');
@@ -597,6 +599,31 @@ export function AdminDashboard() {
       showToast(err.message || 'Failed to reset participant', 'error');
     } finally {
       setResettingPartId(null);
+    }
+  };
+
+  const handleResetAllParticipants = async () => {
+    setResettingAll(true);
+    try {
+      let res;
+      try {
+        res = await apiFetch('/admin/participants/reset-all', { method: 'POST' });
+      } catch (err) {
+        if (err.status === 404) {
+          res = await apiFetch('/api/admin/participants/reset-all', { method: 'POST' });
+        } else {
+          throw err;
+        }
+      }
+
+      showToast(res.message || 'Reset wallet & portfolio for all participants to 20,000 IC!', 'warning');
+      setShowResetAllModal(false);
+      fetchParticipants();
+      fetchLeaderboard();
+    } catch (err) {
+      showToast(err.message || 'Failed to reset all participants', 'error');
+    } finally {
+      setResettingAll(false);
     }
   };
 
@@ -1242,6 +1269,16 @@ export function AdminDashboard() {
                   </button>
                   <button
                     type="button"
+                    onClick={() => setShowResetAllModal(true)}
+                    disabled={participants.length === 0}
+                    className="px-2 py-0.5 rounded bg-[#EF4444]/15 border border-[#EF4444]/30 text-[#EF4444] hover:bg-[#EF4444]/30 font-bold text-[10px] flex items-center gap-1 cursor-pointer disabled:opacity-40"
+                    title="Reset ALL participants to 20,000 IC and clear all holdings & transactions"
+                  >
+                    <RotateCcw className="w-3 h-3" />
+                    <span>Reset All</span>
+                  </button>
+                  <button
+                    type="button"
                     onClick={() => setShowAddParticipantModal(true)}
                     className="px-2 py-0.5 rounded bg-[#22C55E]/15 border border-[#22C55E]/30 text-[#22C55E] hover:bg-[#22C55E]/30 font-bold text-[10px] flex items-center gap-1 cursor-pointer"
                   >
@@ -1828,6 +1865,48 @@ export function AdminDashboard() {
         isOpen={isTraderModalOpen}
         onClose={() => setIsTraderModalOpen(false)}
       />
+
+      {/* Reset All Confirmation Modal */}
+      {showResetAllModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 font-mono animate-fadeIn backdrop-blur-xs">
+          <div className="bg-[#1A1D27] border border-[#2D3142] rounded-xl p-6 max-w-md w-full space-y-4 text-white shadow-2xl">
+            <div className="flex items-center justify-between border-b border-[#2D3142] pb-3">
+              <h3 className="text-xs font-bold text-[#EF4444] uppercase flex items-center gap-1.5">
+                <RotateCcw className="w-4 h-4" />
+                <span>RESET ALL PARTICIPANTS</span>
+              </h3>
+              <button type="button" onClick={() => setShowResetAllModal(false)} className="text-[#7B82A0] hover:text-white cursor-pointer">✕</button>
+            </div>
+
+            <div className="space-y-2 text-xs">
+              <p className="text-white font-bold">
+                Reset ALL <span className="text-[#F0B429]">{participants.length}</span> participants back to 20,000 IC?
+              </p>
+              <p className="text-[11px] text-[#7B82A0]">
+                This will wipe all holdings, transactions, and open limit orders across the entire event. Active trader dashboards will update immediately.
+              </p>
+            </div>
+
+            <div className="flex items-center justify-end gap-2 pt-2 border-t border-[#2D3142]">
+              <button
+                type="button"
+                onClick={() => setShowResetAllModal(false)}
+                className="px-3 py-1.5 rounded-lg bg-[#2D3142] text-[#7B82A0] hover:text-white text-xs font-bold cursor-pointer"
+              >
+                CANCEL
+              </button>
+              <button
+                type="button"
+                disabled={resettingAll}
+                onClick={handleResetAllParticipants}
+                className="px-4 py-1.5 rounded-lg bg-[#EF4444] text-white text-xs font-extrabold uppercase hover:bg-[#dc2626] cursor-pointer shadow-md"
+              >
+                {resettingAll ? 'RESETTING ALL...' : 'CONFIRM RESET ALL'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
     </div>
   );

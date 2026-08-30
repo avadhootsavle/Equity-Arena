@@ -817,4 +817,50 @@ router.post('/participants/:id/reset', async (req, res) => {
   }
 });
 
+// POST /admin/participants/reset-all (Reset all participant wallets and clear holdings/orders)
+router.post(['/participants/reset-all', '/reset-all-participants'], async (req, res) => {
+  try {
+    const traders = await prisma.user.findMany({
+      where: { role: 'TRADER' },
+      select: { id: true, name: true, phone: true }
+    });
+
+    const traderIds = traders.map((t) => t.id);
+
+    if (traderIds.length > 0) {
+      await prisma.$transaction([
+        prisma.order.deleteMany({ where: { userId: { in: traderIds } } }),
+        prisma.holding.deleteMany({ where: { userId: { in: traderIds } } }),
+        prisma.transaction.deleteMany({ where: { userId: { in: traderIds } } }),
+        prisma.user.updateMany({
+          where: { role: 'TRADER' },
+          data: {
+            walletBalance: 20000,
+            hasLoggedIn: false
+          }
+        })
+      ]);
+
+      // Emit live portfolio update to all trader sockets
+      for (const traderId of traderIds) {
+        emitPortfolioUpdate(traderId, {
+          walletBalance: 20000,
+          availableWalletBalance: 20000,
+          holdings: [],
+          reason: 'ADMIN_RESET_ALL'
+        });
+      }
+    }
+
+    broadcastPublicLeaderboard();
+    return res.json({
+      message: `Successfully reset wallet & portfolio for all ${traders.length} participants to 20,000 IC`,
+      count: traders.length
+    });
+  } catch (err) {
+    console.error('Reset all participants error:', err);
+    return res.status(500).json({ error: 'Failed to reset all participants' });
+  }
+});
+
 module.exports = router;
