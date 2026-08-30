@@ -177,7 +177,7 @@ router.get('/me', authenticateToken, async (req, res) => {
     });
 
     if (!user) {
-      return res.status(404).json({ error: 'User not found' });
+      return res.status(401).json({ error: 'User not found or session expired' });
     }
 
     return res.json({ user });

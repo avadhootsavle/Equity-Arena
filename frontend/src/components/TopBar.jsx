@@ -114,13 +114,7 @@ export function TopBar({
   return (
     <header className="sticky top-0 z-30 border-b theme-border theme-bg-rail">
       <div className="flex items-center gap-3 px-3 sm:px-5 h-[54px]">
-        {/* Brand / Exchange Status Badge */}
-        <div className="flex items-center gap-2">
-          <span className="w-2.5 h-2.5 rounded-full bg-[#10B981] animate-ping" />
-          <span className="text-xs font-mono font-bold tracking-wider uppercase text-[#F0B429]">
-            EQUITY ARENA · LIVE EXCHANGE
-          </span>
-        </div>
+
 
         <div className="flex-1" />
 
@@ -178,16 +172,17 @@ export function TopBar({
           <button
             type="button"
             onClick={onOpenTour}
-            title="Open the Trader's Manual"
+            title="Open the Trader's Manual & Battle Tactics"
             aria-label="Open the Trader's Manual"
-            className="flex w-[32px] h-[32px] rounded-md border items-center justify-center transition-colors cursor-pointer focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)]"
+            className="flex items-center gap-1.5 px-2.5 h-[34px] rounded-md border text-xs font-mono font-bold transition-all cursor-pointer shadow-sm hover:scale-[1.02] active:scale-95 focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)]"
             style={{
               color: 'var(--accent)',
-              borderColor: 'color-mix(in srgb, var(--accent) 38%, transparent)',
-              backgroundColor: 'color-mix(in srgb, var(--accent) 12%, transparent)'
+              borderColor: 'color-mix(in srgb, var(--accent) 40%, transparent)',
+              backgroundColor: 'color-mix(in srgb, var(--accent) 14%, transparent)'
             }}
           >
             <BookOpen className="w-3.5 h-3.5" />
+            <span className="hidden lg:inline">PLAYBOOK</span>
           </button>
         )}
 

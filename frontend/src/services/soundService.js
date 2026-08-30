@@ -84,10 +84,9 @@ function unlockAudioOnInteraction() {
   window.addEventListener('touchstart', unlock, { once: true });
 }
 
-// Initialize interaction unlocker and attempt load immediately
+// Initialize interaction unlocker (AudioContext will be created after first user gesture)
 if (typeof window !== 'undefined') {
   unlockAudioOnInteraction();
-  loadAndDecodeMp3();
 }
 
 /**

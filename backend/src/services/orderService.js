@@ -1,5 +1,5 @@
 const { PrismaClient } = require('@prisma/client');
-const { emitPortfolioUpdate } = require('../socket');
+const { emitPortfolioUpdate, broadcastPublicLeaderboard } = require('../socket');
 
 const prisma = new PrismaClient();
 
@@ -264,6 +264,15 @@ async function checkAndExecuteLimitOrders(stockId, currentPrice) {
         }
       } catch (err) {
         // Safe guard
+      }
+    }
+
+    // Update public leaderboard if any limit orders were filled
+    if (executedOrders.length > 0) {
+      try {
+        await broadcastPublicLeaderboard();
+      } catch (err) {
+        // Non-critical, don't crash
       }
     }
 

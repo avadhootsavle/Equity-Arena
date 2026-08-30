@@ -1,82 +1,307 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import {
   Wallet, MousePointerClick, Target, LineChart, Newspaper, Trophy,
-  ArrowRight, ArrowLeft, X, Check, AlertTriangle, Clock, Lightbulb
+  ArrowRight, ArrowLeft, X, Check, AlertTriangle, Clock, Lightbulb,
+  Zap, Flame, ShieldAlert, TrendingUp, TrendingDown, Crosshair,
+  Volume2, Compass, Award, Sparkles, ChevronRight, Terminal
 } from 'lucide-react';
 
 /* ==================================================================
-   Equity Arena — Trader's Manual
-
-   Every number and rule stated here is taken from the live game:
-   20,000 IC start, 15 listed stocks, limit-fill comparisons, the
-   5-minute auto-liquidation sweep and the 5M/15M/30M/1H timeframes.
-   If game rules change, this copy must change with them.
-
-   Visual language: frosted glass over a saturated mesh. Glass only
-   reads as glass when something colourful sits behind it, so the mesh
-   below is deliberately vivid; panels stay at low white opacity and
-   all body copy stays near-white to hold contrast over it.
+   Equity Arena — Tournament Combat Manual (Field Playbook)
+   No corporate fluff. Pure trader psychology, hard tactical mechanics,
+   interactive live simulations, and high-energy pit floor styling.
    ================================================================== */
 
 const ACCENT = '#F0B429';
-const UP = '#4ADE80';
-const DOWN = '#F87171';
+const UP = '#10B981';
+const DOWN = '#EF4444';
 
-/* Shared glass recipe: blur + low-opacity white + a hairline top light. */
-const GLASS =
-  'bg-white/[0.055] backdrop-blur-2xl border border-white/[0.12] shadow-[0_8px_40px_-12px_rgba(0,0,0,0.7)]';
-const GLASS_SOFT = 'bg-white/[0.035] backdrop-blur-xl border border-white/[0.09]';
+/* ---------- High-Impact Interactive Step Visuals ---------- */
 
-const FOCUS =
-  'focus:outline-none focus-visible:ring-2 focus-visible:ring-[#F0B429] focus-visible:ring-offset-2 focus-visible:ring-offset-[#080A10]';
+function GoalInteractiveWidget() {
+  const [allocation, setAllocation] = useState(65); // % in stocks
+  const total = 20000;
+  const inStocks = Math.round((total * allocation) / 100);
+  const inCash = total - inStocks;
+  const mockGain = Math.round(inStocks * 0.18);
+  const projected = total + mockGain;
 
-/* ---------- building blocks for the step visuals ---------- */
-
-function GlassPane({ label, children }) {
   return (
-    <div className={`rounded-3xl overflow-hidden ${GLASS}`}>
-      <div className="flex items-center justify-between px-5 py-3.5 border-b border-white/[0.09]">
-        <div className="flex items-center gap-2" aria-hidden="true">
-          <span className="w-3 h-3 rounded-full bg-[#F87171]/60" />
-          <span className="w-3 h-3 rounded-full bg-[#F0B429]/60" />
-          <span className="w-3 h-3 rounded-full bg-[#4ADE80]/60" />
+    <div className="rounded-3xl bg-[#0D1117]/90 border border-white/[0.12] p-6 shadow-[0_20px_60px_-15px_rgba(0,0,0,0.8)] backdrop-blur-2xl space-y-5">
+      <div className="flex items-center justify-between border-b border-white/[0.08] pb-3">
+        <div className="flex items-center gap-2">
+          <span className="w-2.5 h-2.5 rounded-full bg-emerald-400 animate-ping" />
+          <span className="font-mono text-xs font-bold uppercase tracking-widest text-emerald-400">
+            Tactical Capital Simulator
+          </span>
         </div>
-        <span className="text-[12px] font-mono uppercase tracking-[0.18em] text-slate-300">
-          {label}
-        </span>
+        <span className="font-mono text-[11px] text-slate-400">Drag Slider</span>
       </div>
-      <div className="p-5 space-y-4">{children}</div>
+
+      <div className="space-y-2">
+        <div className="flex justify-between text-xs font-mono">
+          <span className="text-slate-400">Capital Deployment</span>
+          <span className="font-bold text-amber-400">{allocation}% Risk-On</span>
+        </div>
+        <input
+          type="range"
+          min="10"
+          max="95"
+          value={allocation}
+          onChange={(e) => setAllocation(Number(e.target.value))}
+          className="w-full h-2 bg-slate-800 rounded-lg appearance-none cursor-pointer accent-amber-400"
+        />
+        <div className="flex justify-between text-[10px] font-mono text-slate-500">
+          <span>Safe / Idle (10%)</span>
+          <span>Aggressive Speculation (95%)</span>
+        </div>
+      </div>
+
+      <div className="grid grid-cols-2 gap-3 pt-1">
+        <div className="p-3.5 rounded-2xl bg-white/[0.03] border border-white/[0.06] space-y-1">
+          <span className="text-[10px] font-mono text-slate-400 uppercase tracking-wider block">Liquid Reserve</span>
+          <span className="text-xl font-mono font-black text-white">{inCash.toLocaleString()} <span className="text-xs text-amber-400">IC</span></span>
+          <span className="text-[10px] text-slate-500 block">Dry powder for dips</span>
+        </div>
+        <div className="p-3.5 rounded-2xl bg-amber-500/[0.06] border border-amber-500/20 space-y-1">
+          <span className="text-[10px] font-mono text-amber-400 uppercase tracking-wider block">Active Positions</span>
+          <span className="text-xl font-mono font-black text-white">{inStocks.toLocaleString()} <span className="text-xs text-amber-400">IC</span></span>
+          <span className="text-[10px] text-emerald-400 font-mono block">+{mockGain.toLocaleString()} IC at +18%</span>
+        </div>
+      </div>
+
+      <div className="p-4 rounded-2xl bg-gradient-to-r from-emerald-500/10 via-emerald-500/5 to-transparent border border-emerald-500/30 flex items-center justify-between">
+        <div>
+          <span className="text-[11px] font-mono text-emerald-400 font-bold block uppercase tracking-wider">Projected Portfolio Value</span>
+          <span className="text-2xl font-mono font-black text-white">{projected.toLocaleString()} IC</span>
+        </div>
+        <div className="text-right">
+          <span className="px-2.5 py-1 rounded-full bg-emerald-500/20 text-emerald-400 font-mono font-extrabold text-xs">
+            +{(mockGain / total * 100).toFixed(1)}%
+          </span>
+          <span className="text-[10px] text-slate-400 block mt-1">Leaderboard Rank #1</span>
+        </div>
+      </div>
     </div>
   );
 }
 
-function StockRow({ code, name, price, change, sector }) {
-  const up = change >= 0;
+function MarketInteractiveWidget() {
+  const [activeStock, setActiveStock] = useState('ANAG');
+
+  const stocks = [
+    { code: 'ANAG', name: 'Annapurna Agro', price: 46.80, change: 5.4, sector: 'Agri', vol: '1.2M', sentiment: 'BULLISH' },
+    { code: 'RTB', name: 'Rashtriya Trust Bank', price: 2540.10, change: -3.2, sector: 'Banking', vol: '840K', sentiment: 'BEARISH' },
+    { code: 'GSL', name: 'Ganga Shipping', price: 94.50, change: 1.8, sector: 'Logistics', vol: '2.4M', sentiment: 'STABLE' },
+  ];
+
+  const sel = stocks.find(s => s.code === activeStock) || stocks[0];
+
   return (
-    <div className={`rounded-2xl px-4 py-3.5 ${GLASS_SOFT}`}>
-      <div className="flex items-center justify-between gap-3">
-        <div className="flex items-center gap-3 min-w-0">
-          <span
-            className="w-11 h-11 rounded-xl flex items-center justify-center text-[13px] font-mono font-extrabold border flex-shrink-0"
-            style={{
-              color: up ? UP : DOWN,
-              borderColor: up ? `${UP}55` : `${DOWN}55`,
-              backgroundColor: up ? `${UP}1A` : `${DOWN}1A`
-            }}
-          >
-            {code.slice(0, 2)}
-          </span>
-          <span className="min-w-0">
-            <span className="block text-[15px] font-semibold text-white truncate">{name}</span>
-            <span className="block text-[12px] font-mono text-slate-400">{code} · {sector}</span>
+    <div className="rounded-3xl bg-[#0D1117]/90 border border-white/[0.12] p-6 shadow-[0_20px_60px_-15px_rgba(0,0,0,0.8)] backdrop-blur-2xl space-y-4">
+      <div className="flex items-center justify-between border-b border-white/[0.08] pb-3">
+        <div className="flex items-center gap-2">
+          <span className="w-2.5 h-2.5 rounded-full bg-amber-400 animate-pulse" />
+          <span className="font-mono text-xs font-bold uppercase tracking-widest text-white">
+            Live Trading Floor Feed
           </span>
         </div>
-        <div className="text-right flex-shrink-0">
-          <div className="text-[18px] font-mono font-bold text-white">
-            {price}<span className="text-[12px] text-slate-400 ml-1">IC</span>
+        <span className="text-[10px] font-mono text-emerald-400 bg-emerald-500/10 px-2 py-0.5 rounded border border-emerald-500/20">
+          ● TICKER RUNNING
+        </span>
+      </div>
+
+      <div className="grid grid-cols-3 gap-2">
+        {stocks.map(s => {
+          const isUp = s.change >= 0;
+          const isActive = s.code === activeStock;
+          return (
+            <button
+              key={s.code}
+              type="button"
+              onClick={() => setActiveStock(s.code)}
+              className={`p-3 rounded-2xl text-left transition-all border ${
+                isActive
+                  ? 'bg-amber-500/15 border-amber-400 shadow-[0_0_20px_rgba(240,180,41,0.2)] scale-[1.02]'
+                  : 'bg-white/[0.02] border-white/[0.06] hover:bg-white/[0.05]'
+              }`}
+            >
+              <div className="font-mono font-black text-xs text-white flex items-center justify-between">
+                <span>{s.code}</span>
+                <span className={`text-[10px] ${isUp ? 'text-emerald-400' : 'text-rose-400'}`}>
+                  {isUp ? '▲' : '▼'} {Math.abs(s.change)}%
+                </span>
+              </div>
+              <div className="text-sm font-mono font-bold text-slate-200 mt-1">{s.price.toFixed(2)}</div>
+            </button>
+          );
+        })}
+      </div>
+
+      <div className="p-4 rounded-2xl bg-gradient-to-br from-white/[0.04] to-transparent border border-white/[0.08] space-y-3">
+        <div className="flex justify-between items-start">
+          <div>
+            <h4 className="text-base font-bold text-white flex items-center gap-2">
+              <span>{sel.name}</span>
+              <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-slate-800 text-slate-300">
+                {sel.sector}
+              </span>
+            </h4>
+            <div className="text-xs text-slate-400 font-mono mt-0.5">Spot: <strong className="text-white text-sm">{sel.price.toFixed(2)} IC</strong></div>
           </div>
-          <div className="text-[13px] font-mono font-bold" style={{ color: up ? UP : DOWN }}>
-            {up ? '▲' : '▼'} {Math.abs(change).toFixed(2)}%
+          <span className={`px-2.5 py-1 rounded-full text-xs font-mono font-extrabold ${
+            sel.change >= 0 ? 'bg-emerald-500/20 text-emerald-400' : 'bg-rose-500/20 text-rose-400'
+          }`}>
+            {sel.change >= 0 ? 'STRONG BID' : 'HEAVY OFFER'}
+          </span>
+        </div>
+
+        <div className="flex items-center justify-between text-[11px] font-mono text-slate-400 pt-2 border-t border-white/[0.06]">
+          <span>Floor Vol: <strong className="text-white">{sel.vol}</strong></span>
+          <span>Tape Drift: <strong className="text-amber-400">±2.5% / 6s</strong></span>
+          <span>Action: <strong className="text-emerald-400">Click to Open Ticket</strong></span>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function TradeInteractiveWidget() {
+  const [qty, setQty] = useState(5);
+  const [action, setAction] = useState('BUY');
+  const price = 48.50;
+  const cost = (qty * price).toFixed(2);
+
+  return (
+    <div className="rounded-3xl bg-[#0D1117]/90 border border-white/[0.12] p-6 shadow-[0_20px_60px_-15px_rgba(0,0,0,0.8)] backdrop-blur-2xl space-y-5">
+      <div className="flex items-center justify-between border-b border-white/[0.08] pb-3">
+        <div className="flex items-center gap-2">
+          <Zap className="w-4 h-4 text-amber-400" />
+          <span className="font-mono text-xs font-bold uppercase tracking-widest text-white">
+            Live Ticket Terminal
+          </span>
+        </div>
+        <span className="font-mono text-xs text-slate-400">Instant Execution</span>
+      </div>
+
+      <div className="flex items-center gap-2 p-1.5 rounded-2xl bg-black/40 border border-white/[0.08]">
+        <button
+          type="button"
+          onClick={() => setAction('BUY')}
+          className={`flex-1 py-2 rounded-xl font-mono text-xs font-black uppercase transition-all ${
+            action === 'BUY'
+              ? 'bg-emerald-500 text-slate-950 shadow-[0_0_15px_rgba(16,185,129,0.4)]'
+              : 'text-slate-400 hover:text-white'
+          }`}
+        >
+          ● BUY (Go Long)
+        </button>
+        <button
+          type="button"
+          onClick={() => setAction('SELL')}
+          className={`flex-1 py-2 rounded-xl font-mono text-xs font-black uppercase transition-all ${
+            action === 'SELL'
+              ? 'bg-rose-500 text-white shadow-[0_0_15px_rgba(239,68,68,0.4)]'
+              : 'text-slate-400 hover:text-white'
+          }`}
+        >
+          ● SELL (Liquidate)
+        </button>
+      </div>
+
+      <div className="space-y-2">
+        <span className="text-[11px] font-mono text-slate-400 block uppercase">Order Size (Shares)</span>
+        <div className="flex items-center gap-3">
+          <button
+            type="button"
+            onClick={() => setQty(Math.max(1, qty - 1))}
+            className="w-12 h-12 rounded-2xl bg-white/[0.06] hover:bg-white/[0.12] border border-white/[0.1] text-xl font-mono text-white flex items-center justify-center cursor-pointer transition-all active:scale-95"
+          >
+            −
+          </button>
+          <div className="flex-1 h-12 rounded-2xl bg-black/50 border border-white/[0.15] flex items-center justify-center font-mono text-2xl font-black text-amber-400">
+            {qty}
+          </div>
+          <button
+            type="button"
+            onClick={() => setQty(qty + 1)}
+            className="w-12 h-12 rounded-2xl bg-white/[0.06] hover:bg-white/[0.12] border border-white/[0.1] text-xl font-mono text-white flex items-center justify-center cursor-pointer transition-all active:scale-95"
+          >
+            +
+          </button>
+        </div>
+      </div>
+
+      <div className="p-4 rounded-2xl bg-white/[0.03] border border-white/[0.06] flex items-center justify-between font-mono">
+        <div>
+          <span className="text-[10px] text-slate-400 uppercase tracking-wider block">Est. Trade Total</span>
+          <span className="text-xl font-black text-white">{cost} IC</span>
+        </div>
+        <div className="text-right text-[11px] text-slate-400">
+          <div>Fee: <strong className="text-emerald-400">0.00 IC (Zero)</strong></div>
+          <div>Fill: <strong className="text-amber-400">Immediate</strong></div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function LimitInteractiveWidget() {
+  const [target, setTarget] = useState(42.00);
+  const livePrice = 46.50;
+  const isBuyDiscount = target < livePrice;
+
+  return (
+    <div className="rounded-3xl bg-[#0D1117]/90 border border-white/[0.12] p-6 shadow-[0_20px_60px_-15px_rgba(0,0,0,0.8)] backdrop-blur-2xl space-y-5">
+      <div className="flex items-center justify-between border-b border-white/[0.08] pb-3">
+        <div className="flex items-center gap-2">
+          <Crosshair className="w-4 h-4 text-amber-400" />
+          <span className="font-mono text-xs font-bold uppercase tracking-widest text-white">
+            Automated Limit Sniper
+          </span>
+        </div>
+        <span className="text-[10px] font-mono text-emerald-400 bg-emerald-500/10 px-2 py-0.5 rounded border border-emerald-500/20">
+          BOT ACTIVE
+        </span>
+      </div>
+
+      <div className="space-y-3">
+        <div className="flex justify-between items-baseline font-mono">
+          <span className="text-xs text-slate-400">Your Strike Price</span>
+          <span className="text-2xl font-black text-amber-400">{target.toFixed(2)} IC</span>
+        </div>
+        <input
+          type="range"
+          min="35"
+          max="55"
+          step="0.5"
+          value={target}
+          onChange={(e) => setTarget(Number(e.target.value))}
+          className="w-full h-2 bg-slate-800 rounded-lg appearance-none cursor-pointer accent-amber-400"
+        />
+        <div className="flex justify-between text-[11px] font-mono">
+          <span className="text-slate-500">Deep Dip (35 IC)</span>
+          <span className="text-slate-300 font-bold">Current Spot: {livePrice.toFixed(2)} IC</span>
+          <span className="text-slate-500">Spike Top (55 IC)</span>
+        </div>
+      </div>
+
+      <div className={`p-4 rounded-2xl border transition-all ${
+        isBuyDiscount
+          ? 'bg-emerald-500/10 border-emerald-500/30'
+          : 'bg-amber-500/10 border-amber-500/30'
+      }`}>
+        <div className="flex items-start gap-2.5">
+          <Target className="w-5 h-5 text-amber-400 flex-shrink-0 mt-0.5" />
+          <div className="text-xs font-mono space-y-1">
+            <span className="font-bold text-white block">
+              {isBuyDiscount ? '🎯 Limit Buy Resting Below Market' : '⚡ Instant Trigger or Sell Setup'}
+            </span>
+            <p className="text-slate-300 leading-relaxed">
+              {isBuyDiscount
+                ? `System reserves funds and sleeps. If spot drops ${((1 - target / livePrice) * 100).toFixed(1)}% to ${target.toFixed(2)} IC, your order fills instantly.`
+                : `Target is at/above market. Sells trigger on rallies; buys execute immediately.`}
+            </p>
           </div>
         </div>
       </div>
@@ -84,348 +309,212 @@ function StockRow({ code, name, price, change, sector }) {
   );
 }
 
-/** Label/value line used across the visuals. */
-function Line({ k, v, color, top }) {
-  return (
-    <div className={`flex justify-between items-baseline ${top ? 'border-t border-white/[0.1] pt-3' : ''}`}>
-      <span className="text-[14px] text-slate-400">{k}</span>
-      <span className="text-[15px] font-mono font-bold" style={{ color: color || '#FFFFFF' }}>{v}</span>
-    </div>
-  );
-}
+function NewsInteractiveWidget() {
+  const [headlineIdx, setHeadlineIdx] = useState(0);
 
-/* ---------- per-step visuals ---------- */
+  const headlines = [
+    {
+      source: 'REUTERS BREAKING WIRE',
+      headline: 'Govt unveils 20% subsidy boost for domestic fertilizer & agro processing plants.',
+      target: 'ANAG (Annapurna Agro)',
+      impact: 'MASSIVE BULLISH',
+      color: UP,
+      drift: '+15% to +25%'
+    },
+    {
+      source: 'BLOOMBERG FLASH',
+      headline: 'RBI hikes cash reserve ratio unexpectedly; bank liquidity squeezed.',
+      target: 'RTB (Rashtriya Trust Bank)',
+      impact: 'SHARP CRASH',
+      color: DOWN,
+      drift: '-12% to -20%'
+    },
+    {
+      source: 'ECONOMIC TIMES ALERTS',
+      headline: 'Suez Canal shipping rates spike 40% amid global container shortages.',
+      target: 'GSL (Ganga Shipping)',
+      impact: 'MOMENTUM SURGE',
+      color: UP,
+      drift: '+18% to +30%'
+    }
+  ];
 
-function WalletMock() {
-  return (
-    <GlassPane label="Your standing">
-      <div className={`rounded-2xl p-5 ${GLASS_SOFT}`}>
-        <span className="block text-[12px] font-mono uppercase tracking-[0.18em] text-slate-400">
-          Starting balance
-        </span>
-        <span className="block mt-1.5 text-[34px] font-mono font-bold leading-none" style={{ color: ACCENT }}>
-          20,000.00 <span className="text-[18px]">IC</span>
-        </span>
-      </div>
-      <div className="grid grid-cols-2 gap-4">
-        <div className={`rounded-2xl p-4 ${GLASS_SOFT}`}>
-          <span className="block text-[12px] font-mono uppercase tracking-wider text-slate-400">Cash left</span>
-          <span className="block mt-1.5 text-[19px] font-mono font-bold text-white">14,320.55</span>
-        </div>
-        <div className={`rounded-2xl p-4 ${GLASS_SOFT}`}>
-          <span className="block text-[12px] font-mono uppercase tracking-wider text-slate-400">In stocks</span>
-          <span className="block mt-1.5 text-[19px] font-mono font-bold text-white">6,812.40</span>
-        </div>
-      </div>
-      <div className={`rounded-2xl px-4 py-3.5 text-center text-[14px] font-mono text-slate-300 ${GLASS_SOFT}`}>
-        Net worth <span className="text-white font-bold">21,132.95 IC</span>
-        <span className="ml-2 font-bold" style={{ color: UP }}>+5.66%</span>
-      </div>
-    </GlassPane>
-  );
-}
+  const curr = headlines[headlineIdx];
 
-function MarketMock() {
   return (
-    <GlassPane label="Trading floor">
-      <StockRow code="ANAG" name="Annapurna Agro" price="46.12" change={4.31} sector="Agriculture" />
-      <StockRow code="RTB" name="Rashtriya Trust Bank" price="2,584.90" change={-2.14} sector="Banking" />
-      <div className="flex items-center justify-between px-1 text-[13px] font-mono text-slate-400">
-        <span>HIGH <span style={{ color: UP }} className="font-bold">48.90</span></span>
-        <span>LOW <span style={{ color: DOWN }} className="font-bold">41.05</span></span>
-        <span className="text-slate-500">15-min window</span>
-      </div>
-    </GlassPane>
-  );
-}
-
-function TradeMock() {
-  return (
-    <GlassPane label="Quick trade">
-      <StockRow code="GSL" name="Ganga Shipping Lines" price="91.40" change={2.12} sector="Shipping" />
-      <div className="flex items-center gap-2.5">
-        <span className="w-10 h-11 rounded-xl border border-white/[0.14] flex items-center justify-center text-slate-300 text-[18px] font-mono">−</span>
-        <span className="w-14 h-11 rounded-xl border border-white/[0.14] bg-white/[0.06] flex items-center justify-center text-white text-[17px] font-mono font-bold">3</span>
-        <span className="w-10 h-11 rounded-xl border border-white/[0.14] flex items-center justify-center text-slate-300 text-[18px] font-mono">+</span>
-        <span className="flex-1 h-11 rounded-xl bg-[#16A34A] flex items-center justify-center text-white text-[13px] font-mono font-extrabold tracking-wider">BUY</span>
-        <span className="flex-1 h-11 rounded-xl bg-white/[0.06] border border-white/[0.1] flex items-center justify-center text-slate-500 text-[13px] font-mono font-extrabold tracking-wider">SELL</span>
-      </div>
-      <p className="text-[15px] font-mono text-slate-300 text-center">
-        You&rsquo;ll spend <span className="text-white font-bold">274.20 IC</span>
-      </p>
-    </GlassPane>
-  );
-}
-
-function LimitMock() {
-  return (
-    <GlassPane label="Limit order">
-      <div className={`rounded-2xl p-5 space-y-3 ${GLASS_SOFT}`}>
-        <Line k="Stock" v="SANP" />
-        <Line k="Side" v="BUY" color={UP} />
-        <Line k="Quantity" v="10" />
-        <Line k="Target price" v="320.00 IC" color={ACCENT} top />
-      </div>
-      <div
-        className="rounded-2xl border px-4 py-3.5 text-[14px] leading-relaxed text-slate-200"
-        style={{ borderColor: `${ACCENT}3D`, background: `${ACCENT}14` }}
-      >
-        Fills the moment SANP trades at <span className="text-white font-bold">320.00 IC or below</span>.
-        Until then <span className="text-white font-bold">3,200 IC</span> stays reserved.
-      </div>
-    </GlassPane>
-  );
-}
-
-function ChartMock() {
-  const pts = '0,52 22,44 44,50 66,30 88,36 110,22 132,28 154,12 176,18 198,6';
-  return (
-    <GlassPane label="Price chart">
-      <div className="flex items-center gap-2">
-        {['5M', '15M', '30M', '1H'].map((t) => (
-          <span
-            key={t}
-            className={`px-3.5 py-1.5 rounded-lg text-[13px] font-mono font-bold ${
-              t === '15M' ? 'text-slate-950' : 'text-slate-300 border border-white/[0.12]'
-            }`}
-            style={t === '15M' ? { background: ACCENT } : undefined}
-          >
-            {t}
-          </span>
-        ))}
-      </div>
-      <div className={`rounded-2xl p-4 ${GLASS_SOFT}`}>
-        <svg viewBox="0 0 198 60" className="w-full h-[96px]" role="img" aria-label="Example price line trending upward">
-          <defs>
-            <linearGradient id="eaFill" x1="0" y1="0" x2="0" y2="1">
-              <stop offset="0%" stopColor={UP} stopOpacity="0.35" />
-              <stop offset="100%" stopColor={UP} stopOpacity="0" />
-            </linearGradient>
-          </defs>
-          <polygon points={`${pts} 198,60 0,60`} fill="url(#eaFill)" />
-          <polyline points={pts} fill="none" stroke={UP} strokeWidth="2.5" strokeLinejoin="round" strokeLinecap="round" />
-        </svg>
-      </div>
-      <div className="flex items-center justify-between text-[13px] font-mono text-slate-400">
-        <span>OPEN <span className="text-white font-bold">88.10</span></span>
-        <span>HIGH <span style={{ color: UP }} className="font-bold">96.40</span></span>
-        <span>LOW <span style={{ color: DOWN }} className="font-bold">84.22</span></span>
-      </div>
-    </GlassPane>
-  );
-}
-
-function NewsMock() {
-  return (
-    <GlassPane label="Breaking news">
-      <div
-        className="rounded-2xl border-2 p-5 bg-white/[0.05] backdrop-blur-xl"
-        style={{ borderColor: `${ACCENT}5C` }}
-      >
-        <div className="flex items-center gap-2.5 pb-3 border-b border-white/[0.1]">
-          <Newspaper className="w-5 h-5" style={{ color: ACCENT }} aria-hidden="true" />
-          <span className="text-[13px] font-black uppercase tracking-[0.14em]" style={{ color: ACCENT }}>
-            Breaking News
+    <div className="rounded-3xl bg-[#0D1117]/90 border border-white/[0.12] p-6 shadow-[0_20px_60px_-15px_rgba(0,0,0,0.8)] backdrop-blur-2xl space-y-4">
+      <div className="flex items-center justify-between border-b border-white/[0.08] pb-3">
+        <div className="flex items-center gap-2">
+          <Flame className="w-4 h-4 text-amber-400" />
+          <span className="font-mono text-xs font-bold uppercase tracking-widest text-amber-400">
+            Analyst Intelligence Wire
           </span>
         </div>
-        <p className="pt-3.5 text-[17px] font-semibold text-white leading-snug">
-          New tariffs of 15% announced on imported semiconductor components overnight.
+        <button
+          type="button"
+          onClick={() => setHeadlineIdx((headlineIdx + 1) % headlines.length)}
+          className="text-[11px] font-mono text-slate-300 hover:text-white px-2 py-0.5 rounded bg-white/[0.06] border border-white/[0.1] cursor-pointer"
+        >
+          Next Scoop ↻
+        </button>
+      </div>
+
+      <div className="p-5 rounded-2xl bg-gradient-to-b from-amber-500/[0.08] to-transparent border border-amber-500/25 space-y-3">
+        <div className="flex items-center justify-between text-[11px] font-mono">
+          <span className="text-amber-400 font-bold uppercase tracking-widest">
+            ● {curr.source}
+          </span>
+          <span className="text-slate-400">JUST IN</span>
+        </div>
+
+        <p className="text-base font-bold text-white leading-snug">
+          &ldquo;{curr.headline}&rdquo;
         </p>
-      </div>
-      <p className="text-[14px] font-mono text-slate-400 text-center">
-        Read it, decide, act — prices move within seconds.
-      </p>
-    </GlassPane>
-  );
-}
 
-function PortfolioMock() {
-  return (
-    <GlassPane label="My stocks">
-      <div className={`rounded-2xl p-5 space-y-3 ${GLASS_SOFT}`}>
-        <Line k="Shares held" v="14" />
-        <Line k="Avg buy price" v="486.52 IC" />
-        <Line k="Price now" v="497.63 IC" />
-        <Line k="Profit / loss" v="+155.58 IC" color={UP} top />
-      </div>
-      <div className={`rounded-2xl px-4 py-3.5 text-[14px] font-mono text-slate-300 text-center ${GLASS_SOFT}`}>
-        Net worth = <span className="text-white font-bold">Cash left</span> + <span className="text-white font-bold">Money in stocks</span>
-      </div>
-    </GlassPane>
-  );
-}
-
-/**
- * A real screenshot of the running terminal, captured from the live app
- * (frontend/public/guide/*.png). Preferred over any drawn mock-up — if a
- * screenshot exists for a step, it is used instead of the diagram.
- */
-function Shot({ src, alt, label }) {
-  return (
-    <figure className={`rounded-3xl overflow-hidden ${GLASS}`}>
-      <figcaption className="flex items-center justify-between px-5 py-3.5 border-b border-white/[0.09]">
-        <div className="flex items-center gap-2" aria-hidden="true">
-          <span className="w-3 h-3 rounded-full bg-[#F87171]/60" />
-          <span className="w-3 h-3 rounded-full bg-[#F0B429]/60" />
-          <span className="w-3 h-3 rounded-full bg-[#4ADE80]/60" />
+        <div className="pt-2 border-t border-white/[0.06] flex items-center justify-between text-xs font-mono">
+          <span className="text-slate-300">Target: <strong className="text-white">{curr.target}</strong></span>
+          <span className="font-bold px-2 py-0.5 rounded text-[11px]" style={{ color: curr.color, backgroundColor: `${curr.color}1F` }}>
+            {curr.impact} ({curr.drift})
+          </span>
         </div>
-        <span className="text-[13px] font-mono uppercase tracking-[0.18em] text-slate-300">
-          {label}
-        </span>
-      </figcaption>
-      <img src={src} alt={alt} loading="lazy" className="block w-full h-auto" />
-    </figure>
+      </div>
+
+      <p className="text-xs font-mono text-slate-400 text-center">
+        ⚡ The edge belongs to the trader who acts in the first 5 seconds.
+      </p>
+    </div>
   );
 }
 
-/* ---------- the manual itself ---------- */
+function EndgameInteractiveWidget() {
+  return (
+    <div className="rounded-3xl bg-[#0D1117]/90 border border-white/[0.12] p-6 shadow-[0_20px_60px_-15px_rgba(0,0,0,0.8)] backdrop-blur-2xl space-y-4">
+      <div className="flex items-center justify-between border-b border-white/[0.08] pb-3">
+        <div className="flex items-center gap-2">
+          <ShieldAlert className="w-4 h-4 text-rose-400" />
+          <span className="font-mono text-xs font-bold uppercase tracking-widest text-rose-400">
+            Auto-Liquidation Protocol
+          </span>
+        </div>
+        <span className="text-xs font-mono text-amber-400 font-bold bg-amber-500/10 px-2 py-0.5 rounded border border-amber-500/20">
+          T-MINUS 5:00
+        </span>
+      </div>
+
+      <div className="space-y-3">
+        <div className="p-4 rounded-2xl bg-rose-500/[0.08] border border-rose-500/25 space-y-2">
+          <div className="flex items-center gap-2 text-rose-400 font-mono font-bold text-xs uppercase">
+            <AlertTriangle className="w-4 h-4" />
+            <span>The 5-Minute Hard Freeze</span>
+          </div>
+          <p className="text-xs text-slate-300 leading-relaxed font-mono">
+            When 5 minutes remain on the master tournament clock, trading floors lock permanently. Every resting share across all traders is liquidated to cash at current market value.
+          </p>
+        </div>
+
+        <div className="grid grid-cols-2 gap-2 text-xs font-mono">
+          <div className="p-3 rounded-xl bg-white/[0.03] border border-white/[0.06]">
+            <span className="text-slate-400 block text-[10px] uppercase">Leaderboard Basis</span>
+            <strong className="text-white text-sm">100% Realized Cash</strong>
+          </div>
+          <div className="p-3 rounded-xl bg-white/[0.03] border border-white/[0.06]">
+            <span className="text-slate-400 block text-[10px] uppercase">Resting Limit Orders</span>
+            <strong className="text-amber-400 text-sm">Auto-Cancelled & Refunded</strong>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/* ---------- The Tournament Combat Steps ---------- */
 
 const STEPS = [
   {
-    id: 'goal',
-    Icon: Wallet,
-    kicker: 'The objective',
-    title: 'Grow 20,000 IC',
-    lede: 'Every trader starts with exactly 20,000 IC and the same 15 listed companies. Whoever grows that pile the most before the closing bell wins.',
-    points: [
-      'Your net worth is Cash left + Money in stocks — holding is not the same as winning.',
-      'Fifteen stocks span the board, from Annapurna Agro near 42 IC to Suvarna Gold Mining near 3,500 IC.',
-      'The session clock runs down in the header. When it hits zero, the market closes.'
+    id: 'mindset',
+    badge: 'STAGE 01 // MANDATE',
+    title: 'Grow Your 20,000 IC War Chest',
+    subtitle: 'Level playing field. Same 15 companies. Whoever stacks the largest portfolio before the closing bell takes the trophy.',
+    coreRule: 'Net Worth = Liquid Cash + Market Value of Held Shares.',
+    tactics: [
+      'Cash sitting on the sidelines earns 0% — don\'t be a spectator.',
+      'Riding a falling knife ruins your standing — cut losers relentlessly.',
+      'Every tick is real-time: your net worth moves dynamically with the market tape.'
     ],
-    callout: {
-      kind: 'formula',
-      title: 'How you are scored',
-      body: 'Net worth = Cash left + (shares held × current price). Profit is measured against your 20,000 IC starting balance.'
-    },
-    tip: 'Cash sitting idle earns nothing, but neither does a stock you bought too high. Both halves count.',
-    Visual: WalletMock
+    proTip: 'A disciplined trader holding 2 winning positions beats an over-diversified trader with 10 random stocks.',
+    Visual: GoalInteractiveWidget
   },
   {
-    id: 'market',
-    Icon: LineChart,
-    kicker: 'The market',
-    title: 'Read the board',
-    lede: 'The trading floor lists every stock as a live card. Prices tick continuously — roughly every six seconds — so the board is never still.',
-    points: [
-      'The large number is the live price; the coloured pill is its move against the opening price.',
-      'The sparkline traces the last 15 minutes, with HIGH and LOW beneath it.',
-      'Green means the price is above its open, red means below. It says nothing about what comes next.'
+    id: 'radar',
+    badge: 'STAGE 02 // SURVEILLANCE',
+    title: 'Master the Trading Floor',
+    subtitle: 'Every card on your dashboard is a real-time battleground ticking every 6 seconds.',
+    coreRule: 'Color shows past trajectory — NOT future destination.',
+    tactics: [
+      'Green pills mean the stock is above today\'s open; Red means below open.',
+      'Check the 15-minute sparkline under each card before making your entry.',
+      'Click any stock card to expand its full institutional candle chart and trade ticket.'
     ],
-    callout: {
-      kind: 'warn',
-      title: 'A rising price is not a buy signal',
-      body: 'Colour tells you where a stock has been, never where it is going. Read the news and the chart before committing.'
-    },
-    tip: 'Click any card to open its full chart and trade ticket.',
-    shot: { src: '/guide/chart.png', label: 'Live terminal', alt: 'A real stock in the Equity Arena terminal showing its live price, percent change and price chart' },
-    Visual: MarketMock
+    proTip: 'Don\'t chase a green candle that just jumped 25%. Wait for the pullback or set a limit order below market.',
+    Visual: MarketInteractiveWidget
   },
   {
-    id: 'trade',
-    Icon: MousePointerClick,
-    kicker: 'Trading',
-    title: 'Buy and sell instantly',
-    lede: 'Set a quantity with the − / + stepper, then hit Quick Buy or Quick Sell. The order fills immediately at the live price — no confirmation screen.',
-    points: [
-      'Quick Buy spends cash now; Quick Sell returns cash now. Both settle instantly.',
-      'Quick Sell is greyed out unless you actually hold that many shares.',
-      'The line under the buttons shows exactly what you will spend or receive before you commit.'
+    id: 'execution',
+    badge: 'STAGE 03 // COMBAT',
+    title: 'Lightning-Fast Instant Orders',
+    subtitle: 'No slow popups. No delays. Hit Quick Buy or Quick Sell and execute instantly.',
+    coreRule: 'The fill happens at the live server price the microsecond your click registers.',
+    tactics: [
+      'Use the stepper (− / +) or preset buttons (1, 5, 10, 50, 100) to size your position.',
+      'Quick Buy debits your wallet immediately; Quick Sell returns liquid IC immediately.',
+      'Zero brokerage fees — you trade on 100% raw spot pricing.'
     ],
-    callout: {
-      kind: 'formula',
-      title: 'What a trade costs',
-      body: 'Total = quantity × live price. There is no brokerage or fee — the price you see is the price you pay.'
-    },
-    tip: 'Prices move while you decide. The fill uses the price at the moment the server accepts your order, not the one you clicked.',
-    shot: { src: '/guide/stock-card.png', label: 'Live terminal', alt: 'The real trade controls: quantity stepper, Quick Buy, Quick Sell and Normal Trade' },
-    Visual: TradeMock
+    proTip: 'In fast market spikes, size your trades conservatively so you don\'t get trapped at the peak.',
+    Visual: TradeInteractiveWidget
   },
   {
-    id: 'limit',
-    Icon: Target,
-    kicker: 'Automation',
-    title: 'Let limit orders wait for you',
-    lede: 'A limit order names the price you want and then watches the market for you, firing the instant your number is hit — even while you are busy elsewhere.',
-    points: [
-      'A limit BUY fills when the price falls to your target or below.',
-      'A limit SELL fills when the price rises to your target or above.',
-      'Cancel or edit any resting order from the Limit Orders tab at any time.'
+    id: 'sniping',
+    badge: 'STAGE 04 // AUTOMATION',
+    title: 'Deploy Resting Limit Orders',
+    subtitle: 'Don\'t stare at the screen all day. Let limit orders execute while you study the news.',
+    coreRule: 'A Limit BUY strikes when price hits target or lower. A Limit SELL strikes when price hits target or higher.',
+    tactics: [
+      'Set target buy prices 5% to 15% below market to catch panic dips automatically.',
+      'Target funds are safely locked in escrow so you cannot accidentally overspend.',
+      'Manage or cancel pending orders anytime in the "Limit Orders" tab with 1 click.'
     ],
-    callout: {
-      kind: 'warn',
-      title: 'Resting orders reserve your assets',
-      body: 'A pending buy locks target × quantity of your cash, and a pending sell locks those shares. Locked funds cannot be spent twice, so cancel orders you no longer want.'
-    },
-    tip: 'Limit orders are how you catch a crash you did not stay awake for.',
-    Visual: LimitMock
+    proTip: 'Before stepping away for a refreshment break, plant limit buy orders at bargain price floors.',
+    Visual: LimitInteractiveWidget
   },
   {
-    id: 'charts',
-    Icon: LineChart,
-    kicker: 'Analysis',
-    title: 'Read the chart first',
-    lede: 'Open any stock to see its price history drawn from real ticks. Four windows let you tell a genuine trend apart from a momentary spike.',
-    points: [
-      'Switch between 5M, 15M, 30M and 1H — each redraws from the actual tape.',
-      'Hover anywhere on the line to read the exact price and time at that point.',
-      'OPEN, HIGH and LOW beneath the chart always describe the window you are viewing.'
+    id: 'intel',
+    badge: 'STAGE 05 // CATALYSTS',
+    title: 'Trade the Breaking News Wire',
+    subtitle: 'Analyst bulletins interrupt the trading session and trigger violent stock swings.',
+    coreRule: 'Speed is your edge: breaking bulletins broadcast to all players at the exact same millisecond.',
+    tactics: [
+      'When the audible chime rings, immediately read the ticker headline.',
+      'Identify the named company and determine whether it\'s positive or negative.',
+      'Enter your trade in the first 10 seconds before the crowd bids the price away.'
     ],
-    callout: {
-      kind: 'formula',
-      title: 'Zoom changes the story',
-      body: 'A stock that looks like it is collapsing on 5M can be flat on 1H. Check a longer window before reacting to a short one.'
-    },
-    tip: 'The tick count under the chart tells you how much real data the line is drawn from.',
-    shot: { src: '/guide/chart.png', label: 'Live terminal', alt: 'The real price chart with 5M, 15M, 30M and 1H timeframe buttons' },
-    Visual: ChartMock
+    proTip: 'Missed a breaking headline? Open the dedicated News Wire in the sidebar to review all past dispatches.',
+    Visual: NewsInteractiveWidget
   },
   {
-    id: 'news',
-    Icon: Newspaper,
-    kicker: 'Events',
-    title: 'Trade the news',
-    lede: 'Breaking bulletins interrupt the session and genuinely move prices. This is the fastest way the market changes under your feet.',
-    points: [
-      'A bulletin appears top-right with a chime and stays on screen long enough to read.',
-      'Every trader receives the same headline at the same moment.',
-      'The bulletin never says which way the price will go — that judgement is the game.'
+    id: 'endgame',
+    badge: 'STAGE 06 // THE CLOSING BELL',
+    title: 'The 5-Minute Endgame Sweep',
+    subtitle: 'The tournament timer in the header controls your fate. Know when the clock runs out.',
+    coreRule: 'With 5 minutes remaining, trading floor permanently freezes and auto-liquidates.',
+    tactics: [
+      'All stocks held across all participants are automatically sold at live spot prices.',
+      'All resting limit orders are cancelled and locked funds refunded to liquid cash.',
+      'Final tournament winners are ranked solely on total cash net worth.'
     ],
-    callout: {
-      kind: 'warn',
-      title: 'Speed is your only edge',
-      body: 'Because the news is broadcast to everyone simultaneously, the advantage goes to whoever reads it and decides fastest.'
-    },
-    tip: 'Missed one? Every bulletin is kept in the News tab in the sidebar.',
-    Visual: NewsMock
-  },
-  {
-    id: 'close',
-    Icon: Trophy,
-    kicker: 'Scoring',
-    title: 'Track it, then close it',
-    lede: 'My Stocks shows what you hold and what it is worth. My Recent Trades shows the realised result of everything you have already sold.',
-    points: [
-      'Avg buy price is the weighted average across every buy of that stock, so buying more re-averages it.',
-      'Profit on a holding is unrealised — it only becomes real when you sell.',
-      'The Result column on a sale shows what you actually made against that average.'
-    ],
-    callout: {
-      kind: 'clock',
-      title: 'Trading locks before the bell',
-      body: 'With 5 minutes left, trading locks and the market auto-liquidates: every holding is sold at the live price and all resting limit orders are cancelled. Do not count on a last-second exit.'
-    },
-    tip: 'The leaderboard ranks live net worth, so a good unrealised position still counts — right up until the close.',
-    shot: { src: '/guide/portfolio.png', label: 'Live terminal', alt: 'The real My Stocks table showing shares, average buy price, price now and profit or loss' },
-    shot2: { src: '/guide/trades.png', label: 'Live terminal', alt: 'The real My Recent Trades table showing the realised Result of each sale' },
-    Visual: PortfolioMock
+    proTip: 'Never count on a last-second manual sell. Take profits in the final stretch before the freeze locks your position.',
+    Visual: EndgameInteractiveWidget
   }
 ];
-
-const CALLOUT_STYLES = {
-  formula: { Icon: Check, color: UP },
-  warn: { Icon: AlertTriangle, color: ACCENT },
-  clock: { Icon: Clock, color: ACCENT }
-};
 
 export function OnboardingTour({ isOpen, onClose }) {
   const [index, setIndex] = useState(0);
@@ -438,7 +527,7 @@ export function OnboardingTour({ isOpen, onClose }) {
     try {
       localStorage.setItem('equity_arena_tour_completed', 'true');
     } catch (e) {
-      /* private browsing — closing still works */
+      /* ignore storage err */
     }
     onClose();
   }, [onClose]);
@@ -446,7 +535,6 @@ export function OnboardingTour({ isOpen, onClose }) {
   const next = useCallback(() => setIndex((i) => (i >= total - 1 ? i : i + 1)), [total]);
   const prev = useCallback(() => setIndex((i) => Math.max(0, i - 1)), []);
 
-  // Escape closes, arrows page through. A tutorial must never trap the user.
   useEffect(() => {
     if (!isOpen) return;
     const onKey = (e) => {
@@ -458,9 +546,6 @@ export function OnboardingTour({ isOpen, onClose }) {
     return () => window.removeEventListener('keydown', onKey);
   }, [isOpen, finish, next, prev]);
 
-  useEffect(() => { if (isOpen) panelRef.current?.focus(); }, [isOpen]);
-  useEffect(() => { if (isOpen) setIndex(0); }, [isOpen]);
-
   useEffect(() => {
     if (!isOpen) return;
     const prevOverflow = document.body.style.overflow;
@@ -470,9 +555,6 @@ export function OnboardingTour({ isOpen, onClose }) {
 
   if (!isOpen) return null;
 
-  const callout = CALLOUT_STYLES[step.callout.kind];
-  const CalloutIcon = callout.Icon;
-  const StepIcon = step.Icon;
   const Visual = step.Visual;
 
   return (
@@ -480,165 +562,157 @@ export function OnboardingTour({ isOpen, onClose }) {
       ref={panelRef}
       role="dialog"
       aria-modal="true"
-      aria-label="Equity Arena trader's manual"
       tabIndex={-1}
-      className="fixed inset-0 z-[100] bg-[#080A10] text-white overflow-y-auto focus:outline-none"
+      className="fixed inset-0 z-[100] bg-[#07090E] text-white overflow-y-auto focus:outline-none select-none font-sans"
     >
-      {/* Saturated mesh — without this the glass has nothing to refract. */}
+      {/* High-Octane Cyber Ambient Mesh */}
       <div aria-hidden="true" className="pointer-events-none fixed inset-0 overflow-hidden">
-        <div className="absolute -top-52 -left-32 w-[720px] h-[720px] rounded-full blur-[150px] opacity-70"
-             style={{ background: 'radial-gradient(circle,#F0B429 0%,transparent 68%)' }} />
-        <div className="absolute top-1/3 -right-40 w-[760px] h-[760px] rounded-full blur-[160px] opacity-55"
-             style={{ background: 'radial-gradient(circle,#10B981 0%,transparent 68%)' }} />
-        <div className="absolute -bottom-56 left-1/3 w-[820px] h-[820px] rounded-full blur-[170px] opacity-55"
-             style={{ background: 'radial-gradient(circle,#6366F1 0%,transparent 68%)' }} />
-        {/* Darkening wash keeps body copy above 4.5:1 over the bright mesh. */}
-        <div className="absolute inset-0 bg-[#080A10]/72" />
+        <div className="absolute -top-40 -left-40 w-[600px] h-[600px] rounded-full blur-[140px] opacity-40 bg-amber-500" />
+        <div className="absolute top-1/2 -right-40 w-[650px] h-[650px] rounded-full blur-[160px] opacity-25 bg-emerald-500" />
+        <div className="absolute -bottom-40 left-1/3 w-[700px] h-[700px] rounded-full blur-[160px] opacity-20 bg-indigo-600" />
+        <div className="absolute inset-0 bg-[#07090E]/80 backdrop-blur-3xl" />
       </div>
 
-      <div className="relative z-10 min-h-full flex flex-col">
-        {/* ---------------- Header ---------------- */}
-        <header className={`sticky top-0 z-20 flex items-center justify-between gap-4 px-5 sm:px-10 py-4 ${GLASS_SOFT} border-x-0 border-t-0`}>
-          <div className="flex items-center gap-3.5 min-w-0">
-            <span
-              className="w-12 h-12 rounded-2xl flex items-center justify-center font-black text-slate-950 text-[15px] flex-shrink-0"
-              style={{ background: ACCENT }}
-              aria-hidden="true"
-            >
+      <div className="relative z-10 min-h-full flex flex-col justify-between">
+        {/* Top Header Bar */}
+        <header className="sticky top-0 z-20 px-6 sm:px-12 py-4 bg-[#0A0D14]/90 border-b border-white/[0.08] backdrop-blur-2xl flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-xl bg-amber-500/15 border border-amber-500/40 flex items-center justify-center font-black font-mono text-amber-400 shadow-[0_0_15px_rgba(240,180,41,0.25)]">
               EA
-            </span>
-            <span className="min-w-0">
-              <span className="block text-[14px] font-mono font-bold tracking-[0.2em] uppercase" style={{ color: ACCENT }}>
-                Equity Arena
-              </span>
-              <h1 className="text-[20px] sm:text-[23px] font-bold text-white truncate">
-                Trader&rsquo;s Manual
-              </h1>
-            </span>
+            </div>
+            <div>
+              <div className="text-xs font-mono font-bold tracking-[0.25em] text-amber-400 uppercase">
+                Tournament Combat Manual
+              </div>
+              <div className="text-sm font-bold text-white tracking-wide">
+                Equity Arena Trader Playbook
+              </div>
+            </div>
           </div>
 
-          <button
-            type="button"
-            onClick={finish}
-            className={`flex items-center gap-2 px-5 py-3 rounded-2xl ${GLASS} text-[16px] font-mono font-bold text-slate-200 hover:text-white hover:bg-white/[0.1] transition-colors cursor-pointer min-h-[52px] ${FOCUS}`}
-          >
-            <span className="hidden sm:inline">SKIP GUIDE</span>
-            <X className="w-5 h-5" aria-hidden="true" />
-          </button>
+          <div className="flex items-center gap-4">
+            <span className="hidden md:inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-white/[0.04] border border-white/[0.08] text-xs font-mono text-slate-300">
+              <Compass className="w-3.5 h-3.5 text-amber-400" />
+              <span>Section {index + 1} of {total}</span>
+            </span>
+
+            <button
+              type="button"
+              onClick={finish}
+              className="flex items-center gap-2 px-4 py-2 rounded-xl bg-white/[0.05] hover:bg-white/[0.1] border border-white/[0.1] text-xs font-mono font-bold text-slate-200 hover:text-white transition-all cursor-pointer"
+            >
+              <span>DISMISS</span>
+              <X className="w-4 h-4" />
+            </button>
+          </div>
         </header>
 
-        {/* ---------------- Body ---------------- */}
-        <main className="flex-1 w-full max-w-[1240px] mx-auto px-5 sm:px-10 py-10 sm:py-16">
-          <div className="grid lg:grid-cols-[1.1fr_0.9fr] gap-10 lg:gap-16 items-start">
-            {/* Left: the teaching copy */}
-            <div className="min-w-0">
-              {/* Oversized ghost numeral anchors each section */}
-              <div className="flex items-center gap-5">
-                <span
-                  className="text-[76px] sm:text-[96px] font-black leading-none tracking-tighter select-none"
-                  style={{ color: 'transparent', WebkitTextStroke: `2px ${ACCENT}66` }}
-                  aria-hidden="true"
-                >
-                  {String(index + 1).padStart(2, '0')}
+        {/* Center Main Stage */}
+        <main className="flex-1 w-full max-w-[1300px] mx-auto px-6 sm:px-12 py-10 sm:py-16">
+          <div className="grid lg:grid-cols-[1.1fr_0.9fr] gap-12 lg:gap-16 items-center">
+            {/* Left Content Column */}
+            <div className="space-y-6">
+              {/* Badge */}
+              <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-amber-500/10 border border-amber-500/30 text-amber-400 font-mono font-bold text-xs tracking-wider">
+                <Terminal className="w-3.5 h-3.5" />
+                <span>{step.badge}</span>
+              </div>
+
+              {/* Title & Subtitle */}
+              <div className="space-y-3">
+                <h2 className="text-3xl sm:text-5xl font-black text-white tracking-tight leading-[1.08]">
+                  {step.title}
+                </h2>
+                <p className="text-base sm:text-lg text-slate-300 font-medium leading-relaxed">
+                  {step.subtitle}
+                </p>
+              </div>
+
+              {/* Core Rule Callout Pill */}
+              <div className="p-4 rounded-2xl bg-gradient-to-r from-amber-500/15 via-amber-500/5 to-transparent border-l-4 border-l-amber-400 border-y border-r border-white/[0.08]">
+                <span className="text-[11px] font-mono uppercase tracking-widest text-amber-400 font-bold block mb-1">
+                  Core Floor Rule
                 </span>
-                <span className="flex flex-col gap-1.5">
-                  <span className="inline-flex items-center gap-2 text-[16px] font-mono font-bold uppercase tracking-[0.2em]" style={{ color: ACCENT }}>
-                    <StepIcon className="w-5 h-5" aria-hidden="true" />
-                    {step.kicker}
-                  </span>
-                  <span className="text-[16px] font-mono text-slate-300">
-                    Section {index + 1} of {total}
-                  </span>
+                <span className="text-sm sm:text-base font-bold text-white">
+                  {step.coreRule}
                 </span>
               </div>
 
-              <h2 className="mt-6 text-[46px] sm:text-[66px] font-bold leading-[1.03] tracking-tight text-white"
-                  style={{ textWrap: 'balance' }}>
-                {step.title}
-              </h2>
-
-              <p className="mt-6 text-[22px] sm:text-[25px] leading-[1.5] text-slate-100 max-w-[52ch]">
-                {step.lede}
-              </p>
-
-              {/* Numbered rules, hairline-separated — not another bullet list */}
-              <ol className="mt-9 divide-y divide-white/[0.09] border-y border-white/[0.09]">
-                {step.points.map((p, i) => (
-                  <li key={p} className="flex gap-5 py-4">
-                    <span className="text-[17px] font-mono font-bold pt-0.5 flex-shrink-0" style={{ color: ACCENT }}>
-                      {String(i + 1).padStart(2, '0')}
-                    </span>
-                    <span className="text-[19px] leading-[1.5] text-slate-100">{p}</span>
-                  </li>
-                ))}
-              </ol>
-
-              <div
-                className="mt-9 rounded-2xl border p-6 backdrop-blur-xl"
-                style={{ borderColor: `${callout.color}33`, background: `${callout.color}12` }}
-              >
-                <div className="flex items-center gap-2.5">
-                  <CalloutIcon className="w-5 h-5 flex-shrink-0" style={{ color: callout.color }} aria-hidden="true" />
-                  <span className="text-[16px] font-mono font-bold uppercase tracking-[0.14em]" style={{ color: callout.color }}>
-                    {step.callout.title}
-                  </span>
+              {/* Tactical Action Points */}
+              <div className="space-y-2.5 pt-2">
+                <span className="text-xs font-mono uppercase tracking-wider text-slate-400 font-bold block">
+                  Battleground Tactics
+                </span>
+                <div className="space-y-2">
+                  {step.tactics.map((t, i) => (
+                    <div key={i} className="flex items-start gap-3 p-3 rounded-xl bg-white/[0.02] border border-white/[0.06]">
+                      <span className="w-5 h-5 rounded-md bg-amber-500/20 text-amber-400 font-mono font-black text-xs flex items-center justify-center flex-shrink-0 mt-0.5">
+                        {i + 1}
+                      </span>
+                      <span className="text-xs sm:text-sm text-slate-200 leading-relaxed font-medium">
+                        {t}
+                      </span>
+                    </div>
+                  ))}
                 </div>
-                <p className="mt-3 text-[19px] leading-[1.5] text-slate-50">{step.callout.body}</p>
               </div>
 
-              <p className="mt-8 flex gap-4 text-[18px] leading-[1.5] text-slate-200">
-                <Lightbulb className="w-5 h-5 mt-1 flex-shrink-0" style={{ color: ACCENT }} aria-hidden="true" />
-                <span>{step.tip}</span>
-              </p>
+              {/* Pit Floor Pro-Tip */}
+              <div className="flex items-start gap-3 p-4 rounded-2xl bg-emerald-500/[0.08] border border-emerald-500/25 text-emerald-300 text-xs sm:text-sm leading-relaxed">
+                <Award className="w-5 h-5 text-emerald-400 flex-shrink-0 mt-0.5" />
+                <div>
+                  <strong className="text-white block font-mono text-xs uppercase mb-0.5">Pit Master Insight:</strong>
+                  <span>{step.proTip}</span>
+                </div>
+              </div>
             </div>
 
-            {/* Right: a real capture when one exists, else the diagram */}
-            <div className="lg:sticky lg:top-28 min-w-0 space-y-5">
-              {step.shot ? <Shot {...step.shot} /> : <Visual />}
-              {step.shot2 && <Shot {...step.shot2} />}
+            {/* Right Interactive Simulator Column */}
+            <div className="lg:sticky lg:top-28">
+              <Visual />
             </div>
           </div>
         </main>
 
-        {/* ---------------- Footer controls ---------------- */}
-        <footer className={`sticky bottom-0 z-20 px-5 sm:px-10 py-4 ${GLASS_SOFT} border-x-0 border-b-0`}>
-          <div className="max-w-[1240px] mx-auto flex items-center justify-between gap-4">
-            <div className="flex items-center gap-2.5" role="group" aria-label="Jump to section">
+        {/* Bottom Navigation Deck */}
+        <footer className="sticky bottom-0 z-20 px-6 sm:px-12 py-5 bg-[#0A0D14]/95 border-t border-white/[0.08] backdrop-blur-2xl">
+          <div className="max-w-[1300px] mx-auto flex items-center justify-between gap-4">
+            {/* Progress Dots */}
+            <div className="flex items-center gap-2">
               {STEPS.map((s, i) => (
                 <button
                   key={s.id}
                   type="button"
                   onClick={() => setIndex(i)}
-                  title={s.title}
-                  aria-label={`Section ${i + 1}: ${s.title}`}
-                  aria-current={i === index ? 'step' : undefined}
-                  className={`h-3 rounded-full transition-all cursor-pointer ${FOCUS} ${
-                    i === index ? 'w-10' : 'w-3 bg-white/25 hover:bg-white/45'
+                  className={`h-2.5 rounded-full transition-all cursor-pointer ${
+                    i === index
+                      ? 'w-10 bg-amber-400 shadow-[0_0_12px_rgba(240,180,41,0.6)]'
+                      : 'w-2.5 bg-white/20 hover:bg-white/40'
                   }`}
-                  style={i === index ? { background: ACCENT } : undefined}
+                  title={s.title}
                 />
               ))}
             </div>
 
+            {/* Controls */}
             <div className="flex items-center gap-3">
               <button
                 type="button"
                 onClick={prev}
                 disabled={index === 0}
-                className={`flex items-center gap-2 px-5 py-3 rounded-2xl ${GLASS} text-[16px] font-mono font-bold text-slate-200 hover:text-white hover:bg-white/[0.1] transition-colors min-h-[52px] cursor-pointer disabled:opacity-35 disabled:cursor-not-allowed ${FOCUS}`}
+                className="px-5 py-2.5 rounded-xl bg-white/[0.05] hover:bg-white/[0.1] border border-white/[0.1] font-mono text-xs font-bold text-slate-300 disabled:opacity-30 disabled:cursor-not-allowed transition-all cursor-pointer flex items-center gap-1.5"
               >
-                <ArrowLeft className="w-5 h-5" aria-hidden="true" />
-                <span className="hidden sm:inline">BACK</span>
+                <ArrowLeft className="w-4 h-4" />
+                <span className="hidden sm:inline">PREV</span>
               </button>
 
               <button
                 type="button"
                 onClick={isLast ? finish : next}
-                className={`flex items-center gap-2.5 px-7 py-3 rounded-2xl text-slate-950 text-[16px] font-mono font-extrabold tracking-wider transition-transform hover:scale-[1.02] active:scale-[0.98] min-h-[48px] cursor-pointer ${FOCUS}`}
-                style={{ background: ACCENT, boxShadow: `0 8px 30px -8px ${ACCENT}` }}
+                className="px-6 py-2.5 rounded-xl bg-amber-400 hover:bg-amber-300 text-slate-950 font-mono text-xs font-black uppercase tracking-wider transition-all shadow-[0_0_25px_rgba(240,180,41,0.4)] active:scale-95 cursor-pointer flex items-center gap-2"
               >
-                <span>{isLast ? 'START TRADING' : 'NEXT'}</span>
-                <ArrowRight className="w-5 h-5" aria-hidden="true" />
+                <span>{isLast ? 'ENTER THE ARENA' : 'NEXT STAGE'}</span>
+                <ArrowRight className="w-4 h-4" />
               </button>
             </div>
           </div>
@@ -647,3 +721,4 @@ export function OnboardingTour({ isOpen, onClose }) {
     </div>
   );
 }
+

@@ -150,6 +150,21 @@ async function getUserPortfolio(userId) {
     }
   });
 
+  // Fetch executed & past limit orders
+  const pastOrders = await prisma.order.findMany({
+    where: { userId, status: { in: ['EXECUTED', 'CANCELLED'] } },
+    orderBy: [
+      { executedAt: 'desc' },
+      { createdAt: 'desc' }
+    ],
+    take: 40,
+    include: {
+      stock: {
+        select: { symbol: true, name: true, currentPrice: true }
+      }
+    }
+  });
+
   return {
     walletBalance: user.walletBalance,
     availableWalletBalance,
@@ -160,7 +175,9 @@ async function getUserPortfolio(userId) {
     totalPortfolioValue,
     holdings: formattedHoldings,
     transactions,
-    orders: pendingOrders
+    orders: pendingOrders,
+    pendingOrders,
+    pastOrders
   };
 }
 

@@ -161,7 +161,7 @@ export function GameClock({ sessionData, size = 'md', title = 'TIME LEFT' }) {
   );
 }
 
-export function BreakCountdownTimer({ sessionData }) {
+export function BreakCountdownTimer({ sessionData, size = 'lg' }) {
   const breakEndMs = sessionData?.breakEndTime ? new Date(sessionData.breakEndTime).getTime() : null;
   const initialSeconds = sessionData?.breakRemainingSeconds ?? (sessionData?.breakDurationMinutes || 10) * 60;
   const [secondsLeft, setSecondsLeft] = useState(initialSeconds);
@@ -184,10 +184,54 @@ export function BreakCountdownTimer({ sessionData }) {
   const mins = String(Math.floor(secondsLeft / 60)).padStart(2, '0');
   const secs = String(secondsLeft % 60).padStart(2, '0');
 
+  if (size === 'sm' || size === 'compact') {
+    return (
+      <div className="flex items-center gap-1 font-mono font-bold">
+        <div className="px-2 py-0.5 rounded bg-amber-500/15 border border-amber-500/30 text-amber-400 text-sm tracking-wider tabular-nums shadow-inner">
+          {mins}:{secs}
+        </div>
+      </div>
+    );
+  }
+
   return (
-    <div className="font-mono text-xl sm:text-2xl font-extrabold text-amber-400 bg-amber-500/20 border border-amber-500/40 px-4 py-2 rounded-xl inline-flex items-center gap-2 shadow-inner">
-      <span>BREAK ENDS IN</span>
-      <span className="text-amber-300 font-black tracking-widest">{mins}:{secs}</span>
+    <div className="flex items-center justify-center gap-3 select-none">
+      {/* Minutes block */}
+      <div className="flex flex-col items-center">
+        <div className="relative group">
+          <div className="absolute -inset-1 bg-gradient-to-r from-amber-500 to-amber-600 rounded-2xl blur-md opacity-30 group-hover:opacity-60 transition duration-300"></div>
+          <div className="relative w-20 sm:w-24 h-24 sm:h-28 bg-[#161B22] border border-amber-500/30 rounded-2xl flex items-center justify-center shadow-2xl overflow-hidden">
+            <div className="absolute top-0 inset-x-0 h-1/2 bg-white/[0.03] border-b border-white/[0.05]"></div>
+            <span className="font-mono text-4xl sm:text-5xl font-black text-amber-400 tracking-tight drop-shadow-[0_0_15px_rgba(240,180,41,0.5)]">
+              {mins}
+            </span>
+          </div>
+        </div>
+        <span className="text-[11px] font-mono font-bold tracking-[0.25em] text-amber-500/70 uppercase mt-2">
+          MINUTES
+        </span>
+      </div>
+
+      {/* Colon divider */}
+      <div className="flex flex-col items-center justify-center pb-5">
+        <span className="font-mono text-4xl sm:text-5xl font-black text-amber-400/80 animate-pulse">:</span>
+      </div>
+
+      {/* Seconds block */}
+      <div className="flex flex-col items-center">
+        <div className="relative group">
+          <div className="absolute -inset-1 bg-gradient-to-r from-amber-500 to-amber-600 rounded-2xl blur-md opacity-30 group-hover:opacity-60 transition duration-300"></div>
+          <div className="relative w-20 sm:w-24 h-24 sm:h-28 bg-[#161B22] border border-amber-500/30 rounded-2xl flex items-center justify-center shadow-2xl overflow-hidden">
+            <div className="absolute top-0 inset-x-0 h-1/2 bg-white/[0.03] border-b border-white/[0.05]"></div>
+            <span className="font-mono text-4xl sm:text-5xl font-black text-amber-400 tracking-tight drop-shadow-[0_0_15px_rgba(240,180,41,0.5)]">
+              {secs}
+            </span>
+          </div>
+        </div>
+        <span className="text-[11px] font-mono font-bold tracking-[0.25em] text-amber-500/70 uppercase mt-2">
+          SECONDS
+        </span>
+      </div>
     </div>
   );
 }

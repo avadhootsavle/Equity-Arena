@@ -411,12 +411,12 @@ export const FloorCard = memo(function FloorCard({
         </div>
 
         {/* Mode 2: Normal Trade Review & Limit Mode */}
-        <div className="flex items-center gap-1.5 pt-0.5">
+        <div className="flex items-center gap-1.5 pt-0.5 font-mono">
           <button
             type="button"
             onClick={(e) => handleNormalTrade(e, 'BUY')}
-            className="flex-1 py-1 px-2 rounded-[10px] border border-[#CBD5E1] dark:border-[#2D3142] bg-transparent hover:bg-slate-100 dark:hover:bg-[#1E2333] text-[11px] font-semibold text-[#64748B] dark:text-[#94A3B8] flex items-center justify-center gap-1 transition-all active:scale-95 min-h-[30px]"
-            title="Review & set price"
+            className="flex-1 py-1.5 px-2 rounded-lg border border-[#22C55E]/40 bg-[#22C55E]/10 hover:bg-[#22C55E]/20 text-[#22C55E] text-[11px] font-bold flex items-center justify-center gap-1 transition-all active:scale-95 min-h-[32px] cursor-pointer"
+            title="Review & set limit buy price"
           >
             <span>Normal Buy</span>
           </button>
@@ -424,14 +424,8 @@ export const FloorCard = memo(function FloorCard({
           <button
             type="button"
             onClick={(e) => handleNormalTrade(e, 'SELL')}
-            className={`flex-1 py-1 px-2 rounded-[10px] border bg-transparent hover:bg-slate-100 dark:hover:bg-[#1E2333] text-[11px] font-semibold flex items-center justify-center gap-1 transition-all active:scale-95 min-h-[30px] ${
-              isProfitableSell
-                ? 'border-[#22C55E]/60 text-[#22C55E]'
-                : isLossSell
-                ? 'border-[#EF4444]/60 text-[#EF4444]'
-                : 'border-[#CBD5E1] dark:border-[#2D3142] text-[#64748B] dark:text-[#94A3B8]'
-            }`}
-            title={isProfitableSell ? 'Normal Sell (In Profit)' : 'Normal Sell'}
+            className="flex-1 py-1.5 px-2 rounded-lg border border-[#EF4444]/40 bg-[#EF4444]/10 hover:bg-[#EF4444]/20 text-[#EF4444] text-[11px] font-bold flex items-center justify-center gap-1 transition-all active:scale-95 min-h-[32px] cursor-pointer"
+            title="Review & set limit sell price"
           >
             <span>Normal Sell</span>
           </button>

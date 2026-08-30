@@ -419,7 +419,7 @@ export function ChartPanel({
           <PriceChart
             history={history}
             currentPrice={selected.currentPrice}
-            height={340}
+            height={420}
             spanLabel={activeTf.label}
           />
         )}

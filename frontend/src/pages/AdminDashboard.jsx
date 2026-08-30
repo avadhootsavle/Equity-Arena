@@ -3,7 +3,7 @@ import { useAuth } from '../context/AuthContext';
 import { useSocket } from '../context/SocketContext';
 import { useTheme } from '../context/ThemeContext';
 import { apiFetch } from '../services/api';
-import { GameClock } from '../components/GameClock';
+import { GameClock, BreakCountdownTimer } from '../components/GameClock';
 import { useSession } from '../hooks/useSession';
 import { AdminTraderDetailModal } from '../components/AdminTraderDetailModal';
 import { playNewsChime } from '../services/soundService';
@@ -39,6 +39,8 @@ export function AdminDashboard() {
   const [customPercents, setCustomPercents] = useState({});
   const [adjustingStockId, setAdjustingStockId] = useState(null);
   const [confirmStockAdj, setConfirmStockAdj] = useState(null);
+  const [stockFlashes, setStockFlashes] = useState({});
+  const flashTimersRef = useRef(new Map());
 
   const [newsMessage, setNewsMessage] = useState('');
   const [sendingNews, setSendingNews] = useState(false);
@@ -196,12 +198,66 @@ export function AdminDashboard() {
   useEffect(() => {
     if (!socket) return;
 
+    const triggerFlash = (stockId, direction) => {
+      if (!stockId || !direction) return;
+      setStockFlashes((prev) => ({ ...prev, [stockId]: direction }));
+      clearTimeout(flashTimersRef.current.get(stockId));
+      flashTimersRef.current.set(
+        stockId,
+        setTimeout(() => {
+          setStockFlashes((prev) => ({ ...prev, [stockId]: null }));
+        }, 750)
+      );
+    };
+
     const handleStockUpdate = (payload) => {
-      const updated = payload?.stock || payload;
-      if (!updated || !updated.id) return;
+      const diff = payload?.stock || payload;
+      if (!diff) return;
+      const targetId = diff.stockId || diff.id;
+      if (!targetId) return;
+
+      const newPrice = diff.newPrice ?? diff.currentPrice ?? diff.price;
+      const percentChange = diff.percentChange;
 
       setStocks((prev) =>
-        prev.map((s) => (s.id === updated.id ? { ...s, ...updated } : s))
+        prev.map((s) => {
+          if (s.id !== targetId) return s;
+          if (newPrice !== undefined && newPrice !== s.currentPrice) {
+            triggerFlash(targetId, newPrice > s.currentPrice ? 'up' : 'down');
+          }
+          return {
+            ...s,
+            currentPrice: newPrice !== undefined ? newPrice : s.currentPrice,
+            percentChange: percentChange !== undefined ? percentChange : s.percentChange
+          };
+        })
+      );
+    };
+
+    const handleBatchUpdate = (batchData) => {
+      const updates = Array.isArray(batchData) ? batchData : batchData?.updates;
+      if (!Array.isArray(updates) || updates.length === 0) return;
+
+      const updateMap = new Map();
+      updates.forEach((u) => {
+        const id = u.stockId || u.id;
+        if (id) updateMap.set(id, u);
+      });
+
+      setStocks((prev) =>
+        prev.map((s) => {
+          const u = updateMap.get(s.id);
+          if (!u) return s;
+          const newPrice = u.newPrice ?? u.currentPrice ?? u.price;
+          if (newPrice !== undefined && newPrice !== s.currentPrice) {
+            triggerFlash(s.id, newPrice > s.currentPrice ? 'up' : 'down');
+          }
+          return {
+            ...s,
+            currentPrice: newPrice !== undefined ? newPrice : s.currentPrice,
+            percentChange: u.percentChange !== undefined ? u.percentChange : s.percentChange
+          };
+        })
       );
     };
 
@@ -228,28 +284,29 @@ export function AdminDashboard() {
     };
 
     const handleSessionStarted = () => {
-      adminSession.refreshSessionState();
+      adminSession.refetchSession();
       showToast('Tournament Session Started Live!', 'success');
       setShowSessionConfigModal(false);
     };
 
     const handleSessionEnded = () => {
-      adminSession.refreshSessionState();
+      adminSession.refetchSession();
       showToast('Session Ended & Floor Locked.', 'warning');
     };
 
     const handleBreakStarted = () => {
-      adminSession.refreshSessionState();
+      adminSession.refetchSession();
       showToast('Refreshment Break Active!', 'warning');
       setShowBreakModal(false);
     };
 
     const handleBreakEnded = () => {
-      adminSession.refreshSessionState();
+      adminSession.refetchSession();
       showToast('Break Over — Trading Resumed!', 'success');
     };
 
     socket.on('stock:update', handleStockUpdate);
+    socket.on('stocks:batch-update', handleBatchUpdate);
     socket.on('order:executed', handleTradeExecuted);
     socket.on('activity:log', handleActivityLog);
     socket.on('session:started', handleSessionStarted);
@@ -260,6 +317,7 @@ export function AdminDashboard() {
 
     return () => {
       socket.off('stock:update', handleStockUpdate);
+      socket.off('stocks:batch-update', handleBatchUpdate);
       socket.off('order:executed', handleTradeExecuted);
       socket.off('activity:log', handleActivityLog);
       socket.off('session:started', handleSessionStarted);
@@ -289,7 +347,7 @@ export function AdminDashboard() {
         })
       });
 
-      await adminSession.refreshSessionState();
+      await adminSession.refetchSession();
       showToast('Session started successfully!', 'success');
       setShowSessionConfigModal(false);
     } catch (err) {
@@ -304,11 +362,11 @@ export function AdminDashboard() {
       await apiFetch('/admin/session/pause', {
         method: 'POST',
         body: JSON.stringify({
-          breakDurationMinutes: breakMinutes,
+          breakMinutes: breakMinutes,
           note: breakNote
         })
       });
-      await adminSession.refreshSessionState();
+      await adminSession.refetchSession();
       showToast('Trading paused for refreshment break.', 'warning');
       setShowBreakModal(false);
     } catch (err) {
@@ -319,7 +377,7 @@ export function AdminDashboard() {
   const handleResumeSession = async () => {
     try {
       await apiFetch('/admin/session/resume', { method: 'POST' });
-      await adminSession.refreshSessionState();
+      await adminSession.refetchSession();
       showToast('Trading floor unlocked!', 'success');
     } catch (err) {
       showToast(err.message || 'Failed to resume session', 'error');
@@ -329,28 +387,31 @@ export function AdminDashboard() {
   const handleEndSession = async () => {
     if (!window.confirm('Are you sure you want to end the session now? All trader positions will be auto-liquidated.')) return;
     try {
-      await apiFetch('/admin/session/end', { method: 'POST' });
-      await adminSession.refreshSessionState();
+      await apiFetch('/admin/session/stop', { method: 'POST' });
+      await adminSession.refetchSession();
       showToast('Session ended. Portfolio balances auto-liquidated to cash.', 'warning');
     } catch (err) {
       showToast(err.message || 'Failed to end session', 'error');
     }
   };
 
-  /* ---------------- Stock Adjustment ---------------- */
+  /* ---------------- Stock Adjustment (Percentage Only) ---------------- */
   const executeStockAdjust = async (stockId, percentChange) => {
     setAdjustingStockId(stockId);
     try {
       const res = await apiFetch(`/admin/stocks/${stockId}/adjust`, {
         method: 'POST',
-        body: JSON.stringify({ percentChange })
+        body: JSON.stringify({ percent: percentChange, percentChange })
       });
 
       if (res && res.stock) {
         setStocks((prev) =>
-          prev.map((s) => (s.id === stockId ? { ...s, ...res.stock } : s))
+          prev.map((s) => (s.id === stockId ? { ...s, ...res.stock, percentChange: res.percentChange ?? s.percentChange } : s))
         );
-        showToast(`Adjusted ${res.stock.symbol} by ${percentChange > 0 ? '+' : ''}${percentChange}%`, 'success');
+        showToast(
+          `Adjusted ${res.stock.symbol} by ${percentChange > 0 ? '+' : ''}${percentChange}% (${fmtMoney(res.stock.currentPrice)} IC)`,
+          'success'
+        );
       }
       setConfirmStockAdj(null);
     } catch (err) {
@@ -361,9 +422,10 @@ export function AdminDashboard() {
   };
 
   const handleCustomApplyClick = (stockId) => {
-    const val = parseFloat(customPercents[stockId]);
+    const raw = String(customPercents[stockId] || '').trim().replace('%', '');
+    const val = parseFloat(raw);
     if (isNaN(val) || val === 0) {
-      showToast('Enter a valid non-zero percentage', 'error');
+      showToast('Enter a valid percentage (e.g. 15 or -10)', 'error');
       return;
     }
     setConfirmStockAdj({ stockId, percent: val });
@@ -883,17 +945,17 @@ export function AdminDashboard() {
             </div>
           )}
 
-          {adminSession.status === 'ON_BREAK' && (
-            <div className="flex items-center gap-3">
-              <div className="flex items-center gap-1.5 px-2 py-0.5 rounded bg-[#F0B429]/15 border border-[#F0B429]/30 text-[#F0B429] font-bold text-[11px]">
-                <Coffee className="w-3.5 h-3.5" />
-                <span>Break Active</span>
+          {(adminSession.status === 'PAUSED' || adminSession.status === 'ON_BREAK' || adminSession.isPaused) && (
+            <div className="flex items-center gap-2.5 bg-amber-500/10 border border-amber-500/30 px-3 py-1 rounded-xl shadow-sm">
+              <div className="flex items-center gap-1.5 text-amber-400 font-bold text-[11px] uppercase tracking-wider">
+                <Coffee className="w-3.5 h-3.5 animate-bounce" />
+                <span>Break Ends:</span>
               </div>
-              <GameClock sessionData={adminSession} size="sm" />
+              <BreakCountdownTimer sessionData={adminSession} size="sm" />
             </div>
           )}
 
-          {(adminSession.status !== 'ACTIVE' && adminSession.status !== 'ON_BREAK') && (
+          {(adminSession.status !== 'ACTIVE' && adminSession.status !== 'ON_BREAK' && adminSession.status !== 'PAUSED' && !adminSession.isPaused) && (
             <div className="flex items-center gap-2">
               <span className="px-2 py-0.5 rounded bg-slate-800 text-slate-400 text-[11px] font-bold uppercase">
                 {adminSession.status === 'ENDED' ? 'Session Ended' : 'Session Ready'}
@@ -922,29 +984,31 @@ export function AdminDashboard() {
         </div>
 
         {/* Right: Controls & Logout */}
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-2.5">
           {adminSession.status === 'ACTIVE' && (
             <button
               type="button"
               onClick={() => setShowBreakModal(true)}
-              className="px-3 py-1.5 rounded-lg bg-[#F0B429]/15 border border-[#F0B429]/40 text-[#F0B429] hover:bg-[#F0B429]/30 text-xs font-mono font-bold flex items-center gap-1.5 transition-all cursor-pointer"
+              className="px-3 py-1.5 rounded-lg bg-[#F0B429]/15 border border-[#F0B429]/40 text-[#F0B429] hover:bg-[#F0B429]/30 text-xs font-mono font-bold flex items-center gap-1.5 transition-all cursor-pointer shadow-sm"
+              title="Pause trading and start refreshment break"
             >
-              <span>⏸ BREAK</span>
+              <span>⏸ PAUSE FOR BREAK</span>
             </button>
           )}
 
-          {adminSession.status === 'ON_BREAK' && (
+          {(adminSession.status === 'ON_BREAK' || adminSession.status === 'PAUSED' || adminSession.isPaused) && (
             <button
               type="button"
               onClick={handleResumeSession}
-              className="px-3 py-1.5 rounded-lg bg-[#22C55E] text-black hover:bg-[#1eb053] text-xs font-mono font-bold uppercase flex items-center gap-1.5 transition-all cursor-pointer"
+              className="px-3.5 py-1.5 rounded-lg bg-emerald-500 hover:bg-emerald-400 text-slate-950 text-xs font-mono font-black uppercase flex items-center gap-1.5 transition-all cursor-pointer shadow-[0_0_15px_rgba(16,185,129,0.35)] animate-pulse"
+              title="Immediately stop break countdown and unlock trading floor"
             >
-              <Play className="w-3.5 h-3.5 fill-black" />
-              <span>RESUME</span>
+              <Play className="w-3.5 h-3.5 fill-slate-950" />
+              <span>STOP TIMER & RESUME GAME</span>
             </button>
           )}
 
-          {(adminSession.status === 'ACTIVE' || adminSession.status === 'ON_BREAK') && (
+          {(adminSession.status === 'ACTIVE' || adminSession.status === 'ON_BREAK' || adminSession.status === 'PAUSED' || adminSession.isPaused) && (
             <button
               type="button"
               onClick={handleEndSession}
@@ -971,6 +1035,48 @@ export function AdminDashboard() {
           </button>
         </div>
       </header>
+
+      {/* Prominent Break Active Intermission Banner with Countdown and Resume Button */}
+      {(adminSession.status === 'ON_BREAK' || adminSession.status === 'PAUSED' || adminSession.isPaused) && (
+        <div className="bg-gradient-to-r from-amber-500/20 via-amber-600/10 to-amber-500/20 border-b border-amber-500/40 px-6 py-3 flex flex-wrap items-center justify-between gap-4 animate-fadeIn shadow-lg">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-xl bg-amber-500/20 border border-amber-500/40 flex items-center justify-center">
+              <Coffee className="w-5 h-5 text-amber-400 animate-bounce" />
+            </div>
+            <div>
+              <div className="flex items-center gap-2">
+                <span className="text-sm font-extrabold text-white tracking-wide uppercase">
+                  Market On Refreshment Break
+                </span>
+                <span className="px-2 py-0.5 rounded-full bg-amber-500/30 text-amber-300 text-[10px] font-mono font-bold uppercase">
+                  Traders Locked
+                </span>
+              </div>
+              <p className="text-xs text-amber-300/80 font-mono">
+                {adminSession.breakNote || 'Traders are on break. Live price drift and trades are paused.'}
+              </p>
+            </div>
+          </div>
+
+          <div className="flex items-center gap-4">
+            <div className="flex items-center gap-2 bg-[#0D1117] border border-amber-500/40 px-3.5 py-1.5 rounded-xl shadow-inner">
+              <span className="text-xs font-mono font-bold text-amber-400/80 uppercase tracking-widest">
+                Break Ends In:
+              </span>
+              <BreakCountdownTimer sessionData={adminSession} size="sm" />
+            </div>
+
+            <button
+              type="button"
+              onClick={handleResumeSession}
+              className="px-5 py-2 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-mono font-black text-xs uppercase tracking-wider flex items-center gap-2 transition-all cursor-pointer shadow-[0_0_20px_rgba(16,185,129,0.4)] active:scale-95"
+            >
+              <Play className="w-4 h-4 fill-slate-950" />
+              <span>STOP TIMER & RESUME GAME</span>
+            </button>
+          </div>
+        </div>
+      )}
 
       {/* ==================================================================== */}
       {/* TWO-COLUMN BODY — Fits viewport height without main page scrolling    */}
@@ -1266,7 +1372,17 @@ export function AdminDashboard() {
 
                       {/* Current Price & % Change */}
                       <div className="flex items-center gap-2 shrink-0">
-                        <span className="font-bold text-[#F0F2FF]">{fmtMoney(s.currentPrice)} IC</span>
+                        <span
+                          className={`font-bold transition-all duration-300 px-1 py-0.5 rounded font-mono ${
+                            stockFlashes[s.id] === 'up'
+                              ? 'bg-[#22C55E]/25 text-[#22C55E] ring-1 ring-[#22C55E]/50'
+                              : stockFlashes[s.id] === 'down'
+                              ? 'bg-[#EF4444]/25 text-[#EF4444] ring-1 ring-[#EF4444]/50'
+                              : 'text-[#F0F2FF]'
+                          }`}
+                        >
+                          {fmtMoney(s.currentPrice)} IC
+                        </span>
                         <span className={`text-[11px] font-bold ${isPos ? 'text-[#22C55E]' : 'text-[#EF4444]'}`}>
                           {isPos ? '▲+' : '▼'}{s.percentChange || 0}%
                         </span>
@@ -1296,12 +1412,13 @@ export function AdminDashboard() {
                           <div className="flex items-center gap-1">
                             <input
                               type="number"
-                              placeholder="___%"
+                              placeholder="±%"
+                              title="Enter percentage to add (+) or subtract (-), e.g. 15 or -10"
                               value={customPercents[s.id] || ''}
                               onChange={(e) =>
                                 setCustomPercents({ ...customPercents, [s.id]: e.target.value })
                               }
-                              className="w-12 h-5 bg-[#1A1D27] border border-[#2D3142] text-center rounded text-[10px] text-white focus:outline-none focus:border-[#F0B429]"
+                              className="w-14 h-5 bg-[#1A1D27] border border-[#2D3142] text-center rounded text-[10px] text-white focus:outline-none focus:border-[#F0B429]"
                             />
                             <button
                               type="button"
@@ -1313,7 +1430,9 @@ export function AdminDashboard() {
                           </div>
                         ) : (
                           <div className="flex items-center gap-1 text-[10px]">
-                            <span className="text-[#F0B429] font-bold">{confirmStockAdj.percent}%?</span>
+                            <span className="text-[#F0B429] font-bold">
+                              {confirmStockAdj.percent > 0 ? `+${confirmStockAdj.percent}%?` : `${confirmStockAdj.percent}%?`}
+                            </span>
                             <button
                               type="button"
                               onClick={() => executeStockAdjust(s.id, confirmStockAdj.percent)}

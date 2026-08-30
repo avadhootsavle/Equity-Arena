@@ -360,7 +360,7 @@ export function StockDetailModal({
         setNotice(data.message || 'Limit order placed.');
         setQuantity('1');
         await fetchOrders();
-        onSuccess?.(data.message || 'Limit order placed.');
+        onSuccess?.(data.message || 'Limit order placed.', data.portfolio);
       }
     } catch (err) {
       setError(err.message || 'Order failed');
@@ -398,7 +398,7 @@ export function StockDetailModal({
     >
       <div
         onClick={(e) => e.stopPropagation()}
-        className="w-full max-w-5xl max-h-[92vh] surface flex flex-col overflow-hidden animate-pop-in"
+        className="w-full max-w-6xl max-h-[92vh] surface flex flex-col overflow-hidden animate-pop-in"
         style={{ boxShadow: 'var(--card-shadow)' }}
       >
         {/* ================= HEADER ================= */}
@@ -472,17 +472,15 @@ export function StockDetailModal({
 
         {/* ================= BODY ================= */}
         <div className="overflow-y-auto p-4 sm:p-5">
-          <div className="grid grid-cols-1 lg:grid-cols-[minmax(0,1.55fr)_minmax(0,1fr)] gap-4">
+          <div className="grid grid-cols-1 lg:grid-cols-[minmax(0,1.85fr)_minmax(0,1fr)] gap-5">
             {/* ---------------- CHART ---------------- */}
             <div className="space-y-3">
-              <div className="surface-panel p-3">
-                <div className="flex flex-wrap items-center justify-between gap-2 mb-2">
-                  <div className="flex items-center gap-3 text-[10px] font-mono">
+              <div className="surface-panel p-3.5">
+                <div className="flex flex-wrap items-center justify-between gap-2 mb-2.5">
+                  <div className="flex items-center gap-3 text-[11px] font-mono">
                     <span className="flex items-center gap-1.5 theme-text-main font-bold">
-                      {/* Matches the plotted line, which is coloured by the
-                          window move rather than the whole-day change. */}
                       <span
-                        className="w-2 h-2 rounded-full"
+                        className="w-2.5 h-2.5 rounded-full"
                         style={{
                           backgroundColor:
                             stats.windowMove >= 0
@@ -508,7 +506,7 @@ export function StockDetailModal({
                           type="button"
                           onClick={() => setTimeframe(tf.key)}
                           aria-pressed={active}
-                          className="px-2 h-[22px] rounded text-[10px] font-mono font-bold transition-colors"
+                          className="px-2.5 h-[26px] rounded text-[11px] font-mono font-bold transition-colors"
                           style={
                             active
                               ? {
@@ -516,7 +514,7 @@ export function StockDetailModal({
                                     'color-mix(in srgb, var(--accent) 20%, transparent)',
                                   color: 'var(--accent)'
                                 }
-                              : { color: 'var(--text-dim)' }
+                              : { color: 'var(--text-muted)' }
                           }
                         >
                           {tf.label}
@@ -526,32 +524,32 @@ export function StockDetailModal({
                   </div>
                 </div>
 
-                <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-[10px] font-mono mb-1">
-                  <span className="theme-text-dim">
+                <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-[11.5px] font-mono mb-2">
+                  <span className="theme-text-muted">
                     Price{' '}
-                    <strong className="theme-text-main">{fmtMoney(stats.close)}</strong>
+                    <strong className="theme-text-main font-bold">{fmtMoney(stats.close)} IC</strong>
                   </span>
-                  <span className="theme-text-dim">
+                  <span className="theme-text-muted">
                     High{' '}
-                    <strong style={{ color: 'var(--gain-green)' }}>
-                      {fmtMoney(stats.high)}
+                    <strong className="font-bold" style={{ color: 'var(--gain-green)' }}>
+                      {fmtMoney(stats.high)} IC
                     </strong>
                   </span>
-                  <span className="theme-text-dim">
+                  <span className="theme-text-muted">
                     Low{' '}
-                    <strong style={{ color: 'var(--loss-red)' }}>
-                      {fmtMoney(stats.low)}
+                    <strong className="font-bold" style={{ color: 'var(--loss-red)' }}>
+                      {fmtMoney(stats.low)} IC
                     </strong>
                   </span>
                 </div>
 
                 {loadingHistory && windowHistory.length === 0 ? (
-                  <div className="h-[300px] rounded-lg animate-shimmer" />
+                  <div className="h-[360px] rounded-lg animate-shimmer" />
                 ) : (
                   <PriceChart
                     history={windowHistory}
                     currentPrice={currentPrice}
-                    height={300}
+                    height={360}
                     showFooter={false}
                     spanLabel={timeframe}
                   />
@@ -986,83 +984,6 @@ export function StockDetailModal({
                   )}
                 </button>
               </form>
-
-              {/* Resting orders for this stock */}
-              <div className="surface-panel p-3 space-y-2">
-                <div className="flex items-center justify-between">
-                  <span
-                    className="text-[10px] font-mono uppercase tracking-widest font-bold flex items-center gap-1.5"
-                    style={{ color: 'var(--accent)' }}
-                  >
-                    <Clock className="w-3 h-3" />
-                    Open orders · {stock.symbol}
-                  </span>
-                  <span className="text-[10px] font-mono theme-text-dim">
-                    {stockPendingOrders.length}
-                  </span>
-                </div>
-
-                {stockPendingOrders.length === 0 ? (
-                  <p className="text-[10px] font-mono theme-text-dim py-1.5">
-                    No resting orders on this stock.
-                  </p>
-                ) : (
-                  <div className="space-y-1.5">
-                    {stockPendingOrders.map((order) => {
-                      const orderColor =
-                        order.type === 'BUY'
-                          ? 'var(--gain-green)'
-                          : 'var(--loss-red)';
-                      const distance = currentPrice
-                        ? ((order.targetPrice - currentPrice) / currentPrice) * 100
-                        : 0;
-
-                      return (
-                        <div
-                          key={order.id}
-                          className="flex items-center justify-between gap-2 px-2.5 py-2 rounded border theme-border theme-bg-input"
-                        >
-                          <div className="min-w-0">
-                            <div className="flex items-center gap-1.5">
-                              <span
-                                className="px-1.5 py-0.5 rounded text-[8.5px] font-mono font-extrabold uppercase"
-                                style={{
-                                  backgroundColor: `color-mix(in srgb, ${orderColor} 16%, transparent)`,
-                                  color: orderColor
-                                }}
-                              >
-                                Limit {order.type}
-                              </span>
-                              <span className="text-[10.5px] font-mono font-bold theme-text-main">
-                                {order.quantity} @ {fmtMoney(order.targetPrice)}
-                              </span>
-                            </div>
-                            <div className="text-[9px] font-mono theme-text-dim mt-0.5">
-                              {distance >= 0 ? '+' : ''}
-                              {distance.toFixed(2)}% from spot
-                            </div>
-                          </div>
-
-                          <button
-                            type="button"
-                            onClick={() => handleCancelOrder(order.id)}
-                            disabled={cancellingOrderId === order.id}
-                            className="flex items-center gap-1 px-2 py-1 rounded text-[9.5px] font-heading font-bold transition-colors disabled:opacity-50 flex-shrink-0"
-                            style={{
-                              backgroundColor:
-                                'color-mix(in srgb, var(--loss-red) 12%, transparent)',
-                              color: 'var(--loss-red)'
-                            }}
-                          >
-                            <Ban className="w-2.5 h-2.5" />
-                            {cancellingOrderId === order.id ? '…' : 'Cancel'}
-                          </button>
-                        </div>
-                      );
-                    })}
-                  </div>
-                )}
-              </div>
             </div>
           </div>
         </div>

@@ -41,7 +41,8 @@ import {
   Pencil,
   ArrowUpRight,
   AlertTriangle,
-  Trophy
+  Trophy,
+  CheckCircle2
 } from 'lucide-react';
 
 const fmtMoney = (n, d = 2) =>
@@ -174,6 +175,13 @@ export function TraderDashboard() {
     fetchPortfolio();
     fetchNewsFeed();
   }, [fetchStocks, fetchPortfolio, fetchNewsFeed]);
+
+  // Re-fetch portfolio every time user opens the Limit Orders tab so the list is always fresh
+  useEffect(() => {
+    if (activeTab === 'ORDERS') {
+      fetchPortfolio();
+    }
+  }, [activeTab, fetchPortfolio]);
 
   /* ---------------------------------------------------------------
      Chart selection + history
@@ -312,8 +320,6 @@ export function TraderDashboard() {
     const handlePortfolioUpdate = (updated) => {
       const { reason, topUpAmount, ...patch } = updated || {};
 
-      // Only an explicitly tagged admin credit shows the wallet-credit toast.
-      // Sell proceeds also raise the balance, and must not be attributed to the admin.
       if (reason === 'ADMIN_TOPUP') {
         const amount = Number(topUpAmount) || 0;
         if (amount > 0) {
@@ -324,9 +330,12 @@ export function TraderDashboard() {
             3000
           );
         }
+      } else if (reason === 'ADMIN_RESET' || reason === 'ADMIN_RESET_ALL') {
+        pushToast('Admin reset your portfolio to 20,000 IC', 'info', 'Portfolio Reset', 3000);
       }
 
       setPortfolio((prev) => ({ ...prev, ...patch }));
+      fetchPortfolio();
     };
 
     const handleOrderExecuted = (alert) => {
@@ -633,20 +642,7 @@ export function TraderDashboard() {
         <LiveTickerMarquee stocks={stocks} onSelectStock={handleSelectFromFloor} />
 
         <main className="max-w-[1440px] mx-auto px-4 sm:px-6 py-5 pb-24 lg:pb-10 space-y-5">
-          {/* ---------------- Greeting ---------------- */}
-          <div>
-            <h2 className="text-[19px] font-heading font-extrabold theme-text-main leading-tight">
-              Welcome back, {user?.name || user?.email?.split('@')[0] || 'trader'}
-            </h2>
-            <p className="text-[11.5px] theme-text-muted mt-0.5">
-              {stocks.length} stocks to trade. Buy low, sell high, grow your cash.
-            </p>
 
-            <p className="text-[13px] theme-text-main mt-2">
-              You started with <strong className="font-mono">20,000 IC</strong>. You now have{' '}
-              <strong className="font-mono">{fmtMoney(netWorth)} IC</strong>.
-            </p>
-          </div>
 
           {/* ---------------- Session status banner ---------------- */}
           {isTradingLocked && (
@@ -739,16 +735,14 @@ export function TraderDashboard() {
                   suffix=" IC"
                   tone="gold"
                   Icon={Wallet}
-                  hint={`You started with 20,000 IC. You now have ${fmtMoney(netWorth)} IC.`}
                 />
                 <StatTile
-                  label={totalProfit >= 0 ? 'Total Profit' : 'Total Loss'}
+                  label="Total Profit/Loss"
                   value={Math.abs(totalProfit)}
                   prefix={totalProfit >= 0 ? '+' : '−'}
                   suffix=" IC"
                   tone={totalProfit >= 0 ? 'up' : 'down'}
                   Icon={totalProfit >= 0 ? TrendingUp : TrendingDown}
-                  hint={`You started with 20,000 IC. You now have ${fmtMoney(netWorth)} IC.`}
                   delta={totalProfitPercent}
                 />
                 <StatTile
@@ -789,7 +783,7 @@ export function TraderDashboard() {
                     onQuickTrade={runQuickTrade}
                     onNormalTrade={handleCardTrade}
                     ownedQuantity={chartOwnedQty}
-                    cashBalance={portfolio.cashBalance}
+                    cashBalance={availableCash}
                     isTradingLocked={isTradingLocked}
                   />
                 </div>
@@ -980,49 +974,76 @@ export function TraderDashboard() {
 
       <OnboardingTour isOpen={isTourOpen} onClose={() => setIsTourOpen(false)} />
 
-      {/* Phase 44: Full-Screen Break Countdown Overlay on Trader Side */}
+      {/* Full-Screen Break Intermission Overlay on Trader Side */}
       {(sessionData?.status === 'PAUSED' || sessionData?.isPaused) && (
-        <div className="fixed inset-0 z-50 theme-bg-main overflow-y-auto flex flex-col items-center justify-between p-6 font-mono text-center animate-fadeIn backdrop-blur-xl">
-          {/* Header */}
-          <div className="w-full max-w-2xl mx-auto flex items-center justify-between pt-4 border-b theme-border pb-4">
-            <div className="flex items-center gap-2 text-amber-400">
-              <Coffee className="w-6 h-6 animate-bounce" />
-              <span className="text-sm font-extrabold uppercase tracking-wider">REFRESHMENT BREAK IN PROGRESS</span>
+        <div className="fixed inset-0 z-50 bg-[#0A0D12]/95 backdrop-blur-2xl overflow-y-auto flex flex-col items-center justify-between p-6 sm:p-10 font-sans text-center animate-fadeIn select-none">
+          {/* Ambient Glow Orbs */}
+          <div className="absolute top-1/4 left-1/2 -translate-x-1/2 -translate-y-1/2 w-96 h-96 bg-amber-500/10 rounded-full blur-3xl pointer-events-none" />
+          <div className="absolute bottom-10 left-1/3 w-80 h-80 bg-amber-600/5 rounded-full blur-3xl pointer-events-none" />
+
+          {/* Top Header Bar */}
+          <div className="w-full max-w-4xl mx-auto flex items-center justify-between py-3 px-5 rounded-2xl bg-white/[0.03] border border-white/[0.08] backdrop-blur-md shadow-2xl relative z-10">
+            <div className="flex items-center gap-3">
+              <div className="w-8 h-8 rounded-lg bg-amber-500/15 border border-amber-500/30 flex items-center justify-center">
+                <Coffee className="w-4 h-4 text-amber-400 animate-pulse" />
+              </div>
+              <div className="text-left">
+                <div className="text-xs sm:text-sm font-bold text-white tracking-wide flex items-center gap-2">
+                  <span>EQUITY ARENA INTERMISSION</span>
+                </div>
+                <div className="text-[10px] sm:text-xs text-amber-400/80 font-mono">Official Tournament Break</div>
+              </div>
             </div>
-            <span className="px-3 py-1 rounded-full bg-amber-500/20 text-amber-400 border border-amber-500/40 text-xs font-bold uppercase">
-              MARKET PAUSED
-            </span>
+
+            <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-amber-500/15 border border-amber-500/30 text-amber-400 text-xs font-mono font-bold tracking-wider uppercase">
+              <span className="w-2 h-2 rounded-full bg-amber-400 animate-ping" />
+              <span>MARKET PAUSED</span>
+            </div>
           </div>
 
-          {/* Hero Timer Center */}
-          <div className="my-auto py-10 space-y-6 max-w-xl mx-auto w-full">
-            <div className="inline-block p-4 rounded-3xl bg-amber-500/10 border border-amber-500/30">
-              <Coffee className="w-16 h-16 text-amber-400 mx-auto animate-pulse" />
+          {/* Center Stage Hero */}
+          <div className="my-auto py-8 sm:py-12 space-y-8 max-w-2xl mx-auto w-full relative z-10">
+            {/* Glowing Icon Shield */}
+            <div className="relative inline-block">
+              <div className="absolute -inset-2 bg-gradient-to-r from-amber-500/30 to-amber-600/20 rounded-full blur-xl animate-pulse"></div>
+              <div className="relative w-24 h-24 sm:w-28 sm:h-28 rounded-3xl bg-gradient-to-b from-[#1E232B] to-[#12161C] border border-amber-500/40 flex items-center justify-center shadow-[0_10px_35px_-5px_rgba(240,180,41,0.25)] mx-auto">
+                <Coffee className="w-12 h-12 sm:w-14 sm:h-14 text-amber-400 drop-shadow-[0_0_12px_rgba(240,180,41,0.6)]" />
+              </div>
             </div>
 
-            <div className="space-y-2">
-              <div className="text-xs font-bold text-amber-400 uppercase tracking-widest">
+            {/* Countdown Section */}
+            <div className="space-y-3">
+              <div className="text-xs font-mono font-extrabold text-amber-400/90 uppercase tracking-[0.3em] flex items-center justify-center gap-2">
+                <span className="w-1.5 h-1.5 rounded-full bg-amber-400" />
                 TRADING RESUMES IN
+                <span className="w-1.5 h-1.5 rounded-full bg-amber-400" />
               </div>
               <BreakCountdownTimer sessionData={sessionData} />
             </div>
 
-            <div className="p-4 rounded-2xl theme-bg-card border theme-border space-y-2 text-xs">
-              <p className="font-bold theme-text-main text-sm">
-                Take a breather. Trading resumes when the countdown hits zero.
+            {/* Message Card */}
+            <div className="p-6 sm:p-8 rounded-3xl bg-gradient-to-b from-[#161B22]/90 to-[#0F1318]/90 border border-white/[0.08] shadow-[0_20px_50px_rgba(0,0,0,0.5)] space-y-3 backdrop-blur-xl">
+              <h4 className="text-base sm:text-lg font-bold text-white tracking-tight">
+                Take a breather. Refreshments are on us! ☕
+              </h4>
+              <p className="text-xs sm:text-sm text-slate-400 leading-relaxed max-w-md mx-auto">
+                Review your game strategy and hydrate. As soon as the timer hits zero, the trading floor will instantly unlock.
               </p>
               {sessionData?.breakNote && (
-                <p className="text-amber-300 font-semibold bg-amber-500/10 p-3 rounded-xl border border-amber-500/20">
-                  {sessionData.breakNote}
-                </p>
+                <div className="mt-4 pt-4 border-t border-white/[0.08]">
+                  <div className="inline-flex items-center gap-2 text-xs sm:text-sm text-amber-300 font-semibold bg-amber-500/10 px-4 py-2.5 rounded-xl border border-amber-500/20">
+                    <span>📢</span>
+                    <span>{sessionData.breakNote}</span>
+                  </div>
+                </div>
               )}
             </div>
           </div>
 
-          {/* Footer */}
-          <div className="w-full max-w-md mx-auto pb-4 text-xs theme-text-dim flex items-center justify-center gap-2">
-            <Lock className="w-4 h-4 text-amber-400" />
-            <span>Trading floor, live prices, and order executions are locked until break ends.</span>
+          {/* Footer Security / Lock Pill */}
+          <div className="w-full max-w-md mx-auto py-3 px-5 rounded-full bg-white/[0.02] border border-white/[0.06] text-[11px] sm:text-xs text-slate-400 flex items-center justify-center gap-2 font-mono relative z-10">
+            <Lock className="w-3.5 h-3.5 text-amber-400 flex-shrink-0" />
+            <span>Floor locked • Orders & spot pricing safely frozen</span>
           </div>
         </div>
       )}
@@ -1102,81 +1123,77 @@ function NewsPanel({ news, loading, onRefresh, onViewAll }) {
    Orders tab
    ================================================================== */
 function OrdersTab({ portfolio, cancellingOrderId, onCancel, onEdit }) {
-  const orders = portfolio.pendingOrders || [];
+  const pendingOrders = portfolio.pendingOrders || portfolio.orders || [];
+  const pastOrders = portfolio.pastOrders || [];
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-5">
+      {/* SECTION 1: WAITING LIMIT ORDERS (TO BE EXECUTED) */}
       <Reveal as="section" className="surface" style={{ boxShadow: 'var(--card-shadow)' }}>
         <div className="flex flex-wrap items-center justify-between gap-2 px-4 py-3.5 border-b theme-border">
           <div>
             <h3 className="text-[17px] font-semibold theme-text-main flex items-center gap-2">
-              <Clock className="w-4 h-4" style={{ color: 'var(--accent)' }} />
-              Waiting Orders
+              <Clock className="w-4 h-4 text-[#F0B429]" />
+              Waiting Limit Orders (To Be Executed)
             </h3>
-            <p className="text-[14px] theme-text-muted mt-0.5">
-              These buy or sell on their own as soon as the stock hits your price
+            <p className="text-[13px] theme-text-muted mt-0.5">
+              These orders rest in the market and execute automatically as soon as the spot price hits your target.
             </p>
           </div>
-          <span
-            className="px-2.5 py-1 rounded text-[12px] font-semibold flex-shrink-0"
-            style={{
-              backgroundColor: 'color-mix(in srgb, var(--accent) 13%, transparent)',
-              color: 'var(--accent)'
-            }}
-          >
-            {orders.length} waiting
+          <span className="px-2.5 py-1 rounded text-[12px] font-bold font-mono bg-[#F0B429]/15 text-[#F0B429] border border-[#F0B429]/30">
+            {pendingOrders.length} Waiting
           </span>
         </div>
 
         <div className="p-3 space-y-2">
-          {orders.length === 0 ? (
-            <div className="py-12 text-center">
-              <Clock
-                className="w-7 h-7 mx-auto mb-2.5"
-                style={{ color: 'var(--text-dim)' }}
-              />
+          {pendingOrders.length === 0 ? (
+            <div className="py-10 text-center">
+              <Clock className="w-7 h-7 mx-auto mb-2 text-[#7B82A0]" />
               <div className="text-[15px] theme-text-main font-semibold">
-                No waiting orders
+                No active waiting limit orders
               </div>
-              <div className="text-[14px] theme-text-muted mt-1 max-w-[340px] mx-auto">
-                Open any stock, switch to <strong>Limit Order</strong>, and pick the price
-                you want. We'll buy or sell for you when it gets there.
+              <div className="text-[13px] theme-text-muted mt-1 max-w-[380px] mx-auto">
+                Open any stock, switch to <strong>Limit Order</strong>, and pick your target price. We'll execute automatically when reached.
               </div>
             </div>
           ) : (
-            orders.map((order, i) => {
+            pendingOrders.map((order, i) => {
               const isBuy = order.type === 'BUY';
               const color = isBuy ? 'var(--gain-green)' : 'var(--loss-red)';
 
               return (
                 <div
                   key={order.id}
-                  className="surface-panel px-3.5 py-3 flex flex-wrap items-center justify-between gap-3 animate-card-rise"
+                  className="surface-panel px-4 py-3 flex flex-wrap items-center justify-between gap-3 animate-card-rise"
                   style={{ animationDelay: `${Math.min(i * 40, 320)}ms` }}
                 >
                   <div className="flex items-center gap-3 min-w-0">
                     <span
-                      className="px-2 py-0.5 rounded text-[12px] font-bold flex-shrink-0"
+                      className="px-2.5 py-1 rounded text-[11px] font-mono font-bold uppercase flex-shrink-0"
                       style={{
                         backgroundColor: `color-mix(in srgb, ${color} 15%, transparent)`,
                         color
                       }}
                     >
-                      {isBuy ? 'Will buy' : 'Will sell'}
+                      {isBuy ? 'WILL BUY' : 'WILL SELL'}
                     </span>
                     <div className="min-w-0">
-                      <div className="text-[15px] font-semibold theme-text-main">
-                        {order.stock?.symbol || 'Stock'}
-                        <span className="theme-text-dim font-normal text-[13px] ml-1.5">
+                      <div className="text-[15px] font-semibold theme-text-main flex items-center gap-2">
+                        <span>{order.stock?.symbol || 'Stock'}</span>
+                        <span className="theme-text-dim font-normal text-[13px]">
                           {order.stock?.name || ''}
                         </span>
                       </div>
                       <div className="text-[13px] theme-text-muted mt-0.5">
-                        {order.quantity} {order.quantity === 1 ? 'share' : 'shares'} when the
-                        price reaches{' '}
+                        {order.quantity} {order.quantity === 1 ? 'share' : 'shares'} when target hits{' '}
                         <strong className="font-mono" style={{ color: 'var(--accent)' }}>
                           {fmtMoney(order.targetPrice)} IC
                         </strong>
+                        {order.stock?.currentPrice && (
+                          <span className="theme-text-dim font-mono ml-2">
+                            (Live: {fmtMoney(order.stock.currentPrice)} IC)
+                          </span>
+                        )}
                       </div>
                     </div>
                   </div>
@@ -1219,13 +1236,74 @@ function OrdersTab({ portfolio, cancellingOrderId, onCancel, onEdit }) {
         </div>
       </Reveal>
 
-      <Reveal delay={0.06}>
-        <MyTrades
-          transactions={portfolio.transactions || []}
-          limit={20}
-          title="Past Trades"
-        />
-      </Reveal>
+      {/* SECTION 2: EXECUTED & COMPLETED LIMIT ORDERS (HAS BEEN EXECUTED) */}
+      {pastOrders.length > 0 && (
+        <Reveal as="section" className="surface" style={{ boxShadow: 'var(--card-shadow)' }}>
+          <div className="flex flex-wrap items-center justify-between gap-2 px-4 py-3.5 border-b theme-border">
+            <div>
+              <h3 className="text-[17px] font-semibold theme-text-main flex items-center gap-2">
+                <CheckCircle2 className="w-4 h-4 text-[#22C55E]" />
+                Executed Limit Orders History
+              </h3>
+              <p className="text-[13px] theme-text-muted mt-0.5">
+                Limit orders that have reached target price and successfully filled
+              </p>
+            </div>
+            <span className="px-2.5 py-1 rounded text-[12px] font-bold font-mono bg-[#22C55E]/15 text-[#22C55E] border border-[#22C55E]/30">
+              {pastOrders.length} Executed
+            </span>
+          </div>
+
+          <div className="p-3 space-y-2">
+            {pastOrders.map((order) => {
+              const isExecuted = order.status === 'EXECUTED';
+              const isBuy = order.type === 'BUY';
+              const statusColor = isExecuted ? '#22C55E' : '#64748B';
+
+              return (
+                <div
+                  key={`past-order-${order.id}`}
+                  className="surface-panel px-4 py-3 flex flex-wrap items-center justify-between gap-3 font-mono text-[13px]"
+                >
+                  <div className="flex items-center gap-3 min-w-0">
+                    <span
+                      className="px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider flex-shrink-0"
+                      style={{
+                        backgroundColor: `color-mix(in srgb, ${statusColor} 15%, transparent)`,
+                        color: statusColor
+                      }}
+                    >
+                      {isExecuted ? 'EXECUTED' : 'CANCELLED'}
+                    </span>
+
+                    <div className="min-w-0">
+                      <div className="font-bold theme-text-main flex items-center gap-2">
+                        <span className={isBuy ? 'text-[#22C55E]' : 'text-[#EF4444]'}>
+                          LIMIT {order.type}
+                        </span>
+                        <span>{order.stock?.symbol || 'STOCK'}</span>
+                      </div>
+                      <div className="text-[12px] theme-text-muted mt-0.5">
+                        {order.quantity} shares @ target {fmtMoney(order.targetPrice)} IC
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="text-right text-[12px] theme-text-muted">
+                    {order.executedAt ? (
+                      <span className="text-[#22C55E] font-bold">
+                        Filled at {new Date(order.executedAt).toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' })}
+                      </span>
+                    ) : (
+                      <span>Created {new Date(order.createdAt).toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' })}</span>
+                    )}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </Reveal>
+      )}
     </div>
   );
 }

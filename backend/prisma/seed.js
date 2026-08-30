@@ -407,31 +407,19 @@ async function main() {
   await prisma.stock.deleteMany();
   await prisma.user.deleteMany();
 
-  // Create Admin User
+  // Create Admin User ONLY (No new trader/user created at seeding)
+  const adminPasswordHash = await bcrypt.hash('010428', 10);
   const adminUser = await prisma.user.create({
     data: {
       name: 'Admin User',
-      email: 'admin@test.com',
-      passwordHash: 'admin123',
+      email: 'avadhoot@krishna.kavya',
+      passwordHash: adminPasswordHash,
       role: 'ADMIN',
       walletBalance: 20000,
-      isTestAccount: true
+      isTestAccount: false
     }
   });
-  console.log(`✅ Created Admin user (Plain Text Password): ${adminUser.email}`);
-
-  // Create Seed Demo Trader
-  await prisma.user.create({
-    data: {
-      name: 'Seed Demo Trader',
-      email: 'seed_trader@test.com',
-      passwordHash: 'trader123',
-      role: 'TRADER',
-      walletBalance: 20000,
-      isTestAccount: true
-    }
-  });
-  console.log(`✅ Created Seed Demo Trader (20,000 IC Wallet)`);
+  console.log(`✅ Created Admin user: ${adminUser.email}`);
 
   const now = Date.now();
   const ONE_HOUR = 60 * 60 * 1000;

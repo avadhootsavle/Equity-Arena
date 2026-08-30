@@ -115,8 +115,9 @@ export function movingAverage(values, period = 10) {
 
 export function PriceChart({
   history = [],
-  currentPrice = 0,
-  height = 300,
+  currentPrice,
+  height = 360,
+  lineColorOverride,
   showVolume = false,
   showSMA = false,
   smaPeriod = 10,
@@ -393,9 +394,10 @@ export function PriceChart({
               {!occluded && (
               <text
                 x={padding.left + plotW + 8}
-                y={y + 3.5}
-                fill="var(--text-dim)"
-                fontSize="10"
+                y={y + 4}
+                fill="var(--text-muted)"
+                fontSize="11.5"
+                fontWeight="600"
                 fontFamily="'JetBrains Mono', monospace"
               >
                 {fmtMoney(tick, tick >= 1000 ? 0 : 2)} IC
@@ -420,8 +422,9 @@ export function PriceChart({
             <text
               x={g.x}
               y={height - 8}
-              fill="var(--text-dim)"
-              fontSize="10"
+              fill="var(--text-muted)"
+              fontSize="11.5"
+              fontWeight="600"
               fontFamily="'JetBrains Mono', monospace"
               textAnchor="middle"
             >

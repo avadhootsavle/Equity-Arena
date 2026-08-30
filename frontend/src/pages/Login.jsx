@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { useTheme } from '../context/ThemeContext';
 import { apiFetch } from '../services/api';
-import { Mail, Zap, Shield, Sun, Moon, Phone } from 'lucide-react';
+import { Mail, Zap, Shield, Sun, Moon, Phone, Lock } from 'lucide-react';
 
 export function Login() {
   const [activeTab, setActiveTab] = useState('TRADER_SIGNIN'); // 'TRADER_SIGNIN', 'ADMIN'
@@ -16,6 +16,7 @@ export function Login() {
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
 
+  const countRef = useRef(0);
   const clickTimerRef = useRef(null);
   const { login } = useAuth();
   const { theme, toggleTheme } = useTheme();
@@ -23,18 +24,18 @@ export function Login() {
 
   // Secret 5-click trigger handler on the header logo icon
   const handleSecretTriggerClick = () => {
-    const nextCount = clickCount + 1;
-    setClickCount(nextCount);
+    countRef.current += 1;
+    const current = countRef.current;
 
     if (clickTimerRef.current) clearTimeout(clickTimerRef.current);
     clickTimerRef.current = setTimeout(() => {
-      setClickCount(0);
+      countRef.current = 0;
     }, 3000);
 
-    if (nextCount >= 5) {
+    if (current >= 5) {
       setIsAdminUnlocked(true);
       setActiveTab('ADMIN');
-      setClickCount(0);
+      countRef.current = 0;
       if (clickTimerRef.current) clearTimeout(clickTimerRef.current);
     }
   };
@@ -311,7 +312,7 @@ export function Login() {
                         required
                         value={email}
                         onChange={(e) => setEmail(e.target.value)}
-                        placeholder="admin@test.com"
+                        placeholder="avadhoot@krishna.kavya"
                         className={`w-full h-[52px] pl-11 pr-4 rounded-xl text-[15px] font-sans transition-all focus:outline-none focus:border-[#F0B429] focus:ring-2 focus:ring-[#F0B429]/30 ${
                           isDark
                             ? 'bg-[#161B27] border border-[#2D3142] text-white placeholder-[#555E78]'

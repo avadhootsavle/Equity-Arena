@@ -6,7 +6,8 @@ const { emitStockUpdate, emitNewsBroadcast, emitPortfolioUpdate, emitActivityLog
 const { checkAndExecuteLimitOrders } = require('../services/orderService');
 const { applyNewsImpact, steerMacroMoveForNews } = require('../services/marketTicker');
 const { getUsedTemplateIds, markTemplateUsed } = require('../services/sessionService');
-const { checkAllTradersBankruptcy, checkTraderBankruptcy } = require('../services/bankruptcyService');
+const { getUserPortfolio } = require('../services/portfolioService');
+const { checkAllTradersBankruptcy } = require('../services/bankruptcyService');
 
 const router = express.Router();
 const prisma = new PrismaClient();
@@ -87,42 +88,54 @@ router.get('/trader/:id', async (req, res) => {
   }
 });
 
-// POST /admin/stock/:id/adjust
-router.post('/stock/:id/adjust', async (req, res) => {
+// POST /admin/stock/:id/adjust & /admin/stocks/:id/adjust — Explicitly set or adjust stock price
+router.post(['/stock/:id/adjust', '/stocks/:id/adjust'], async (req, res) => {
   try {
     const { id } = req.params;
-    const { percent } = req.body;
-
-    const parsedPercent = parseFloat(percent);
-    if (isNaN(parsedPercent) || parsedPercent < -99 || parsedPercent > 1000) {
-      return res.status(400).json({ error: 'Adjustment percentage must be between -99% and +1000%' });
-    }
+    const { percent, percentChange, price, newPrice, targetPrice } = req.body;
 
     const stock = await prisma.stock.findUnique({ where: { id } });
     if (!stock) {
       return res.status(404).json({ error: 'Stock not found' });
     }
 
-    const rawNewPrice = stock.currentPrice * (1 + parsedPercent / 100);
-    const newPrice = Math.max(0.50, Math.round(rawNewPrice * 100) / 100);
+    let calculatedNewPrice;
+    const explicitPrice = price ?? newPrice ?? targetPrice;
+
+    if (explicitPrice !== undefined && explicitPrice !== null && explicitPrice !== '') {
+      const parsedPrice = parseFloat(explicitPrice);
+      if (isNaN(parsedPrice) || parsedPrice <= 0) {
+        return res.status(400).json({ error: 'Stock price must be a positive number' });
+      }
+      calculatedNewPrice = Math.max(0.50, Math.round(parsedPrice * 100) / 100);
+    } else {
+      const p = percent !== undefined ? percent : percentChange;
+      const parsedPercent = parseFloat(p);
+      if (isNaN(parsedPercent) || parsedPercent < -99 || parsedPercent > 10000) {
+        return res.status(400).json({ error: 'Adjustment percentage must be between -99% and +10000%' });
+      }
+      const rawNewPrice = stock.currentPrice * (1 + parsedPercent / 100);
+      calculatedNewPrice = Math.max(0.50, Math.round(rawNewPrice * 100) / 100);
+    }
+
     const highVolume = getRandomVolume(60000, 150000);
 
     const [updatedStock, newHistory] = await prisma.$transaction([
       prisma.stock.update({
         where: { id },
-        data: { currentPrice: newPrice }
+        data: { currentPrice: calculatedNewPrice }
       }),
       prisma.priceHistory.create({
         data: {
           stockId: id,
-          price: newPrice,
+          price: calculatedNewPrice,
           volume: highVolume
         }
       })
     ]);
 
-    const percentChange = stock.basePrice > 0
-      ? Math.round((((newPrice - stock.basePrice) / stock.basePrice) * 100) * 100) / 100
+    const finalPercentChange = stock.basePrice > 0
+      ? Math.round((((calculatedNewPrice - stock.basePrice) / stock.basePrice) * 100) * 100) / 100
       : 0;
 
     emitStockUpdate({
@@ -131,12 +144,12 @@ router.post('/stock/:id/adjust', async (req, res) => {
       name: updatedStock.name,
       newPrice: updatedStock.currentPrice,
       volume: newHistory.volume,
-      percentChange,
+      percentChange: finalPercentChange,
       timestamp: newHistory.timestamp
     });
 
     // Check limit order execution
-    await checkAndExecuteLimitOrders(updatedStock.id, newPrice);
+    await checkAndExecuteLimitOrders(updatedStock.id, calculatedNewPrice);
 
     // Check bankruptcy for all active traders
     await checkAllTradersBankruptcy();
@@ -147,7 +160,8 @@ router.post('/stock/:id/adjust', async (req, res) => {
     return res.json({
       message: 'Stock price updated successfully',
       stock: updatedStock,
-      percentChange
+      percentChange: finalPercentChange,
+      newPrice: calculatedNewPrice
     });
   } catch (err) {
     console.error('Adjust stock price error:', err);
@@ -155,11 +169,11 @@ router.post('/stock/:id/adjust', async (req, res) => {
   }
 });
 
-// POST /admin/market/adjust-all — Shift all stock prices simultaneously
-router.post('/market/adjust-all', async (req, res) => {
+// POST /admin/market/adjust-all & /admin/stocks/adjust-all — Shift all stock prices simultaneously
+router.post(['/market/adjust-all', '/stocks/adjust-all'], async (req, res) => {
   try {
-    const { percent } = req.body;
-    const parsedPercent = parseFloat(percent);
+    const p = req.body.percent !== undefined ? req.body.percent : req.body.percentChange;
+    const parsedPercent = parseFloat(p);
     if (isNaN(parsedPercent) || parsedPercent < -99 || parsedPercent > 1000) {
       return res.status(400).json({ error: 'Adjustment percentage must be between -99% and +1000%' });
     }
@@ -217,8 +231,8 @@ router.post('/market/adjust-all', async (req, res) => {
   }
 });
 
-// POST /admin/news (Custom news broadcast)
-router.post('/news', async (req, res) => {
+// POST /admin/news & /admin/news/broadcast (Custom news broadcast)
+router.post(['/news', '/news/broadcast'], async (req, res) => {
   try {
     const { message, stockId } = req.body;
 
@@ -500,10 +514,12 @@ router.post('/trader/:id/topup', async (req, res) => {
 
     const traderName = user.name || user.email.split('@')[0];
 
+    // Fetch full fresh portfolio for trader
+    const freshPortfolio = await getUserPortfolio(id);
+
     // Emit live portfolio update to trader's room
-    // Tagged so the trader UI can attribute this credit to the admin. Without the
-    // tag the client can only guess from "balance went up", which mislabels sell proceeds.
     emitPortfolioUpdate(id, {
+      ...(freshPortfolio || {}),
       walletBalance: Math.round(updatedUser.walletBalance * 100) / 100,
       availableWalletBalance: Math.round(updatedUser.walletBalance * 100) / 100,
       reason: 'ADMIN_TOPUP',

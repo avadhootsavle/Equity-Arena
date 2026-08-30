@@ -8,6 +8,8 @@ const {
   checkAndExecuteLimitOrders
 } = require('../services/orderService');
 const { getCurrentSession } = require('../services/sessionService');
+const { getUserPortfolio } = require('../services/portfolioService');
+const { emitPortfolioUpdate } = require('../socket');
 
 const router = express.Router();
 const prisma = new PrismaClient();
@@ -102,11 +104,17 @@ router.post('/orders', authenticateToken, tradeRateLimiter, async (req, res) => 
       include: { stock: true }
     });
 
+    const freshPortfolio = await getUserPortfolio(userId);
+    if (freshPortfolio) {
+      emitPortfolioUpdate(userId, freshPortfolio);
+    }
+
     return res.status(201).json({
       message: wasExecutedImmediately
         ? `Limit ${uppercaseType} order executed immediately at ${stock.currentPrice.toFixed(2)} IC!`
         : `Limit ${uppercaseType} order placed successfully at target ${parsedTargetPrice.toFixed(2)} IC!`,
-      order: refetchedOrder
+      order: refetchedOrder,
+      portfolio: freshPortfolio
     });
   } catch (err) {
     console.error('Error placing limit order:', err);
@@ -239,11 +247,17 @@ const handleUpdateOrder = async (req, res) => {
       include: { stock: true }
     });
 
+    const freshPortfolio = await getUserPortfolio(userId);
+    if (freshPortfolio) {
+      emitPortfolioUpdate(userId, freshPortfolio);
+    }
+
     return res.json({
       message: wasExecutedImmediately
         ? `Limit ${updatedOrder.type} order executed immediately at ${stock.currentPrice.toFixed(2)} IC!`
         : `Limit ${updatedOrder.type} order for ${stock.symbol} updated successfully (Target: ${newTargetPrice.toFixed(2)} IC, Qty: ${newQuantity}).`,
-      order: refetchedOrder
+      order: refetchedOrder,
+      portfolio: freshPortfolio
     });
   } catch (err) {
     console.error('Error updating limit order:', err);
@@ -283,9 +297,15 @@ router.delete('/orders/:id', authenticateToken, async (req, res) => {
       include: { stock: true }
     });
 
+    const freshPortfolio = await getUserPortfolio(userId);
+    if (freshPortfolio) {
+      emitPortfolioUpdate(userId, freshPortfolio);
+    }
+
     return res.json({
       message: `Limit ${cancelledOrder.type} order for ${cancelledOrder.stock.symbol} cancelled successfully. Locked ${cancelledOrder.type === 'BUY' ? 'funds' : 'shares'} released.`,
-      order: cancelledOrder
+      order: cancelledOrder,
+      portfolio: freshPortfolio
     });
   } catch (err) {
     console.error('Error cancelling limit order:', err);
