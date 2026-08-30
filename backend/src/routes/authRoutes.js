@@ -8,74 +8,52 @@ const { adminLoginRateLimiter, recordAdminFailedAttempt, clearAdminRateLimit } =
 const router = express.Router();
 const prisma = new PrismaClient();
 
-// POST /auth/register
+// POST /auth/register (Disabled — Roster pre-loading only)
 router.post('/register', async (req, res) => {
-  try {
-    const { name, email, password } = req.body;
-
-    if (!email || !email.trim() || !password) {
-      return res.status(400).json({ error: 'Email and password are required' });
-    }
-
-    const cleanEmail = email.trim().toLowerCase();
-    const cleanName = (name && name.trim()) ? name.trim() : cleanEmail.split('@')[0];
-
-    const existingUser = await prisma.user.findUnique({ where: { email: cleanEmail } });
-    if (existingUser) {
-      return res.status(400).json({ error: 'User with this email already exists' });
-    }
-
-    const user = await prisma.user.create({
-      data: {
-        name: cleanName,
-        email: cleanEmail,
-        passwordHash: password,
-        role: 'TRADER',
-        walletBalance: 20000,
-        isTestAccount: false
-      }
-    });
-
-    const token = generateToken(user);
-
-    return res.status(201).json({
-      token,
-      user: {
-        id: user.id,
-        name: user.name,
-        email: user.email,
-        role: user.role,
-        walletBalance: user.walletBalance
-      }
-    });
-  } catch (err) {
-    console.error('Register error:', err);
-    return res.status(500).json({ error: 'Internal server error' });
-  }
+  return res.status(403).json({ error: "Self-registration is disabled. Please ask your event administrator to add you to the roster." });
 });
 
-// POST /auth/login (Public Trader Login)
+// POST /auth/login (Trader Roster Login via Email + Phone Number)
 router.post('/login', async (req, res) => {
   try {
-    const { email, password } = req.body;
+    const { email, phone, password } = req.body;
+    const inputCredential = String(phone || password || '').trim();
 
-    if (!email || !email.trim() || !password) {
-      return res.status(400).json({ error: 'Email and password are required' });
+    if (!email || !email.trim() || !inputCredential) {
+      return res.status(400).json({ error: 'Email and phone number are required' });
     }
 
     const cleanEmail = email.trim().toLowerCase();
+    const cleanPhone = inputCredential.replace(/\D/g, '');
 
     const user = await prisma.user.findUnique({ where: { email: cleanEmail } });
-    if (!user || user.role === 'ADMIN') {
-      return res.status(401).json({ error: 'Invalid email or password' });
+    if (!user) {
+      return res.status(400).json({ error: "You're not registered for this event. Ask your admin to add you." });
+    }
+    if (user.role === 'ADMIN') {
+      return res.status(401).json({ error: 'Invalid email or phone number' });
     }
 
-    let isMatch = user.passwordHash === password;
+    let isMatch = Boolean(cleanPhone && user.phone && user.phone === cleanPhone);
     if (!isMatch) {
-      isMatch = await bcrypt.compare(password, user.passwordHash).catch(() => false);
+      isMatch = user.passwordHash === inputCredential;
     }
     if (!isMatch) {
-      return res.status(401).json({ error: 'Invalid email or password' });
+      isMatch = await bcrypt.compare(inputCredential, user.passwordHash).catch(() => false);
+    }
+    if (!isMatch && cleanPhone) {
+      isMatch = await bcrypt.compare(cleanPhone, user.passwordHash).catch(() => false);
+    }
+
+    if (!isMatch) {
+      return res.status(400).json({ error: 'Incorrect phone number.' });
+    }
+
+    if (!user.hasLoggedIn) {
+      await prisma.user.update({
+        where: { id: user.id },
+        data: { hasLoggedIn: true }
+      });
     }
 
     const token = generateToken(user);
@@ -86,8 +64,10 @@ router.post('/login', async (req, res) => {
         id: user.id,
         name: user.name,
         email: user.email,
+        phone: user.phone,
         role: user.role,
-        walletBalance: user.walletBalance
+        walletBalance: user.walletBalance,
+        hasLoggedIn: true
       }
     });
   } catch (err) {

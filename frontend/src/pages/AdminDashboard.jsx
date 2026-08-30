@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback, useMemo } from 'react';
+import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { useSocket } from '../context/SocketContext';
 import { useTheme } from '../context/ThemeContext';
@@ -7,11 +7,12 @@ import { GameClock } from '../components/GameClock';
 import { useSession } from '../hooks/useSession';
 import { AdminTraderDetailModal } from '../components/AdminTraderDetailModal';
 import { playNewsChime } from '../services/soundService';
+import * as XLSX from 'xlsx';
 import { 
   TrendingUp, TrendingDown, Shield, LogOut, Radio, Send, 
-  Trophy, Search, RefreshCw, CheckCircle2, AlertCircle, Sparkles, SlidersHorizontal, Clock, Zap, Eye, Sun, Moon, RotateCcw, Bell, Users,
+  Trophy, Search, RefreshCw, CheckCircle2, AlertCircle, Sparkles, SlidersHorizontal, Clock, Zap, Eye, Sun, Moon, RotateCcw, Bell, Users, UserPlus, Upload, Trash2, RotateCcw as ResetIcon, Check, X,
   ThumbsUp, ThumbsDown, Newspaper, PieChart, BarChart3, Filter, ArrowUpRight, ArrowDownRight, Layers, Activity,
-  Play, Square, Coffee, Lock, Check, X, ChevronRight, HelpCircle
+  Play, Square, Coffee, Lock, ChevronRight, HelpCircle
 } from 'lucide-react';
 
 const fmtMoney = (n, d = 2) =>
@@ -19,6 +20,13 @@ const fmtMoney = (n, d = 2) =>
     minimumFractionDigits: d,
     maximumFractionDigits: d
   });
+
+const maskPhone = (phone) => {
+  if (!phone) return '••••----';
+  const clean = String(phone).replace(/\D/g, '');
+  if (clean.length <= 4) return '••••' + clean;
+  return '••••' + clean.slice(-4);
+};
 
 export function AdminDashboard() {
   const adminSession = useSession();
@@ -28,7 +36,7 @@ export function AdminDashboard() {
 
   // Layout & Filter states
   const [newsTab, setNewsTab] = useState('POSITIVE'); // 'POSITIVE' | 'NEGATIVE'
-  const [rightBottomTab, setRightBottomTab] = useState('LEADERBOARD'); // 'LEADERBOARD' | 'ACTIVITY'
+  const [rightBottomTab, setRightBottomTab] = useState('LEADERBOARD'); // 'LEADERBOARD' | 'ACTIVITY' | 'PARTICIPANTS'
   const [stockSortMode, setStockSortMode] = useState('CHANGE'); // 'CHANGE' | 'ALPHA'
   const [searchQuery, setSearchQuery] = useState('');
 
@@ -37,7 +45,7 @@ export function AdminDashboard() {
   
   const [customPercents, setCustomPercents] = useState({});
   const [adjustingStockId, setAdjustingStockId] = useState(null);
-  const [confirmStockAdj, setConfirmStockAdj] = useState(null); // { stockId, percent }
+  const [confirmStockAdj, setConfirmStockAdj] = useState(null);
 
   const [newsMessage, setNewsMessage] = useState('');
   const [sendingNews, setSendingNews] = useState(false);
@@ -54,6 +62,23 @@ export function AdminDashboard() {
   const [leaderboard, setLeaderboard] = useState([]);
   const [loadingLeaderboard, setLoadingLeaderboard] = useState(false);
   const [liveTradeFeed, setLiveTradeFeed] = useState([]);
+
+  /* Participants Roster State */
+  const [participants, setParticipants] = useState([]);
+  const [loadingParticipants, setLoadingParticipants] = useState(false);
+  const [participantSearch, setParticipantSearch] = useState('');
+  
+  const [showAddParticipantModal, setShowAddParticipantModal] = useState(false);
+  const [newPartName, setNewPartName] = useState('');
+  const [newPartEmail, setNewPartEmail] = useState('');
+  const [newPartPhone, setNewPartPhone] = useState('');
+  const [addingParticipant, setAddingParticipant] = useState(false);
+
+  const [showUploadPreviewModal, setShowUploadPreviewModal] = useState(false);
+  const [uploadPreviewRows, setUploadPreviewRows] = useState([]);
+  const [uploadingRoster, setUploadingRoster] = useState(false);
+
+  const fileInputRef = useRef(null);
 
   // Admin Trader Drill-Down Modal state
   const [selectedTraderId, setSelectedTraderId] = useState(null);
@@ -127,11 +152,26 @@ export function AdminDashboard() {
     }
   }, []);
 
+  const fetchParticipants = useCallback(async () => {
+    setLoadingParticipants(true);
+    try {
+      const data = await apiFetch('/admin/participants');
+      if (Array.isArray(data)) {
+        setParticipants(data);
+      }
+    } catch (err) {
+      console.error('Fetch participants error:', err);
+    } finally {
+      setLoadingParticipants(false);
+    }
+  }, []);
+
   useEffect(() => {
     fetchStocks();
     fetchNewsTemplates();
     fetchLeaderboard();
-  }, [fetchStocks, fetchNewsTemplates, fetchLeaderboard]);
+    fetchParticipants();
+  }, [fetchStocks, fetchNewsTemplates, fetchLeaderboard, fetchParticipants]);
 
   /* ---------------- Socket Wiring ---------------- */
   useEffect(() => {
@@ -160,6 +200,7 @@ export function AdminDashboard() {
       };
       setLiveTradeFeed((prev) => [tradeItem, ...prev].slice(0, 30));
       fetchLeaderboard();
+      fetchParticipants();
     };
 
     const handleActivityLog = (log) => {
@@ -208,7 +249,7 @@ export function AdminDashboard() {
       socket.off('break:ended', handleBreakEnded);
       socket.off('session:resumed', handleBreakEnded);
     };
-  }, [socket, adminSession, fetchLeaderboard]);
+  }, [socket, adminSession, fetchLeaderboard, fetchParticipants]);
 
   /* ---------------- Session Handlers ---------------- */
   const handleStartSession = async () => {
@@ -362,6 +403,116 @@ export function AdminDashboard() {
     }
   };
 
+  /* ---------------- Roster Management Handlers ---------------- */
+  const handleFileSelect = (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = async (evt) => {
+      try {
+        const bstr = evt.target.result;
+        const wb = XLSX.read(bstr, { type: 'binary' });
+        const wsName = wb.SheetNames[0];
+        const data = XLSX.utils.sheet_to_json(wb.Sheets[wsName]);
+
+        if (!Array.isArray(data) || data.length === 0) {
+          showToast('Selected file contains no participant rows.', 'error');
+          return;
+        }
+
+        setUploadPreviewRows(data);
+        setShowUploadPreviewModal(true);
+      } catch (err) {
+        showToast('Error reading Excel/CSV file: ' + err.message, 'error');
+      }
+    };
+    reader.readAsBinaryString(file);
+    e.target.value = null; // Reset input
+  };
+
+  const handleConfirmImport = async () => {
+    if (!uploadPreviewRows || uploadPreviewRows.length === 0) return;
+    setUploadingRoster(true);
+    try {
+      const res = await apiFetch('/admin/participants/upload', {
+        method: 'POST',
+        body: JSON.stringify({ rows: uploadPreviewRows })
+      });
+
+      showToast(res.message || 'Roster imported successfully!', 'success');
+      setShowUploadPreviewModal(false);
+      setUploadPreviewRows([]);
+      fetchParticipants();
+      fetchLeaderboard();
+    } catch (err) {
+      showToast(err.message || 'Failed to import roster', 'error');
+    } finally {
+      setUploadingRoster(false);
+    }
+  };
+
+  const handleAddSingleParticipant = async (e) => {
+    e.preventDefault();
+    if (!newPartEmail.trim() || !newPartPhone.trim()) {
+      showToast('Email and Phone Number are required', 'error');
+      return;
+    }
+    setAddingParticipant(true);
+    try {
+      await apiFetch('/admin/participants/add', {
+        method: 'POST',
+        body: JSON.stringify({
+          name: newPartName,
+          email: newPartEmail,
+          phone: newPartPhone
+        })
+      });
+
+      showToast(`Added ${newPartName || newPartEmail} to roster!`, 'success');
+      setShowAddParticipantModal(false);
+      setNewPartName('');
+      setNewPartEmail('');
+      setNewPartPhone('');
+      fetchParticipants();
+    } catch (err) {
+      showToast(err.message || 'Failed to add participant', 'error');
+    } finally {
+      setAddingParticipant(false);
+    }
+  };
+
+  const handleRemoveParticipant = async (p) => {
+    const hasPositions = (p.walletBalance !== 20000) || (p._count && p._count.holdings > 0);
+    const confirmMsg = hasPositions
+      ? `WARNING: ${p.name} has active positions/modified wallet (${p.walletBalance} IC). Remove anyway?`
+      : `Remove ${p.name}? They will not be able to log in.`;
+
+    if (!window.confirm(confirmMsg)) return;
+
+    try {
+      await apiFetch(`/admin/participants/${p.id}`, { method: 'DELETE' });
+      showToast(`Removed ${p.name} from roster`, 'warning');
+      fetchParticipants();
+      fetchLeaderboard();
+    } catch (err) {
+      showToast(err.message || 'Failed to remove participant', 'error');
+    }
+  };
+
+  const handleResetParticipant = async (p) => {
+    if (!window.confirm(`Reset ${p.name}'s wallet to 20,000 IC and clear all positions/trades?`)) return;
+
+    try {
+      await apiFetch(`/admin/participants/${p.id}/reset`, { method: 'POST' });
+      showToast(`Reset portfolio & wallet for ${p.name}`, 'success');
+      fetchParticipants();
+      fetchLeaderboard();
+    } catch (err) {
+      showToast(err.message || 'Failed to reset participant', 'error');
+    }
+  };
+
   /* ---------------- Open Drill-Down Modal ---------------- */
   const handleOpenTraderModal = (traderId) => {
     setSelectedTraderId(traderId);
@@ -390,6 +541,18 @@ export function AdminDashboard() {
 
     return result;
   }, [stocks, searchQuery, stockSortMode]);
+
+  /* ---------------- Filtered Participants ---------------- */
+  const filteredParticipants = useMemo(() => {
+    if (!participantSearch.trim()) return participants;
+    const q = participantSearch.toLowerCase().trim();
+    return participants.filter(
+      (p) =>
+        (p.name && p.name.toLowerCase().includes(q)) ||
+        (p.email && p.email.toLowerCase().includes(q)) ||
+        (p.phone && p.phone.includes(q))
+    );
+  }, [participants, participantSearch]);
 
   /* ---------------- Categorized Templates ---------------- */
   const positiveTemplates = useMemo(
@@ -432,6 +595,15 @@ export function AdminDashboard() {
           <span>{toast.message}</span>
         </div>
       )}
+
+      {/* Hidden File Input for Excel/CSV Import */}
+      <input
+        type="file"
+        ref={fileInputRef}
+        onChange={handleFileSelect}
+        accept=".xlsx, .xls, .csv"
+        className="hidden"
+      />
 
       {/* ==================================================================== */}
       {/* FIXED TOP BAR — Always visible, never scrolls away                    */}
@@ -913,16 +1085,16 @@ export function AdminDashboard() {
             </div>
           </div>
 
-          {/* RIGHT BOTTOM (40% Height) — LEADERBOARD & ACTIVITY TABS */}
+          {/* RIGHT BOTTOM (40% Height) — LEADERBOARD, ACTIVITY & PARTICIPANTS TABS */}
           <div className="h-[40%] bg-[#1A1D27] border border-[#2D3142] rounded-xl p-3.5 shadow-lg flex flex-col overflow-hidden">
             
             {/* Sub-tabs Header */}
             <div className="flex items-center justify-between border-b border-[#2D3142] pb-2 mb-2 shrink-0 font-mono text-xs">
-              <div className="flex items-center gap-1.5 bg-[#0F1117] p-1 rounded-lg border border-[#2D3142]">
+              <div className="flex items-center gap-1 bg-[#0F1117] p-1 rounded-lg border border-[#2D3142]">
                 <button
                   type="button"
                   onClick={() => setRightBottomTab('LEADERBOARD')}
-                  className={`px-3 py-1 rounded-md font-mono text-[10.5px] font-bold transition-all cursor-pointer flex items-center gap-1.5 ${
+                  className={`px-2.5 py-1 rounded-md font-mono text-[10.5px] font-bold transition-all cursor-pointer flex items-center gap-1 ${
                     rightBottomTab === 'LEADERBOARD'
                       ? 'bg-[#F0B429]/20 text-[#F0B429] border border-[#F0B429]/40 shadow-sm'
                       : 'text-[#7B82A0] hover:text-white'
@@ -935,14 +1107,27 @@ export function AdminDashboard() {
                 <button
                   type="button"
                   onClick={() => setRightBottomTab('ACTIVITY')}
-                  className={`px-3 py-1 rounded-md font-mono text-[10.5px] font-bold transition-all cursor-pointer flex items-center gap-1.5 ${
+                  className={`px-2.5 py-1 rounded-md font-mono text-[10.5px] font-bold transition-all cursor-pointer flex items-center gap-1 ${
                     rightBottomTab === 'ACTIVITY'
                       ? 'bg-[#F0B429]/20 text-[#F0B429] border border-[#F0B429]/40 shadow-sm'
                       : 'text-[#7B82A0] hover:text-white'
                   }`}
                 >
                   <Activity className="w-3.5 h-3.5 text-[#F0B429]" />
-                  <span>LIVE ACTIVITY ({liveTradeFeed.length})</span>
+                  <span>LIVE ACTIVITY</span>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => setRightBottomTab('PARTICIPANTS')}
+                  className={`px-2.5 py-1 rounded-md font-mono text-[10.5px] font-bold transition-all cursor-pointer flex items-center gap-1 ${
+                    rightBottomTab === 'PARTICIPANTS'
+                      ? 'bg-[#F0B429]/20 text-[#F0B429] border border-[#F0B429]/40 shadow-sm'
+                      : 'text-[#7B82A0] hover:text-white'
+                  }`}
+                >
+                  <Users className="w-3.5 h-3.5 text-[#F0B429]" />
+                  <span>PARTICIPANTS ({participants.length})</span>
                 </button>
               </div>
 
@@ -956,11 +1141,33 @@ export function AdminDashboard() {
                   REFRESH
                 </button>
               )}
+
+              {rightBottomTab === 'PARTICIPANTS' && (
+                <div className="flex items-center gap-1.5 font-mono">
+                  <button
+                    type="button"
+                    onClick={() => setShowAddParticipantModal(true)}
+                    className="px-2 py-0.5 rounded bg-[#22C55E]/15 border border-[#22C55E]/30 text-[#22C55E] hover:bg-[#22C55E]/30 font-bold text-[10px] flex items-center gap-1 cursor-pointer"
+                  >
+                    <UserPlus className="w-3 h-3" />
+                    <span>Add</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => fileInputRef.current && fileInputRef.current.click()}
+                    className="px-2 py-0.5 rounded bg-[#F0B429]/15 border border-[#F0B429]/30 text-[#F0B429] hover:bg-[#F0B429]/30 font-bold text-[10px] flex items-center gap-1 cursor-pointer"
+                  >
+                    <Upload className="w-3 h-3" />
+                    <span>Upload Excel/CSV</span>
+                  </button>
+                </div>
+              )}
             </div>
 
             {/* Scrollable Sub-tab Content */}
             <div className="flex-1 overflow-y-auto pr-1 space-y-1.5 min-h-0 font-mono text-xs">
-              {rightBottomTab === 'LEADERBOARD' ? (
+              {/* TAB 1: LEADERBOARD */}
+              {rightBottomTab === 'LEADERBOARD' && (
                 loadingLeaderboard ? (
                   <div className="py-8 text-center text-[#7B82A0] text-xs">Loading standings...</div>
                 ) : leaderboard.length === 0 ? (
@@ -1006,8 +1213,10 @@ export function AdminDashboard() {
                     );
                   })
                 )
-              ) : (
-                /* Activity Stream */
+              )}
+
+              {/* TAB 2: LIVE ACTIVITY */}
+              {rightBottomTab === 'ACTIVITY' && (
                 liveTradeFeed.length === 0 ? (
                   <div className="py-8 text-center text-[#7B82A0] text-xs italic">
                     Awaiting live trades & broadcasts...
@@ -1045,6 +1254,87 @@ export function AdminDashboard() {
                   })
                 )
               )}
+
+              {/* TAB 3: PARTICIPANTS ROSTER */}
+              {rightBottomTab === 'PARTICIPANTS' && (
+                <div className="space-y-1.5">
+                  <div className="flex items-center justify-between pb-1 font-mono text-[10.5px] text-[#7B82A0]">
+                    <input
+                      type="text"
+                      placeholder="Filter roster..."
+                      value={participantSearch}
+                      onChange={(e) => setParticipantSearch(e.target.value)}
+                      className="h-6 bg-[#0F1117] border border-[#2D3142] rounded px-2 text-[10px] text-white focus:outline-none focus:border-[#F0B429] w-full"
+                    />
+                  </div>
+
+                  {loadingParticipants ? (
+                    <div className="py-8 text-center text-[#7B82A0] text-xs">Loading participants roster...</div>
+                  ) : filteredParticipants.length === 0 ? (
+                    <div className="py-8 text-center text-[#7B82A0] text-xs italic">No participants found.</div>
+                  ) : (
+                    filteredParticipants.map((p) => {
+                      return (
+                        <div
+                          key={p.id}
+                          className="p-2 bg-[#0F1117] border border-[#2D3142] rounded-lg flex items-center justify-between hover:bg-[#161B27] transition-all text-xs"
+                        >
+                          <div className="flex items-center gap-3">
+                            <div>
+                              <div className="flex items-center gap-2">
+                                <span className="font-bold text-white text-xs">{p.name}</span>
+                                <span
+                                  className={`text-[9px] px-1.5 py-0.2 rounded font-extrabold uppercase ${
+                                    p.hasLoggedIn
+                                      ? 'bg-[#22C55E]/15 text-[#22C55E] border border-[#22C55E]/30'
+                                      : 'bg-[#7B82A0]/15 text-[#7B82A0] border border-[#7B82A0]/30'
+                                  }`}
+                                >
+                                  {p.hasLoggedIn ? 'Logged In' : 'Not Yet Logged In'}
+                                </span>
+                              </div>
+                              <div className="text-[10px] text-[#7B82A0] flex items-center gap-2 mt-0.5">
+                                <span>{p.email}</span>
+                                <span>•</span>
+                                <span title={p.phone}>{maskPhone(p.phone)}</span>
+                              </div>
+                            </div>
+                          </div>
+
+                          <div className="flex items-center gap-3">
+                            <div className="text-right">
+                              <span className="text-xs font-bold text-[#F0F2FF] block">
+                                {fmtMoney(p.walletBalance)} IC
+                              </span>
+                            </div>
+
+                            <div className="flex items-center gap-1">
+                              <button
+                                type="button"
+                                title="Reset Wallet & Portfolio"
+                                onClick={() => handleResetParticipant(p)}
+                                className="p-1 bg-[#F0B429]/15 border border-[#F0B429]/30 text-[#F0B429] hover:bg-[#F0B429]/30 rounded text-[10px] transition-colors cursor-pointer"
+                              >
+                                <RotateCcw className="w-3.5 h-3.5" />
+                              </button>
+
+                              <button
+                                type="button"
+                                title="Remove Participant"
+                                onClick={() => handleRemoveParticipant(p)}
+                                className="p-1 bg-[#EF4444]/15 border border-[#EF4444]/30 text-[#EF4444] hover:bg-[#EF4444]/30 rounded text-[10px] transition-colors cursor-pointer"
+                              >
+                                <Trash2 className="w-3.5 h-3.5" />
+                              </button>
+                            </div>
+                          </div>
+                        </div>
+                      );
+                    })
+                  )}
+                </div>
+              )}
+
             </div>
           </div>
 
@@ -1248,6 +1538,138 @@ export function AdminDashboard() {
               >
                 {isStartingSession ? 'STARTING...' : 'START TOURNAMENT SESSION'}
               </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Add Single Participant Modal */}
+      {showAddParticipantModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 font-mono animate-fadeIn backdrop-blur-xs">
+          <form onSubmit={handleAddSingleParticipant} className="bg-[#1A1D27] border border-[#2D3142] rounded-xl p-6 max-w-md w-full space-y-4 text-white shadow-2xl">
+            <div className="flex items-center justify-between border-b border-[#2D3142] pb-3">
+              <h3 className="text-xs font-bold text-[#F0B429] uppercase flex items-center gap-1.5">
+                <UserPlus className="w-4 h-4" />
+                <span>ADD PARTICIPANT TO ROSTER</span>
+              </h3>
+              <button type="button" onClick={() => setShowAddParticipantModal(false)} className="text-[#7B82A0] hover:text-white cursor-pointer">✕</button>
+            </div>
+
+            <div className="space-y-3 text-xs">
+              <div>
+                <label className="text-[10px] text-[#7B82A0] uppercase block mb-1">Full Name:</label>
+                <input
+                  type="text"
+                  placeholder="e.g. John Doe"
+                  value={newPartName}
+                  onChange={(e) => setNewPartName(e.target.value)}
+                  className="w-full h-9 bg-[#0F1117] border border-[#2D3142] rounded-md px-2.5 text-xs text-white focus:outline-none focus:border-[#F0B429]"
+                />
+              </div>
+
+              <div>
+                <label className="text-[10px] text-[#7B82A0] uppercase block mb-1">Email Address:*</label>
+                <input
+                  type="email"
+                  required
+                  placeholder="john@example.com"
+                  value={newPartEmail}
+                  onChange={(e) => setNewPartEmail(e.target.value)}
+                  className="w-full h-9 bg-[#0F1117] border border-[#2D3142] rounded-md px-2.5 text-xs text-white focus:outline-none focus:border-[#F0B429]"
+                />
+              </div>
+
+              <div>
+                <label className="text-[10px] text-[#7B82A0] uppercase block mb-1">Phone Number (Login Password):*</label>
+                <input
+                  type="text"
+                  required
+                  placeholder="9876543210"
+                  value={newPartPhone}
+                  onChange={(e) => setNewPartPhone(e.target.value)}
+                  className="w-full h-9 bg-[#0F1117] border border-[#2D3142] rounded-md px-2.5 text-xs text-white focus:outline-none focus:border-[#F0B429]"
+                />
+              </div>
+            </div>
+
+            <div className="flex items-center justify-end gap-2 pt-2 border-t border-[#2D3142]">
+              <button
+                type="button"
+                onClick={() => setShowAddParticipantModal(false)}
+                className="px-3 py-1.5 rounded-lg bg-[#2D3142] text-[#7B82A0] hover:text-white text-xs font-bold cursor-pointer"
+              >
+                CANCEL
+              </button>
+              <button
+                type="submit"
+                disabled={addingParticipant}
+                className="px-4 py-1.5 rounded-lg bg-[#F0B429] text-black text-xs font-bold uppercase hover:bg-[#d9a120] cursor-pointer"
+              >
+                {addingParticipant ? 'ADDING...' : 'ADD PARTICIPANT'}
+              </button>
+            </div>
+          </form>
+        </div>
+      )}
+
+      {/* Upload Roster Preview Modal */}
+      {showUploadPreviewModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 font-mono animate-fadeIn backdrop-blur-xs">
+          <div className="bg-[#1A1D27] border border-[#2D3142] rounded-xl p-6 max-w-xl w-full space-y-4 text-white shadow-2xl flex flex-col max-h-[85vh]">
+            <div className="flex items-center justify-between border-b border-[#2D3142] pb-3 shrink-0">
+              <h3 className="text-xs font-bold text-[#F0B429] uppercase flex items-center gap-1.5">
+                <Upload className="w-4 h-4" />
+                <span>PREVIEW IMPORT ({uploadPreviewRows.length} PARTICIPANTS)</span>
+              </h3>
+              <button type="button" onClick={() => setShowUploadPreviewModal(false)} className="text-[#7B82A0] hover:text-white cursor-pointer">✕</button>
+            </div>
+
+            <div className="flex-1 overflow-y-auto pr-1 space-y-1 text-xs">
+              <div className="grid grid-cols-3 font-bold text-[#7B82A0] border-b border-[#2D3142] pb-1.5 text-[10.5px]">
+                <span>NAME</span>
+                <span>EMAIL</span>
+                <span>PHONE</span>
+              </div>
+              {uploadPreviewRows.slice(0, 50).map((r, idx) => {
+                const name = r.Name || r['Full Name'] || r['Student Name'] || r.name || 'Trader';
+                const email = r.Email || r['Email Address'] || r.email || '-';
+                const phone = String(r.Phone || r['Mobile'] || r['Phone Number'] || r.phone || '-');
+                return (
+                  <div key={idx} className="grid grid-cols-3 text-[11px] py-1 border-b border-[#2D3142]/40">
+                    <span className="truncate text-white font-bold">{name}</span>
+                    <span className="truncate text-[#7B82A0]">{email}</span>
+                    <span className="truncate text-[#F0B429]">{phone}</span>
+                  </div>
+                );
+              })}
+              {uploadPreviewRows.length > 50 && (
+                <div className="text-[10px] text-[#7B82A0] text-center pt-2 italic">
+                  ...and {uploadPreviewRows.length - 50} more participants
+                </div>
+              )}
+            </div>
+
+            <div className="flex items-center justify-between pt-3 border-t border-[#2D3142] shrink-0">
+              <span className="text-[10.5px] text-[#7B82A0]">
+                Duplicate emails/phones will be skipped automatically.
+              </span>
+              <div className="flex items-center gap-2">
+                <button
+                  type="button"
+                  onClick={() => setShowUploadPreviewModal(false)}
+                  className="px-3 py-1.5 rounded-lg bg-[#2D3142] text-[#7B82A0] hover:text-white text-xs font-bold cursor-pointer"
+                >
+                  CANCEL
+                </button>
+                <button
+                  type="button"
+                  disabled={uploadingRoster}
+                  onClick={handleConfirmImport}
+                  className="px-4 py-1.5 rounded-lg bg-[#22C55E] text-black text-xs font-bold uppercase hover:bg-[#1eb053] cursor-pointer"
+                >
+                  {uploadingRoster ? 'IMPORTING...' : 'CONFIRM IMPORT'}
+                </button>
+              </div>
             </div>
           </div>
         </div>

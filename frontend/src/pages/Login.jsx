@@ -3,15 +3,15 @@ import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { useTheme } from '../context/ThemeContext';
 import { apiFetch } from '../services/api';
-import { User, Lock, Mail, ArrowRight, Zap, Shield, Sun, Moon } from 'lucide-react';
+import { User, Lock, Mail, ArrowRight, Zap, Shield, Sun, Moon, Phone } from 'lucide-react';
 
 export function Login() {
-  const [activeTab, setActiveTab] = useState('TRADER_SIGNIN'); // 'TRADER_SIGNIN', 'TRADER_REGISTER', 'ADMIN'
+  const [activeTab, setActiveTab] = useState('TRADER_SIGNIN'); // 'TRADER_SIGNIN', 'ADMIN'
   const [isAdminUnlocked, setIsAdminUnlocked] = useState(false);
   const [clickCount, setClickCount] = useState(0);
 
-  const [name, setName] = useState('');
   const [email, setEmail] = useState('');
+  const [phone, setPhone] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
@@ -39,20 +39,16 @@ export function Login() {
     }
   };
 
-  // Trader Sign In / Register submit
+  // Trader Sign In submit (Email + Phone Number)
   const handleTraderSubmit = async (e) => {
     e.preventDefault();
     setError('');
     setLoading(true);
 
     try {
-      const isRegister = activeTab === 'TRADER_REGISTER';
-      const endpoint = isRegister ? '/auth/register' : '/auth/login';
-      const payload = isRegister ? { name, email, password } : { email, password };
-      
-      const data = await apiFetch(endpoint, {
+      const data = await apiFetch('/auth/login', {
         method: 'POST',
-        body: JSON.stringify(payload)
+        body: JSON.stringify({ email, phone })
       });
 
       login(data.token, data.user);
@@ -99,150 +95,79 @@ export function Login() {
         `
       }}
     >
-      {/* Subtle Red & Amber Glow Background Effects */}
-      <div className="absolute inset-0 pointer-events-none z-0 overflow-hidden">
-        {/* Right Red Glow */}
-        <div
-          className="absolute -right-20 top-1/2 -translate-y-1/2 w-[600px] h-[600px] rounded-full blur-3xl opacity-60"
-          style={{
-            background: 'radial-gradient(ellipse at center, rgba(180,20,20,0.12) 0%, transparent 70%)'
-          }}
-        />
-        {/* Left Amber Glow */}
-        <div
-          className="absolute -left-20 top-1/2 -translate-y-1/2 w-[600px] h-[600px] rounded-full blur-3xl opacity-60"
-          style={{
-            background: 'radial-gradient(ellipse at center, rgba(240,180,41,0.09) 0%, transparent 70%)'
-          }}
-        />
-      </div>
+      {/* HEADER */}
+      <header className="flex items-center justify-between z-10 max-w-6xl mx-auto w-full">
+        <div className="flex items-center gap-3">
+          <div
+            onClick={handleSecretTriggerClick}
+            className="w-10 h-10 rounded-xl bg-[#F0B429] flex items-center justify-center shadow-lg shadow-[#F0B429]/20 cursor-pointer transition-transform hover:scale-105 active:scale-95"
+            title="Equity Arena"
+          >
+            <Zap className="w-6 h-6 text-black fill-black" />
+          </div>
+          <div>
+            <h1 className="text-lg font-extrabold tracking-wider font-mono">EQUITY ARENA</h1>
+            <p className="text-[10px] text-[#7B82A0] font-mono tracking-widest uppercase">
+              Live Stock Market Simulation
+            </p>
+          </div>
+        </div>
 
-      {/* Top Bar: Theme Switcher */}
-      <header className="relative z-20 flex justify-end items-center max-w-7xl mx-auto w-full">
         <button
           onClick={toggleTheme}
-          title={`Switch to ${isDark ? 'Light' : 'Dark'} Mode`}
-          className={`px-3.5 py-2 rounded-lg border text-xs font-mono font-bold transition-all flex items-center gap-2 shadow-sm ${
+          className={`p-2.5 rounded-xl border transition-all ${
             isDark
-              ? 'bg-[#0F1117] border-[#2D3142] text-white hover:border-[#F0B429]'
-              : 'bg-white border-[#CBD5E1] text-[#1A1D27] hover:border-[#F0B429]'
+              ? 'bg-[#161B27] border-[#2D3142] text-[#F0F2FF] hover:bg-[#1E2333]'
+              : 'bg-white border-[#CBD5E1] text-[#1A1D27] hover:bg-[#F1F5F9]'
           }`}
+          title="Toggle Theme"
         >
-          {isDark ? (
-            <>
-              <Sun className="w-4 h-4 text-[#F0B429]" />
-              <span>Light Mode</span>
-            </>
-          ) : (
-            <>
-              <Moon className="w-4 h-4 text-indigo-600" />
-              <span>Dark Mode</span>
-            </>
-          )}
+          {isDark ? <Sun className="w-5 h-5" /> : <Moon className="w-5 h-5" />}
         </button>
       </header>
 
-      {/* Main Container: Split Screen Desktop / Single Column Mobile */}
-      <main className="relative z-10 max-w-7xl mx-auto w-full my-auto py-8">
+      {/* MAIN CONTAINER */}
+      <main className="z-10 max-w-5xl mx-auto w-full my-auto py-8">
         <div className="grid grid-cols-1 md:grid-cols-12 gap-8 items-center">
           
-          {/* ================= LEFT COLUMN: HERO PANEL (DESKTOP) ================= */}
-          <div className="hidden md:flex md:col-span-7 flex-col justify-between p-6 lg:p-12 relative min-h-[520px]">
-            {/* Top Amber Strand Light Diagonal Ray */}
-            <div className="absolute inset-0 pointer-events-none overflow-hidden rounded-3xl">
-              <div className="absolute -top-12 -right-12 w-[150%] h-[2px] bg-gradient-to-l from-[#F0B429]/40 via-[#F0B429]/20 to-transparent transform -rotate-12 origin-top-right" />
-              
-              {/* Bottom-left Angular Geometric Web Pattern */}
-              <svg
-                className="absolute bottom-0 left-0 w-72 h-72 text-[#F0B429]/10 pointer-events-none"
-                viewBox="0 0 200 200"
-                fill="none"
-              >
-                <path d="M0 200 L200 0 M0 150 L150 0 M0 100 L100 0 M0 50 L50 0 M50 200 L200 50 M100 200 L200 100" stroke="currentColor" strokeWidth="1" />
-                <circle cx="0" cy="200" r="180" stroke="currentColor" strokeWidth="1" strokeDasharray="4 4" />
-                <circle cx="0" cy="200" r="120" stroke="currentColor" strokeWidth="1" />
-                <circle cx="0" cy="200" r="60" stroke="currentColor" strokeWidth="1" strokeDasharray="2 2" />
-              </svg>
+          {/* LEFT HERO COLUMN */}
+          <div className="md:col-span-6 space-y-6">
+            <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-[#F0B429]/10 border border-[#F0B429]/30 text-[#F0B429] font-mono text-xs font-bold">
+              <span className="w-2 h-2 rounded-full bg-[#F0B429] animate-pulse" />
+              <span>OFFICIAL TOURNAMENT TRADING FLOOR</span>
             </div>
 
-            {/* Content */}
-            <div className="space-y-6 relative z-10">
-              <button
-                type="button"
-                onClick={handleSecretTriggerClick}
-                className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-md bg-[#F0B429]/10 border border-[#F0B429]/30 text-[#F0B429] text-[13px] font-mono font-bold tracking-[0.2em] uppercase select-none hover:bg-[#F0B429]/20 transition-all cursor-pointer"
-                title="Ignite 8.0 Exchange"
-              >
-                <span>◆</span>
-                <span>IGNITE 8.0</span>
-              </button>
+            <h2 className="text-3xl sm:text-4xl lg:text-5xl font-extrabold tracking-tight leading-tight">
+              Trade Real-Time Markets with <span className="text-[#F0B429]">20,000 IC</span> Cash
+            </h2>
 
-              <div className="space-y-0 leading-none">
-                <h1
-                  className={`text-6xl lg:text-[76px] font-black tracking-tight uppercase ${
-                    isDark ? 'text-white drop-shadow-[0_0_30px_rgba(240,180,41,0.35)]' : 'text-[#1A1D27]'
-                  }`}
-                  style={{ fontFamily: 'Space Grotesk, sans-serif' }}
-                >
-                  EQUITY
-                </h1>
-                <h1
-                  className="text-6xl lg:text-[76px] font-black tracking-tight text-[#F0B429] uppercase drop-shadow-[0_0_30px_rgba(240,180,41,0.35)]"
-                  style={{ fontFamily: 'Space Grotesk, sans-serif' }}
-                >
-                  ARENA
-                </h1>
+            <p className="text-sm sm:text-base text-[#7B82A0] font-mono leading-relaxed">
+              Log in with your registered Email and Phone Number to access your tournament trading portal.
+            </p>
+
+            {/* QUICK FEATURES */}
+            <div className="grid grid-cols-2 gap-4 pt-4 font-mono text-xs">
+              <div className={`p-3.5 rounded-xl border ${isDark ? 'bg-[#121622] border-[#2D3142]' : 'bg-white border-[#E2E6F0]'}`}>
+                <div className="font-extrabold text-[#F0B429] text-base mb-1">20,000 IC</div>
+                <div className="text-[#7B82A0]">Starting Balance</div>
               </div>
-
-              <p className={`text-[18px] font-normal ${isDark ? 'text-[#7B82A0]' : 'text-[#374151]'}`}>
-                Trade. Think. Win.
-              </p>
-
-              <p className={`text-[15px] font-normal leading-relaxed max-w-md ${isDark ? 'text-[#94A3B8]' : 'text-[#4B5563]'}`}>
-                15 Indian stocks. 20,000 IC to start. One session to prove yourself.
-              </p>
-            </div>
-
-            {/* Bottom Stats Row */}
-            <div className={`pt-8 border-t ${isDark ? 'border-[#2D3142]/50 text-[#7B82A0]' : 'border-[#CBD5E1] text-[#6B7280]'} text-[12px] font-mono font-bold uppercase tracking-[0.15em] flex items-center gap-3 relative z-10`}>
-              <span>15 STOCKS</span>
-              <span className="text-[#F0B429]">•</span>
-              <span>3 HOURS</span>
-              <span className="text-[#F0B429]">•</span>
-              <span>REAL-TIME PRICES</span>
+              <div className={`p-3.5 rounded-xl border ${isDark ? 'bg-[#121622] border-[#2D3142]' : 'bg-white border-[#E2E6F0]'}`}>
+                <div className="font-extrabold text-[#22C55E] text-base mb-1">15 STOCKS</div>
+                <div className="text-[#7B82A0]">Live Order Book</div>
+              </div>
             </div>
           </div>
 
-          {/* ================= MOBILE HEADER (<768px) ================= */}
-          <div className="md:hidden text-center space-y-2 mb-4">
-            <button
-              type="button"
-              onClick={handleSecretTriggerClick}
-              className="inline-flex items-center gap-2 px-3 py-1 rounded-md bg-[#F0B429]/10 border border-[#F0B429]/30 text-[#F0B429] text-[12px] font-mono font-bold tracking-[0.2em] uppercase"
-            >
-              <span>◆</span>
-              <span>IGNITE 8.0</span>
-            </button>
-            <h1
-              className="text-4xl font-black uppercase tracking-tight"
-              style={{ fontFamily: 'Space Grotesk, sans-serif' }}
-            >
-              <span className={isDark ? 'text-white' : 'text-[#1A1D27]'}>EQUITY </span>
-              <span className="text-[#F0B429]">ARENA</span>
-            </h1>
-            <p className={`text-sm ${isDark ? 'text-[#7B82A0]' : 'text-[#374151]'}`}>Trade. Think. Win.</p>
-          </div>
-
-          {/* ================= RIGHT COLUMN: FORM PANEL ================= */}
-          <div className="md:col-span-5 w-full">
+          {/* RIGHT LOGIN CARD */}
+          <div className="md:col-span-6">
             <div
-              className={`p-6 sm:p-8 lg:p-10 transition-all ${
+              className={`p-6 sm:p-8 rounded-2xl border shadow-2xl transition-all ${
                 isDark
-                  ? 'bg-[#0F1117] border border-[#1E2333] text-white shadow-2xl md:rounded-none rounded-2xl'
-                  : 'bg-white border border-[#E2E6F0] text-[#1A1D27] shadow-[0_4px_24px_rgba(0,0,0,0.08)] md:rounded-none rounded-2xl'
+                  ? 'bg-[#0F1117] border-[#1E2333] text-white shadow-2xl'
+                  : 'bg-white border-[#E2E6F0] text-[#1A1D27] shadow-[0_4px_24px_rgba(0,0,0,0.08)]'
               }`}
             >
-              {/* TAB STRIP: SIGN IN / CREATE ACCOUNT */}
+              {/* TAB STRIP: TRADER LOG IN & ADMIN */}
               <div className="flex items-center border-b border-[#2D3142]/60 mb-6 font-mono">
                 <button
                   type="button"
@@ -255,20 +180,7 @@ export function Login() {
                       : 'text-[#64748B] hover:text-[#1A1D27] border-transparent'
                   }`}
                 >
-                  Sign In
-                </button>
-                <button
-                  type="button"
-                  onClick={() => { setActiveTab('TRADER_REGISTER'); setError(''); }}
-                  className={`py-3 px-5 text-[13px] font-bold uppercase tracking-wider transition-all border-b-2 ${
-                    activeTab === 'TRADER_REGISTER'
-                      ? 'bg-[#F0B429] text-black border-[#F0B429] rounded-t-lg font-extrabold shadow-md'
-                      : isDark
-                      ? 'text-[#7B82A0] hover:text-white border-transparent'
-                      : 'text-[#64748B] hover:text-[#1A1D27] border-transparent'
-                  }`}
-                >
-                  Create Account
+                  Trader Login
                 </button>
 
                 {isAdminUnlocked && (
@@ -296,35 +208,12 @@ export function Login() {
                 </div>
               )}
 
-              {/* TRADER FORM */}
+              {/* TRADER FORM (Email + Phone Number) */}
               {activeTab !== 'ADMIN' && (
-                <form onSubmit={handleTraderSubmit} className="space-y-5">
-                  {activeTab === 'TRADER_REGISTER' && (
-                    <div>
-                      <label className="block text-xs font-mono font-bold uppercase tracking-wider mb-1.5 text-[#7B82A0]">
-                        Full Name
-                      </label>
-                      <div className="relative">
-                        <User className="absolute left-3.5 top-3.5 w-5 h-5 text-[#7B82A0]" />
-                        <input
-                          type="text"
-                          required
-                          value={name}
-                          onChange={(e) => setName(e.target.value)}
-                          placeholder="Your Name"
-                          className={`w-full h-12 pl-11 pr-4 rounded-lg text-[16px] font-sans transition-all focus:outline-none focus:border-[#F0B429] focus:ring-2 focus:ring-[#F0B429]/20 ${
-                            isDark
-                              ? 'bg-[#161B27] border border-[#2D3142] text-white placeholder-[#555E78]'
-                              : 'bg-white border border-[#CBD5E1] text-[#1A1D27] placeholder-[#94A3B8]'
-                          }`}
-                        />
-                      </div>
-                    </div>
-                  )}
-
+                <form onSubmit={handleTraderSubmit} className="space-y-5 font-mono">
                   <div>
-                    <label className="block text-xs font-mono font-bold uppercase tracking-wider mb-1.5 text-[#7B82A0]">
-                      Email Address
+                    <label className="block text-xs font-bold uppercase tracking-wider mb-1.5 text-[#7B82A0]">
+                      Your Email
                     </label>
                     <div className="relative">
                       <Mail className="absolute left-3.5 top-3.5 w-5 h-5 text-[#7B82A0]" />
@@ -334,7 +223,7 @@ export function Login() {
                         value={email}
                         onChange={(e) => setEmail(e.target.value)}
                         placeholder="you@example.com"
-                        className={`w-full h-12 pl-11 pr-4 rounded-lg text-[16px] font-sans transition-all focus:outline-none focus:border-[#F0B429] focus:ring-2 focus:ring-[#F0B429]/20 ${
+                        className={`w-full h-12 pl-11 pr-4 rounded-lg text-[15px] font-sans transition-all focus:outline-none focus:border-[#F0B429] focus:ring-2 focus:ring-[#F0B429]/20 ${
                           isDark
                             ? 'bg-[#161B27] border border-[#2D3142] text-white placeholder-[#555E78]'
                             : 'bg-white border border-[#CBD5E1] text-[#1A1D27] placeholder-[#94A3B8]'
@@ -344,18 +233,18 @@ export function Login() {
                   </div>
 
                   <div>
-                    <label className="block text-xs font-mono font-bold uppercase tracking-wider mb-1.5 text-[#7B82A0]">
-                      Password
+                    <label className="block text-xs font-bold uppercase tracking-wider mb-1.5 text-[#7B82A0]">
+                      Your Phone Number
                     </label>
                     <div className="relative">
-                      <Lock className="absolute left-3.5 top-3.5 w-5 h-5 text-[#7B82A0]" />
+                      <Phone className="absolute left-3.5 top-3.5 w-5 h-5 text-[#7B82A0]" />
                       <input
-                        type="password"
+                        type="text"
                         required
-                        value={password}
-                        onChange={(e) => setPassword(e.target.value)}
-                        placeholder="••••••••"
-                        className={`w-full h-12 pl-11 pr-4 rounded-lg text-[16px] font-sans transition-all focus:outline-none focus:border-[#F0B429] focus:ring-2 focus:ring-[#F0B429]/20 ${
+                        value={phone}
+                        onChange={(e) => setPhone(e.target.value)}
+                        placeholder="9876543210"
+                        className={`w-full h-12 pl-11 pr-4 rounded-lg text-[15px] font-sans transition-all focus:outline-none focus:border-[#F0B429] focus:ring-2 focus:ring-[#F0B429]/20 ${
                           isDark
                             ? 'bg-[#161B27] border border-[#2D3142] text-white placeholder-[#555E78]'
                             : 'bg-white border border-[#CBD5E1] text-[#1A1D27] placeholder-[#94A3B8]'
@@ -367,30 +256,29 @@ export function Login() {
                   <button
                     type="submit"
                     disabled={loading}
-                    className="w-full h-12 bg-[#F0B429] hover:bg-[#f5bc38] text-black font-extrabold text-[16px] font-mono uppercase tracking-wider rounded-lg shadow-lg flex items-center justify-center gap-2 transition-all hover:scale-[1.01] active:scale-[0.99] disabled:opacity-50 mt-8"
+                    className="w-full h-12 bg-[#F0B429] hover:bg-[#f5bc38] text-black font-extrabold text-[15px] font-mono uppercase tracking-wider rounded-lg shadow-lg flex items-center justify-center gap-2 transition-all hover:scale-[1.01] active:scale-[0.99] disabled:opacity-50 mt-6 cursor-pointer"
                   >
                     {loading ? (
                       'AUTHENTICATING...'
                     ) : (
                       <>
                         <Zap className="w-5 h-5 fill-black text-black" />
-                        <span>
-                          {activeTab === 'TRADER_REGISTER'
-                            ? 'START TRADING (20,000 IC CASH)'
-                            : 'LOG IN'}
-                        </span>
-                        <ArrowRight className="w-5 h-5" />
+                        <span>LOG IN →</span>
                       </>
                     )}
                   </button>
+
+                  <p className="text-[11px] text-center text-[#7B82A0] mt-4 font-mono">
+                    Can't log in? Ask the event admin to check your registration.
+                  </p>
                 </form>
               )}
 
               {/* ADMIN FORM */}
               {activeTab === 'ADMIN' && (
-                <form onSubmit={handleAdminSubmit} className="space-y-5">
+                <form onSubmit={handleAdminSubmit} className="space-y-5 font-mono">
                   <div>
-                    <label className="block text-xs font-mono font-bold uppercase tracking-wider mb-1.5 text-[#7B82A0]">
+                    <label className="block text-xs font-bold uppercase tracking-wider mb-1.5 text-[#7B82A0]">
                       Admin Email
                     </label>
                     <div className="relative">
@@ -401,7 +289,7 @@ export function Login() {
                         value={email}
                         onChange={(e) => setEmail(e.target.value)}
                         placeholder="admin@test.com"
-                        className={`w-full h-12 pl-11 pr-4 rounded-lg text-[16px] font-sans transition-all focus:outline-none focus:border-[#F0B429] focus:ring-2 focus:ring-[#F0B429]/20 ${
+                        className={`w-full h-12 pl-11 pr-4 rounded-lg text-[15px] font-sans transition-all focus:outline-none focus:border-[#F0B429] focus:ring-2 focus:ring-[#F0B429]/20 ${
                           isDark
                             ? 'bg-[#161B27] border border-[#2D3142] text-white placeholder-[#555E78]'
                             : 'bg-white border border-[#CBD5E1] text-[#1A1D27] placeholder-[#94A3B8]'
@@ -411,7 +299,7 @@ export function Login() {
                   </div>
 
                   <div>
-                    <label className="block text-xs font-mono font-bold uppercase tracking-wider mb-1.5 text-[#7B82A0]">
+                    <label className="block text-xs font-bold uppercase tracking-wider mb-1.5 text-[#7B82A0]">
                       Admin Password
                     </label>
                     <div className="relative">
@@ -422,7 +310,7 @@ export function Login() {
                         value={password}
                         onChange={(e) => setPassword(e.target.value)}
                         placeholder="••••••••"
-                        className={`w-full h-12 pl-11 pr-4 rounded-lg text-[16px] font-sans transition-all focus:outline-none focus:border-[#F0B429] focus:ring-2 focus:ring-[#F0B429]/20 ${
+                        className={`w-full h-12 pl-11 pr-4 rounded-lg text-[15px] font-sans transition-all focus:outline-none focus:border-[#F0B429] focus:ring-2 focus:ring-[#F0B429]/20 ${
                           isDark
                             ? 'bg-[#161B27] border border-[#2D3142] text-white placeholder-[#555E78]'
                             : 'bg-white border border-[#CBD5E1] text-[#1A1D27] placeholder-[#94A3B8]'
@@ -434,28 +322,29 @@ export function Login() {
                   <button
                     type="submit"
                     disabled={loading}
-                    className="w-full h-12 bg-[#F0B429] hover:bg-[#f5bc38] text-black font-extrabold text-[16px] font-mono uppercase tracking-wider rounded-lg shadow-lg flex items-center justify-center gap-2 transition-all hover:scale-[1.01] active:scale-[0.99] disabled:opacity-50 mt-8"
+                    className="w-full h-12 bg-[#F0B429] hover:bg-[#f5bc38] text-black font-extrabold text-[15px] font-mono uppercase tracking-wider rounded-lg shadow-lg flex items-center justify-center gap-2 transition-all hover:scale-[1.01] active:scale-[0.99] disabled:opacity-50 mt-6 cursor-pointer"
                   >
                     {loading ? (
                       'AUTHENTICATING...'
                     ) : (
                       <>
                         <Shield className="w-5 h-5 text-black" />
-                        <span>ADMIN LOG IN</span>
-                        <ArrowRight className="w-5 h-5" />
+                        <span>ADMIN ACCESS</span>
                       </>
                     )}
                   </button>
                 </form>
               )}
+
             </div>
           </div>
+
         </div>
       </main>
 
-      {/* Footer Watermark */}
-      <footer className="relative z-10 text-center font-mono text-[11px] text-[#555E78] uppercase tracking-widest pt-4">
-        EQUITY ARENA · IGNITE 8.0 · India Stock Exchange
+      {/* FOOTER */}
+      <footer className="z-10 max-w-6xl mx-auto w-full text-center text-xs font-mono text-[#7B82A0] pt-4">
+        Antigravity Coding Engine • Equity Arena 2.0 • Secure Roster Authentication
       </footer>
     </div>
   );

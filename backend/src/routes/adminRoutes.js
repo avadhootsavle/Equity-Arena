@@ -534,4 +534,198 @@ router.post('/trader/:id/topup', async (req, res) => {
   }
 });
 
+// GET /admin/participants
+router.get('/participants', async (req, res) => {
+  try {
+    const participants = await prisma.user.findMany({
+      where: { role: 'TRADER' },
+      select: {
+        id: true,
+        name: true,
+        email: true,
+        phone: true,
+        walletBalance: true,
+        hasLoggedIn: true,
+        isPreloaded: true,
+        isTestAccount: true,
+        createdAt: true,
+        _count: {
+          select: { holdings: true, orders: true, transactions: true }
+        }
+      },
+      orderBy: { createdAt: 'desc' }
+    });
+
+    return res.json(participants);
+  } catch (err) {
+    console.error('Get participants error:', err);
+    return res.status(500).json({ error: 'Failed to fetch participants' });
+  }
+});
+
+// POST /admin/participants/upload (Import roster array)
+router.post('/participants/upload', async (req, res) => {
+  try {
+    const { rows } = req.body;
+    if (!Array.isArray(rows) || rows.length === 0) {
+      return res.status(400).json({ error: 'Participant rows array is required' });
+    }
+
+    let createdCount = 0;
+    let skippedCount = 0;
+
+    for (const row of rows) {
+      const rawName = row.Name || row['Full Name'] || row['Student Name'] || row.name || '';
+      const rawEmail = row.Email || row['Email Address'] || row.email || '';
+      const rawPhone = String(row.Phone || row['Mobile'] || row['Phone Number'] || row.phone || '').trim();
+
+      if (!rawEmail || !rawPhone) {
+        skippedCount++;
+        continue;
+      }
+
+      const cleanEmail = String(rawEmail).trim().toLowerCase();
+      const cleanName = String(rawName).trim() || cleanEmail.split('@')[0];
+      const cleanPhone = rawPhone.replace(/\D/g, '');
+
+      const existing = await prisma.user.findFirst({
+        where: {
+          OR: [{ email: cleanEmail }, { phone: cleanPhone }]
+        }
+      });
+
+      if (existing) {
+        skippedCount++;
+        continue;
+      }
+
+      const passwordHash = await bcrypt.hash(cleanPhone, 10);
+      await prisma.user.create({
+        data: {
+          name: cleanName,
+          email: cleanEmail,
+          phone: cleanPhone,
+          passwordHash,
+          role: 'TRADER',
+          walletBalance: 20000,
+          isTestAccount: false,
+          isPreloaded: true,
+          hasLoggedIn: false
+        }
+      });
+      createdCount++;
+    }
+
+    return res.json({
+      message: `${createdCount} participants imported, ${skippedCount} already existed (skipped)`,
+      createdCount,
+      skippedCount
+    });
+  } catch (err) {
+    console.error('Upload participants error:', err);
+    return res.status(500).json({ error: 'Failed to import participants' });
+  }
+});
+
+// POST /admin/participants/add
+router.post('/participants/add', async (req, res) => {
+  try {
+    const { name, email, phone } = req.body;
+    if (!email || !email.trim() || !phone || !String(phone).trim()) {
+      return res.status(400).json({ error: 'Email and Phone Number are required' });
+    }
+
+    const cleanEmail = email.trim().toLowerCase();
+    const cleanPhone = String(phone).trim().replace(/\D/g, '');
+    const cleanName = (name && name.trim()) ? name.trim() : cleanEmail.split('@')[0];
+
+    const existing = await prisma.user.findFirst({
+      where: { OR: [{ email: cleanEmail }, { phone: cleanPhone }] }
+    });
+    if (existing) {
+      return res.status(400).json({ error: 'Participant with this email or phone already exists' });
+    }
+
+    const passwordHash = await bcrypt.hash(cleanPhone, 10);
+    const user = await prisma.user.create({
+      data: {
+        name: cleanName,
+        email: cleanEmail,
+        phone: cleanPhone,
+        passwordHash,
+        role: 'TRADER',
+        walletBalance: 20000,
+        isTestAccount: false,
+        isPreloaded: true,
+        hasLoggedIn: false
+      }
+    });
+
+    return res.status(201).json({ message: 'Participant added successfully', user });
+  } catch (err) {
+    console.error('Add participant error:', err);
+    return res.status(500).json({ error: 'Failed to add participant' });
+  }
+});
+
+// DELETE /admin/participants/:id
+router.delete('/participants/:id', async (req, res) => {
+  try {
+    const { id } = req.params;
+    const user = await prisma.user.findUnique({ where: { id } });
+    if (!user) {
+      return res.status(404).json({ error: 'Participant not found' });
+    }
+
+    await prisma.$transaction([
+      prisma.order.deleteMany({ where: { userId: id } }),
+      prisma.holding.deleteMany({ where: { userId: id } }),
+      prisma.transaction.deleteMany({ where: { userId: id } }),
+      prisma.user.delete({ where: { id } })
+    ]);
+
+    broadcastPublicLeaderboard();
+    return res.json({ message: `Participant ${user.name} removed successfully` });
+  } catch (err) {
+    console.error('Delete participant error:', err);
+    return res.status(500).json({ error: 'Failed to remove participant' });
+  }
+});
+
+// POST /admin/participants/:id/reset
+router.post('/participants/:id/reset', async (req, res) => {
+  try {
+    const { id } = req.params;
+    const user = await prisma.user.findUnique({ where: { id } });
+    if (!user) {
+      return res.status(404).json({ error: 'Participant not found' });
+    }
+
+    let passwordHash = user.passwordHash;
+    if (user.phone) {
+      passwordHash = await bcrypt.hash(user.phone, 10);
+    }
+
+    await prisma.$transaction([
+      prisma.order.deleteMany({ where: { userId: id } }),
+      prisma.holding.deleteMany({ where: { userId: id } }),
+      prisma.transaction.deleteMany({ where: { userId: id } }),
+      prisma.user.update({
+        where: { id },
+        data: {
+          walletBalance: 20000,
+          passwordHash,
+          hasLoggedIn: false
+        }
+      })
+    ]);
+
+    broadcastPublicLeaderboard();
+    return res.json({ message: `Reset wallet and portfolio for ${user.name} to 20,000 IC` });
+  } catch (err) {
+    console.error('Reset participant error:', err);
+    return res.status(500).json({ error: 'Failed to reset participant' });
+  }
+});
+
 module.exports = router;
