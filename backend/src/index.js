@@ -131,12 +131,26 @@ if (hasClientBuild) {
   });
 }
 
-const PORT = process.env.PORT || 5001;
-
 if (require.main === module) {
-  server.listen(PORT, '0.0.0.0', () => {
+  const listener = server.listen(PORT, '0.0.0.0', () => {
     console.log(`🚀 Equity Arena Server listening on http://0.0.0.0:${PORT} (Bound to all network interfaces)`);
   });
+
+  process.once('SIGUSR2', () => {
+    listener.close(() => {
+      process.kill(process.pid, 'SIGUSR2');
+    });
+  });
+
+  const gracefulShutdown = () => {
+    listener.close(() => {
+      process.exit(0);
+    });
+    setTimeout(() => process.exit(0), 1000).unref();
+  };
+
+  process.on('SIGINT', gracefulShutdown);
+  process.on('SIGTERM', gracefulShutdown);
 }
 
 module.exports = { app, server };
