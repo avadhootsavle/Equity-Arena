@@ -116,8 +116,7 @@ export function TopBar({
       <div className="flex items-center gap-3 px-3 sm:px-5 h-[54px]">
         {/* Brand / Exchange Status Badge */}
         <div className="flex items-center gap-2">
-          <img src="/vite.svg" alt="Equity Arena Logo" className="w-6 h-6 rounded-md shrink-0" />
-          <span className="w-2 h-2 rounded-full bg-[#10B981] animate-ping" />
+          <span className="w-2.5 h-2.5 rounded-full bg-[#10B981] animate-ping" />
           <span className="text-xs font-mono font-bold tracking-wider uppercase text-[#F0B429]">
             EQUITY ARENA · LIVE EXCHANGE
           </span>
