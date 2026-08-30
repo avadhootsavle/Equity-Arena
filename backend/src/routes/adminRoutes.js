@@ -259,8 +259,8 @@ router.post('/news', async (req, res) => {
   }
 });
 
-// GET /admin/news-templates
-router.get('/news-templates', async (req, res) => {
+// GET /admin/news-templates or /admin/news/templates
+router.get(['/news-templates', '/news/templates'], async (req, res) => {
   try {
     const [templates, stocks] = await Promise.all([
       prisma.newsTemplate.findMany({ orderBy: { createdAt: 'asc' } }),

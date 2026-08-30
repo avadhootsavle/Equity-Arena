@@ -43,6 +43,7 @@ export function AdminDashboard() {
   const [sendingNews, setSendingNews] = useState(false);
 
   const [templates, setTemplates] = useState([]);
+  const [loadingTemplates, setLoadingTemplates] = useState(true);
   const [usedTemplateIds, setUsedTemplateIds] = useState([]);
   const [inlineConfirmTplId, setInlineConfirmTplId] = useState(null);
   const [customNewsConfirm, setCustomNewsConfirm] = useState(false);
@@ -96,16 +97,18 @@ export function AdminDashboard() {
   }, []);
 
   const fetchNewsTemplates = useCallback(async () => {
+    setLoadingTemplates(true);
     try {
-      const data = await apiFetch('/admin/news/templates');
-      if (data && Array.isArray(data.templates)) {
-        setTemplates(data.templates);
-        if (Array.isArray(data.usedTemplateIds)) {
-          setUsedTemplateIds(data.usedTemplateIds);
-        }
+      const data = await apiFetch('/admin/news-templates');
+      const tpls = Array.isArray(data) ? data : (data?.templates || []);
+      setTemplates(tpls);
+      if (data?.usedTemplateIds && Array.isArray(data.usedTemplateIds)) {
+        setUsedTemplateIds(data.usedTemplateIds);
       }
     } catch (err) {
       console.error('Fetch news templates error:', err);
+    } finally {
+      setLoadingTemplates(false);
     }
   }, []);
 
@@ -384,12 +387,22 @@ export function AdminDashboard() {
 
   /* ---------------- Categorized Templates ---------------- */
   const positiveTemplates = useMemo(
-    () => templates.filter((t) => (t.effectPercent || 0) >= 0 || t.type === 'POSITIVE'),
+    () => templates.filter((t) => {
+      if (t.type === 'POSITIVE') return true;
+      if (t.type === 'NEGATIVE') return false;
+      const eff = t.targetStocks && t.targetStocks[0] ? t.targetStocks[0].effectPercent : t.effectPercent;
+      return (eff || 0) >= 0;
+    }),
     [templates]
   );
 
   const negativeTemplates = useMemo(
-    () => templates.filter((t) => (t.effectPercent || 0) < 0 || t.type === 'NEGATIVE'),
+    () => templates.filter((t) => {
+      if (t.type === 'NEGATIVE') return true;
+      if (t.type === 'POSITIVE') return false;
+      const eff = t.targetStocks && t.targetStocks[0] ? t.targetStocks[0].effectPercent : t.effectPercent;
+      return (eff || 0) < 0;
+    }),
     [templates]
   );
 
@@ -458,7 +471,7 @@ export function AdminDashboard() {
               <button
                 type="button"
                 onClick={() => setShowSessionConfigModal(true)}
-                className="px-2.5 py-1 rounded bg-[#F0B429] hover:bg-[#d9a120] text-black font-extrabold text-[10px] uppercase transition-all shadow-sm"
+                className="px-2.5 py-1 rounded bg-[#F0B429] hover:bg-[#d9a120] text-black font-extrabold text-[10px] uppercase transition-all shadow-sm cursor-pointer"
               >
                 + START SESSION
               </button>
@@ -483,10 +496,9 @@ export function AdminDashboard() {
             <button
               type="button"
               onClick={() => setShowBreakModal(true)}
-              className="px-3 py-1.5 rounded-lg bg-[#F0B429]/15 border border-[#F0B429]/40 text-[#F0B429] hover:bg-[#F0B429]/30 text-xs font-bold uppercase flex items-center gap-1.5 transition-all cursor-pointer"
+              className="px-3 py-1.5 rounded-lg bg-[#F0B429]/15 border border-[#F0B429]/40 text-[#F0B429] hover:bg-[#F0B429]/30 text-xs font-mono font-bold flex items-center gap-1.5 transition-all cursor-pointer"
             >
-              <Coffee className="w-3.5 h-3.5" />
-              <span>PAUSE BREAK</span>
+              <span>⏸ BREAK</span>
             </button>
           )}
 
@@ -494,10 +506,10 @@ export function AdminDashboard() {
             <button
               type="button"
               onClick={handleResumeSession}
-              className="px-3 py-1.5 rounded-lg bg-[#22C55E] text-black hover:bg-[#1eb053] text-xs font-bold uppercase flex items-center gap-1.5 transition-all cursor-pointer"
+              className="px-3 py-1.5 rounded-lg bg-[#22C55E] text-black hover:bg-[#1eb053] text-xs font-mono font-bold uppercase flex items-center gap-1.5 transition-all cursor-pointer"
             >
               <Play className="w-3.5 h-3.5 fill-black" />
-              <span>RESUME TRADING</span>
+              <span>RESUME</span>
             </button>
           )}
 
@@ -505,10 +517,9 @@ export function AdminDashboard() {
             <button
               type="button"
               onClick={handleEndSession}
-              className="px-3 py-1.5 rounded-lg bg-[#EF4444]/15 border border-[#EF4444]/40 text-[#EF4444] hover:bg-[#EF4444]/30 text-xs font-bold uppercase flex items-center gap-1.5 transition-all cursor-pointer"
+              className="px-3 py-1.5 rounded-lg bg-[#EF4444]/15 border border-[#EF4444]/40 text-[#EF4444] hover:bg-[#EF4444]/30 text-xs font-mono font-bold flex items-center gap-1.5 transition-all cursor-pointer"
             >
-              <Square className="w-3.5 h-3.5 fill-current" />
-              <span>END SESSION</span>
+              <span>■ END</span>
             </button>
           )}
 
@@ -538,7 +549,7 @@ export function AdminDashboard() {
         {/* ------------------------------------------------------------------ */}
         {/* LEFT COLUMN (45% Width / lg:col-span-5) — SEND NEWS                */}
         {/* ------------------------------------------------------------------ */}
-        <section className="lg:col-span-5 bg-[#1A1D27] border border-[#2D3142] rounded-xl p-3.5 shadow-lg flex flex-col h-full overflow-hidden">
+        <section className="lg:col-span-5 bg-[#1A1D27] border border-[#2D3142] rounded-xl p-3.5 shadow-lg flex flex-col h-full overflow-hidden border-r border-[#2D3142]/80">
           
           {/* Header & Positive / Negative Toggle Tabs */}
           <div className="flex items-center justify-between border-b border-[#2D3142] pb-2.5 mb-2.5 shrink-0">
@@ -581,106 +592,109 @@ export function AdminDashboard() {
 
           {/* Scrollable Templates List (Independent Container) */}
           <div className="flex-1 overflow-y-auto pr-1 space-y-1.5 min-h-0">
-            {activeTemplates.map((t) => {
-              const isUsed = usedTemplateIds.includes(t.id);
-              const isConfirming = inlineConfirmTplId === t.id;
-              const targets = t.targetStocks && t.targetStocks.length > 0
-                ? t.targetStocks
-                : [{ stockName: t.sector, symbol: '', effectPercent: t.effectPercent }];
+            {loadingTemplates ? (
+              <div className="py-16 text-center text-[#7B82A0] text-xs font-mono">Loading news templates...</div>
+            ) : activeTemplates.length === 0 ? (
+              <div className="py-16 text-center text-[#7B82A0] text-xs font-mono italic">No templates found in this category.</div>
+            ) : (
+              activeTemplates.map((t) => {
+                const isUsed = usedTemplateIds.includes(t.id);
+                const isConfirming = inlineConfirmTplId === t.id;
+                const targets = t.targetStocks && t.targetStocks.length > 0
+                  ? t.targetStocks
+                  : [{ stockName: t.sector, symbol: '', effectPercent: t.effectPercent }];
 
-              return (
-                <div
-                  key={t.id}
-                  className={`p-2 rounded-lg border transition-all font-mono text-xs ${
-                    isConfirming
-                      ? 'bg-[#0F1117] border-[#F0B429]/60 shadow-md'
-                      : isUsed
-                      ? 'bg-[#0F1117]/60 border-[#2D3142]/60 opacity-60'
-                      : 'bg-[#0F1117] border-[#2D3142] hover:bg-[#161B27]'
-                  }`}
-                >
-                  <div className="flex items-center justify-between gap-2">
-                    {/* Truncated Headline */}
-                    <p
-                      className={`text-[11px] truncate flex-1 leading-tight ${
-                        isUsed ? 'line-through text-[#7B82A0]' : 'text-[#F0F2FF]'
-                      }`}
-                      title={t.headline}
-                    >
-                      {t.headline}
-                    </p>
-
-                    {/* Inline Affected Target Stock Badge */}
-                    <div className="flex items-center gap-1 shrink-0">
-                      {targets.map((tgt, idx) => {
-                        const isUp = tgt.effectPercent >= 0;
-                        return (
-                          <span
-                            key={idx}
-                            className={`text-[9.5px] font-extrabold px-1.5 py-0.5 rounded border ${
-                              isUp
-                                ? 'bg-[#22C55E]/10 border-[#22C55E]/30 text-[#22C55E]'
-                                : 'bg-[#EF4444]/10 border-[#EF4444]/30 text-[#EF4444]'
-                            }`}
-                          >
-                            {tgt.symbol || tgt.stockName} {isUp ? '▲+' : '▼'}{tgt.effectPercent}%
-                          </span>
-                        );
-                      })}
-                    </div>
-
-                    {/* Send Action Trigger */}
-                    {!isConfirming ? (
-                      <button
-                        type="button"
-                        onClick={() => setInlineConfirmTplId(t.id)}
-                        className={`px-2.5 py-1 text-[10px] font-bold rounded uppercase tracking-wider transition-all shrink-0 cursor-pointer ${
-                          newsTab === 'POSITIVE'
-                            ? 'bg-[#22C55E]/15 border border-[#22C55E]/30 text-[#22C55E] hover:bg-[#22C55E]/30'
-                            : 'bg-[#EF4444]/15 border border-[#EF4444]/30 text-[#EF4444] hover:bg-[#EF4444]/30'
+                return (
+                  <div
+                    key={t.id}
+                    className={`p-2 rounded-lg border transition-all font-mono text-xs ${
+                      isConfirming
+                        ? 'bg-[#0F1117] border-[#F0B429]/60 shadow-md'
+                        : isUsed
+                        ? 'bg-[#0F1117]/60 border-[#2D3142]/60 opacity-50'
+                        : 'bg-[#0F1117] border-[#2D3142] hover:bg-[#161B27]'
+                    }`}
+                  >
+                    <div className="flex items-center justify-between gap-2">
+                      {/* 13px One-Line Truncated Headline */}
+                      <p
+                        className={`text-[13px] font-mono leading-snug truncate flex-1 ${
+                          isUsed ? 'line-through text-[#7B82A0]' : 'text-[#F0F2FF]'
                         }`}
+                        title={t.headline}
                       >
-                        SEND
-                      </button>
-                    ) : null}
-                  </div>
+                        {t.headline}
+                      </p>
 
-                  {/* Inline Delay & Confirm Row */}
-                  {isConfirming && (
-                    <div className="flex items-center justify-between pt-1.5 mt-1 border-t border-[#2D3142] text-[10px] font-mono animate-fadeIn">
-                      <div className="flex items-center gap-1.5">
-                        <span className="text-[#7B82A0]">Delay:</span>
-                        <input
-                          type="number"
-                          value={delaySeconds}
-                          onChange={(e) => setDelaySeconds(parseInt(e.target.value, 10) || 0)}
-                          className="w-12 h-5 bg-[#1A1D27] border border-[#2D3142] text-center rounded text-[10px] text-white focus:outline-none focus:border-[#F0B429]"
-                        />
-                        <span className="text-[#7B82A0]">sec</span>
+                      {/* Inline Target Stock Pill */}
+                      <div className="flex items-center gap-1 shrink-0">
+                        {targets.map((tgt, idx) => {
+                          const isUp = (tgt.effectPercent !== undefined ? tgt.effectPercent : t.effectPercent) >= 0;
+                          const pctVal = tgt.effectPercent !== undefined ? tgt.effectPercent : t.effectPercent;
+                          return (
+                            <span
+                              key={idx}
+                              className={`text-[10.5px] font-mono font-bold px-2 py-0.5 rounded-full border ${
+                                isUp
+                                  ? 'bg-[#22C55E]/15 border-[#22C55E]/30 text-[#22C55E]'
+                                  : 'bg-[#EF4444]/15 border-[#EF4444]/30 text-[#EF4444]'
+                              }`}
+                            >
+                              → {tgt.symbol || tgt.stockName} {isUp ? '▲+' : '▼'}{pctVal}%
+                            </span>
+                          );
+                        })}
                       </div>
 
-                      <div className="flex items-center gap-1">
+                      {/* Amber SEND Button (28px height) */}
+                      {!isConfirming ? (
                         <button
                           type="button"
-                          disabled={triggeringTemplateId === t.id}
-                          onClick={() => handleTriggerTemplate(t.id)}
-                          className="px-3 py-1 bg-[#22C55E] text-black font-extrabold text-[9.5px] rounded uppercase hover:bg-[#1eb053] transition-colors cursor-pointer"
+                          onClick={() => setInlineConfirmTplId(t.id)}
+                          className="h-[28px] px-3 bg-[#F0B429]/10 border border-[#F0B429]/40 text-[#F0B429] hover:bg-[#F0B429]/25 text-xs font-mono font-bold rounded-lg transition-all cursor-pointer shadow-xs shrink-0 flex items-center justify-center"
                         >
-                          {triggeringTemplateId === t.id ? 'SENDING...' : 'CONFIRM'}
+                          SEND
                         </button>
-                        <button
-                          type="button"
-                          onClick={() => setInlineConfirmTplId(null)}
-                          className="px-2 py-1 bg-[#2D3142] text-[#7B82A0] hover:text-white font-bold text-[9.5px] rounded cursor-pointer"
-                        >
-                          ✕
-                        </button>
-                      </div>
+                      ) : null}
                     </div>
-                  )}
-                </div>
-              );
-            })}
+
+                    {/* Inline Delay & Confirm Row */}
+                    {isConfirming && (
+                      <div className="flex items-center justify-between pt-1.5 mt-1 border-t border-[#2D3142] text-[10.5px] font-mono animate-fadeIn">
+                        <div className="flex items-center gap-1.5">
+                          <span className="text-[#7B82A0]">Delay:</span>
+                          <input
+                            type="number"
+                            value={delaySeconds}
+                            onChange={(e) => setDelaySeconds(parseInt(e.target.value, 10) || 0)}
+                            className="w-12 h-6 bg-[#1A1D27] border border-[#2D3142] text-center rounded text-xs text-white focus:outline-none focus:border-[#F0B429]"
+                          />
+                          <span className="text-[#7B82A0]">sec</span>
+                        </div>
+
+                        <div className="flex items-center gap-1.5">
+                          <button
+                            type="button"
+                            disabled={triggeringTemplateId === t.id}
+                            onClick={() => handleTriggerTemplate(t.id)}
+                            className="h-6 px-3 bg-[#22C55E] text-black font-extrabold text-[10px] rounded uppercase hover:bg-[#1eb053] transition-colors cursor-pointer"
+                          >
+                            {triggeringTemplateId === t.id ? 'SENDING...' : 'CONFIRM SEND'}
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => setInlineConfirmTplId(null)}
+                            className="h-6 px-2 bg-[#2D3142] text-[#7B82A0] hover:text-white font-bold text-[10px] rounded cursor-pointer"
+                          >
+                            ✕
+                          </button>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                );
+              })
+            )}
           </div>
 
           {/* Compact Custom Breaking News Input Area (Pinned at Bottom) */}
@@ -702,7 +716,7 @@ export function AdminDashboard() {
                 type="button"
                 disabled={sendingNews || !newsMessage.trim()}
                 onClick={() => setCustomNewsConfirm(true)}
-                className="w-full py-1.5 bg-[#F0B429] text-black font-bold text-xs rounded-lg uppercase tracking-wider hover:bg-[#d9a120] transition-colors disabled:opacity-50 cursor-pointer"
+                className="w-full py-1.5 bg-[#F0B429] text-black font-bold text-xs rounded-lg uppercase tracking-wider hover:bg-[#d9a120] transition-colors disabled:opacity-50 cursor-pointer shadow-xs"
               >
                 SEND CUSTOM NEWS
               </button>
@@ -775,7 +789,7 @@ export function AdminDashboard() {
               </div>
             </div>
 
-            {/* Scrollable Compact Stock Rows (Independent Container) */}
+            {/* Scrollable Compact Stock Rows with Subtle Hover Highlight */}
             <div className="flex-1 overflow-y-auto pr-1 space-y-1.5 min-h-0 font-mono">
               {loadingStocks ? (
                 <div className="py-12 text-center text-[#7B82A0] text-xs">Loading market stocks...</div>
@@ -790,7 +804,7 @@ export function AdminDashboard() {
                   return (
                     <div
                       key={s.id}
-                      className="p-2 bg-[#0F1117] border border-[#2D3142] rounded-lg hover:bg-[#161B27] transition-colors flex items-center justify-between text-xs gap-2"
+                      className="p-2 bg-[#0F1117] border border-[#2D3142] rounded-lg hover:bg-[#181C28] hover:border-[#F0B429]/40 transition-all flex items-center justify-between text-xs gap-2 shadow-xs"
                     >
                       {/* Symbol & Name */}
                       <div className="flex items-center gap-2 min-w-0 flex-1">
@@ -825,6 +839,7 @@ export function AdminDashboard() {
                           ))}
                         </div>
 
+                        {/* Custom % Apply Button (Amber) */}
                         {!isConfirmingCustom ? (
                           <div className="flex items-center gap-1">
                             <input
@@ -839,7 +854,7 @@ export function AdminDashboard() {
                             <button
                               type="button"
                               onClick={() => handleCustomApplyClick(s.id)}
-                              className="px-1.5 py-0.5 bg-[#F0B429]/20 border border-[#F0B429]/40 text-[#F0B429] font-bold text-[10px] rounded hover:bg-[#F0B429]/40 transition-colors cursor-pointer"
+                              className="px-2 py-0.5 bg-[#F0B429] hover:bg-[#d9a120] text-black font-extrabold text-[10px] rounded transition-all cursor-pointer shadow-xs"
                             >
                               APPLY
                             </button>
@@ -926,14 +941,15 @@ export function AdminDashboard() {
                 ) : (
                   leaderboard.map((entry) => {
                     const isTop1 = entry.rank === 1;
-                    const isTop3 = entry.rank <= 3;
 
                     return (
                       <div
                         key={entry.id || entry.rank}
                         className={`p-2 bg-[#0F1117] border ${
-                          isTop3 ? 'border-l-4 border-l-[#F0B429] border-[#2D3142]' : 'border-[#2D3142]'
-                        } rounded-lg flex items-center justify-between hover:bg-[#161B27] transition-colors`}
+                          isTop1
+                            ? 'border-l-4 border-l-[#F0B429] border-[#F0B429]/40 bg-[#F0B429]/5 shadow-[0_0_12px_rgba(240,180,41,0.12)]'
+                            : 'border-[#2D3142]'
+                        } rounded-lg flex items-center justify-between hover:bg-[#161B27] transition-all`}
                       >
                         <div className="flex items-center gap-3">
                           <span className={`font-extrabold text-xs w-5 ${isTop1 ? 'text-[#F0B429]' : 'text-[#7B82A0]'}`}>
@@ -948,9 +964,6 @@ export function AdminDashboard() {
                           <div className="text-right">
                             <span className="text-xs font-extrabold text-[#22C55E] block">
                               {fmtMoney(entry.totalPortfolioValue)} IC
-                            </span>
-                            <span className="text-[9.5px] text-[#7B82A0] block">
-                              Cash: {fmtMoney(entry.walletBalance)} IC
                             </span>
                           </div>
 

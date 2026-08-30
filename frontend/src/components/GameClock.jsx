@@ -83,7 +83,7 @@ function Segment({ value, label, urgent, size, isPaused }) {
         {value}
       </div>
       <span
-        className="text-[12px] font-mono uppercase tracking-[0.18em] mt-1.5"
+        className="text-[10px] font-mono uppercase tracking-[0.18em] mt-1 text-center w-full block"
         style={{ color: isPaused ? 'var(--accent)' : urgent ? 'var(--loss-red)' : 'var(--text-dim)' }}
       >
         {label}
