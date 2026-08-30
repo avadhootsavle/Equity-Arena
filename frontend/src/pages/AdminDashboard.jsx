@@ -21,13 +21,6 @@ const fmtMoney = (n, d = 2) =>
     maximumFractionDigits: d
   });
 
-const maskPhone = (phone) => {
-  if (!phone) return '••••----';
-  const clean = String(phone).replace(/\D/g, '');
-  if (clean.length <= 4) return '••••' + clean;
-  return '••••' + clean.slice(-4);
-};
-
 export function AdminDashboard() {
   const adminSession = useSession();
   const { user, logout } = useAuth();
@@ -67,6 +60,8 @@ export function AdminDashboard() {
   const [participants, setParticipants] = useState([]);
   const [loadingParticipants, setLoadingParticipants] = useState(false);
   const [participantSearch, setParticipantSearch] = useState('');
+  const [resetConfirmPartId, setResetConfirmPartId] = useState(null);
+  const [resettingPartId, setResettingPartId] = useState(null);
   
   const [showAddParticipantModal, setShowAddParticipantModal] = useState(false);
   const [newPartName, setNewPartName] = useState('');
@@ -581,15 +576,27 @@ export function AdminDashboard() {
   };
 
   const handleResetParticipant = async (p) => {
-    if (!window.confirm(`Reset ${p.name}'s wallet to 20,000 IC and clear all positions/trades?`)) return;
-
+    setResettingPartId(p.id);
     try {
-      await apiFetch(`/admin/participants/${p.id}/reset`, { method: 'POST' });
-      showToast(`Reset portfolio & wallet for ${p.name}`, 'success');
+      let res;
+      try {
+        res = await apiFetch(`/admin/participants/${p.id}/reset`, { method: 'POST' });
+      } catch (err) {
+        if (err.status === 404) {
+          res = await apiFetch(`/api/admin/participants/${p.id}/reset`, { method: 'POST' });
+        } else {
+          throw err;
+        }
+      }
+
+      showToast(res.message || `Reset ${p.name}'s wallet to 20,000 IC and cleared all positions/orders`, 'success');
+      setResetConfirmPartId(null);
       fetchParticipants();
       fetchLeaderboard();
     } catch (err) {
       showToast(err.message || 'Failed to reset participant', 'error');
+    } finally {
+      setResettingPartId(null);
     }
   };
 
@@ -1350,7 +1357,7 @@ export function AdminDashboard() {
                   <div className="flex items-center justify-between pb-1 font-mono text-[10.5px] text-[#7B82A0]">
                     <input
                       type="text"
-                      placeholder="Filter roster..."
+                      placeholder="Filter roster by name, email or phone..."
                       value={participantSearch}
                       onChange={(e) => setParticipantSearch(e.target.value)}
                       className="h-6 bg-[#0F1117] border border-[#2D3142] rounded px-2 text-[10px] text-white focus:outline-none focus:border-[#F0B429] w-full"
@@ -1360,63 +1367,117 @@ export function AdminDashboard() {
                   {loadingParticipants ? (
                     <div className="py-8 text-center text-[#7B82A0] text-xs">Loading participants roster...</div>
                   ) : filteredParticipants.length === 0 ? (
-                    <div className="py-8 text-center text-[#7B82A0] text-xs italic">No participants found.</div>
+                    /* Step 4 Empty State with Clear Call-to-Action Upload Button */
+                    <div className="py-8 px-4 text-center bg-[#0F1117] border border-[#2D3142] rounded-xl space-y-3 font-mono">
+                      <div className="w-10 h-10 rounded-full bg-[#F0B429]/10 border border-[#F0B429]/30 flex items-center justify-center mx-auto text-[#F0B429]">
+                        <Users className="w-5 h-5" />
+                      </div>
+                      <div>
+                        <h4 className="text-xs font-bold text-white uppercase tracking-wider">No Participants in Roster Yet</h4>
+                        <p className="text-[10.5px] text-[#7B82A0] max-w-sm mx-auto mt-1">
+                          Traders cannot log in until you upload the event participant roster list (Excel or CSV).
+                        </p>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => fileInputRef.current && fileInputRef.current.click()}
+                        className="px-4 py-2 bg-[#F0B429] hover:bg-[#d9a120] text-black font-extrabold text-xs rounded-lg uppercase tracking-wider transition-all cursor-pointer shadow-md inline-flex items-center gap-2"
+                      >
+                        <Upload className="w-4 h-4" />
+                        <span>Upload Participant List (Excel or CSV)</span>
+                      </button>
+                    </div>
                   ) : (
                     filteredParticipants.map((p) => {
+                      const isConfirmingReset = resetConfirmPartId === p.id;
+                      const isResetting = resettingPartId === p.id;
+
                       return (
                         <div
                           key={p.id}
                           className="p-2 bg-[#0F1117] border border-[#2D3142] rounded-lg flex items-center justify-between hover:bg-[#161B27] transition-all text-xs"
                         >
-                          <div className="flex items-center gap-3">
-                            <div>
-                              <div className="flex items-center gap-2">
-                                <span className="font-bold text-white text-xs">{p.name}</span>
-                                <span
-                                  className={`text-[9px] px-1.5 py-0.2 rounded font-extrabold uppercase ${
-                                    p.hasLoggedIn
-                                      ? 'bg-[#22C55E]/15 text-[#22C55E] border border-[#22C55E]/30'
-                                      : 'bg-[#7B82A0]/15 text-[#7B82A0] border border-[#7B82A0]/30'
-                                  }`}
-                                >
-                                  {p.hasLoggedIn ? 'Logged In' : 'Not Yet Logged In'}
-                                </span>
+                          {!isConfirmingReset ? (
+                            <>
+                              {/* Left: Name, Email & Unmasked Full Phone Number */}
+                              <div className="flex items-center gap-3 min-w-0 flex-1 pr-2">
+                                <div className="min-w-0 flex-1">
+                                  <div className="flex items-center gap-2">
+                                    <span className="font-bold text-white text-xs truncate">{p.name}</span>
+                                    <span
+                                      className={`text-[9px] px-1.5 py-0.2 rounded font-extrabold uppercase shrink-0 ${
+                                        p.hasLoggedIn
+                                          ? 'bg-[#22C55E]/15 text-[#22C55E] border border-[#22C55E]/30'
+                                          : 'bg-[#7B82A0]/15 text-[#7B82A0] border border-[#7B82A0]/30'
+                                      }`}
+                                    >
+                                      {p.hasLoggedIn ? 'Logged In' : 'Not Yet'}
+                                    </span>
+                                  </div>
+                                  <div className="text-[10px] text-[#7B82A0] flex items-center gap-2 mt-0.5 font-mono truncate">
+                                    <span className="truncate">{p.email}</span>
+                                    <span>•</span>
+                                    <span className="text-[#F0B429] font-bold shrink-0">{p.phone || '-'}</span>
+                                  </div>
+                                </div>
                               </div>
-                              <div className="text-[10px] text-[#7B82A0] flex items-center gap-2 mt-0.5">
-                                <span>{p.email}</span>
-                                <span>•</span>
-                                <span title={p.phone}>{maskPhone(p.phone)}</span>
-                              </div>
-                            </div>
-                          </div>
 
-                          <div className="flex items-center gap-3">
-                            <div className="text-right">
-                              <span className="text-xs font-bold text-[#F0F2FF] block">
-                                {fmtMoney(p.walletBalance)} IC
+                              {/* Right: Wallet Balance + Action Buttons */}
+                              <div className="flex items-center gap-2 shrink-0">
+                                <div className="text-right">
+                                  <span className="text-xs font-bold text-[#22C55E] block">
+                                    {fmtMoney(p.walletBalance)} IC
+                                  </span>
+                                </div>
+
+                                <div className="flex items-center gap-1">
+                                  <button
+                                    type="button"
+                                    title="Reset Wallet & Portfolio"
+                                    onClick={() => setResetConfirmPartId(p.id)}
+                                    className="px-2 py-1 bg-[#F0B429]/15 border border-[#F0B429]/30 text-[#F0B429] hover:bg-[#F0B429]/30 rounded text-[10px] font-bold transition-colors cursor-pointer flex items-center gap-1"
+                                  >
+                                    <RotateCcw className="w-3 h-3" />
+                                    <span>Reset</span>
+                                  </button>
+
+                                  <button
+                                    type="button"
+                                    title="Remove Participant"
+                                    onClick={() => handleRemoveParticipant(p)}
+                                    className="px-2 py-1 bg-[#EF4444]/15 border border-[#EF4444]/30 text-[#EF4444] hover:bg-[#EF4444]/30 rounded text-[10px] font-bold transition-colors cursor-pointer flex items-center gap-1"
+                                  >
+                                    <Trash2 className="w-3 h-3" />
+                                    <span>Remove</span>
+                                  </button>
+                                </div>
+                              </div>
+                            </>
+                          ) : (
+                            /* Step 2 Inline Reset Confirmation Prompt */
+                            <div className="w-full flex items-center justify-between gap-2 p-1 bg-[#F0B429]/10 border border-[#F0B429]/40 rounded-md animate-fadeIn">
+                              <span className="text-[11px] text-[#F0B429] font-bold truncate">
+                                Reset {p.name} to 20,000 IC and clear all trades?
                               </span>
+                              <div className="flex items-center gap-1.5 shrink-0">
+                                <button
+                                  type="button"
+                                  disabled={isResetting}
+                                  onClick={() => handleResetParticipant(p)}
+                                  className="px-2.5 py-1 bg-[#F0B429] text-black font-extrabold text-[10px] rounded uppercase hover:bg-[#d9a120] cursor-pointer shadow-xs"
+                                >
+                                  {isResetting ? 'RESETTING...' : 'CONFIRM RESET'}
+                                </button>
+                                <button
+                                  type="button"
+                                  onClick={() => setResetConfirmPartId(null)}
+                                  className="px-2 py-1 bg-[#2D3142] text-[#7B82A0] hover:text-white text-[10px] font-bold rounded cursor-pointer"
+                                >
+                                  CANCEL
+                                </button>
+                              </div>
                             </div>
-
-                            <div className="flex items-center gap-1">
-                              <button
-                                type="button"
-                                title="Reset Wallet & Portfolio"
-                                onClick={() => handleResetParticipant(p)}
-                                className="p-1 bg-[#F0B429]/15 border border-[#F0B429]/30 text-[#F0B429] hover:bg-[#F0B429]/30 rounded text-[10px] transition-colors cursor-pointer"
-                              >
-                                <RotateCcw className="w-3.5 h-3.5" />
-                              </button>
-
-                              <button
-                                type="button"
-                                title="Remove Participant"
-                                onClick={() => handleRemoveParticipant(p)}
-                                className="p-1 bg-[#EF4444]/15 border border-[#EF4444]/30 text-[#EF4444] hover:bg-[#EF4444]/30 rounded text-[10px] transition-colors cursor-pointer"
-                              >
-                                <Trash2 className="w-3.5 h-3.5" />
-                              </button>
-                            </div>
-                          </div>
+                          )}
                         </div>
                       );
                     })
@@ -1737,7 +1798,7 @@ export function AdminDashboard() {
 
             <div className="flex items-center justify-between pt-3 border-t border-[#2D3142] shrink-0">
               <span className="text-[10.5px] text-[#7B82A0]">
-                Duplicate emails/phones will be skipped automatically.
+                Duplicate emails/phones will be updated automatically.
               </span>
               <div className="flex items-center gap-2">
                 <button

@@ -802,8 +802,15 @@ router.post('/participants/:id/reset', async (req, res) => {
       })
     ]);
 
+    emitPortfolioUpdate(id, {
+      walletBalance: 20000,
+      availableWalletBalance: 20000,
+      holdings: [],
+      reason: 'ADMIN_RESET'
+    });
+
     broadcastPublicLeaderboard();
-    return res.json({ message: `Reset wallet and portfolio for ${user.name} to 20,000 IC` });
+    return res.json({ message: `Reset ${user.name} to 20,000 IC and cleared all positions/orders` });
   } catch (err) {
     console.error('Reset participant error:', err);
     return res.status(500).json({ error: 'Failed to reset participant' });
