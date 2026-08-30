@@ -101,8 +101,7 @@ app.get('/health', (req, res) => {
 });
 
 // Serve frontend static build files (if compiled dist folder exists)
-const distPath = path.join(__dirname, '../../frontend/dist');
-if (fs.existsSync(distPath)) {
+if (hasClientBuild) {
   app.use(express.static(distPath, {
     setHeaders: (res, filePath) => {
       if (filePath.endsWith('index.html')) {
