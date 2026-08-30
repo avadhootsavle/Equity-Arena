@@ -61,12 +61,17 @@ export function AdminDashboard() {
   const [loadingParticipants, setLoadingParticipants] = useState(false);
   const [participantSearch, setParticipantSearch] = useState('');
   const [resetConfirmPartId, setResetConfirmPartId] = useState(null);
+  const [removeConfirmPartId, setRemoveConfirmPartId] = useState(null);
   const [resettingPartId, setResettingPartId] = useState(null);
+  const [removingPartId, setRemovingPartId] = useState(null);
   const [showResetAllModal, setShowResetAllModal] = useState(false);
   const [resettingAll, setResettingAll] = useState(false);
   const [showDeleteAllModal, setShowDeleteAllModal] = useState(false);
   const [deletingAll, setDeletingAll] = useState(false);
   
+  const removeTimerRef = useRef(null);
+  const resetTimerRef = useRef(null);
+
   const [showAddParticipantModal, setShowAddParticipantModal] = useState(false);
   const [newPartName, setNewPartName] = useState('');
   const [newPartEmail, setNewPartEmail] = useState('');
@@ -418,7 +423,7 @@ export function AdminDashboard() {
   };
 
   /* ---------------- Roster Management Handlers ---------------- */
-  const parseRowData = (row) => {
+  const parseRowData = (row, index) => {
     if (!row || typeof row !== 'object') return null;
 
     let rawName = '';
@@ -430,11 +435,11 @@ export function AdminDashboard() {
       const k = String(key).trim().toLowerCase().replace(/[^a-z0-9]/g, '');
       const v = String(val).trim();
 
-      if (!rawName && (k.includes('name') || k.includes('student') || k.includes('participant') || k.includes('trader'))) {
+      if (!rawName && (k.includes('fullname') || k.includes('studentname') || k.includes('name') || k.includes('participant') || k.includes('trader') || k.includes('user'))) {
         rawName = v;
-      } else if (!rawEmail && (k.includes('email') || k.includes('mail'))) {
+      } else if (!rawEmail && (k.includes('emailaddress') || k.includes('email') || k.includes('mail'))) {
         rawEmail = v;
-      } else if (!rawPhone && (k.includes('phone') || k.includes('mobile') || k.includes('contact') || k.includes('number') || k.includes('cell') || k.includes('tel'))) {
+      } else if (!rawPhone && (k.includes('phonenumber') || k.includes('mobilenumber') || k.includes('phone') || k.includes('mobile') || k.includes('contact') || k.includes('cell') || k.includes('tel'))) {
         rawPhone = v;
       }
     }
@@ -457,11 +462,21 @@ export function AdminDashboard() {
 
     const cleanEmail = rawEmail.trim().toLowerCase();
     const cleanPhone = rawPhone.replace(/\D/g, '');
-    const cleanName = rawName.trim() || (cleanEmail ? cleanEmail.split('@')[0] : 'Trader');
+    const cleanName = rawName.trim();
 
-    if (!cleanEmail || !cleanPhone) return null;
+    const missingFields = [];
+    if (!cleanName) missingFields.push('Name');
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!cleanEmail || !emailRegex.test(cleanEmail)) missingFields.push('Email');
+    if (!cleanPhone || cleanPhone.length < 7) missingFields.push('Phone');
 
-    return { name: cleanName, email: cleanEmail, phone: cleanPhone };
+    return {
+      rowIndex: index + 1,
+      name: cleanName || 'Missing Name',
+      email: cleanEmail || 'Missing Email',
+      phone: cleanPhone || 'Missing Phone',
+      missingFields
+    };
   };
 
   const handleFileSelect = (e) => {
@@ -481,10 +496,10 @@ export function AdminDashboard() {
           return;
         }
 
-        const cleanRows = rawData.map(parseRowData).filter(Boolean);
+        const cleanRows = rawData.map((row, idx) => parseRowData(row, idx)).filter(Boolean);
 
         if (cleanRows.length === 0) {
-          showToast('Could not extract valid Name, Email, and Phone rows from file.', 'error');
+          showToast('Could not extract participant rows from file.', 'error');
           return;
         }
 
@@ -499,27 +514,38 @@ export function AdminDashboard() {
   };
 
   const handleConfirmImport = async () => {
-    if (!uploadPreviewRows || uploadPreviewRows.length === 0) return;
+    const validRows = uploadPreviewRows.filter((r) => r.missingFields.length === 0);
+    if (!validRows || validRows.length === 0) {
+      showToast('No valid participant rows to import.', 'error');
+      return;
+    }
     setUploadingRoster(true);
     try {
       let res;
       try {
         res = await apiFetch('/admin/participants/upload', {
           method: 'POST',
-          body: JSON.stringify({ rows: uploadPreviewRows })
+          body: JSON.stringify({ rows: validRows })
         });
       } catch (firstErr) {
         if (firstErr.status === 404) {
           res = await apiFetch('/api/admin/participants/upload', {
             method: 'POST',
-            body: JSON.stringify({ rows: uploadPreviewRows })
+            body: JSON.stringify({ rows: validRows })
           });
         } else {
           throw firstErr;
         }
       }
 
-      showToast(res.message || 'Roster imported successfully!', 'success');
+      const totalFound = uploadPreviewRows.length;
+      const createdCount = res.createdCount || 0;
+      const skippedEmailCount = res.skippedEmailCount || 0;
+      const skippedDataCount = (totalFound - validRows.length) + (res.skippedDataCount || 0);
+
+      const finalMsg = res.message || `Import Result: ${createdCount} accounts created, ${skippedEmailCount} skipped because email already exists, ${skippedDataCount} skipped because of missing data.`;
+
+      showToast(finalMsg, 'success');
       setShowUploadPreviewModal(false);
       setUploadPreviewRows([]);
       fetchParticipants();
@@ -533,27 +559,70 @@ export function AdminDashboard() {
 
   const handleAddSingleParticipant = async (e) => {
     e.preventDefault();
-    if (!newPartEmail.trim() || !newPartPhone.trim()) {
-      showToast('Email and Phone Number are required', 'error');
+    const cleanName = newPartName.trim();
+    const cleanEmail = newPartEmail.trim().toLowerCase();
+    const cleanPhone = newPartPhone.trim().replace(/\D/g, '');
+
+    if (!cleanName) {
+      showToast('Full Name is required', 'error');
       return;
     }
+
+    if (!cleanEmail) {
+      showToast('Email Address is required', 'error');
+      return;
+    }
+
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(cleanEmail)) {
+      showToast('Please enter a valid email address (e.g. name@example.com)', 'error');
+      return;
+    }
+
+    if (!cleanPhone) {
+      showToast('Phone Number is required', 'error');
+      return;
+    }
+
+    if (cleanPhone.length < 7) {
+      showToast('Please enter a valid phone number (at least 7 digits)', 'error');
+      return;
+    }
+
     setAddingParticipant(true);
     try {
-      await apiFetch('/admin/participants/add', {
-        method: 'POST',
-        body: JSON.stringify({
-          name: newPartName,
-          email: newPartEmail,
-          phone: newPartPhone
-        })
-      });
+      let res;
+      try {
+        res = await apiFetch('/admin/participants/add', {
+          method: 'POST',
+          body: JSON.stringify({
+            name: cleanName,
+            email: cleanEmail,
+            phone: cleanPhone
+          })
+        });
+      } catch (firstErr) {
+        if (firstErr.status === 404) {
+          res = await apiFetch('/api/admin/participants/add', {
+            method: 'POST',
+            body: JSON.stringify({
+              name: cleanName,
+              email: cleanEmail,
+              phone: cleanPhone
+            })
+          });
+        } else {
+          throw firstErr;
+        }
+      }
 
-      showToast(`Added ${newPartName || newPartEmail} to roster!`, 'success');
+      showToast(res.message || `Participant ${cleanName} added successfully!`, 'success');
       setShowAddParticipantModal(false);
       setNewPartName('');
       setNewPartEmail('');
       setNewPartPhone('');
       fetchParticipants();
+      fetchLeaderboard();
     } catch (err) {
       showToast(err.message || 'Failed to add participant', 'error');
     } finally {
@@ -561,25 +630,67 @@ export function AdminDashboard() {
     }
   };
 
-  const handleRemoveParticipant = async (p) => {
-    const hasPositions = (p.walletBalance !== 20000) || (p._count && p._count.holdings > 0);
-    const confirmMsg = hasPositions
-      ? `WARNING: ${p.name} has active positions/modified wallet (${p.walletBalance} IC). Remove anyway?`
-      : `Remove ${p.name}? They will not be able to log in.`;
+  /* Inline 2-Step Confirmation & Auto-Cancel Handlers */
+  const handleRemoveClick = (p) => {
+    if (resetTimerRef.current) clearTimeout(resetTimerRef.current);
+    if (removeTimerRef.current) clearTimeout(removeTimerRef.current);
+    setResetConfirmPartId(null);
+    setRemoveConfirmPartId(p.id);
 
-    if (!window.confirm(confirmMsg)) return;
+    removeTimerRef.current = setTimeout(() => {
+      setRemoveConfirmPartId(null);
+    }, 10000);
+  };
 
+  const handleCancelRemove = () => {
+    if (removeTimerRef.current) clearTimeout(removeTimerRef.current);
+    setRemoveConfirmPartId(null);
+  };
+
+  const handleConfirmRemove = async (p) => {
+    if (removeTimerRef.current) clearTimeout(removeTimerRef.current);
+    setRemovingPartId(p.id);
     try {
-      await apiFetch(`/admin/participants/${p.id}`, { method: 'DELETE' });
-      showToast(`Removed ${p.name} from roster`, 'warning');
+      let res;
+      try {
+        res = await apiFetch(`/admin/participants/${p.id}`, { method: 'DELETE' });
+      } catch (err) {
+        if (err.status === 404) {
+          res = await apiFetch(`/api/admin/participants/${p.id}`, { method: 'DELETE' });
+        } else {
+          throw err;
+        }
+      }
+
+      showToast(res.message || `Participant ${p.name} removed successfully`, 'warning');
+      setRemoveConfirmPartId(null);
       fetchParticipants();
       fetchLeaderboard();
     } catch (err) {
       showToast(err.message || 'Failed to remove participant', 'error');
+    } finally {
+      setRemovingPartId(null);
     }
   };
 
-  const handleResetParticipant = async (p) => {
+  const handleResetClick = (p) => {
+    if (removeTimerRef.current) clearTimeout(removeTimerRef.current);
+    if (resetTimerRef.current) clearTimeout(resetTimerRef.current);
+    setRemoveConfirmPartId(null);
+    setResetConfirmPartId(p.id);
+
+    resetTimerRef.current = setTimeout(() => {
+      setResetConfirmPartId(null);
+    }, 10000);
+  };
+
+  const handleCancelReset = () => {
+    if (resetTimerRef.current) clearTimeout(resetTimerRef.current);
+    setResetConfirmPartId(null);
+  };
+
+  const handleConfirmReset = async (p) => {
+    if (resetTimerRef.current) clearTimeout(resetTimerRef.current);
     setResettingPartId(p.id);
     try {
       let res;
@@ -593,7 +704,7 @@ export function AdminDashboard() {
         }
       }
 
-      showToast(res.message || `Reset ${p.name}'s wallet to 20,000 IC and cleared all positions/orders`, 'success');
+      showToast(res.message || `Reset ${p.name} to 20,000 IC and cleared all trades and holdings.`, 'success');
       setResetConfirmPartId(null);
       fetchParticipants();
       fetchLeaderboard();
@@ -1465,14 +1576,64 @@ export function AdminDashboard() {
                   ) : (
                     filteredParticipants.map((p) => {
                       const isConfirmingReset = resetConfirmPartId === p.id;
+                      const isConfirmingRemove = removeConfirmPartId === p.id;
                       const isResetting = resettingPartId === p.id;
+                      const isRemoving = removingPartId === p.id;
 
                       return (
                         <div
                           key={p.id}
-                          className="p-2 bg-[#0F1117] border border-[#2D3142] rounded-lg flex items-center justify-between hover:bg-[#161B27] transition-all text-xs"
+                          className="p-2 bg-[#0F1117] border border-[#2D3142] rounded-lg flex items-center justify-between hover:bg-[#161B27] transition-all text-xs min-h-[46px]"
                         >
-                          {!isConfirmingReset ? (
+                          {isConfirmingRemove ? (
+                            /* Inline 2-Step Remove Confirmation Row */
+                            <div className="w-full flex items-center justify-between gap-2 p-1.5 bg-[#EF4444]/10 border border-[#EF4444]/40 rounded-md animate-fadeIn font-mono">
+                              <span className="text-[11px] text-[#EF4444] font-bold truncate">
+                                Remove {p.name} permanently? They will not be able to log in.
+                              </span>
+                              <div className="flex items-center gap-1.5 shrink-0">
+                                <button
+                                  type="button"
+                                  disabled={isRemoving}
+                                  onClick={() => handleConfirmRemove(p)}
+                                  className="px-3 py-1 bg-[#EF4444] text-white font-extrabold text-[10px] rounded uppercase hover:bg-[#dc2626] cursor-pointer shadow-xs"
+                                >
+                                  {isRemoving ? 'REMOVING...' : 'YES REMOVE'}
+                                </button>
+                                <button
+                                  type="button"
+                                  onClick={handleCancelRemove}
+                                  className="px-2.5 py-1 bg-[#2D3142] text-[#7B82A0] hover:text-white text-[10px] font-bold rounded cursor-pointer"
+                                >
+                                  CANCEL
+                                </button>
+                              </div>
+                            </div>
+                          ) : isConfirmingReset ? (
+                            /* Inline 2-Step Reset Confirmation Row */
+                            <div className="w-full flex items-center justify-between gap-2 p-1.5 bg-[#F0B429]/10 border border-[#F0B429]/40 rounded-md animate-fadeIn font-mono">
+                              <span className="text-[11px] text-[#F0B429] font-bold truncate">
+                                Reset {p.name} to 20,000 IC and clear all their trades and holdings?
+                              </span>
+                              <div className="flex items-center gap-1.5 shrink-0">
+                                <button
+                                  type="button"
+                                  disabled={isResetting}
+                                  onClick={() => handleConfirmReset(p)}
+                                  className="px-3 py-1 bg-[#F0B429] text-black font-extrabold text-[10px] rounded uppercase hover:bg-[#d9a120] cursor-pointer shadow-xs"
+                                >
+                                  {isResetting ? 'RESETTING...' : 'YES RESET'}
+                                </button>
+                                <button
+                                  type="button"
+                                  onClick={handleCancelReset}
+                                  className="px-2.5 py-1 bg-[#2D3142] text-[#7B82A0] hover:text-white text-[10px] font-bold rounded cursor-pointer"
+                                >
+                                  CANCEL
+                                </button>
+                              </div>
+                            </div>
+                          ) : (
                             <>
                               {/* Left: Name, Email & Unmasked Full Phone Number */}
                               <div className="flex items-center gap-3 min-w-0 flex-1 pr-2">
@@ -1480,17 +1641,18 @@ export function AdminDashboard() {
                                   <div className="flex items-center gap-2">
                                     <span className="font-bold text-white text-xs truncate">{p.name}</span>
                                     <span
-                                      className={`text-[9px] px-1.5 py-0.2 rounded font-extrabold uppercase shrink-0 ${
+                                      className={`text-[9px] px-1.5 py-0.2 rounded font-extrabold uppercase shrink-0 flex items-center gap-1 ${
                                         p.hasLoggedIn
                                           ? 'bg-[#22C55E]/15 text-[#22C55E] border border-[#22C55E]/30'
                                           : 'bg-[#7B82A0]/15 text-[#7B82A0] border border-[#7B82A0]/30'
                                       }`}
                                     >
-                                      {p.hasLoggedIn ? 'Logged In' : 'Not Yet'}
+                                      <span className={`w-1.5 h-1.5 rounded-full ${p.hasLoggedIn ? 'bg-[#22C55E] animate-pulse' : 'bg-[#7B82A0]'}`} />
+                                      <span>{p.hasLoggedIn ? 'Logged In' : 'Not Yet'}</span>
                                     </span>
                                   </div>
                                   <div className="text-[10px] text-[#7B82A0] flex items-center gap-2 mt-0.5 font-mono truncate">
-                                    <span className="truncate">{p.email}</span>
+                                    <span className="truncate text-slate-300">{p.email}</span>
                                     <span>•</span>
                                     <span className="text-[#F0B429] font-bold shrink-0">{p.phone || '-'}</span>
                                   </div>
@@ -1499,7 +1661,7 @@ export function AdminDashboard() {
 
                               {/* Right: Wallet Balance + Action Buttons */}
                               <div className="flex items-center gap-2 shrink-0">
-                                <div className="text-right">
+                                <div className="text-right pr-1">
                                   <span className="text-xs font-bold text-[#22C55E] block">
                                     {fmtMoney(p.walletBalance)} IC
                                   </span>
@@ -1509,7 +1671,7 @@ export function AdminDashboard() {
                                   <button
                                     type="button"
                                     title="Reset Wallet & Portfolio"
-                                    onClick={() => setResetConfirmPartId(p.id)}
+                                    onClick={() => handleResetClick(p)}
                                     className="px-2 py-1 bg-[#F0B429]/15 border border-[#F0B429]/30 text-[#F0B429] hover:bg-[#F0B429]/30 rounded text-[10px] font-bold transition-colors cursor-pointer flex items-center gap-1"
                                   >
                                     <RotateCcw className="w-3 h-3" />
@@ -1519,7 +1681,7 @@ export function AdminDashboard() {
                                   <button
                                     type="button"
                                     title="Remove Participant"
-                                    onClick={() => handleRemoveParticipant(p)}
+                                    onClick={() => handleRemoveClick(p)}
                                     className="px-2 py-1 bg-[#EF4444]/15 border border-[#EF4444]/30 text-[#EF4444] hover:bg-[#EF4444]/30 rounded text-[10px] font-bold transition-colors cursor-pointer flex items-center gap-1"
                                   >
                                     <Trash2 className="w-3 h-3" />
@@ -1528,30 +1690,6 @@ export function AdminDashboard() {
                                 </div>
                               </div>
                             </>
-                          ) : (
-                            /* Step 2 Inline Reset Confirmation Prompt */
-                            <div className="w-full flex items-center justify-between gap-2 p-1 bg-[#F0B429]/10 border border-[#F0B429]/40 rounded-md animate-fadeIn">
-                              <span className="text-[11px] text-[#F0B429] font-bold truncate">
-                                Reset {p.name} to 20,000 IC and clear all trades?
-                              </span>
-                              <div className="flex items-center gap-1.5 shrink-0">
-                                <button
-                                  type="button"
-                                  disabled={isResetting}
-                                  onClick={() => handleResetParticipant(p)}
-                                  className="px-2.5 py-1 bg-[#F0B429] text-black font-extrabold text-[10px] rounded uppercase hover:bg-[#d9a120] cursor-pointer shadow-xs"
-                                >
-                                  {isResetting ? 'RESETTING...' : 'CONFIRM RESET'}
-                                </button>
-                                <button
-                                  type="button"
-                                  onClick={() => setResetConfirmPartId(null)}
-                                  className="px-2 py-1 bg-[#2D3142] text-[#7B82A0] hover:text-white text-[10px] font-bold rounded cursor-pointer"
-                                >
-                                  CANCEL
-                                </button>
-                              </div>
-                            </div>
                           )}
                         </div>
                       );
@@ -1782,9 +1920,10 @@ export function AdminDashboard() {
 
             <div className="space-y-3 text-xs">
               <div>
-                <label className="text-[10px] text-[#7B82A0] uppercase block mb-1">Full Name:</label>
+                <label className="text-[10px] text-[#7B82A0] uppercase block mb-1">Full Name:*</label>
                 <input
                   type="text"
+                  required
                   placeholder="e.g. John Doe"
                   value={newPartName}
                   onChange={(e) => setNewPartName(e.target.value)}
@@ -1805,7 +1944,7 @@ export function AdminDashboard() {
               </div>
 
               <div>
-                <label className="text-[10px] text-[#7B82A0] uppercase block mb-1">Phone Number (Login Password):*</label>
+                <label className="text-[10px] text-[#7B82A0] uppercase block mb-1">Phone Number (Password):*</label>
                 <input
                   type="text"
                   required
@@ -1840,40 +1979,61 @@ export function AdminDashboard() {
       {/* Upload Roster Preview Modal */}
       {showUploadPreviewModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 font-mono animate-fadeIn backdrop-blur-xs">
-          <div className="bg-[#1A1D27] border border-[#2D3142] rounded-xl p-6 max-w-xl w-full space-y-4 text-white shadow-2xl flex flex-col max-h-[85vh]">
+          <div className="bg-[#1A1D27] border border-[#2D3142] rounded-xl p-6 max-w-2xl w-full space-y-4 text-white shadow-2xl flex flex-col max-h-[85vh]">
             <div className="flex items-center justify-between border-b border-[#2D3142] pb-3 shrink-0">
-              <h3 className="text-xs font-bold text-[#F0B429] uppercase flex items-center gap-1.5">
-                <Upload className="w-4 h-4" />
-                <span>PREVIEW IMPORT ({uploadPreviewRows.length} PARTICIPANTS)</span>
-              </h3>
+              <div>
+                <h3 className="text-xs font-bold text-[#F0B429] uppercase flex items-center gap-1.5">
+                  <Upload className="w-4 h-4" />
+                  <span>PREVIEW IMPORT ({uploadPreviewRows.length} ROWS FOUND)</span>
+                </h3>
+                <p className="text-[10px] text-[#7B82A0] mt-0.5">
+                  {uploadPreviewRows.filter((r) => r.missingFields.length === 0).length} Ready to Import, {uploadPreviewRows.filter((r) => r.missingFields.length > 0).length} Invalid/Missing Data
+                </p>
+              </div>
               <button type="button" onClick={() => setShowUploadPreviewModal(false)} className="text-[#7B82A0] hover:text-white cursor-pointer">✕</button>
             </div>
 
-            <div className="flex-1 overflow-y-auto pr-1 space-y-1 text-xs">
-              <div className="grid grid-cols-3 font-bold text-[#7B82A0] border-b border-[#2D3142] pb-1.5 text-[10.5px]">
+            <div className="flex-1 overflow-y-auto pr-1 space-y-1.5 text-xs">
+              <div className="grid grid-cols-4 font-bold text-[#7B82A0] border-b border-[#2D3142] pb-1.5 text-[10.5px]">
                 <span>NAME</span>
                 <span>EMAIL</span>
                 <span>PHONE</span>
+                <span className="text-right">STATUS</span>
               </div>
-              {uploadPreviewRows.slice(0, 50).map((r, idx) => {
+              {uploadPreviewRows.slice(0, 100).map((r, idx) => {
+                const hasError = r.missingFields.length > 0;
                 return (
-                  <div key={idx} className="grid grid-cols-3 text-[11px] py-1 border-b border-[#2D3142]/40">
-                    <span className="truncate text-white font-bold">{r.name}</span>
-                    <span className="truncate text-[#7B82A0]">{r.email}</span>
-                    <span className="truncate text-[#F0B429]">{r.phone}</span>
+                  <div
+                    key={idx}
+                    className={`grid grid-cols-4 text-[11px] py-1.5 px-2 rounded border ${
+                      hasError
+                        ? 'bg-[#EF4444]/15 border-[#EF4444]/40 text-red-200'
+                        : 'bg-[#0F1117]/60 border-[#2D3142]/40 text-slate-200'
+                    }`}
+                  >
+                    <span className="truncate font-bold">{r.name}</span>
+                    <span className="truncate font-mono">{r.email}</span>
+                    <span className="truncate font-mono text-[#F0B429]">{r.phone}</span>
+                    <span className="text-right font-mono font-bold text-[10px]">
+                      {hasError ? (
+                        <span className="text-[#EF4444] uppercase">Missing: {r.missingFields.join(', ')}</span>
+                      ) : (
+                        <span className="text-[#22C55E] uppercase">Ready</span>
+                      )}
+                    </span>
                   </div>
                 );
               })}
-              {uploadPreviewRows.length > 50 && (
+              {uploadPreviewRows.length > 100 && (
                 <div className="text-[10px] text-[#7B82A0] text-center pt-2 italic">
-                  ...and {uploadPreviewRows.length - 50} more participants
+                  ...and {uploadPreviewRows.length - 100} more participants
                 </div>
               )}
             </div>
 
             <div className="flex items-center justify-between pt-3 border-t border-[#2D3142] shrink-0">
               <span className="text-[10.5px] text-[#7B82A0]">
-                Duplicate emails/phones will be updated automatically.
+                Only valid rows without missing data will be imported. Duplicates skipped automatically.
               </span>
               <div className="flex items-center gap-2">
                 <button
@@ -1885,9 +2045,9 @@ export function AdminDashboard() {
                 </button>
                 <button
                   type="button"
-                  disabled={uploadingRoster}
+                  disabled={uploadingRoster || uploadPreviewRows.filter((r) => r.missingFields.length === 0).length === 0}
                   onClick={handleConfirmImport}
-                  className="px-4 py-1.5 rounded-lg bg-[#22C55E] text-black text-xs font-bold uppercase hover:bg-[#1eb053] cursor-pointer"
+                  className="px-4 py-1.5 rounded-lg bg-[#22C55E] text-black text-xs font-bold uppercase hover:bg-[#1eb053] cursor-pointer disabled:opacity-40"
                 >
                   {uploadingRoster ? 'IMPORTING...' : 'CONFIRM IMPORT'}
                 </button>

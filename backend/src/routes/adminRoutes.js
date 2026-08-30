@@ -648,60 +648,77 @@ router.post(['/participants/upload', '/participants-upload', '/upload-participan
           }
         });
 
-        if (existing) {
-          const passwordHash = await bcrypt.hash(parsed.phone, 10);
-          await prisma.user.update({
-            where: { id: existing.id },
-            data: {
-              name: parsed.name || existing.name,
-              phone: parsed.phone,
-              passwordHash,
-              isPreloaded: true
-            }
-          });
-          updatedCount++;
-          continue;
-        }
+// POST /admin/participants/upload — Bulk roster import (Excel/CSV)
+router.post(['/participants/upload', '/upload-participants'], async (req, res) => {
+  try {
+    const { rows } = req.body;
+    if (!Array.isArray(rows) || rows.length === 0) {
+      return res.status(400).json({ error: 'No participant rows provided for upload' });
+    }
 
-        const passwordHash = await bcrypt.hash(parsed.phone, 10);
-        await prisma.user.create({
-          data: {
-            name: parsed.name,
-            email: parsed.email,
-            phone: parsed.phone,
-            passwordHash,
-            role: 'TRADER',
-            walletBalance: 20000,
-            isTestAccount: false,
-            isPreloaded: true,
-            hasLoggedIn: false
-          }
-        });
-        createdCount++;
-      } catch (rowErr) {
-        console.error('Error importing row:', rawRow, rowErr);
-        skippedCount++;
-        skippedDetails.push(`Row ${i + 1}: Processing error (${rowErr.message})`);
+    let createdCount = 0;
+    let skippedEmailCount = 0;
+    let skippedDataCount = 0;
+
+    for (let i = 0; i < rows.length; i++) {
+      const rawRow = rows[i];
+      if (!rawRow || typeof rawRow !== 'object') {
+        skippedDataCount++;
+        continue;
       }
+
+      const email = String(rawRow.email || '').trim().toLowerCase();
+      const phone = String(rawRow.phone || '').trim().replace(/\D/g, '');
+      const name = String(rawRow.name || '').trim();
+
+      const validEmail = email && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+      const validPhone = phone && phone.length >= 7;
+
+      if (!name || !validEmail || !validPhone) {
+        skippedDataCount++;
+        continue;
+      }
+
+      const existingUser = await prisma.user.findFirst({
+        where: { email }
+      });
+
+      if (existingUser) {
+        skippedEmailCount++;
+        continue;
+      }
+
+      const passwordHash = await bcrypt.hash(phone, 10);
+      await prisma.user.create({
+        data: {
+          name,
+          email,
+          phone,
+          passwordHash,
+          role: 'TRADER',
+          walletBalance: 20000,
+          isTestAccount: false,
+          isPreloaded: true,
+          hasLoggedIn: false
+        }
+      });
+      createdCount++;
     }
 
     broadcastPublicLeaderboard();
 
     const summaryParts = [];
-    if (createdCount > 0) summaryParts.push(`${createdCount} accounts created`);
-    if (updatedCount > 0) summaryParts.push(`${updatedCount} updated`);
-    if (skippedCount > 0) summaryParts.push(`${skippedCount} skipped`);
+    summaryParts.push(`${createdCount} accounts created`);
+    summaryParts.push(`${skippedEmailCount} skipped because email already exists`);
+    summaryParts.push(`${skippedDataCount} skipped because of missing data`);
 
-    const message = summaryParts.length > 0
-      ? `Roster import complete: ${summaryParts.join(', ')}.`
-      : 'Roster import complete.';
+    const message = `Import Result: ${summaryParts.join(', ')}.`;
 
     return res.json({
       message,
       createdCount,
-      updatedCount,
-      skippedCount,
-      skippedDetails
+      skippedEmailCount,
+      skippedDataCount
     });
   } catch (err) {
     console.error('Upload participants error:', err);
@@ -709,25 +726,53 @@ router.post(['/participants/upload', '/participants-upload', '/upload-participan
   }
 });
 
-// POST /admin/participants/add
+// POST /admin/participants/add — Single participant manual creation with full field validation
 router.post('/participants/add', async (req, res) => {
   try {
     const { name, email, phone } = req.body;
-    if (!email || !email.trim() || !phone || !String(phone).trim()) {
-      return res.status(400).json({ error: 'Email and Phone Number are required' });
+
+    const cleanName = (name || '').trim();
+    const cleanEmail = (email || '').trim().toLowerCase();
+    const cleanPhone = (phone || '').trim().replace(/\D/g, '');
+
+    // 1. Validation checks
+    if (!cleanName) {
+      return res.status(400).json({ error: 'Full Name is required' });
     }
 
-    const cleanEmail = email.trim().toLowerCase();
-    const cleanPhone = String(phone).trim().replace(/\D/g, '');
-    const cleanName = (name && name.trim()) ? name.trim() : cleanEmail.split('@')[0];
+    if (!cleanEmail) {
+      return res.status(400).json({ error: 'Email Address is required' });
+    }
 
-    const existing = await prisma.user.findFirst({
-      where: { OR: [{ email: cleanEmail }, { phone: cleanPhone }] }
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(cleanEmail)) {
+      return res.status(400).json({ error: 'Please enter a valid email address (e.g. name@example.com)' });
+    }
+
+    if (!cleanPhone) {
+      return res.status(400).json({ error: 'Phone Number is required' });
+    }
+
+    if (cleanPhone.length < 7) {
+      return res.status(400).json({ error: 'Please enter a valid phone number (at least 7 digits)' });
+    }
+
+    // 2. Uniqueness checks
+    const existingEmail = await prisma.user.findFirst({
+      where: { email: cleanEmail }
     });
-    if (existing) {
-      return res.status(400).json({ error: 'Participant with this email or phone already exists' });
+    if (existingEmail) {
+      return res.status(400).json({ error: 'Email address is already registered in the system' });
     }
 
+    const existingPhone = await prisma.user.findFirst({
+      where: { phone: cleanPhone }
+    });
+    if (existingPhone) {
+      return res.status(400).json({ error: 'Phone number is already registered in the system' });
+    }
+
+    // 3. Create trader account
     const passwordHash = await bcrypt.hash(cleanPhone, 10);
     const user = await prisma.user.create({
       data: {
@@ -743,14 +788,27 @@ router.post('/participants/add', async (req, res) => {
       }
     });
 
-    return res.status(201).json({ message: 'Participant added successfully', user });
+    broadcastPublicLeaderboard();
+
+    return res.status(201).json({
+      message: `Participant ${user.name} added successfully!`,
+      user: {
+        id: user.id,
+        name: user.name,
+        email: user.email,
+        phone: user.phone,
+        walletBalance: user.walletBalance,
+        role: user.role,
+        hasLoggedIn: user.hasLoggedIn
+      }
+    });
   } catch (err) {
     console.error('Add participant error:', err);
     return res.status(500).json({ error: 'Failed to add participant' });
   }
 });
 
-// DELETE /admin/participants/:id
+// DELETE /admin/participants/:id — Permanent participant deletion
 router.delete('/participants/:id', async (req, res) => {
   try {
     const { id } = req.params;
@@ -774,7 +832,7 @@ router.delete('/participants/:id', async (req, res) => {
   }
 });
 
-// POST /admin/participants/:id/reset
+// POST /admin/participants/:id/reset — Atomic reset to 20,000 IC & clear trades/holdings
 router.post('/participants/:id/reset', async (req, res) => {
   try {
     const { id } = req.params;
@@ -810,14 +868,14 @@ router.post('/participants/:id/reset', async (req, res) => {
     });
 
     broadcastPublicLeaderboard();
-    return res.json({ message: `Reset ${user.name} to 20,000 IC and cleared all positions/orders` });
+    return res.json({ message: `Reset ${user.name} to 20,000 IC and cleared all trades and holdings.` });
   } catch (err) {
     console.error('Reset participant error:', err);
     return res.status(500).json({ error: 'Failed to reset participant' });
   }
 });
 
-// POST /admin/participants/reset-all (Reset all participant wallets and clear holdings/orders)
+// POST /admin/participants/reset-all
 router.post(['/participants/reset-all', '/reset-all-participants'], async (req, res) => {
   try {
     const traders = await prisma.user.findMany({
@@ -841,7 +899,6 @@ router.post(['/participants/reset-all', '/reset-all-participants'], async (req, 
         })
       ]);
 
-      // Emit live portfolio update to all trader sockets
       for (const traderId of traderIds) {
         emitPortfolioUpdate(traderId, {
           walletBalance: 20000,
@@ -863,7 +920,7 @@ router.post(['/participants/reset-all', '/reset-all-participants'], async (req, 
   }
 });
 
-// POST /admin/participants/delete-all (Delete all participant accounts from database)
+// POST /admin/participants/delete-all
 router.post(['/participants/delete-all', '/participants-delete-all', '/clear-participants'], async (req, res) => {
   try {
     const traders = await prisma.user.findMany({
