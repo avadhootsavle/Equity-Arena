@@ -1,4 +1,5 @@
 const express = require('express');
+const bcrypt = require('bcryptjs');
 const { PrismaClient } = require('@prisma/client');
 const { authenticateToken, requireAdmin } = require('../middleware/authMiddleware');
 const { emitStockUpdate, emitNewsBroadcast, emitPortfolioUpdate, emitActivityLog, broadcastPublicLeaderboard } = require('../socket');
@@ -564,8 +565,10 @@ router.get(['/participants', '/roster'], async (req, res) => {
 });
 
 // Helper for flexible participant row extraction
-function parseParticipantRow(row) {
-  if (!row || typeof row !== 'object') return null;
+function parseParticipantRow(row, rowIndex = 0) {
+  if (!row || typeof row !== 'object') {
+    return { error: `Row ${rowIndex + 1}: Empty or invalid row structure`, row: null };
+  }
 
   let rawName = '';
   let rawEmail = '';
@@ -606,9 +609,14 @@ function parseParticipantRow(row) {
   const cleanPhone = rawPhone.replace(/\D/g, '');
   const cleanName = rawName.trim() || (cleanEmail ? cleanEmail.split('@')[0] : 'Trader');
 
-  if (!cleanEmail || !cleanPhone) return null;
+  if (!cleanEmail) {
+    return { error: `Row ${rowIndex + 1}: Missing email address`, row: null };
+  }
+  if (!cleanPhone) {
+    return { error: `Row ${rowIndex + 1}: Missing phone number`, row: null };
+  }
 
-  return { name: cleanName, email: cleanEmail, phone: cleanPhone };
+  return { error: null, row: { name: cleanName, email: cleanEmail, phone: cleanPhone } };
 }
 
 // POST /admin/participants/upload (and aliases /admin/participants-upload, /admin/upload-participants)
@@ -622,12 +630,15 @@ router.post(['/participants/upload', '/participants-upload', '/upload-participan
     let createdCount = 0;
     let updatedCount = 0;
     let skippedCount = 0;
+    const skippedDetails = [];
 
-    for (const rawRow of rows) {
+    for (let i = 0; i < rows.length; i++) {
+      const rawRow = rows[i];
       try {
-        const parsed = parseParticipantRow(rawRow);
-        if (!parsed || !parsed.email || !parsed.phone) {
+        const { error, row: parsed } = parseParticipantRow(rawRow, i);
+        if (error || !parsed) {
           skippedCount++;
+          skippedDetails.push(error || `Row ${i + 1}: Invalid data`);
           continue;
         }
 
@@ -638,7 +649,6 @@ router.post(['/participants/upload', '/participants-upload', '/upload-participan
         });
 
         if (existing) {
-          // Update existing user credentials and info
           const passwordHash = await bcrypt.hash(parsed.phone, 10);
           await prisma.user.update({
             where: { id: existing.id },
@@ -671,18 +681,27 @@ router.post(['/participants/upload', '/participants-upload', '/upload-participan
       } catch (rowErr) {
         console.error('Error importing row:', rawRow, rowErr);
         skippedCount++;
+        skippedDetails.push(`Row ${i + 1}: Processing error (${rowErr.message})`);
       }
     }
 
-    const message = createdCount > 0
-      ? `${createdCount} new participants created, ${updatedCount} updated in roster`
-      : `${updatedCount} participants updated in roster (all 45 already existed)`;
+    broadcastPublicLeaderboard();
+
+    const summaryParts = [];
+    if (createdCount > 0) summaryParts.push(`${createdCount} accounts created`);
+    if (updatedCount > 0) summaryParts.push(`${updatedCount} updated`);
+    if (skippedCount > 0) summaryParts.push(`${skippedCount} skipped`);
+
+    const message = summaryParts.length > 0
+      ? `Roster import complete: ${summaryParts.join(', ')}.`
+      : 'Roster import complete.';
 
     return res.json({
       message,
       createdCount,
       updatedCount,
-      skippedCount
+      skippedCount,
+      skippedDetails
     });
   } catch (err) {
     console.error('Upload participants error:', err);

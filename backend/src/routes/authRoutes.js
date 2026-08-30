@@ -28,7 +28,7 @@ router.post('/login', async (req, res) => {
 
     const user = await prisma.user.findUnique({ where: { email: cleanEmail } });
     if (!user) {
-      return res.status(400).json({ error: "You're not registered for this event. Ask your admin to add you." });
+      return res.status(400).json({ error: "You are not registered for this event — ask your admin." });
     }
     if (user.role === 'ADMIN') {
       return res.status(401).json({ error: 'Invalid email or phone number' });
