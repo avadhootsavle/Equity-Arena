@@ -534,8 +534,8 @@ router.post('/trader/:id/topup', async (req, res) => {
   }
 });
 
-// GET /admin/participants
-router.get('/participants', async (req, res) => {
+// GET /admin/participants (and alias /admin/roster)
+router.get(['/participants', '/roster'], async (req, res) => {
   try {
     const participants = await prisma.user.findMany({
       where: { role: 'TRADER' },
@@ -611,8 +611,8 @@ function parseParticipantRow(row) {
   return { name: cleanName, email: cleanEmail, phone: cleanPhone };
 }
 
-// POST /admin/participants/upload (Import roster array)
-router.post('/participants/upload', async (req, res) => {
+// POST /admin/participants/upload (and aliases /admin/participants-upload, /admin/upload-participants)
+router.post(['/participants/upload', '/participants-upload', '/upload-participants'], async (req, res) => {
   try {
     const { rows } = req.body;
     if (!Array.isArray(rows) || rows.length === 0) {
