@@ -273,7 +273,7 @@ const ANALYST_NEWS_TEMPLATES = [
     notes: "Carbon penalties favor renewable energy offset providers while raising automaker compliance costs"
   },
 
-  // --- PHASE 23B: REALISTIC CROSS-SECTOR CAUSE-AND-EFFECT TEMPLATES ---
+  // --- REALISTIC CROSS-SECTOR CAUSE-AND-EFFECT TEMPLATES ---
   {
     headline: "A major digital banking platform reported a security incident affecting online transactions overnight. Technology providers linked to the platform's infrastructure are also facing scrutiny.",
     sector: "Banking/Finance",
@@ -396,7 +396,7 @@ function getRandomVolume(min = 5000, max = 15000) {
 }
 
 async function main() {
-  console.log('🌱 Starting Phase 11 database seeding (Hardened Admin & Audit Logging)...');
+  console.log('🌱 Starting database seeding...');
 
   await prisma.adminAuditLog.deleteMany();
   await prisma.transaction.deleteMany();
@@ -502,7 +502,7 @@ async function main() {
   }
   console.log(`✅ Seeded ${ANALYST_NEWS_TEMPLATES.length} Analyst-Style News Templates.`);
 
-  console.log(`🎉 Phase 11 Database seeding completed successfully!`);
+  console.log(`🎉 Database seeding completed successfully!`);
 }
 
 main()

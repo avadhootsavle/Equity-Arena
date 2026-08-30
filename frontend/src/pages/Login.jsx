@@ -344,7 +344,7 @@ export function Login() {
 
       {/* FOOTER */}
       <footer className="z-10 max-w-6xl mx-auto w-full text-center text-xs font-mono text-[#7B82A0] pt-4">
-        Antigravity Coding Engine • Equity Arena 2.0 • Secure Roster Authentication
+        Equity Arena • Real-Time Stock Market Trading Terminal • Ignite 8.0
       </footer>
     </div>
   );
