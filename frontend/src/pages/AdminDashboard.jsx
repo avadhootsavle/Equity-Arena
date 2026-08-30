@@ -64,6 +64,8 @@ export function AdminDashboard() {
   const [resettingPartId, setResettingPartId] = useState(null);
   const [showResetAllModal, setShowResetAllModal] = useState(false);
   const [resettingAll, setResettingAll] = useState(false);
+  const [showDeleteAllModal, setShowDeleteAllModal] = useState(false);
+  const [deletingAll, setDeletingAll] = useState(false);
   
   const [showAddParticipantModal, setShowAddParticipantModal] = useState(false);
   const [newPartName, setNewPartName] = useState('');
@@ -624,6 +626,31 @@ export function AdminDashboard() {
       showToast(err.message || 'Failed to reset all participants', 'error');
     } finally {
       setResettingAll(false);
+    }
+  };
+
+  const handleDeleteAllParticipants = async () => {
+    setDeletingAll(true);
+    try {
+      let res;
+      try {
+        res = await apiFetch('/admin/participants/delete-all', { method: 'POST' });
+      } catch (err) {
+        if (err.status === 404) {
+          res = await apiFetch('/api/admin/participants/delete-all', { method: 'POST' });
+        } else {
+          throw err;
+        }
+      }
+
+      showToast(res.message || 'Deleted all participant accounts from roster.', 'warning');
+      setShowDeleteAllModal(false);
+      fetchParticipants();
+      fetchLeaderboard();
+    } catch (err) {
+      showToast(err.message || 'Failed to delete all participants', 'error');
+    } finally {
+      setDeletingAll(false);
     }
   };
 
@@ -1271,11 +1298,21 @@ export function AdminDashboard() {
                     type="button"
                     onClick={() => setShowResetAllModal(true)}
                     disabled={participants.length === 0}
-                    className="px-2 py-0.5 rounded bg-[#EF4444]/15 border border-[#EF4444]/30 text-[#EF4444] hover:bg-[#EF4444]/30 font-bold text-[10px] flex items-center gap-1 cursor-pointer disabled:opacity-40"
-                    title="Reset ALL participants to 20,000 IC and clear all holdings & transactions"
+                    className="px-2 py-0.5 rounded bg-[#F0B429]/15 border border-[#F0B429]/30 text-[#F0B429] hover:bg-[#F0B429]/30 font-bold text-[10px] flex items-center gap-1 cursor-pointer disabled:opacity-40"
+                    title="Reset ALL participant balances to 20,000 IC and clear holdings"
                   >
                     <RotateCcw className="w-3 h-3" />
                     <span>Reset All</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setShowDeleteAllModal(true)}
+                    disabled={participants.length === 0}
+                    className="px-2 py-0.5 rounded bg-[#EF4444]/15 border border-[#EF4444]/30 text-[#EF4444] hover:bg-[#EF4444]/30 font-bold text-[10px] flex items-center gap-1 cursor-pointer disabled:opacity-40"
+                    title="Delete ALL participant accounts permanently"
+                  >
+                    <Trash2 className="w-3 h-3" />
+                    <span>Delete All</span>
                   </button>
                   <button
                     type="button"
@@ -1871,7 +1908,7 @@ export function AdminDashboard() {
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 font-mono animate-fadeIn backdrop-blur-xs">
           <div className="bg-[#1A1D27] border border-[#2D3142] rounded-xl p-6 max-w-md w-full space-y-4 text-white shadow-2xl">
             <div className="flex items-center justify-between border-b border-[#2D3142] pb-3">
-              <h3 className="text-xs font-bold text-[#EF4444] uppercase flex items-center gap-1.5">
+              <h3 className="text-xs font-bold text-[#F0B429] uppercase flex items-center gap-1.5">
                 <RotateCcw className="w-4 h-4" />
                 <span>RESET ALL PARTICIPANTS</span>
               </h3>
@@ -1899,9 +1936,51 @@ export function AdminDashboard() {
                 type="button"
                 disabled={resettingAll}
                 onClick={handleResetAllParticipants}
-                className="px-4 py-1.5 rounded-lg bg-[#EF4444] text-white text-xs font-extrabold uppercase hover:bg-[#dc2626] cursor-pointer shadow-md"
+                className="px-4 py-1.5 rounded-lg bg-[#F0B429] text-black text-xs font-extrabold uppercase hover:bg-[#d9a120] cursor-pointer shadow-md"
               >
                 {resettingAll ? 'RESETTING ALL...' : 'CONFIRM RESET ALL'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Delete All Confirmation Modal */}
+      {showDeleteAllModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 font-mono animate-fadeIn backdrop-blur-xs">
+          <div className="bg-[#1A1D27] border border-[#2D3142] rounded-xl p-6 max-w-md w-full space-y-4 text-white shadow-2xl">
+            <div className="flex items-center justify-between border-b border-[#2D3142] pb-3">
+              <h3 className="text-xs font-bold text-[#EF4444] uppercase flex items-center gap-1.5">
+                <Trash2 className="w-4 h-4" />
+                <span>DELETE ALL PARTICIPANTS</span>
+              </h3>
+              <button type="button" onClick={() => setShowDeleteAllModal(false)} className="text-[#7B82A0] hover:text-white cursor-pointer">✕</button>
+            </div>
+
+            <div className="space-y-2 text-xs">
+              <p className="text-white font-bold">
+                Permanently delete ALL <span className="text-[#EF4444]">{participants.length}</span> participant accounts?
+              </p>
+              <p className="text-[11px] text-[#7B82A0]">
+                This will wipe the entire roster and remove all accounts from the database. The roster table will revert to empty state for a fresh upload.
+              </p>
+            </div>
+
+            <div className="flex items-center justify-end gap-2 pt-2 border-t border-[#2D3142]">
+              <button
+                type="button"
+                onClick={() => setShowDeleteAllModal(false)}
+                className="px-3 py-1.5 rounded-lg bg-[#2D3142] text-[#7B82A0] hover:text-white text-xs font-bold cursor-pointer"
+              >
+                CANCEL
+              </button>
+              <button
+                type="button"
+                disabled={deletingAll}
+                onClick={handleDeleteAllParticipants}
+                className="px-4 py-1.5 rounded-lg bg-[#EF4444] text-white text-xs font-extrabold uppercase hover:bg-[#dc2626] cursor-pointer shadow-md"
+              >
+                {deletingAll ? 'DELETING ALL...' : 'CONFIRM DELETE ALL'}
               </button>
             </div>
           </div>

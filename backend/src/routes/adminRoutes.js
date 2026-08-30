@@ -863,4 +863,34 @@ router.post(['/participants/reset-all', '/reset-all-participants'], async (req, 
   }
 });
 
+// POST /admin/participants/delete-all (Delete all participant accounts from database)
+router.post(['/participants/delete-all', '/participants-delete-all', '/clear-participants'], async (req, res) => {
+  try {
+    const traders = await prisma.user.findMany({
+      where: { role: 'TRADER' },
+      select: { id: true }
+    });
+
+    const traderIds = traders.map((t) => t.id);
+
+    if (traderIds.length > 0) {
+      await prisma.$transaction([
+        prisma.order.deleteMany({ where: { userId: { in: traderIds } } }),
+        prisma.holding.deleteMany({ where: { userId: { in: traderIds } } }),
+        prisma.transaction.deleteMany({ where: { userId: { in: traderIds } } }),
+        prisma.user.deleteMany({ where: { role: 'TRADER' } })
+      ]);
+    }
+
+    broadcastPublicLeaderboard();
+    return res.json({
+      message: `Successfully deleted all ${traders.length} participant accounts from roster. Database is clean.`,
+      count: traders.length
+    });
+  } catch (err) {
+    console.error('Delete all participants error:', err);
+    return res.status(500).json({ error: 'Failed to delete all participants' });
+  }
+});
+
 module.exports = router;
