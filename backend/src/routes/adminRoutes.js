@@ -563,6 +563,54 @@ router.get('/participants', async (req, res) => {
   }
 });
 
+// Helper for flexible participant row extraction
+function parseParticipantRow(row) {
+  if (!row || typeof row !== 'object') return null;
+
+  let rawName = '';
+  let rawEmail = '';
+  let rawPhone = '';
+
+  for (const [key, val] of Object.entries(row)) {
+    if (val === undefined || val === null) continue;
+    const k = String(key).trim().toLowerCase().replace(/[^a-z0-9]/g, '');
+    const v = String(val).trim();
+
+    if (!rawName && (k.includes('name') || k.includes('student') || k.includes('participant') || k.includes('trader'))) {
+      rawName = v;
+    } else if (!rawEmail && (k.includes('email') || k.includes('mail'))) {
+      rawEmail = v;
+    } else if (!rawPhone && (k.includes('phone') || k.includes('mobile') || k.includes('contact') || k.includes('number') || k.includes('cell') || k.includes('tel'))) {
+      rawPhone = v;
+    }
+  }
+
+  // Fallbacks: search by content format
+  const allValues = Object.values(row).map((v) => String(v || '').trim()).filter(Boolean);
+  if (!rawEmail) {
+    const emailCandidate = allValues.find((v) => v.includes('@'));
+    if (emailCandidate) rawEmail = emailCandidate;
+  }
+  if (!rawPhone) {
+    const phoneCandidate = allValues.find((v) => {
+      const digits = v.replace(/\D/g, '');
+      return digits.length >= 7 && digits.length <= 15;
+    });
+    if (phoneCandidate) rawPhone = phoneCandidate;
+  }
+  if (!rawName && allValues.length > 0) {
+    rawName = allValues.find((v) => v !== rawEmail && v !== rawPhone) || allValues[0];
+  }
+
+  const cleanEmail = rawEmail.trim().toLowerCase();
+  const cleanPhone = rawPhone.replace(/\D/g, '');
+  const cleanName = rawName.trim() || (cleanEmail ? cleanEmail.split('@')[0] : 'Trader');
+
+  if (!cleanEmail || !cleanPhone) return null;
+
+  return { name: cleanName, email: cleanEmail, phone: cleanPhone };
+}
+
 // POST /admin/participants/upload (Import roster array)
 router.post('/participants/upload', async (req, res) => {
   try {
@@ -574,50 +622,48 @@ router.post('/participants/upload', async (req, res) => {
     let createdCount = 0;
     let skippedCount = 0;
 
-    for (const row of rows) {
-      const rawName = row.Name || row['Full Name'] || row['Student Name'] || row.name || '';
-      const rawEmail = row.Email || row['Email Address'] || row.email || '';
-      const rawPhone = String(row.Phone || row['Mobile'] || row['Phone Number'] || row.phone || '').trim();
-
-      if (!rawEmail || !rawPhone) {
-        skippedCount++;
-        continue;
-      }
-
-      const cleanEmail = String(rawEmail).trim().toLowerCase();
-      const cleanName = String(rawName).trim() || cleanEmail.split('@')[0];
-      const cleanPhone = rawPhone.replace(/\D/g, '');
-
-      const existing = await prisma.user.findFirst({
-        where: {
-          OR: [{ email: cleanEmail }, { phone: cleanPhone }]
+    for (const rawRow of rows) {
+      try {
+        const parsed = parseParticipantRow(rawRow);
+        if (!parsed || !parsed.email || !parsed.phone) {
+          skippedCount++;
+          continue;
         }
-      });
 
-      if (existing) {
-        skippedCount++;
-        continue;
-      }
+        const existing = await prisma.user.findFirst({
+          where: {
+            OR: [{ email: parsed.email }, { phone: parsed.phone }]
+          }
+        });
 
-      const passwordHash = await bcrypt.hash(cleanPhone, 10);
-      await prisma.user.create({
-        data: {
-          name: cleanName,
-          email: cleanEmail,
-          phone: cleanPhone,
-          passwordHash,
-          role: 'TRADER',
-          walletBalance: 20000,
-          isTestAccount: false,
-          isPreloaded: true,
-          hasLoggedIn: false
+        if (existing) {
+          skippedCount++;
+          continue;
         }
-      });
-      createdCount++;
+
+        const passwordHash = await bcrypt.hash(parsed.phone, 10);
+        await prisma.user.create({
+          data: {
+            name: parsed.name,
+            email: parsed.email,
+            phone: parsed.phone,
+            passwordHash,
+            role: 'TRADER',
+            walletBalance: 20000,
+            isTestAccount: false,
+            isPreloaded: true,
+            hasLoggedIn: false
+          }
+        });
+        createdCount++;
+      } catch (rowErr) {
+        console.error('Error importing row:', rawRow, rowErr);
+        skippedCount++;
+      }
     }
 
     return res.json({
-      message: `${createdCount} participants imported, ${skippedCount} already existed (skipped)`,
+      message: `${createdCount} participants imported, ${skippedCount} skipped/duplicates`,
       createdCount,
       skippedCount
     });

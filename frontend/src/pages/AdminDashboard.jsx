@@ -404,6 +404,52 @@ export function AdminDashboard() {
   };
 
   /* ---------------- Roster Management Handlers ---------------- */
+  const parseRowData = (row) => {
+    if (!row || typeof row !== 'object') return null;
+
+    let rawName = '';
+    let rawEmail = '';
+    let rawPhone = '';
+
+    for (const [key, val] of Object.entries(row)) {
+      if (val === undefined || val === null) continue;
+      const k = String(key).trim().toLowerCase().replace(/[^a-z0-9]/g, '');
+      const v = String(val).trim();
+
+      if (!rawName && (k.includes('name') || k.includes('student') || k.includes('participant') || k.includes('trader'))) {
+        rawName = v;
+      } else if (!rawEmail && (k.includes('email') || k.includes('mail'))) {
+        rawEmail = v;
+      } else if (!rawPhone && (k.includes('phone') || k.includes('mobile') || k.includes('contact') || k.includes('number') || k.includes('cell') || k.includes('tel'))) {
+        rawPhone = v;
+      }
+    }
+
+    const allValues = Object.values(row).map((v) => String(v || '').trim()).filter(Boolean);
+    if (!rawEmail) {
+      const emailCandidate = allValues.find((v) => v.includes('@'));
+      if (emailCandidate) rawEmail = emailCandidate;
+    }
+    if (!rawPhone) {
+      const phoneCandidate = allValues.find((v) => {
+        const digits = v.replace(/\D/g, '');
+        return digits.length >= 7 && digits.length <= 15;
+      });
+      if (phoneCandidate) rawPhone = phoneCandidate;
+    }
+    if (!rawName && allValues.length > 0) {
+      rawName = allValues.find((v) => v !== rawEmail && v !== rawPhone) || allValues[0];
+    }
+
+    const cleanEmail = rawEmail.trim().toLowerCase();
+    const cleanPhone = rawPhone.replace(/\D/g, '');
+    const cleanName = rawName.trim() || (cleanEmail ? cleanEmail.split('@')[0] : 'Trader');
+
+    if (!cleanEmail || !cleanPhone) return null;
+
+    return { name: cleanName, email: cleanEmail, phone: cleanPhone };
+  };
+
   const handleFileSelect = (e) => {
     const file = e.target.files[0];
     if (!file) return;
@@ -414,14 +460,21 @@ export function AdminDashboard() {
         const bstr = evt.target.result;
         const wb = XLSX.read(bstr, { type: 'binary' });
         const wsName = wb.SheetNames[0];
-        const data = XLSX.utils.sheet_to_json(wb.Sheets[wsName]);
+        const rawData = XLSX.utils.sheet_to_json(wb.Sheets[wsName]);
 
-        if (!Array.isArray(data) || data.length === 0) {
+        if (!Array.isArray(rawData) || rawData.length === 0) {
           showToast('Selected file contains no participant rows.', 'error');
           return;
         }
 
-        setUploadPreviewRows(data);
+        const cleanRows = rawData.map(parseRowData).filter(Boolean);
+
+        if (cleanRows.length === 0) {
+          showToast('Could not extract valid Name, Email, and Phone rows from file.', 'error');
+          return;
+        }
+
+        setUploadPreviewRows(cleanRows);
         setShowUploadPreviewModal(true);
       } catch (err) {
         showToast('Error reading Excel/CSV file: ' + err.message, 'error');
@@ -1631,14 +1684,11 @@ export function AdminDashboard() {
                 <span>PHONE</span>
               </div>
               {uploadPreviewRows.slice(0, 50).map((r, idx) => {
-                const name = r.Name || r['Full Name'] || r['Student Name'] || r.name || 'Trader';
-                const email = r.Email || r['Email Address'] || r.email || '-';
-                const phone = String(r.Phone || r['Mobile'] || r['Phone Number'] || r.phone || '-');
                 return (
                   <div key={idx} className="grid grid-cols-3 text-[11px] py-1 border-b border-[#2D3142]/40">
-                    <span className="truncate text-white font-bold">{name}</span>
-                    <span className="truncate text-[#7B82A0]">{email}</span>
-                    <span className="truncate text-[#F0B429]">{phone}</span>
+                    <span className="truncate text-white font-bold">{r.name}</span>
+                    <span className="truncate text-[#7B82A0]">{r.email}</span>
+                    <span className="truncate text-[#F0B429]">{r.phone}</span>
                   </div>
                 );
               })}
