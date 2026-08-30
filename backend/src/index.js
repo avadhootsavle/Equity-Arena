@@ -131,6 +131,8 @@ if (hasClientBuild) {
   });
 }
 
+const PORT = process.env.PORT || 5001;
+
 if (require.main === module) {
   const listener = server.listen(PORT, '0.0.0.0', () => {
     console.log(`🚀 Equity Arena Server listening on http://0.0.0.0:${PORT} (Bound to all network interfaces)`);

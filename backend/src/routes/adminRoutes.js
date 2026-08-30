@@ -619,35 +619,6 @@ function parseParticipantRow(row, rowIndex = 0) {
   return { error: null, row: { name: cleanName, email: cleanEmail, phone: cleanPhone } };
 }
 
-// POST /admin/participants/upload (and aliases /admin/participants-upload, /admin/upload-participants)
-router.post(['/participants/upload', '/participants-upload', '/upload-participants'], async (req, res) => {
-  try {
-    const { rows } = req.body;
-    if (!Array.isArray(rows) || rows.length === 0) {
-      return res.status(400).json({ error: 'Participant rows array is required' });
-    }
-
-    let createdCount = 0;
-    let updatedCount = 0;
-    let skippedCount = 0;
-    const skippedDetails = [];
-
-    for (let i = 0; i < rows.length; i++) {
-      const rawRow = rows[i];
-      try {
-        const { error, row: parsed } = parseParticipantRow(rawRow, i);
-        if (error || !parsed) {
-          skippedCount++;
-          skippedDetails.push(error || `Row ${i + 1}: Invalid data`);
-          continue;
-        }
-
-        const existing = await prisma.user.findFirst({
-          where: {
-            OR: [{ email: parsed.email }, { phone: parsed.phone }]
-          }
-        });
-
 // POST /admin/participants/upload — Bulk roster import (Excel/CSV)
 router.post(['/participants/upload', '/upload-participants'], async (req, res) => {
   try {
