@@ -155,7 +155,16 @@ export function AdminDashboard() {
   const fetchParticipants = useCallback(async () => {
     setLoadingParticipants(true);
     try {
-      const data = await apiFetch('/admin/participants');
+      let data;
+      try {
+        data = await apiFetch('/admin/participants');
+      } catch (firstErr) {
+        if (firstErr.status === 404) {
+          data = await apiFetch('/api/admin/participants');
+        } else {
+          throw firstErr;
+        }
+      }
       if (Array.isArray(data)) {
         setParticipants(data);
       }
@@ -172,6 +181,12 @@ export function AdminDashboard() {
     fetchLeaderboard();
     fetchParticipants();
   }, [fetchStocks, fetchNewsTemplates, fetchLeaderboard, fetchParticipants]);
+
+  useEffect(() => {
+    if (rightBottomTab === 'PARTICIPANTS') {
+      fetchParticipants();
+    }
+  }, [rightBottomTab, fetchParticipants]);
 
   /* ---------------- Socket Wiring ---------------- */
   useEffect(() => {
@@ -1209,6 +1224,15 @@ export function AdminDashboard() {
 
               {rightBottomTab === 'PARTICIPANTS' && (
                 <div className="flex items-center gap-1.5 font-mono">
+                  <button
+                    type="button"
+                    onClick={fetchParticipants}
+                    disabled={loadingParticipants}
+                    className="px-2 py-0.5 rounded bg-[#2D3142] text-[#7B82A0] hover:text-white font-bold text-[10px] flex items-center gap-1 cursor-pointer"
+                    title="Refresh roster list"
+                  >
+                    <RefreshCw className={`w-3 h-3 ${loadingParticipants ? 'animate-spin' : ''}`} />
+                  </button>
                   <button
                     type="button"
                     onClick={() => setShowAddParticipantModal(true)}
