@@ -194,33 +194,49 @@ export function BreakCountdownTimer({ sessionData, size = 'lg' }) {
     );
   }
 
+  const isXl = size === 'xl';
+
   return (
-    <div className="flex items-center justify-center gap-2 select-none font-mono">
+    <div className="flex items-center justify-center gap-3 select-none font-mono">
       {/* Minutes ledger digit */}
       <div className="flex flex-col items-center">
-        <div className="px-3.5 py-2 rounded-xs bg-[#0B0F17] border border-white/[0.12] text-center min-w-[70px] shadow-sm">
-          <span className="font-mono text-3xl sm:text-4xl font-bold tracking-tight text-[#F0B429] tabular-nums">
+        <div className={`rounded-sm bg-[#070A10] border-2 border-white/[0.15] text-center shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] ${
+          isXl ? 'px-6 py-4 min-w-[110px]' : 'px-3.5 py-2 min-w-[70px]'
+        }`}>
+          <span className={`font-mono font-black tracking-tight text-[#F0B429] tabular-nums ${
+            isXl ? 'text-5xl sm:text-6xl md:text-7xl' : 'text-3xl sm:text-4xl'
+          }`}>
             {mins}
           </span>
         </div>
-        <span className="text-[9px] font-mono tracking-[0.2em] text-slate-500 uppercase mt-1.5">
+        <span className={`font-mono tracking-[0.25em] text-slate-400 font-bold uppercase mt-2 ${
+          isXl ? 'text-[11px]' : 'text-[9px]'
+        }`}>
           MINUTES
         </span>
       </div>
 
       {/* Ticker separator */}
-      <div className="flex flex-col items-center justify-center pb-4 text-slate-600">
-        <span className="font-mono text-2xl font-semibold">:</span>
+      <div className={`flex flex-col items-center justify-center pb-5 text-amber-500/60 ${
+        isXl ? 'text-4xl sm:text-5xl' : 'text-2xl'
+      }`}>
+        <span className="font-mono font-black animate-pulse">:</span>
       </div>
 
       {/* Seconds ledger digit */}
       <div className="flex flex-col items-center">
-        <div className="px-3.5 py-2 rounded-xs bg-[#0B0F17] border border-white/[0.12] text-center min-w-[70px] shadow-sm">
-          <span className="font-mono text-3xl sm:text-4xl font-bold tracking-tight text-[#F0B429] tabular-nums">
+        <div className={`rounded-sm bg-[#070A10] border-2 border-white/[0.15] text-center shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] ${
+          isXl ? 'px-6 py-4 min-w-[110px]' : 'px-3.5 py-2 min-w-[70px]'
+        }`}>
+          <span className={`font-mono font-black tracking-tight text-[#F0B429] tabular-nums ${
+            isXl ? 'text-5xl sm:text-6xl md:text-7xl' : 'text-3xl sm:text-4xl'
+          }`}>
             {secs}
           </span>
         </div>
-        <span className="text-[9px] font-mono tracking-[0.2em] text-slate-500 uppercase mt-1.5">
+        <span className={`font-mono tracking-[0.25em] text-slate-400 font-bold uppercase mt-2 ${
+          isXl ? 'text-[11px]' : 'text-[9px]'
+        }`}>
           SECONDS
         </span>
       </div>
