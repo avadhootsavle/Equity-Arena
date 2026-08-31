@@ -167,9 +167,10 @@ export function PublicLeaderboardPage() {
         </header>
 
         {/* MAIN LEADERBOARD TABLE */}
-        <main className="max-w-6xl mx-auto">
+        {/* MAIN LEADERBOARD SHOWCASE */}
+        <main className="max-w-5xl mx-auto">
           {loading ? (
-            <div className="py-24 text-center font-mono text-[#7B82A0] animate-pulse text-xl">
+            <div className="py-32 text-center font-mono text-[#7B82A0] animate-pulse text-xl">
               Loading live tournament standings...
             </div>
           ) : !isSessionActive && leaderboard.length === 0 ? (
@@ -182,134 +183,146 @@ export function PublicLeaderboardPage() {
                 The standings table will update live as soon as trading begins.
               </p>
             </div>
-          ) : (
-            <div className="bg-[#11141D]/90 backdrop-blur-xl border border-[#2D3142] rounded-3xl p-4 sm:p-6 shadow-2xl overflow-hidden">
-              
-              {/* TABLE COLUMN HEADERS */}
-              <div className="grid grid-cols-12 gap-4 pb-4 border-b border-[#2D3142] px-6 font-mono text-[11px] font-semibold text-[#555E78] uppercase tracking-[0.15em]">
-                <div className="col-span-2 text-left">RANK</div>
-                <div className="col-span-4 text-left">TRADER</div>
-                <div className="col-span-3 text-right">PORTFOLIO VALUE</div>
-                <div className="col-span-3 text-right">RETURN</div>
-              </div>
-
-              {/* SMOOTH ANIMATED ROWS */}
-              <div className="space-y-2 mt-3">
-                <AnimatePresence initial={false}>
-                  {leaderboard.map((item) => {
-                    const isRank1 = item.rank === 1;
-                    const isRank2 = item.rank === 2;
-                    const isRank3 = item.rank === 3;
-                    const isPositive = item.returnPercent > 0;
-                    const isNegative = item.returnPercent < 0;
-
-                    const rowId = item.id || item.name;
-
-                    return (
-                      <motion.div
-                        key={rowId}
-                        layout
-                        initial={{ opacity: 0, y: 15 }}
-                        animate={{
-                          opacity: 1,
-                          y: 0,
-                          backgroundColor:
-                            item.rankChange === 1
-                              ? 'rgba(34, 197, 94, 0.12)'
-                              : item.rankChange === -1
-                              ? 'rgba(239, 68, 68, 0.12)'
-                              : isRank1
-                              ? 'rgba(240, 180, 41, 0.12)'
-                              : 'rgba(255, 255, 255, 0.01)'
-                        }}
-                        exit={{ opacity: 0, scale: 0.95 }}
-                        transition={{ type: 'spring', stiffness: 350, damping: 28 }}
-                        className={`grid grid-cols-12 gap-4 items-center px-6 py-4 sm:py-5 rounded-2xl transition-all duration-300 group hover:bg-white/[0.03] ${
-                          isRank1
-                            ? 'border-l-4 border-l-[#F0B429] bg-gradient-to-r from-[#F0B429]/15 via-[#F0B429]/5 to-transparent border border-[#F0B429]/40 text-white shadow-[0_0_30px_-10px_rgba(240,180,41,0.3)]'
-                            : isRank2
-                            ? 'border-l-4 border-l-[#94A3B8] bg-slate-900/30 border border-slate-700/40 text-white'
-                            : isRank3
-                            ? 'border-l-4 border-l-[#B87333] bg-amber-950/20 border border-amber-800/30 text-white'
-                            : 'border border-[#1F2432] text-[#E2E8F0]'
-                        }`}
-                      >
-                        {/* RANK */}
-                        <div className="col-span-2 flex items-center gap-2">
-                          <span
-                            className={`font-mono font-black ${
-                              isRank1
-                                ? 'text-[32px] text-[#F0B429] drop-shadow-[0_0_12px_rgba(240,180,41,0.6)]'
-                                : isRank2
-                                ? 'text-[24px] text-[#94A3B8]'
-                                : isRank3
-                                ? 'text-[24px] text-[#B87333]'
-                                : 'text-[18px] text-[#555E78]'
-                            }`}
-                          >
-                            #{item.rank}
-                          </span>
-                          {isRank1 && (
-                            <Crown className="w-6 h-6 text-[#F0B429] animate-bounce ml-1 flex-shrink-0" />
-                          )}
-                        </div>
-
-                        {/* NAME */}
-                        <div
-                          className={`col-span-4 text-left truncate ${
-                            isRank1
-                              ? 'text-[22px] font-bold text-white'
-                              : isRank2 || isRank3
-                              ? 'text-[20px] font-semibold text-white'
-                              : 'text-[18px] font-medium text-[#E2E8F0]'
-                          }`}
-                        >
-                          {item.name}
-                        </div>
-
-                        {/* PORTFOLIO VALUE */}
-                        <div
-                          className={`col-span-3 text-right font-mono font-bold tracking-tight ${
-                            isRank1
-                              ? 'text-[28px] text-white'
-                              : isRank2 || isRank3
-                              ? 'text-[24px] text-white'
-                              : 'text-[20px] text-white'
-                          }`}
-                        >
-                          {item.totalValue.toLocaleString('en-US', {
-                            minimumFractionDigits: 2,
-                            maximumFractionDigits: 2
-                          })}{' '}
-                          <span className="text-[12px] text-[#7B82A0] font-normal">IC</span>
-                        </div>
-
-                        {/* RETURN % BADGE */}
-                        <div className="col-span-3 text-right">
-                          <span
-                            className={`inline-flex items-center gap-1.5 font-mono font-bold rounded-xl px-3 py-1 border shadow-sm ${
-                              isRank1 ? 'text-[16px] px-4 py-1.5' : 'text-[14px]'
-                            } ${
-                              isPositive
-                                ? 'bg-[#14532D] text-[#4ADE80] border-[#22C55E]/40'
-                                : isNegative
-                                ? 'bg-[#7F1D1D] text-[#F87171] border-[#EF4444]/40'
-                                : 'bg-[#1F2937] text-[#9CA3AF] border-[#4B5563]/40'
-                            }`}
-                          >
-                            <span>{isPositive ? '▲' : isNegative ? '▼' : '—'}</span>
-                            <span>
-                              {isPositive ? '+' : ''}
-                              {item.returnPercent.toFixed(1)}%
-                            </span>
-                          </span>
-                        </div>
-                      </motion.div>
-                    );
-                  })}
-                </AnimatePresence>
-              </div>
+          ) : leaderboard.length === 0 ? (
+            <div className="py-24 text-center bg-[#11141D]/60 border border-[#2D3142] rounded-3xl p-10">
+              <span className="text-[#7B82A0] font-mono text-sm">No active participants on leaderboard yet.</span>
             </div>
+          ) : (
+            /* GRAND CHAMPION PODIUM (#1 ONLY SHOWCASE) */
+            (() => {
+              const top1 = leaderboard[0];
+              const isPositive = (top1.returnPercent || 0) > 0;
+              const isNegative = (top1.returnPercent || 0) < 0;
+              const profitDelta = (top1.totalValue || 0) - 20000;
+
+              return (
+                <div className="relative my-4 sm:my-8">
+                  {/* Atmospheric Stage Glow */}
+                  <div className="absolute -top-16 left-1/2 -translate-x-1/2 w-[600px] h-[340px] bg-gradient-to-b from-[#F0B429]/25 via-[#F0B429]/8 to-transparent rounded-full blur-3xl pointer-events-none" />
+                  
+                  {/* Main Champion Card with Gold Shimmer Border */}
+                  <div className="relative rounded-3xl p-[2px] bg-gradient-to-b from-[#F0B429] via-[#FBBF24]/50 to-[#2D3142]/60 shadow-[0_24px_80px_rgba(0,0,0,0.8),0_0_50px_rgba(240,180,41,0.25)] overflow-hidden">
+                    <div className="bg-[#0E121B]/95 backdrop-blur-2xl rounded-[22px] p-6 sm:p-12 relative overflow-hidden">
+                      
+                      {/* Subtle Watermark in Background */}
+                      <div className="absolute -right-10 -bottom-10 opacity-5 pointer-events-none select-none text-[220px] font-black text-white leading-none">
+                        #1
+                      </div>
+
+                      {/* Top Podium Ribbon */}
+                      <div className="flex items-center justify-between gap-4 border-b border-[#21262D] pb-6 mb-8 flex-wrap">
+                        <div className="flex items-center gap-3">
+                          <div className="relative flex items-center justify-center">
+                            <span className="absolute -inset-1 rounded-full bg-[#F0B429]/40 blur-sm animate-pulse" />
+                            <div className="relative w-11 h-11 rounded-2xl bg-gradient-to-tr from-[#F0B429] to-[#FDE047] flex items-center justify-center shadow-lg">
+                              <Crown className="w-6 h-6 text-black" />
+                            </div>
+                          </div>
+                          <div>
+                            <div className="flex items-center gap-2">
+                              <span className="text-xs font-mono font-black tracking-[0.25em] text-[#F0B429] uppercase">
+                                TOURNAMENT LEADER
+                              </span>
+                              <span className="px-2 py-0.5 rounded-full text-[10px] font-black tracking-wider uppercase bg-[#22C55E]/15 text-[#22C55E] border border-[#22C55E]/30 font-mono">
+                                LIVE #1 RANK
+                              </span>
+                            </div>
+                            <span className="text-xs text-[#8B949E] font-mono">
+                              Current highest tournament net worth
+                            </span>
+                          </div>
+                        </div>
+
+                        {/* Return Badge */}
+                        <div className="flex items-center gap-2">
+                          <div className={`px-4 py-2 rounded-xl border flex items-center gap-2 font-mono font-bold text-sm ${
+                            isPositive
+                              ? 'bg-[#22C55E]/15 text-[#22C55E] border-[#22C55E]/30'
+                              : isNegative
+                              ? 'bg-[#EF4444]/15 text-[#EF4444] border-[#EF4444]/30'
+                              : 'bg-[#2D3142]/40 text-[#8B949E] border-[#2D3142]'
+                          }`}>
+                            <span className="text-base">{isPositive ? '▲' : isNegative ? '▼' : '•'}</span>
+                            <span>{isPositive ? '+' : ''}{(top1.returnPercent || 0).toFixed(2)}% Session Return</span>
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Main Hero: Big Crown & Leader Name */}
+                      <div className="text-center py-4 space-y-3">
+                        <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-[#F0B429]/10 border border-[#F0B429]/30 text-[#F0B429] font-mono text-xs font-bold uppercase tracking-widest">
+                          ★ CHAMPION STANDING ★
+                        </div>
+                        <h2 className="text-4xl sm:text-6xl font-black text-white tracking-tight drop-shadow-[0_4px_24px_rgba(0,0,0,0.8)]">
+                          {top1.name}
+                        </h2>
+                        {top1.email && (
+                          <p className="text-xs sm:text-sm font-mono text-[#8B949E]">
+                            Registered Trader ID: <span className="text-slate-300 font-semibold">{top1.email}</span>
+                          </p>
+                        )}
+                      </div>
+
+                      {/* Big Prominent Net Worth Display */}
+                      <div className="mt-8 pt-8 border-t border-[#21262D] grid grid-cols-1 sm:grid-cols-3 gap-4">
+                        
+                        {/* Box 1: Total Portfolio Value */}
+                        <div className="p-5 rounded-2xl bg-[#161B22]/80 border border-[#2D3142] text-center sm:text-left shadow-inner">
+                          <span className="text-[11px] font-mono uppercase tracking-wider text-[#8B949E] block mb-1">
+                            TOTAL PORTFOLIO NET WORTH
+                          </span>
+                          <div className="text-3xl sm:text-4xl font-mono font-black text-[#F0B429] tracking-tight">
+                            {top1.totalValue.toLocaleString('en-US', {
+                              minimumFractionDigits: 2,
+                              maximumFractionDigits: 2
+                            })}
+                            <span className="text-sm font-normal text-slate-400 ml-1.5">IC</span>
+                          </div>
+                        </div>
+
+                        {/* Box 2: Profit / Loss Difference */}
+                        <div className="p-5 rounded-2xl bg-[#161B22]/80 border border-[#2D3142] text-center sm:text-left shadow-inner">
+                          <span className="text-[11px] font-mono uppercase tracking-wider text-[#8B949E] block mb-1">
+                            NET GAIN / DEFICIT
+                          </span>
+                          <div className={`text-3xl sm:text-4xl font-mono font-black tracking-tight ${
+                            profitDelta > 0
+                              ? 'text-[#22C55E]'
+                              : profitDelta < 0
+                              ? 'text-[#EF4444]'
+                              : 'text-white'
+                          }`}>
+                            {profitDelta > 0 ? '+' : ''}
+                            {profitDelta.toLocaleString('en-US', {
+                              minimumFractionDigits: 2,
+                              maximumFractionDigits: 2
+                            })}
+                            <span className="text-sm font-normal text-slate-400 ml-1.5">IC</span>
+                          </div>
+                        </div>
+
+                        {/* Box 3: Performance Rank Status */}
+                        <div className="p-5 rounded-2xl bg-[#161B22]/80 border border-[#2D3142] text-center sm:text-left shadow-inner flex flex-col justify-center">
+                          <span className="text-[11px] font-mono uppercase tracking-wider text-[#8B949E] block mb-1">
+                            PODIUM BENCHMARK
+                          </span>
+                          <div className="flex items-center gap-2">
+                            <span className="text-2xl sm:text-3xl font-mono font-black text-white">
+                              #1 of {leaderboard.length}
+                            </span>
+                            <span className="text-xs font-mono font-bold text-[#F0B429] uppercase px-2 py-0.5 rounded bg-[#F0B429]/15 border border-[#F0B429]/30">
+                              DEFENDING
+                            </span>
+                          </div>
+                        </div>
+
+                      </div>
+
+                    </div>
+                  </div>
+                </div>
+              );
+            })()
           )}
         </main>
       </div>
