@@ -1173,41 +1173,66 @@ export function AdminDashboard() {
                 return (
                   <div
                     key={t.id}
-                    className={`p-2 rounded-lg border transition-all font-mono text-xs ${
+                    className={`p-2.5 rounded-lg border transition-all font-mono text-xs ${
                       isConfirming
                         ? 'bg-[#0F1117] border-[#F0B429]/60 shadow-md space-y-2'
                         : isRecentlySent
                         ? 'bg-[#22C55E]/10 border-[#22C55E]/40 text-[#22C55E]'
                         : isUsed
                         ? 'bg-[#0F1117]/60 border-[#2D3142]/60 opacity-50'
-                        : 'bg-[#0F1117] border-[#2D3142] hover:bg-[#161B27]'
+                        : 'bg-[#0F1117] border-[#2D3142] hover:bg-[#161B27] hover:border-[#F0B429]/40'
                     }`}
                   >
-                    {/* Line 1: Headline + SEND button (Normal collapsed state) */}
+                    {/* Normal State: Headline + Affected Stocks Badges + SEND Button */}
                     {!isConfirming && !isRecentlySent && (
-                      <div className="flex items-center justify-between gap-3 h-[28px]">
-                        <p
-                          className={`text-[13px] font-mono leading-snug truncate flex-1 ${
-                            isUsed ? 'line-through text-[#7B82A0]' : 'text-[#F0F2FF]'
-                          }`}
-                          title={t.headline}
-                        >
-                          {t.headline}
-                        </p>
+                      <div className="flex items-start justify-between gap-3">
+                        <div className="space-y-1.5 min-w-0 flex-1">
+                          <p
+                            className={`text-[12.5px] font-sans font-medium leading-snug line-clamp-2 ${
+                              isUsed ? 'line-through text-[#7B82A0]' : 'text-[#F0F2FF]'
+                            }`}
+                            title={t.headline}
+                          >
+                            {t.headline}
+                          </p>
+
+                          {/* Upfront Target Stocks & Impact Badges */}
+                          <div className="flex items-center gap-1.5 flex-wrap">
+                            <span className="text-[10px] text-[#7B82A0] uppercase font-mono font-bold">Affects:</span>
+                            {targets.map((tgt, idx) => {
+                              const pctVal = tgt.effectPercent !== undefined ? tgt.effectPercent : t.effectPercent;
+                              const isUp = (pctVal || 0) >= 0;
+                              return (
+                                <span
+                                  key={idx}
+                                  className={`text-[10.5px] font-mono font-bold px-2 py-0.5 rounded border inline-flex items-center gap-1 shadow-xs ${
+                                    isUp
+                                      ? 'bg-[#22C55E]/15 border-[#22C55E]/40 text-[#22C55E]'
+                                      : 'bg-[#EF4444]/15 border-[#EF4444]/40 text-[#EF4444]'
+                                  }`}
+                                >
+                                  <span>{tgt.symbol || tgt.stockName}</span>
+                                  <span>{isUp ? `+${pctVal}%` : `${pctVal}%`}</span>
+                                </span>
+                              );
+                            })}
+                          </div>
+                        </div>
 
                         <button
                           type="button"
                           onClick={() => setInlineConfirmTplId(t.id)}
-                          className="h-[28px] px-3 bg-[#F0B429]/10 border border-[#F0B429]/40 text-[#F0B429] hover:bg-[#F0B429]/25 text-xs font-mono font-bold rounded-lg transition-all cursor-pointer shadow-xs shrink-0 flex items-center justify-center"
+                          className="h-[30px] px-3.5 bg-[#F0B429]/15 border border-[#F0B429]/40 text-[#F0B429] hover:bg-[#F0B429]/30 text-xs font-mono font-bold rounded-lg transition-all cursor-pointer shadow-xs shrink-0 flex items-center justify-center gap-1 mt-0.5"
                         >
-                          SEND
+                          <Send className="w-3 h-3" />
+                          <span>SEND</span>
                         </button>
                       </div>
                     )}
 
-                    {/* Line 1: Headline when confirming */}
+                    {/* Headline when confirming */}
                     {isConfirming && (
-                      <p className="text-[13px] font-mono leading-snug text-[#F0F2FF]" title={t.headline}>
+                      <p className="text-[13px] font-sans font-bold leading-snug text-[#F0F2FF]" title={t.headline}>
                         {t.headline}
                       </p>
                     )}
@@ -1418,7 +1443,7 @@ export function AdminDashboard() {
 
                       {/* Stock Adjustment Controls */}
                       <div className="flex items-center gap-1 shrink-0">
-                        <div className="flex items-center gap-1">
+                        <div className="flex items-center gap-1 bg-[#141824] p-0.5 rounded-md border border-[#2D3142]/60">
                           {[10, 25, -10, -25].map((pct) => (
                             <button
                               key={pct}
@@ -1426,8 +1451,8 @@ export function AdminDashboard() {
                               onClick={() => executeStockAdjust(s.id, pct)}
                               className={`px-1.5 py-0.5 rounded text-[10px] font-bold transition-all cursor-pointer ${
                                 pct > 0
-                                  ? 'bg-[#22C55E]/15 border border-[#22C55E]/30 text-[#22C55E] hover:bg-[#22C55E]/30'
-                                  : 'bg-[#EF4444]/15 border border-[#EF4444]/30 text-[#EF4444] hover:bg-[#EF4444]/30'
+                                  ? 'bg-[#22C55E]/15 border border-[#22C55E]/30 text-[#22C55E] hover:bg-[#22C55E]/35'
+                                  : 'bg-[#EF4444]/15 border border-[#EF4444]/30 text-[#EF4444] hover:bg-[#EF4444]/35'
                               }`}
                             >
                               {pct > 0 ? `+${pct}%` : `${pct}%`}
@@ -1543,51 +1568,62 @@ export function AdminDashboard() {
               )}
 
               {rightBottomTab === 'PARTICIPANTS' && (
-                <div className="flex items-center gap-1.5 font-mono">
+                <div className="flex items-center gap-1.5 font-mono flex-wrap">
+                  {/* Action Group 1: Add & Upload (Primary) */}
+                  <div className="flex items-center gap-1 bg-[#0F1117] p-0.5 rounded-lg border border-[#2D3142]">
+                    <button
+                      type="button"
+                      onClick={() => setShowAddParticipantModal(true)}
+                      className="px-2.5 py-1 rounded bg-[#22C55E]/15 border border-[#22C55E]/30 text-[#22C55E] hover:bg-[#22C55E]/30 font-bold text-[10.5px] flex items-center gap-1 cursor-pointer transition-all"
+                      title="Manually add a single participant"
+                    >
+                      <UserPlus className="w-3.5 h-3.5" />
+                      <span>Add</span>
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => fileInputRef.current && fileInputRef.current.click()}
+                      className="px-2.5 py-1 rounded bg-[#F0B429]/15 border border-[#F0B429]/30 text-[#F0B429] hover:bg-[#F0B429]/30 font-bold text-[10.5px] flex items-center gap-1 cursor-pointer transition-all"
+                      title="Bulk import from Excel or CSV file"
+                    >
+                      <Upload className="w-3.5 h-3.5" />
+                      <span>Import List</span>
+                    </button>
+                  </div>
+
+                  {/* Action Group 2: Danger/Maintenance Actions */}
+                  <div className="flex items-center gap-1 bg-[#0F1117] p-0.5 rounded-lg border border-[#2D3142]">
+                    <button
+                      type="button"
+                      onClick={() => setShowResetAllModal(true)}
+                      disabled={participants.length === 0}
+                      className="px-2 py-1 rounded text-[#F0B429] hover:bg-[#F0B429]/15 font-bold text-[10.5px] flex items-center gap-1 cursor-pointer disabled:opacity-40 transition-all"
+                      title="Reset ALL participant balances to 20,000 IC and clear holdings"
+                    >
+                      <RotateCcw className="w-3 h-3" />
+                      <span>Reset All</span>
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setShowDeleteAllModal(true)}
+                      disabled={participants.length === 0}
+                      className="px-2 py-1 rounded text-[#EF4444] hover:bg-[#EF4444]/15 font-bold text-[10.5px] flex items-center gap-1 cursor-pointer disabled:opacity-40 transition-all"
+                      title="Delete ALL participant accounts permanently"
+                    >
+                      <Trash2 className="w-3 h-3" />
+                      <span>Delete All</span>
+                    </button>
+                  </div>
+
+                  {/* Refresh Indicator */}
                   <button
                     type="button"
-                    onClick={fetchParticipants}
+                    onClick={() => fetchParticipants(true)}
                     disabled={loadingParticipants}
-                    className="px-2 py-0.5 rounded bg-[#2D3142] text-[#7B82A0] hover:text-white font-bold text-[10px] flex items-center gap-1 cursor-pointer"
-                    title="Refresh roster list"
+                    className="p-1.5 rounded-lg bg-[#0F1117] border border-[#2D3142] text-[#7B82A0] hover:text-white font-bold cursor-pointer transition-all"
+                    title="Refresh participant list"
                   >
-                    <RefreshCw className={`w-3 h-3 ${loadingParticipants ? 'animate-spin' : ''}`} />
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setShowResetAllModal(true)}
-                    disabled={participants.length === 0}
-                    className="px-2 py-0.5 rounded bg-[#F0B429]/15 border border-[#F0B429]/30 text-[#F0B429] hover:bg-[#F0B429]/30 font-bold text-[10px] flex items-center gap-1 cursor-pointer disabled:opacity-40"
-                    title="Reset ALL participant balances to 20,000 IC and clear holdings"
-                  >
-                    <RotateCcw className="w-3 h-3" />
-                    <span>Reset All</span>
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setShowDeleteAllModal(true)}
-                    disabled={participants.length === 0}
-                    className="px-2 py-0.5 rounded bg-[#EF4444]/15 border border-[#EF4444]/30 text-[#EF4444] hover:bg-[#EF4444]/30 font-bold text-[10px] flex items-center gap-1 cursor-pointer disabled:opacity-40"
-                    title="Delete ALL participant accounts permanently"
-                  >
-                    <Trash2 className="w-3 h-3" />
-                    <span>Delete All</span>
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setShowAddParticipantModal(true)}
-                    className="px-2 py-0.5 rounded bg-[#22C55E]/15 border border-[#22C55E]/30 text-[#22C55E] hover:bg-[#22C55E]/30 font-bold text-[10px] flex items-center gap-1 cursor-pointer"
-                  >
-                    <UserPlus className="w-3 h-3" />
-                    <span>Add</span>
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => fileInputRef.current && fileInputRef.current.click()}
-                    className="px-2 py-0.5 rounded bg-[#F0B429]/15 border border-[#F0B429]/30 text-[#F0B429] hover:bg-[#F0B429]/30 font-bold text-[10px] flex items-center gap-1 cursor-pointer"
-                  >
-                    <Upload className="w-3 h-3" />
-                    <span>Upload Excel/CSV</span>
+                    <RefreshCw className={`w-3.5 h-3.5 ${loadingParticipants ? 'animate-spin text-[#F0B429]' : ''}`} />
                   </button>
                 </div>
               )}
@@ -1687,14 +1723,25 @@ export function AdminDashboard() {
               {/* TAB 3: PARTICIPANTS ROSTER */}
               {rightBottomTab === 'PARTICIPANTS' && (
                 <div className="space-y-1.5">
-                  <div className="flex items-center justify-between pb-1 font-mono text-[10.5px] text-[#7B82A0]">
+                  <div className="relative pb-1">
+                    <Search className="w-3.5 h-3.5 absolute left-2.5 top-2 text-[#7B82A0]" />
                     <input
                       type="text"
-                      placeholder="Filter roster by name, email or phone..."
+                      placeholder="Search roster by name, email, or phone number..."
                       value={participantSearch}
                       onChange={(e) => setParticipantSearch(e.target.value)}
-                      className="h-6 bg-[#0F1117] border border-[#2D3142] rounded px-2 text-[10px] text-white focus:outline-none focus:border-[#F0B429] w-full"
+                      className="h-7.5 bg-[#0F1117] border border-[#2D3142] rounded-lg pl-8 pr-8 text-xs text-white placeholder-[#7B82A0] focus:outline-none focus:border-[#F0B429] w-full font-mono transition-all"
                     />
+                    {participantSearch && (
+                      <button
+                        type="button"
+                        onClick={() => setParticipantSearch('')}
+                        className="absolute right-2.5 top-2 text-[#7B82A0] hover:text-white text-xs cursor-pointer"
+                        title="Clear search"
+                      >
+                        ✕
+                      </button>
+                    )}
                   </div>
 
                   {loadingParticipants ? (
@@ -1730,27 +1777,27 @@ export function AdminDashboard() {
                       return (
                         <div
                           key={p.id}
-                          className="p-2 bg-[#0F1117] border border-[#2D3142] rounded-lg flex items-center justify-between hover:bg-[#161B27] transition-all text-xs min-h-[46px]"
+                          className="p-3 bg-[#0F1117] border border-[#2D3142] hover:border-[#F0B429]/40 rounded-xl flex items-center justify-between hover:bg-[#141824] transition-all text-xs"
                         >
                           {isConfirmingRemove ? (
                             /* Inline 2-Step Remove Confirmation Row */
-                            <div className="w-full flex items-center justify-between gap-2 p-1.5 bg-[#EF4444]/10 border border-[#EF4444]/40 rounded-md animate-fadeIn font-mono">
-                              <span className="text-[11px] text-[#EF4444] font-bold truncate">
-                                Remove {p.name} permanently? They will not be able to log in.
+                            <div className="w-full flex items-center justify-between gap-2 p-2 bg-[#EF4444]/10 border border-[#EF4444]/40 rounded-lg animate-fadeIn font-mono">
+                              <span className="text-xs text-[#EF4444] font-bold truncate">
+                                Remove <strong>{p.name}</strong> permanently? They will not be able to log in.
                               </span>
-                              <div className="flex items-center gap-1.5 shrink-0">
+                              <div className="flex items-center gap-2 shrink-0">
                                 <button
                                   type="button"
                                   disabled={isRemoving}
                                   onClick={() => handleConfirmRemove(p)}
-                                  className="px-3 py-1 bg-[#EF4444] text-white font-extrabold text-[10px] rounded uppercase hover:bg-[#dc2626] cursor-pointer shadow-xs"
+                                  className="px-3 py-1 bg-[#EF4444] text-white font-extrabold text-xs rounded-md uppercase hover:bg-[#dc2626] cursor-pointer shadow-xs"
                                 >
-                                  {isRemoving ? 'REMOVING...' : 'YES REMOVE'}
+                                  {isRemoving ? 'REMOVING...' : 'YES, REMOVE'}
                                 </button>
                                 <button
                                   type="button"
                                   onClick={handleCancelRemove}
-                                  className="px-2.5 py-1 bg-[#2D3142] text-[#7B82A0] hover:text-white text-[10px] font-bold rounded cursor-pointer"
+                                  className="px-2.5 py-1 bg-[#2D3142] text-[#7B82A0] hover:text-white text-xs font-bold rounded-md cursor-pointer"
                                 >
                                   CANCEL
                                 </button>
@@ -1758,23 +1805,23 @@ export function AdminDashboard() {
                             </div>
                           ) : isConfirmingReset ? (
                             /* Inline 2-Step Reset Confirmation Row */
-                            <div className="w-full flex items-center justify-between gap-2 p-1.5 bg-[#F0B429]/10 border border-[#F0B429]/40 rounded-md animate-fadeIn font-mono">
-                              <span className="text-[11px] text-[#F0B429] font-bold truncate">
-                                Reset {p.name} to 20,000 IC and clear all their trades and holdings?
+                            <div className="w-full flex items-center justify-between gap-2 p-2 bg-[#F0B429]/10 border border-[#F0B429]/40 rounded-lg animate-fadeIn font-mono">
+                              <span className="text-xs text-[#F0B429] font-bold truncate">
+                                Reset <strong>{p.name}</strong> to 20,000 IC and clear all trades/holdings?
                               </span>
-                              <div className="flex items-center gap-1.5 shrink-0">
+                              <div className="flex items-center gap-2 shrink-0">
                                 <button
                                   type="button"
                                   disabled={isResetting}
                                   onClick={() => handleConfirmReset(p)}
-                                  className="px-3 py-1 bg-[#F0B429] text-black font-extrabold text-[10px] rounded uppercase hover:bg-[#d9a120] cursor-pointer shadow-xs"
+                                  className="px-3 py-1 bg-[#F0B429] text-black font-extrabold text-xs rounded-md uppercase hover:bg-[#d9a120] cursor-pointer shadow-xs"
                                 >
-                                  {isResetting ? 'RESETTING...' : 'YES RESET'}
+                                  {isResetting ? 'RESETTING...' : 'YES, RESET'}
                                 </button>
                                 <button
                                   type="button"
                                   onClick={handleCancelReset}
-                                  className="px-2.5 py-1 bg-[#2D3142] text-[#7B82A0] hover:text-white text-[10px] font-bold rounded cursor-pointer"
+                                  className="px-2.5 py-1 bg-[#2D3142] text-[#7B82A0] hover:text-white text-xs font-bold rounded-md cursor-pointer"
                                 >
                                   CANCEL
                                 </button>
@@ -1782,57 +1829,75 @@ export function AdminDashboard() {
                             </div>
                           ) : (
                             <>
-                              {/* Left: Name, Email & Unmasked Full Phone Number */}
-                              <div className="flex items-center gap-3 min-w-0 flex-1 pr-2">
+                              {/* Left: Avatar initial + Name + Email + Phone + Login status */}
+                              <div className="flex items-center gap-3 min-w-0 flex-1 pr-3">
+                                <div className="w-8 h-8 rounded-lg bg-[#F0B429]/10 border border-[#F0B429]/20 flex items-center justify-center font-bold text-[#F0B429] shrink-0 text-xs">
+                                  {p.name ? p.name.charAt(0).toUpperCase() : 'T'}
+                                </div>
                                 <div className="min-w-0 flex-1">
-                                  <div className="flex items-center gap-2">
-                                    <span className="font-bold text-white text-xs truncate">{p.name}</span>
+                                  <div className="flex items-center gap-2 flex-wrap">
                                     <span
-                                      className={`text-[9px] px-1.5 py-0.2 rounded font-extrabold uppercase shrink-0 flex items-center gap-1 ${
+                                      onClick={() => handleOpenTraderModal(p.id)}
+                                      className="font-bold text-white text-xs hover:text-[#F0B429] cursor-pointer transition-colors"
+                                      title="Click to view trader drill-down and portfolio details"
+                                    >
+                                      {p.name}
+                                    </span>
+                                    <span
+                                      className={`text-[9.5px] px-2 py-0.5 rounded-full font-extrabold uppercase shrink-0 inline-flex items-center gap-1.5 ${
                                         p.hasLoggedIn
                                           ? 'bg-[#22C55E]/15 text-[#22C55E] border border-[#22C55E]/30'
                                           : 'bg-[#7B82A0]/15 text-[#7B82A0] border border-[#7B82A0]/30'
                                       }`}
                                     >
                                       <span className={`w-1.5 h-1.5 rounded-full ${p.hasLoggedIn ? 'bg-[#22C55E] animate-pulse' : 'bg-[#7B82A0]'}`} />
-                                      <span>{p.hasLoggedIn ? 'Logged In' : 'Not Yet'}</span>
+                                      <span>{p.hasLoggedIn ? 'Logged In' : 'Not Logged In'}</span>
                                     </span>
                                   </div>
-                                  <div className="text-[10px] text-[#7B82A0] flex items-center gap-2 mt-0.5 font-mono truncate">
+                                  <div className="text-[11px] text-[#7B82A0] flex items-center gap-2.5 mt-0.5 font-mono truncate">
                                     <span className="truncate text-slate-300">{p.email}</span>
                                     <span>•</span>
-                                    <span className="text-[#F0B429] font-bold shrink-0">{p.phone || '-'}</span>
+                                    <span className="text-[#F0B429] font-medium shrink-0">Tel: {p.phone || '-'}</span>
                                   </div>
                                 </div>
                               </div>
 
-                              {/* Right: Wallet Balance + Action Buttons */}
-                              <div className="flex items-center gap-2 shrink-0">
-                                <div className="text-right pr-1">
-                                  <span className="text-xs font-bold text-[#22C55E] block">
+                              {/* Right: Cash Balance + Drill Down + Reset + Remove */}
+                              <div className="flex items-center gap-3 shrink-0">
+                                <div className="text-right px-2 py-1 bg-[#1A1D27] border border-[#2D3142] rounded-lg">
+                                  <span className="text-[10px] text-[#7B82A0] block uppercase font-mono">CASH</span>
+                                  <span className="text-xs font-mono font-black text-[#22C55E] block">
                                     {fmtMoney(p.walletBalance)} IC
                                   </span>
                                 </div>
 
-                                <div className="flex items-center gap-1">
+                                <div className="flex items-center gap-1.5 font-mono">
                                   <button
                                     type="button"
-                                    title="Reset Wallet & Portfolio"
-                                    onClick={() => handleResetClick(p)}
-                                    className="px-2 py-1 bg-[#F0B429]/15 border border-[#F0B429]/30 text-[#F0B429] hover:bg-[#F0B429]/30 rounded text-[10px] font-bold transition-colors cursor-pointer flex items-center gap-1"
+                                    title="View Trader Drill-down and Holdings"
+                                    onClick={() => handleOpenTraderModal(p.id)}
+                                    className="px-2.5 py-1 bg-[#F0B429]/15 border border-[#F0B429]/30 text-[#F0B429] hover:bg-[#F0B429]/30 rounded-md text-[11px] font-bold transition-all cursor-pointer flex items-center gap-1"
                                   >
-                                    <RotateCcw className="w-3 h-3" />
-                                    <span>Reset</span>
+                                    <Eye className="w-3.5 h-3.5" />
+                                    <span>View</span>
                                   </button>
 
                                   <button
                                     type="button"
-                                    title="Remove Participant"
-                                    onClick={() => handleRemoveClick(p)}
-                                    className="px-2 py-1 bg-[#EF4444]/15 border border-[#EF4444]/30 text-[#EF4444] hover:bg-[#EF4444]/30 rounded text-[10px] font-bold transition-colors cursor-pointer flex items-center gap-1"
+                                    title="Reset Wallet & Portfolio to 20,000 IC"
+                                    onClick={() => handleResetClick(p)}
+                                    className="p-1.5 bg-[#2D3142]/60 hover:bg-[#F0B429]/20 hover:text-[#F0B429] text-[#7B82A0] rounded-md transition-all cursor-pointer"
                                   >
-                                    <Trash2 className="w-3 h-3" />
-                                    <span>Remove</span>
+                                    <RotateCcw className="w-3.5 h-3.5" />
+                                  </button>
+
+                                  <button
+                                    type="button"
+                                    title="Remove Participant from Roster"
+                                    onClick={() => handleRemoveClick(p)}
+                                    className="p-1.5 bg-[#2D3142]/60 hover:bg-[#EF4444]/20 hover:text-[#EF4444] text-[#7B82A0] rounded-md transition-all cursor-pointer"
+                                  >
+                                    <Trash2 className="w-3.5 h-3.5" />
                                   </button>
                                 </div>
                               </div>
