@@ -234,24 +234,46 @@ export function AdminTraderDetailModal({ traderId, isOpen, onClose }) {
             </div>
 
             {/* FIX 4: MANUAL IC TOP-UP CONTROL WITH INLINE CONFIRM */}
-            <div className="p-3 bg-[#111111] border border-[#2A2A2A] rounded-[4px] space-y-2 font-mono">
+            <div className="p-3 bg-[#111111] border border-[#2A2A2A] rounded-[4px] space-y-2.5 font-mono">
               <div className="flex items-center justify-between gap-3 flex-wrap">
-                <span className="text-[11px] font-bold text-[#F0B429] uppercase">GIVE EXTRA COINS:</span>
+                <div className="flex items-center gap-2">
+                  <span className="text-[11px] font-bold text-[#F0B429] uppercase">GIVE EXTRA COINS:</span>
+                  {data.trader.totalPortfolioValue < 100 && (
+                    <span className="px-2 py-0.5 rounded text-[9.5px] font-black uppercase tracking-wider bg-[#EF4444]/20 text-[#EF4444] border border-[#EF4444]/40 animate-pulse">
+                      BANKRUPT (NEEDS IC)
+                    </span>
+                  )}
+                </div>
+
                 <div className="flex items-center gap-2 flex-1 justify-end">
+                  {/* Quick Preset Chips */}
+                  <div className="hidden sm:flex items-center gap-1">
+                    {[1000, 5000, 10000, 20000].map((amt) => (
+                      <button
+                        key={amt}
+                        type="button"
+                        onClick={() => setTopUpAmount(String(amt))}
+                        className="px-2 py-1 bg-[#1A1D27] hover:bg-[#F0B429]/20 hover:text-[#F0B429] text-[#7B82A0] border border-[#2D3142] rounded text-[10px] font-bold transition-colors cursor-pointer"
+                      >
+                        +{amt >= 1000 ? `${amt / 1000}k` : amt}
+                      </button>
+                    ))}
+                  </div>
+
                   <input
                     type="number"
                     min="1"
                     placeholder="Amount in IC"
                     value={topUpAmount}
                     onChange={(e) => setTopUpAmount(e.target.value)}
-                    className="w-36 h-[32px] bg-[#0D0D0D] border border-[#3A3A3A] rounded-[4px] px-2.5 text-xs text-white focus:outline-none focus:border-[#F0B429]"
+                    className="w-32 h-[32px] bg-[#0D0D0D] border border-[#3A3A3A] rounded-[4px] px-2.5 text-xs text-white focus:outline-none focus:border-[#F0B429]"
                   />
                   {!confirmTopUp ? (
                     <button
                       type="button"
                       disabled={isTopUpLoading || !topUpAmount || parseFloat(topUpAmount) <= 0}
                       onClick={handleTopUpClick}
-                      className="h-[32px] px-4 text-xs uppercase font-bold text-[#F0B429] border border-[#F0B429] rounded-[4px] hover:bg-[#F0B429]/10 transition-colors disabled:opacity-50"
+                      className="h-[32px] px-4 text-xs uppercase font-extrabold text-black bg-[#F0B429] hover:bg-[#d9a120] rounded-[4px] transition-colors disabled:opacity-50 cursor-pointer shadow-xs"
                     >
                       GIVE
                     </button>

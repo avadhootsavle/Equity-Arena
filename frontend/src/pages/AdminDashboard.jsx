@@ -2077,6 +2077,11 @@ export function AdminDashboard() {
                                       <span className={`w-1.5 h-1.5 rounded-full ${p.hasLoggedIn ? 'bg-[#22C55E] animate-pulse' : 'bg-[#7B82A0]'}`} />
                                       <span>{p.hasLoggedIn ? 'Logged In' : 'Not Logged In'}</span>
                                     </span>
+                                    {p.walletBalance < 100 && (
+                                      <span className="text-[9.5px] px-2 py-0.5 rounded-full font-black uppercase tracking-wider bg-[#EF4444]/20 text-[#EF4444] border border-[#EF4444]/40 animate-pulse">
+                                        BANKRUPT
+                                      </span>
+                                    )}
                                   </div>
                                   <div className="text-[11px] text-[#7B82A0] flex items-center gap-2.5 mt-0.5 font-mono truncate">
                                     <span className="truncate text-slate-300">{p.email}</span>
@@ -2098,9 +2103,18 @@ export function AdminDashboard() {
                                 <div className="flex items-center gap-1.5 font-mono">
                                   <button
                                     type="button"
+                                    title="Give Extra IC Coins to Trader"
+                                    onClick={() => handleOpenTraderModal(p.id)}
+                                    className="px-2 py-1 bg-[#F0B429] hover:bg-[#d9a120] text-black rounded-md text-[11px] font-extrabold transition-all cursor-pointer flex items-center gap-1 shadow-xs"
+                                  >
+                                    <span>+ GIVE IC</span>
+                                  </button>
+
+                                  <button
+                                    type="button"
                                     title="View Trader Drill-down and Holdings"
                                     onClick={() => handleOpenTraderModal(p.id)}
-                                    className="px-2.5 py-1 bg-[#F0B429]/15 border border-[#F0B429]/30 text-[#F0B429] hover:bg-[#F0B429]/30 rounded-md text-[11px] font-bold transition-all cursor-pointer flex items-center gap-1"
+                                    className="px-2 py-1 bg-[#F0B429]/15 border border-[#F0B429]/30 text-[#F0B429] hover:bg-[#F0B429]/30 rounded-md text-[11px] font-bold transition-all cursor-pointer flex items-center gap-1"
                                   >
                                     <Eye className="w-3.5 h-3.5" />
                                     <span>View</span>

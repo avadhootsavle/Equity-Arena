@@ -53,6 +53,18 @@ async function checkTraderBankruptcy(userId) {
 
       console.log(`[Bankruptcy Alert] ${alertPayload.traderName} has gone bankrupt (Net worth: ${alertPayload.totalValue} IC)`);
       emitBankruptAlert(alertPayload);
+
+      const { emitActivityLog } = require('../socket');
+      emitActivityLog({
+        id: Date.now() + Math.random(),
+        traderName: alertPayload.traderName,
+        action: 'DECLARED BANKRUPT',
+        quantity: 0,
+        symbol: 'BANKRUPT',
+        price: alertPayload.totalValue,
+        timestamp: Date.now(),
+        isBankrupt: true
+      });
     }
   } catch (err) {
     console.error('Bankruptcy check error:', err);

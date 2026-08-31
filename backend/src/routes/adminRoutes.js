@@ -7,7 +7,7 @@ const { checkAndExecuteLimitOrders } = require('../services/orderService');
 const { applyNewsImpact, steerMacroMoveForNews, triggerOrganicRamp } = require('../services/marketTicker');
 const { getUsedTemplateIds, markTemplateUsed } = require('../services/sessionService');
 const { getUserPortfolio } = require('../services/portfolioService');
-const { checkAllTradersBankruptcy } = require('../services/bankruptcyService');
+const { checkAllTradersBankruptcy, bankruptTraderIds } = require('../services/bankruptcyService');
 
 const router = express.Router();
 const prisma = new PrismaClient();
@@ -576,11 +576,14 @@ router.post('/trader/:id/topup', async (req, res) => {
       isTopUp: true
     });
 
+    // Clear trader from bankrupt set now that they received funds
+    bankruptTraderIds.delete(id);
+
     // Broadcast updated leaderboard standings to all clients & admin
     broadcastPublicLeaderboard();
 
     return res.json({
-      message: `Added ${parsedAmount.toLocaleString()} IC to ${traderName}'s wallet`,
+      message: `Added ${parsedAmount.toLocaleString()} IC to ${traderName}'s wallet (Revived from bankruptcy)`,
       walletBalance: Math.round(updatedUser.walletBalance * 100) / 100
     });
   } catch (err) {

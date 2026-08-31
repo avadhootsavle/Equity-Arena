@@ -155,7 +155,10 @@ function emitPortfolioUpdate(userId, portfolioData) {
 
 function emitBankruptAlert(data) {
   try {
-    if (io) io.to('traders').emit('bankrupt:alert', data);
+    if (io) {
+      io.to('traders').emit('bankrupt:alert', data);
+      io.to('admin').emit('bankrupt:alert', data);
+    }
   } catch (err) {
     console.error('[Socket emitBankruptAlert error]:', err.message);
   }
