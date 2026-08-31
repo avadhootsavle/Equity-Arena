@@ -976,13 +976,7 @@ export function TraderDashboard() {
       <OnboardingTour isOpen={isTourOpen} onClose={() => setIsTourOpen(false)} />
 
       {/* Full-Screen Deliberately-Designed Trading Terminal Intermission Screen */}
-      <IntermissionOverlay
-        sessionData={sessionData}
-        onReviewStrategy={() => {
-          // Trader can review their active portfolio / strategy
-          setActiveTab('PORTFOLIO');
-        }}
-      />
+      <IntermissionOverlay sessionData={sessionData} />
     </div>
   );
 }

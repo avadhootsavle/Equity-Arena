@@ -1,42 +1,12 @@
 import React, { useState } from 'react';
-import { Coffee, Shield, CheckCircle2, Lock, Terminal, Activity, FileText, ChevronRight } from 'lucide-react';
+import { Coffee, Lock, Terminal, ShieldAlert, ChevronRight } from 'lucide-react';
 import { BreakCountdownTimer } from './GameClock';
 
-export function IntermissionOverlay({ sessionData, onReviewStrategy }) {
-  const [acknowledged, setAcknowledged] = useState(false);
-  const [showTacticalChecklist, setShowTacticalChecklist] = useState(false);
+export function IntermissionOverlay({ sessionData }) {
+  const [showTacticalChecklist, setShowTacticalChecklist] = useState(true);
 
-  // If dismissed temporarily to review strategy, or if session isn't paused, do not render
+  // If session is not paused, do not render overlay
   if (!sessionData?.isPaused && sessionData?.status !== 'PAUSED') return null;
-  if (acknowledged) {
-    // Subtle, unobtrusive top banner allowing trader to return to full intermission readout
-    return (
-      <aside
-        aria-label="Tournament Intermission Active"
-        className="fixed top-0 inset-x-0 z-40 bg-[#0B0F17]/95 border-b border-amber-500/30 px-4 py-2 text-xs font-mono flex items-center justify-between shadow-lg backdrop-blur-md text-slate-300"
-      >
-        <div className="flex items-center gap-2.5">
-          <span className="w-2 h-2 rounded-xs bg-[#F0B429]" />
-          <span className="text-[#F0B429] font-bold tracking-wider">FLOOR PAUSED // INTERMISSION</span>
-          <span className="text-slate-500">|</span>
-          <span className="text-slate-400">Trading halted • Orders locked</span>
-        </div>
-        <div className="flex items-center gap-3">
-          <div className="flex items-center gap-1.5">
-            <span className="text-[11px] text-slate-400">RESUMES IN:</span>
-            <BreakCountdownTimer sessionData={sessionData} size="compact" />
-          </div>
-          <button
-            type="button"
-            onClick={() => setAcknowledged(false)}
-            className="px-2.5 py-1 rounded-xs bg-white/[0.06] hover:bg-white/[0.12] border border-white/[0.1] text-[11px] text-white font-mono cursor-pointer transition-colors"
-          >
-            RESTORE INTERMISSION VIEW
-          </button>
-        </div>
-      </aside>
-    );
-  }
 
   const sessionId = sessionData?.id ? String(sessionData.id).slice(0, 8).toUpperCase() : 'SYS-MAIN-01';
   const durationMins = sessionData?.breakDurationMinutes || 10;
@@ -47,7 +17,7 @@ export function IntermissionOverlay({ sessionData, onReviewStrategy }) {
       role="dialog"
       aria-modal="true"
       aria-labelledby="intermission-title"
-      className="fixed inset-0 z-50 bg-[#080B10]/95 backdrop-blur-md overflow-y-auto font-sans text-slate-200 select-none flex flex-col justify-between"
+      className="fixed inset-0 z-[100] bg-[#080B10] overflow-y-auto font-sans text-slate-200 select-none flex flex-col justify-between"
     >
       {/* Background terminal micro-grid texture (hairline CSS grid) */}
       <div
@@ -63,7 +33,7 @@ export function IntermissionOverlay({ sessionData, onReviewStrategy }) {
       />
 
       {/* ── System Status Rail / Header Chrome ──────────────────────────────── */}
-      <header className="relative z-10 w-full border-b border-white/[0.08] bg-[#0B0F17]/80 px-4 sm:px-8 py-2.5 flex items-center justify-between text-xs font-mono">
+      <header className="relative z-10 w-full border-b border-white/[0.08] bg-[#0B0F17] px-4 sm:px-8 py-2.5 flex items-center justify-between text-xs font-mono">
         <div className="flex items-center gap-3">
           <div className="flex items-center gap-1.5 px-2 py-0.5 rounded-xs bg-amber-500/10 border border-amber-500/30 text-[#F0B429]">
             <span className="w-1.5 h-1.5 rounded-xs bg-[#F0B429]" />
@@ -128,7 +98,7 @@ export function IntermissionOverlay({ sessionData, onReviewStrategy }) {
               <div className="space-y-3">
                 <p className="text-sm text-slate-300 leading-relaxed font-normal">
                   Order matching and quote updates are paused for tournament recess. 
-                  Spot valuations and resting limit queue positions are locked in memory without penalty.
+                  Trading dashboard access is temporarily suspended. Spot valuations and resting limit queue positions remain locked in memory without penalty.
                 </p>
 
                 {breakNote ? (
@@ -142,40 +112,21 @@ export function IntermissionOverlay({ sessionData, onReviewStrategy }) {
                   </div>
                 ) : (
                   <div className="p-3 rounded-xs bg-white/[0.02] border border-white/[0.05] text-xs font-mono text-slate-400">
-                    Floor Controller Dispatch: Standard tournament intermission in effect. Prepare thesis for the next trading sprint.
+                    Floor Controller Dispatch: Standard tournament intermission in effect. Trading floor unlocks automatically upon timer expiry.
                   </div>
                 )}
               </div>
             </div>
 
-            {/* Tactical Action Deck */}
-            <div className="pt-6 mt-6 border-t border-white/[0.06] flex flex-wrap items-center justify-between gap-3">
-              <div className="flex items-center gap-2 text-xs font-mono text-slate-400">
-                <Lock className="w-3.5 h-3.5 text-slate-500" />
-                <span>Resumes automatically at zero</span>
+            {/* Lock Status Deck (Strict Floor Security - No Dismiss / No Dashboard Access) */}
+            <div className="pt-5 mt-6 border-t border-white/[0.06] flex items-center justify-between gap-3 text-xs font-mono">
+              <div className="flex items-center gap-2 text-slate-400">
+                <Lock className="w-4 h-4 text-[#F0B429]" />
+                <span className="text-slate-300 font-semibold">DASHBOARD ACCESS LOCKED</span>
               </div>
-
-              <div className="flex items-center gap-2.5">
-                <button
-                  type="button"
-                  onClick={() => {
-                    setAcknowledged(true);
-                    if (onReviewStrategy) onReviewStrategy();
-                  }}
-                  className="px-4 py-2 rounded-xs border border-white/[0.12] hover:bg-white/[0.06] text-xs font-mono text-slate-200 transition-colors cursor-pointer flex items-center gap-2"
-                >
-                  <FileText className="w-3.5 h-3.5 text-slate-400" />
-                  <span>Review Strategy</span>
-                </button>
-
-                <button
-                  type="button"
-                  onClick={() => setAcknowledged(true)}
-                  className="px-5 py-2 rounded-xs bg-[#F0B429] hover:bg-[#ffc83b] text-slate-950 text-xs font-mono font-bold uppercase tracking-wider transition-colors cursor-pointer flex items-center gap-1.5 shadow-sm"
-                >
-                  <CheckCircle2 className="w-3.5 h-3.5" />
-                  <span>Got It</span>
-                </button>
+              <div className="flex items-center gap-2 text-slate-500 text-[11px]">
+                <ShieldAlert className="w-3.5 h-3.5 text-slate-500" />
+                <span>Unlocks automatically when countdown reaches 00:00</span>
               </div>
             </div>
           </div>
@@ -216,20 +167,22 @@ export function IntermissionOverlay({ sessionData, onReviewStrategy }) {
                   <ChevronRight className={`w-3.5 h-3.5 transition-transform ${showTacticalChecklist ? 'rotate-90' : ''}`} />
                 </button>
 
-                <div className="space-y-1.5 text-[11px] text-slate-400">
-                  <div className="flex items-start gap-2 p-1.5 rounded-xs bg-white/[0.02]">
-                    <span className="text-slate-500">01</span>
-                    <span>Audit resting limit orders against recent sentiment</span>
+                {showTacticalChecklist && (
+                  <div className="space-y-1.5 text-[11px] text-slate-400">
+                    <div className="flex items-start gap-2 p-1.5 rounded-xs bg-white/[0.02]">
+                      <span className="text-slate-500">01</span>
+                      <span>Audit resting limit orders against recent sentiment</span>
+                    </div>
+                    <div className="flex items-start gap-2 p-1.5 rounded-xs bg-white/[0.02]">
+                      <span className="text-slate-500">02</span>
+                      <span>Calculate liquid IC reserve for post-recess volatility</span>
+                    </div>
+                    <div className="flex items-start gap-2 p-1.5 rounded-xs bg-white/[0.02]">
+                      <span className="text-slate-500">03</span>
+                      <span>Review open positions ahead of the 5-min endgame freeze</span>
+                    </div>
                   </div>
-                  <div className="flex items-start gap-2 p-1.5 rounded-xs bg-white/[0.02]">
-                    <span className="text-slate-500">02</span>
-                    <span>Calculate liquid IC reserve for post-recess volatility</span>
-                  </div>
-                  <div className="flex items-start gap-2 p-1.5 rounded-xs bg-white/[0.02]">
-                    <span className="text-slate-500">03</span>
-                    <span>Review open positions ahead of the 5-min endgame freeze</span>
-                  </div>
-                </div>
+                )}
               </div>
             </div>
 
@@ -243,7 +196,7 @@ export function IntermissionOverlay({ sessionData, onReviewStrategy }) {
       </main>
 
       {/* ── Bottom Product Chrome / Status Footer ──────────────────────────── */}
-      <footer className="relative z-10 w-full border-t border-white/[0.08] bg-[#0B0F17]/80 px-4 sm:px-8 py-2.5 flex items-center justify-between text-[11px] font-mono text-slate-500">
+      <footer className="relative z-10 w-full border-t border-white/[0.08] bg-[#0B0F17] px-4 sm:px-8 py-2.5 flex items-center justify-between text-[11px] font-mono text-slate-500">
         <div className="flex items-center gap-2">
           <Terminal className="w-3.5 h-3.5 text-slate-400" />
           <span>EQUITY ARENA ENGINE // STANDALONE TERMINAL CLIENT</span>
