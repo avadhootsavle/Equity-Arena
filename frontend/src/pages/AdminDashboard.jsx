@@ -12,7 +12,7 @@ import {
   TrendingUp, TrendingDown, Shield, LogOut, Radio, Send, 
   Trophy, Search, RefreshCw, CheckCircle2, AlertCircle, Sparkles, SlidersHorizontal, Clock, Zap, Eye, Sun, Moon, RotateCcw, Bell, Users, UserPlus, Upload, Trash2, RotateCcw as ResetIcon, Check, X,
   ThumbsUp, ThumbsDown, Newspaper, PieChart, BarChart3, Filter, ArrowUpRight, ArrowDownRight, Layers, Activity,
-  Play, Square, Coffee, Lock, ChevronRight, HelpCircle
+  Play, Square, Coffee, Lock, ChevronRight, HelpCircle, Briefcase
 } from 'lucide-react';
 
 const fmtMoney = (n, d = 2) =>
@@ -29,12 +29,17 @@ export function AdminDashboard() {
 
   // Layout & Filter states
   const [newsTab, setNewsTab] = useState('POSITIVE'); // 'POSITIVE' | 'NEGATIVE'
-  const [rightBottomTab, setRightBottomTab] = useState('LEADERBOARD'); // 'LEADERBOARD' | 'ACTIVITY' | 'PARTICIPANTS'
+  const [rightBottomTab, setRightBottomTab] = useState('LEADERBOARD'); // 'LEADERBOARD' | 'ACTIVITY' | 'PARTICIPANTS' | 'HOLDINGS'
   const [stockSortMode, setStockSortMode] = useState('CHANGE'); // 'CHANGE' | 'ALPHA'
+  const [stockCategoryFilter, setStockCategoryFilter] = useState('ALL'); // 'ALL' | 'PENNY' | 'REGULAR'
   const [searchQuery, setSearchQuery] = useState('');
 
   const [stocks, setStocks] = useState([]);
   const [loadingStocks, setLoadingStocks] = useState(true);
+  
+  const [stockHoldingsData, setStockHoldingsData] = useState({ byStock: {}, byTrader: [], totalHoldingsCount: 0 });
+  const [loadingHoldings, setLoadingHoldings] = useState(false);
+  const [holdingsViewMode, setHoldingsViewMode] = useState('BY_STOCK'); // 'BY_STOCK' | 'BY_TRADER'
   
   const [customPercents, setCustomPercents] = useState({});
   const [adjustingStockId, setAdjustingStockId] = useState(null);
@@ -185,18 +190,39 @@ export function AdminDashboard() {
     }
   }, []);
 
+  const fetchStockHoldings = useCallback(async (isInitial = false) => {
+    if (isInitial) setLoadingHoldings(true);
+    try {
+      const data = await apiFetch('/admin/stock-holdings');
+      if (data && typeof data === 'object') {
+        setStockHoldingsData({
+          byStock: data.byStock || {},
+          byTrader: Array.isArray(data.byTrader) ? data.byTrader : [],
+          totalHoldingsCount: data.totalHoldingsCount || 0
+        });
+      }
+    } catch (err) {
+      console.error('Fetch stock holdings error:', err);
+    } finally {
+      if (isInitial) setLoadingHoldings(false);
+    }
+  }, []);
+
   useEffect(() => {
     fetchStocks();
     fetchNewsTemplates();
     fetchLeaderboard(true);
     fetchParticipants(true);
-  }, [fetchStocks, fetchNewsTemplates, fetchLeaderboard, fetchParticipants]);
+    fetchStockHoldings(true);
+  }, [fetchStocks, fetchNewsTemplates, fetchLeaderboard, fetchParticipants, fetchStockHoldings]);
 
   useEffect(() => {
     if (rightBottomTab === 'PARTICIPANTS') {
       fetchParticipants();
+    } else if (rightBottomTab === 'HOLDINGS') {
+      fetchStockHoldings();
     }
-  }, [rightBottomTab, fetchParticipants]);
+  }, [rightBottomTab, fetchParticipants, fetchStockHoldings]);
 
   /* ---------------- Socket Wiring ---------------- */
   useEffect(() => {
@@ -355,10 +381,11 @@ export function AdminDashboard() {
     const autoRefreshTimer = setInterval(() => {
       fetchLeaderboard();
       fetchParticipants();
+      fetchStockHoldings();
     }, 3000);
 
     return () => clearInterval(autoRefreshTimer);
-  }, [fetchLeaderboard, fetchParticipants]);
+  }, [fetchLeaderboard, fetchParticipants, fetchStockHoldings]);
 
   /* ---------------- Session Handlers ---------------- */
   const handleStartSession = async () => {
@@ -875,6 +902,12 @@ export function AdminDashboard() {
   const filteredAndSortedStocks = useMemo(() => {
     let result = [...stocks];
 
+    if (stockCategoryFilter === 'PENNY') {
+      result = result.filter((s) => (s.basePrice || s.currentPrice) <= 15.0);
+    } else if (stockCategoryFilter === 'REGULAR') {
+      result = result.filter((s) => (s.basePrice || s.currentPrice) > 15.0);
+    }
+
     if (searchQuery.trim()) {
       const q = searchQuery.toLowerCase().trim();
       result = result.filter(
@@ -892,7 +925,7 @@ export function AdminDashboard() {
     }
 
     return result;
-  }, [stocks, searchQuery, stockSortMode]);
+  }, [stocks, searchQuery, stockSortMode, stockCategoryFilter]);
 
   /* ---------------- Filtered Participants ---------------- */
   const filteredParticipants = useMemo(() => {
@@ -1475,26 +1508,67 @@ export function AdminDashboard() {
                 </div>
               </div>
 
-              {/* Sort Toggle */}
-              <div className="flex items-center gap-1 bg-[#0F1117] border border-[#2D3142] rounded-lg p-0.5 text-[10px]">
-                <button
-                  type="button"
-                  onClick={() => setStockSortMode('CHANGE')}
-                  className={`px-2 py-1 rounded-md font-mono font-bold transition-all cursor-pointer ${
-                    stockSortMode === 'CHANGE' ? 'bg-[#F0B429] text-black shadow-sm' : 'text-[#7B82A0] hover:text-white'
-                  }`}
-                >
-                  % Change ▼
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setStockSortMode('ALPHA')}
-                  className={`px-2 py-1 rounded-md font-mono font-bold transition-all cursor-pointer ${
-                    stockSortMode === 'ALPHA' ? 'bg-[#F0B429] text-black shadow-sm' : 'text-[#7B82A0] hover:text-white'
-                  }`}
-                >
-                  A-Z
-                </button>
+              {/* Filter & Sort Controls */}
+              <div className="flex items-center gap-2">
+                {/* Category Pills: All vs Penny vs Regular */}
+                <div className="flex items-center gap-0.5 bg-[#0F1117] border border-[#2D3142] rounded-lg p-0.5 text-[10px]">
+                  <button
+                    type="button"
+                    onClick={() => setStockCategoryFilter('ALL')}
+                    className={`px-2 py-1 rounded-md font-mono font-bold transition-all cursor-pointer ${
+                      stockCategoryFilter === 'ALL'
+                        ? 'bg-[#F0B429] text-black shadow-xs'
+                        : 'text-[#7B82A0] hover:text-white'
+                    }`}
+                  >
+                    ALL ({stocks.length})
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setStockCategoryFilter('PENNY')}
+                    className={`px-2 py-1 rounded-md font-mono font-bold transition-all cursor-pointer flex items-center gap-1 ${
+                      stockCategoryFilter === 'PENNY'
+                        ? 'bg-[#EC4899] text-white shadow-xs'
+                        : 'text-[#EC4899] hover:bg-[#EC4899]/15'
+                    }`}
+                  >
+                    <span className="w-1.5 h-1.5 rounded-full bg-[#EC4899]" />
+                    <span>PENNY ({stocks.filter((s) => (s.basePrice || s.currentPrice) <= 15).length})</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setStockCategoryFilter('REGULAR')}
+                    className={`px-2 py-1 rounded-md font-mono font-bold transition-all cursor-pointer ${
+                      stockCategoryFilter === 'REGULAR'
+                        ? 'bg-[#3B82F6] text-white shadow-xs'
+                        : 'text-[#7B82A0] hover:text-white'
+                    }`}
+                  >
+                    MAIN ({stocks.filter((s) => (s.basePrice || s.currentPrice) > 15).length})
+                  </button>
+                </div>
+
+                {/* Sort Toggle */}
+                <div className="flex items-center gap-1 bg-[#0F1117] border border-[#2D3142] rounded-lg p-0.5 text-[10px]">
+                  <button
+                    type="button"
+                    onClick={() => setStockSortMode('CHANGE')}
+                    className={`px-2 py-1 rounded-md font-mono font-bold transition-all cursor-pointer ${
+                      stockSortMode === 'CHANGE' ? 'bg-[#F0B429] text-black shadow-sm' : 'text-[#7B82A0] hover:text-white'
+                    }`}
+                  >
+                    % Change ▼
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setStockSortMode('ALPHA')}
+                    className={`px-2 py-1 rounded-md font-mono font-bold transition-all cursor-pointer ${
+                      stockSortMode === 'ALPHA' ? 'bg-[#F0B429] text-black shadow-sm' : 'text-[#7B82A0] hover:text-white'
+                    }`}
+                  >
+                    A-Z
+                  </button>
+                </div>
               </div>
             </div>
 
@@ -1515,9 +1589,14 @@ export function AdminDashboard() {
                       key={s.id}
                       className="p-2 bg-[#0F1117] border border-[#2D3142] rounded-lg hover:bg-[#181C28] hover:border-[#F0B429]/40 transition-all flex items-center justify-between text-xs gap-2 shadow-xs"
                     >
-                      {/* Symbol & Name */}
+                      {/* Symbol & Name & Penny Badge */}
                       <div className="flex items-center gap-2 min-w-0 flex-1">
                         <span className="font-extrabold text-white text-xs shrink-0">{s.symbol}</span>
+                        {(s.basePrice || s.currentPrice) <= 15 && (
+                          <span className="px-1.5 py-0.2 rounded text-[9px] font-black uppercase tracking-wider bg-[#EC4899]/20 text-[#EC4899] border border-[#EC4899]/40 shrink-0">
+                            PENNY
+                          </span>
+                        )}
                         <span className="text-[#7B82A0] text-[11px] truncate hidden sm:inline">{s.name}</span>
                       </div>
 
@@ -1652,6 +1731,19 @@ export function AdminDashboard() {
                   <Users className="w-3.5 h-3.5 text-[#F0B429]" />
                   <span>PARTICIPANTS ({participants.length})</span>
                 </button>
+
+                <button
+                  type="button"
+                  onClick={() => setRightBottomTab('HOLDINGS')}
+                  className={`px-2.5 py-1 rounded-md font-mono text-[10.5px] font-bold transition-all cursor-pointer flex items-center gap-1 ${
+                    rightBottomTab === 'HOLDINGS'
+                      ? 'bg-[#F0B429]/20 text-[#F0B429] border border-[#F0B429]/40 shadow-sm'
+                      : 'text-[#7B82A0] hover:text-white'
+                  }`}
+                >
+                  <Briefcase className="w-3.5 h-3.5 text-[#F0B429]" />
+                  <span>STOCK HOLDINGS ({stockHoldingsData.totalHoldingsCount})</span>
+                </button>
               </div>
 
               {rightBottomTab === 'LEADERBOARD' && (
@@ -1663,6 +1755,40 @@ export function AdminDashboard() {
                 >
                   REFRESH
                 </button>
+              )}
+
+              {rightBottomTab === 'HOLDINGS' && (
+                <div className="flex items-center gap-2 font-mono">
+                  {/* View Mode Toggle: BY TRADER vs BY STOCK */}
+                  <div className="flex items-center bg-[#0F1117] border border-[#2D3142] rounded-lg p-0.5 text-[10px]">
+                    <button
+                      type="button"
+                      onClick={() => setHoldingsViewMode('BY_STOCK')}
+                      className={`px-2 py-0.5 rounded font-bold transition-all cursor-pointer ${
+                        holdingsViewMode === 'BY_STOCK' ? 'bg-[#F0B429] text-black' : 'text-[#7B82A0] hover:text-white'
+                      }`}
+                    >
+                      By Stock
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setHoldingsViewMode('BY_TRADER')}
+                      className={`px-2 py-0.5 rounded font-bold transition-all cursor-pointer ${
+                        holdingsViewMode === 'BY_TRADER' ? 'bg-[#F0B429] text-black' : 'text-[#7B82A0] hover:text-white'
+                      }`}
+                    >
+                      By Trader
+                    </button>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => fetchStockHoldings(true)}
+                    disabled={loadingHoldings}
+                    className="text-[10px] text-[#F0B429] hover:underline font-mono cursor-pointer"
+                  >
+                    REFRESH
+                  </button>
+                </div>
               )}
 
               {rightBottomTab === 'PARTICIPANTS' && (
@@ -2001,6 +2127,140 @@ export function AdminDashboard() {
                               </div>
                             </>
                           )}
+                        </div>
+                      );
+                    })
+                  )}
+                </div>
+              )}
+
+              {/* TAB 4: STOCK HOLDINGS (Who holds what) */}
+              {rightBottomTab === 'HOLDINGS' && (
+                <div className="flex-1 overflow-y-auto pr-1 space-y-2 min-h-0 font-mono">
+                  {loadingHoldings ? (
+                    <div className="py-12 text-center text-[#7B82A0] text-xs font-mono">Loading stock ownership data...</div>
+                  ) : stockHoldingsData.totalHoldingsCount === 0 ? (
+                    <div className="py-12 text-center text-[#7B82A0] text-xs font-mono italic">
+                      No active stock holdings yet. When traders buy stocks, their positions will appear here live.
+                    </div>
+                  ) : holdingsViewMode === 'BY_STOCK' ? (
+                    /* VIEW MODE 1: GROUPED BY STOCK */
+                    Object.values(stockHoldingsData.byStock).map((item) => {
+                      const totalShares = item.holders.reduce((acc, h) => acc + h.quantity, 0);
+                      const totalVal = item.holders.reduce((acc, h) => acc + h.value, 0);
+                      const isPenny = item.currentPrice <= 15.0;
+
+                      return (
+                        <div
+                          key={item.stockId}
+                          className="bg-[#0F1117] border border-[#2D3142] rounded-lg p-2.5 space-y-2"
+                        >
+                          {/* Stock Summary Header */}
+                          <div className="flex items-center justify-between border-b border-[#2D3142]/60 pb-1.5">
+                            <div className="flex items-center gap-2">
+                              <span className="font-extrabold text-white text-xs">{item.symbol}</span>
+                              {isPenny && (
+                                <span className="px-1.5 py-0.2 rounded text-[9px] font-black uppercase tracking-wider bg-[#EC4899]/20 text-[#EC4899] border border-[#EC4899]/40">
+                                  PENNY
+                                </span>
+                              )}
+                              <span className="text-[#7B82A0] text-[11px] truncate">{item.name}</span>
+                            </div>
+                            <div className="flex items-center gap-3 text-xs">
+                              <span className="text-[#F0B429] font-bold">
+                                Total: {totalShares.toLocaleString()} shares
+                              </span>
+                              <span className="text-[#22C55E] font-black">
+                                ({fmtMoney(totalVal)} IC)
+                              </span>
+                            </div>
+                          </div>
+
+                          {/* Holders List */}
+                          <div className="grid grid-cols-1 sm:grid-cols-2 gap-1.5">
+                            {item.holders.map((h) => (
+                              <div
+                                key={h.traderId}
+                                onClick={() => handleOpenTraderModal(h.traderId)}
+                                className="flex items-center justify-between p-1.5 bg-[#1A1D27] hover:bg-[#252A38] border border-[#2D3142]/80 rounded text-xs cursor-pointer transition-colors"
+                                title="Click to view full trader portfolio"
+                              >
+                                <div className="flex items-center gap-1.5 truncate mr-2">
+                                  <div className="w-5 h-5 rounded bg-[#F0B429]/15 text-[#F0B429] flex items-center justify-center font-bold text-[10px] shrink-0">
+                                    {h.traderName.charAt(0).toUpperCase()}
+                                  </div>
+                                  <span className="font-bold text-white text-[11px] truncate">{h.traderName}</span>
+                                </div>
+                                <div className="text-right shrink-0">
+                                  <span className="font-extrabold text-[#F0B429] text-[11px] block">
+                                    {h.quantity} shares
+                                  </span>
+                                  <span className="text-[10px] text-[#7B82A0] block">
+                                    {fmtMoney(h.value)} IC
+                                  </span>
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      );
+                    })
+                  ) : (
+                    /* VIEW MODE 2: GROUPED BY TRADER */
+                    stockHoldingsData.byTrader.map((trader) => {
+                      const totalStocksOwned = trader.stocks.reduce((acc, s) => acc + s.quantity, 0);
+                      const totalStockVal = trader.stocks.reduce((acc, s) => acc + s.value, 0);
+
+                      return (
+                        <div
+                          key={trader.traderId}
+                          className="bg-[#0F1117] border border-[#2D3142] rounded-lg p-2.5 space-y-2"
+                        >
+                          {/* Trader Header */}
+                          <div className="flex items-center justify-between border-b border-[#2D3142]/60 pb-1.5">
+                            <div
+                              onClick={() => handleOpenTraderModal(trader.traderId)}
+                              className="flex items-center gap-2 cursor-pointer hover:text-[#F0B429] transition-colors"
+                            >
+                              <div className="w-6 h-6 rounded-lg bg-[#F0B429]/15 text-[#F0B429] flex items-center justify-center font-bold text-xs shrink-0">
+                                {trader.traderName.charAt(0).toUpperCase()}
+                              </div>
+                              <div>
+                                <span className="font-extrabold text-white text-xs block">{trader.traderName}</span>
+                                <span className="text-[10px] text-[#7B82A0] block truncate">{trader.email}</span>
+                              </div>
+                            </div>
+                            <div className="text-right text-xs">
+                              <span className="text-[#22C55E] font-black block">
+                                Stock Value: {fmtMoney(totalStockVal)} IC
+                              </span>
+                              <span className="text-[10px] text-[#7B82A0] block">
+                                {totalStocksOwned} total shares
+                              </span>
+                            </div>
+                          </div>
+
+                          {/* Stocks Held Pills */}
+                          <div className="flex flex-wrap gap-1.5">
+                            {trader.stocks.map((s) => {
+                              const isPenny = s.currentPrice <= 15.0;
+                              return (
+                                <div
+                                  key={s.stockId}
+                                  className="px-2 py-1 bg-[#1A1D27] border border-[#2D3142] rounded flex items-center gap-2 text-xs font-mono"
+                                >
+                                  <span className="font-extrabold text-white">{s.symbol}</span>
+                                  {isPenny && (
+                                    <span className="px-1 py-0.2 rounded text-[8.5px] font-black uppercase bg-[#EC4899]/20 text-[#EC4899] border border-[#EC4899]/40">
+                                      PENNY
+                                    </span>
+                                  )}
+                                  <span className="text-[#F0B429] font-bold">×{s.quantity}</span>
+                                  <span className="text-[#7B82A0] text-[10px]">({fmtMoney(s.value)} IC)</span>
+                                </div>
+                              );
+                            })}
+                          </div>
                         </div>
                       );
                     })

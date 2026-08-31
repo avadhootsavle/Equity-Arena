@@ -437,32 +437,75 @@ router.get('/leaderboard', async (req, res) => {
   }
 });
 
-// GET /admin/stock-holdings — Returns breakdown of who owns which stocks
+// GET /admin/stock-holdings — Returns breakdown of who owns which stocks (by stock and by trader)
 router.get('/stock-holdings', async (req, res) => {
   try {
     const holdings = await prisma.holding.findMany({
       where: {
-        user: { role: 'TRADER', isTestAccount: false }
+        user: { role: 'TRADER', isTestAccount: false },
+        quantity: { gt: 0 }
       },
       include: {
-        user: { select: { id: true, name: true, email: true } },
-        stock: { select: { id: true, symbol: true, name: true } }
-      }
+        user: { select: { id: true, name: true, email: true, walletBalance: true } },
+        stock: { select: { id: true, symbol: true, name: true, currentPrice: true, basePrice: true } }
+      },
+      orderBy: [
+        { user: { name: 'asc' } },
+        { stock: { symbol: 'asc' } }
+      ]
     });
 
-    const stockMap = {};
+    const byStock = {};
+    const byTrader = {};
+
     for (const h of holdings) {
-      if (!stockMap[h.stockId]) {
-        stockMap[h.stockId] = [];
+      const stockVal = Math.round(h.quantity * h.stock.currentPrice * 100) / 100;
+
+      // Grouped by stock
+      if (!byStock[h.stockId]) {
+        byStock[h.stockId] = {
+          stockId: h.stock.id,
+          symbol: h.stock.symbol,
+          name: h.stock.name,
+          currentPrice: h.stock.currentPrice,
+          holders: []
+        };
       }
-      stockMap[h.stockId].push({
+      byStock[h.stockId].holders.push({
         traderId: h.user.id,
         traderName: h.user.name || h.user.email.split('@')[0],
-        quantity: h.quantity
+        email: h.user.email,
+        quantity: h.quantity,
+        avgBuyPrice: h.averageBuyPrice,
+        value: stockVal
+      });
+
+      // Grouped by trader
+      if (!byTrader[h.userId]) {
+        byTrader[h.userId] = {
+          traderId: h.user.id,
+          traderName: h.user.name || h.user.email.split('@')[0],
+          email: h.user.email,
+          walletBalance: h.user.walletBalance,
+          stocks: []
+        };
+      }
+      byTrader[h.userId].stocks.push({
+        stockId: h.stock.id,
+        symbol: h.stock.symbol,
+        name: h.stock.name,
+        quantity: h.quantity,
+        avgBuyPrice: h.averageBuyPrice,
+        currentPrice: h.stock.currentPrice,
+        value: stockVal
       });
     }
 
-    return res.json(stockMap);
+    return res.json({
+      byStock,
+      byTrader: Object.values(byTrader),
+      totalHoldingsCount: holdings.length
+    });
   } catch (err) {
     console.error('Get stock holdings error:', err);
     return res.status(500).json({ error: 'Failed to fetch stock holdings' });
