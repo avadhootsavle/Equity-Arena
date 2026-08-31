@@ -80,18 +80,21 @@ function getStockState(stockId) {
 }
 
 /**
- * Phase 23: Steers upcoming macro moves for target stocks based on news broadcast effects
- * @param {Array<{sector?: string, symbol?: string, effectPercent: number}>} stockEffects
+ * Steers upcoming macro moves for target stocks based on news broadcast effects.
+ * Supports matching by stockId, sector, or symbol, and allows smooth organic ramping.
+ * @param {Array<{stockId?: string, sector?: string, symbol?: string, effectPercent: number}>} stockEffects
  * @param {number} delaySeconds
+ * @param {number} rampSteps - Number of ticker steps over which the move naturally unfolds (default 6)
  */
-async function steerMacroMoveForNews(stockEffects, delaySeconds = 30) {
+async function steerMacroMoveForNews(stockEffects, delaySeconds = 30, rampSteps = 6) {
   try {
     const stocks = await prisma.stock.findMany();
     const now = Date.now();
 
     for (const effect of stockEffects) {
-      const { sector, symbol, effectPercent } = effect;
+      const { stockId, sector, symbol, effectPercent } = effect;
       const matchingStocks = stocks.filter((s) => 
+        (stockId && s.id === stockId) ||
         (sector && s.sector.toLowerCase().trim() === sector.toLowerCase().trim()) ||
         (symbol && s.symbol.toLowerCase().trim() === symbol.toLowerCase().trim())
       );
@@ -104,7 +107,8 @@ async function steerMacroMoveForNews(stockEffects, delaySeconds = 30) {
 
         state.pendingMacroSteer = {
           targetPrice,
-          effectPercent
+          effectPercent,
+          rampSteps
         };
 
         // Accelerate next macro move to trigger in delaySeconds
@@ -113,6 +117,44 @@ async function steerMacroMoveForNews(stockEffects, delaySeconds = 30) {
     }
   } catch (err) {
     console.error('Error steering macro move for news:', err);
+  }
+}
+
+/**
+ * Triggers an immediate smooth, organic price adjustment for a stock.
+ * Rather than a direct unnatural spike on the chart, the engine ramps the stock price
+ * over 5 to 7 natural ticks with noise so it looks completely realistic and algorithmic.
+ * @param {string} stockId
+ * @param {number} targetPrice
+ * @param {number} rampSteps
+ */
+async function triggerOrganicRamp(stockId, targetPrice, rampSteps = 6) {
+  try {
+    const stock = await prisma.stock.findUnique({ where: { id: stockId } });
+    if (!stock) return null;
+
+    const state = getStockState(stock.id);
+    const minPrice = Math.max(1.00, Math.round((stock.basePrice || stock.currentPrice) * 0.20 * 100) / 100);
+    const maxPrice = Math.round((stock.basePrice || stock.currentPrice) * 2.50 * 100) / 100;
+    const boundedTarget = Math.min(maxPrice, Math.max(minPrice, Math.round(targetPrice * 100) / 100));
+
+    state.macroRampActive = true;
+    state.macroRampStep = 0;
+    state.macroTotalRampSteps = Math.max(3, rampSteps);
+    const totalDelta = boundedTarget - stock.currentPrice;
+    state.macroStepIncrement = totalDelta / state.macroTotalRampSteps;
+
+    // Immediately trigger an initial organic tick step so the user sees instant feedback
+    setImmediate(async () => {
+      try {
+        await tickMarket();
+      } catch (e) {}
+    });
+
+    return boundedTarget;
+  } catch (err) {
+    console.error('Error triggering organic ramp:', err);
+    return null;
   }
 }
 
@@ -153,8 +195,12 @@ async function tickMarket() {
         state.nextMacroIntervalMs = getNextMacroIntervalMs();
 
         let targetPrice;
+        let rampSteps = 6;
         if (state.pendingMacroSteer) {
           targetPrice = state.pendingMacroSteer.targetPrice;
+          if (state.pendingMacroSteer.rampSteps) {
+            rampSteps = state.pendingMacroSteer.rampSteps;
+          }
           state.pendingMacroSteer = null; // Consume news steer
         } else {
           const isSkippedCycle = Math.random() < 0.12;
@@ -170,7 +216,7 @@ async function tickMarket() {
         if (targetPrice !== undefined && targetPrice !== stock.currentPrice) {
           state.macroRampActive = true;
           state.macroRampStep = 0;
-          state.macroTotalRampSteps = 5;
+          state.macroTotalRampSteps = Math.max(3, rampSteps);
           const totalDelta = targetPrice - stock.currentPrice;
           state.macroStepIncrement = totalDelta / state.macroTotalRampSteps;
         }
@@ -297,6 +343,7 @@ module.exports = {
   stopMarketTicker,
   tickMarket,
   steerMacroMoveForNews,
+  triggerOrganicRamp,
   getStockState,
   setBaseMacroIntervalMinutes,
   setSessionVolatility

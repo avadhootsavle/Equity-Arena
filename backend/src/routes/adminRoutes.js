@@ -4,7 +4,7 @@ const { PrismaClient } = require('@prisma/client');
 const { authenticateToken, requireAdmin } = require('../middleware/authMiddleware');
 const { emitStockUpdate, emitNewsBroadcast, emitPortfolioUpdate, emitActivityLog, broadcastPublicLeaderboard } = require('../socket');
 const { checkAndExecuteLimitOrders } = require('../services/orderService');
-const { applyNewsImpact, steerMacroMoveForNews } = require('../services/marketTicker');
+const { applyNewsImpact, steerMacroMoveForNews, triggerOrganicRamp } = require('../services/marketTicker');
 const { getUsedTemplateIds, markTemplateUsed } = require('../services/sessionService');
 const { getUserPortfolio } = require('../services/portfolioService');
 const { checkAllTradersBankruptcy } = require('../services/bankruptcyService');
@@ -118,50 +118,23 @@ router.post(['/stock/:id/adjust', '/stocks/:id/adjust'], async (req, res) => {
       calculatedNewPrice = Math.max(0.50, Math.round(rawNewPrice * 100) / 100);
     }
 
-    const highVolume = getRandomVolume(60000, 150000);
+    const boundedNewPrice = calculatedNewPrice;
 
-    const [updatedStock, newHistory] = await prisma.$transaction([
-      prisma.stock.update({
-        where: { id },
-        data: { currentPrice: calculatedNewPrice }
-      }),
-      prisma.priceHistory.create({
-        data: {
-          stockId: id,
-          price: calculatedNewPrice,
-          volume: highVolume
-        }
-      })
-    ]);
+    // Trigger organic price ramp across background ticks so the stock chart rises/falls naturally
+    await triggerOrganicRamp(stock.id, boundedNewPrice, 6);
 
     const finalPercentChange = stock.basePrice > 0
-      ? Math.round((((calculatedNewPrice - stock.basePrice) / stock.basePrice) * 100) * 100) / 100
+      ? Math.round((((boundedNewPrice - stock.basePrice) / stock.basePrice) * 100) * 100) / 100
       : 0;
 
-    emitStockUpdate({
-      stockId: updatedStock.id,
-      symbol: updatedStock.symbol,
-      name: updatedStock.name,
-      newPrice: updatedStock.currentPrice,
-      volume: newHistory.volume,
-      percentChange: finalPercentChange,
-      timestamp: newHistory.timestamp
-    });
-
-    // Check limit order execution
-    await checkAndExecuteLimitOrders(updatedStock.id, calculatedNewPrice);
-
-    // Check bankruptcy for all active traders
-    await checkAllTradersBankruptcy();
-
-    // Broadcast updated leaderboard standings to all clients & admin
-    broadcastPublicLeaderboard();
-
     return res.json({
-      message: 'Stock price updated successfully',
-      stock: updatedStock,
+      message: 'Stock adjustment scheduled organically — chart will trend naturally',
+      stock: {
+        ...stock,
+        currentPrice: boundedNewPrice
+      },
       percentChange: finalPercentChange,
-      newPrice: calculatedNewPrice
+      newPrice: boundedNewPrice
     });
   } catch (err) {
     console.error('Adjust stock price error:', err);
@@ -231,22 +204,23 @@ router.post(['/market/adjust-all', '/stocks/adjust-all'], async (req, res) => {
   }
 });
 
-// POST /admin/news & /admin/news/broadcast (Custom news broadcast)
+// POST /admin/news & /admin/news/broadcast (Custom news broadcast with algorithmic stock steering)
 router.post(['/news', '/news/broadcast'], async (req, res) => {
   try {
-    const { message, stockId } = req.body;
+    const { message, stockId, direction, effectDirection, effectPercent, delaySeconds } = req.body;
 
     if (!message || typeof message !== 'string' || !message.trim()) {
       return res.status(400).json({ error: 'News message is required' });
     }
 
     let stockSymbol = null;
+    let targetStock = null;
     if (stockId) {
-      const stock = await prisma.stock.findUnique({ where: { id: stockId } });
-      if (!stock) {
+      targetStock = await prisma.stock.findUnique({ where: { id: stockId } });
+      if (!targetStock) {
         return res.status(404).json({ error: 'Associated stock not found' });
       }
-      stockSymbol = stock.symbol;
+      stockSymbol = targetStock.symbol;
     }
 
     const news = await prisma.news.create({
@@ -256,6 +230,7 @@ router.post(['/news', '/news/broadcast'], async (req, res) => {
       }
     });
 
+    // Broadcast announcement to all connected clients & terminals
     emitNewsBroadcast({
       id: news.id,
       message: news.message,
@@ -264,8 +239,28 @@ router.post(['/news', '/news/broadcast'], async (req, res) => {
       timestamp: news.timestamp
     });
 
+    // If an affected stock was selected with RISE or FALL, steer the market quant engine algorithmically!
+    const activeDir = (direction || effectDirection || '').toUpperCase();
+    if (targetStock && (activeDir === 'RISE' || activeDir === 'FALL')) {
+      const pct = Math.abs(parseFloat(effectPercent) || 15);
+      const signedPct = activeDir === 'FALL' ? -pct : pct;
+      const delay = Math.max(0, parseInt(delaySeconds, 10) || 15);
+
+      // Steer macro move organically over 6-8 background ticks so chart rises/falls naturally
+      await steerMacroMoveForNews([
+        {
+          stockId: targetStock.id,
+          symbol: targetStock.symbol,
+          sector: targetStock.sector,
+          effectPercent: signedPct
+        }
+      ], delay, 7);
+    }
+
     return res.status(201).json({
-      message: 'News broadcasted successfully',
+      message: targetStock
+        ? `Custom news broadcasted! ${targetStock.symbol} will organically ${activeDir === 'FALL' ? 'fall' : 'rise'} like algorithm.`
+        : 'News broadcasted successfully',
       news
     });
   } catch (err) {

@@ -43,6 +43,9 @@ export function AdminDashboard() {
   const flashTimersRef = useRef(new Map());
 
   const [newsMessage, setNewsMessage] = useState('');
+  const [customNewsStockId, setCustomNewsStockId] = useState('');
+  const [customNewsDirection, setCustomNewsDirection] = useState('RISE'); // 'RISE' | 'FALL'
+  const [customNewsPercent, setCustomNewsPercent] = useState('15');
   const [sendingNews, setSendingNews] = useState(false);
 
   const [templates, setTemplates] = useState([]);
@@ -494,16 +497,21 @@ export function AdminDashboard() {
     if (!newsMessage.trim()) return;
     setSendingNews(true);
     try {
-      await apiFetch('/admin/news/broadcast', {
+      const res = await apiFetch('/admin/news/broadcast', {
         method: 'POST',
         body: JSON.stringify({
-          message: newsMessage.trim()
+          message: newsMessage.trim(),
+          stockId: customNewsStockId || null,
+          direction: customNewsDirection,
+          effectPercent: parseFloat(customNewsPercent) || 15,
+          delaySeconds: 15
         })
       });
 
       playNewsChime();
-      showToast('Custom market news broadcasted live!', 'success');
+      showToast(res.message || 'Custom market news broadcasted live!', 'success');
       setNewsMessage('');
+      setCustomNewsStockId('');
       setCustomNewsConfirm(false);
     } catch (err) {
       showToast(err.message || 'Failed to broadcast custom news', 'error');
@@ -1319,17 +1327,85 @@ export function AdminDashboard() {
               placeholder="Write custom market announcement..."
               value={newsMessage}
               onChange={(e) => setNewsMessage(e.target.value)}
-              className="w-full bg-[#0F1117] border border-[#2D3142] rounded-lg p-2 text-xs text-white placeholder-[#7B82A0] focus:outline-none focus:border-[#F0B429] resize-none"
+              className="w-full bg-[#0F1117] border border-[#2D3142] rounded-lg p-2 text-xs text-white placeholder-[#7B82A0] focus:outline-none focus:border-[#F0B429] resize-none font-sans"
             />
+
+            {/* Algorithmic Stock Impact Target Selector */}
+            <div className="bg-[#0F1117] border border-[#2D3142] rounded-lg p-2 space-y-1.5 font-mono text-xs">
+              <div className="flex items-center justify-between text-[10.5px] text-[#7B82A0]">
+                <span className="font-bold text-white uppercase">AFFECTED STOCK (ALGORITHM):</span>
+                <span>Optional algorithmic steer</span>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-12 gap-1.5 items-center">
+                {/* Stock Dropdown (6 cols) */}
+                <select
+                  value={customNewsStockId}
+                  onChange={(e) => setCustomNewsStockId(e.target.value)}
+                  className="sm:col-span-6 h-7 bg-[#1A1D27] border border-[#2D3142] rounded px-2 text-xs text-white focus:outline-none focus:border-[#F0B429] cursor-pointer"
+                >
+                  <option value="">No specific stock (General news)</option>
+                  {stocks.map((s) => (
+                    <option key={s.id} value={s.id}>
+                      {s.symbol} — {s.name} ({fmtMoney(s.currentPrice)} IC)
+                    </option>
+                  ))}
+                </select>
+
+                {/* Direction Toggle: RISE vs FALL (4 cols) */}
+                <div className="sm:col-span-4 flex items-center gap-1 bg-[#1A1D27] p-0.5 rounded border border-[#2D3142]">
+                  <button
+                    type="button"
+                    disabled={!customNewsStockId}
+                    onClick={() => setCustomNewsDirection('RISE')}
+                    className={`flex-1 py-1 rounded text-[10px] font-extrabold uppercase transition-all cursor-pointer ${
+                      customNewsDirection === 'RISE' && customNewsStockId
+                        ? 'bg-[#22C55E] text-black shadow-xs'
+                        : 'text-[#7B82A0] hover:text-[#22C55E]'
+                    } disabled:opacity-40`}
+                  >
+                    ▲ RISE
+                  </button>
+                  <button
+                    type="button"
+                    disabled={!customNewsStockId}
+                    onClick={() => setCustomNewsDirection('FALL')}
+                    className={`flex-1 py-1 rounded text-[10px] font-extrabold uppercase transition-all cursor-pointer ${
+                      customNewsDirection === 'FALL' && customNewsStockId
+                        ? 'bg-[#EF4444] text-white shadow-xs'
+                        : 'text-[#7B82A0] hover:text-[#EF4444]'
+                    } disabled:opacity-40`}
+                  >
+                    ▼ FALL
+                  </button>
+                </div>
+
+                {/* % Impact (2 cols) */}
+                <div className="sm:col-span-2 flex items-center gap-1">
+                  <input
+                    type="number"
+                    disabled={!customNewsStockId}
+                    min="1"
+                    max="100"
+                    placeholder="15%"
+                    value={customNewsPercent}
+                    onChange={(e) => setCustomNewsPercent(e.target.value)}
+                    className="w-full h-7 bg-[#1A1D27] border border-[#2D3142] rounded text-center text-xs text-white focus:outline-none focus:border-[#F0B429] disabled:opacity-40 font-bold"
+                  />
+                </div>
+              </div>
+            </div>
 
             {!customNewsConfirm ? (
               <button
                 type="button"
                 disabled={sendingNews || !newsMessage.trim()}
                 onClick={() => setCustomNewsConfirm(true)}
-                className="w-full py-1.5 bg-[#F0B429] text-black font-bold text-xs rounded-lg uppercase tracking-wider hover:bg-[#d9a120] transition-colors disabled:opacity-50 cursor-pointer shadow-xs"
+                className="w-full py-2 bg-[#F0B429] text-black font-extrabold text-xs rounded-lg uppercase tracking-wider hover:bg-[#d9a120] transition-colors disabled:opacity-50 cursor-pointer shadow-xs"
               >
-                SEND CUSTOM NEWS
+                {customNewsStockId
+                  ? `BROADCAST NEWS & STEER ${stocks.find((s) => s.id === customNewsStockId)?.symbol || 'STOCK'} ${customNewsDirection} (+${customNewsPercent}%)`
+                  : 'BROADCAST CUSTOM NEWS'}
               </button>
             ) : (
               <div className="flex items-center gap-2 animate-fadeIn">
