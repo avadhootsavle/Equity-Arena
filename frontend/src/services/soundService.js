@@ -265,3 +265,63 @@ function playSynthesizedChime() {
     console.error('Audio chime playback error:', err);
   }
 }
+
+/**
+ * Plays intermission start chime (intermisson-start.mp3) in low volume.
+ * Guarantees playing strictly ONCE per break event via unique break identifier / timestamp tracking.
+ */
+let lastPlayedBreakKey = null;
+
+export function playIntermissionStartSound(breakKey) {
+  if (isSoundMuted()) return;
+
+  // Multi-tab check: Only active visible tab plays audio
+  if (typeof document !== 'undefined' && document.visibilityState === 'hidden') {
+    return;
+  }
+
+  // Deduplication check: Guarantee it only plays ONCE per break session
+  const key = breakKey || 'active_break';
+  try {
+    const stored = localStorage.getItem('equity_last_played_break_key');
+    if (stored === String(key) || lastPlayedBreakKey === String(key)) {
+      return; // Already played for this break session!
+    }
+    lastPlayedBreakKey = String(key);
+    localStorage.setItem('equity_last_played_break_key', String(key));
+  } catch (e) {
+    if (lastPlayedBreakKey === String(key)) return;
+    lastPlayedBreakKey = String(key);
+  }
+
+  try {
+    const audio = new Audio('/sounds/intermisson-start.mp3');
+    // "little low volume" -> 0.35 volume
+    audio.volume = 0.35;
+    const playPromise = audio.play();
+    if (playPromise !== undefined) {
+      playPromise.catch((err) => {
+        // Fallback to Web Audio synthesis if browser audio element is restricted
+        try {
+          const ctx = getAudioContext();
+          if (ctx) {
+            if (ctx.state === 'suspended') ctx.resume().catch(() => {});
+            const osc = ctx.createOscillator();
+            const gain = ctx.createGain();
+            osc.type = 'sine';
+            osc.frequency.setValueAtTime(440, ctx.currentTime);
+            osc.frequency.exponentialRampToValueAtTime(330, ctx.currentTime + 0.35);
+            gain.gain.setValueAtTime(0.2, ctx.currentTime);
+            gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.45);
+            osc.connect(gain);
+            gain.connect(ctx.destination);
+            osc.start(ctx.currentTime);
+            osc.stop(ctx.currentTime + 0.5);
+          }
+        } catch (e2) {}
+      });
+    }
+  } catch (err) {
+    console.warn('Intermission start audio trigger skipped:', err);
+  }
+}

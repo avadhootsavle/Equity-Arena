@@ -22,7 +22,7 @@ import { StockDetailModal } from '../components/StockDetailModal';
 import { OnboardingTour } from '../components/OnboardingTour';
 import { IntermissionOverlay } from '../components/IntermissionOverlay';
 import { NewsToast } from '../components/NewsToast';
-import { playNewsChime } from '../services/soundService';
+import { playNewsChime, playIntermissionStartSound } from '../services/soundService';
 
 import {
   Wallet,
@@ -344,6 +344,11 @@ export function TraderDashboard() {
       fetchPortfolio();
     };
 
+    const handleBreakStarted = (data) => {
+      const key = data?.breakEndTime || data?.endsAt || data?.sessionId || Date.now();
+      playIntermissionStartSound(key);
+    };
+
     const handleBreakEnded = () => {
       pushToast('Market is back! Trading has resumed.', 'success', 'Market Unlocked');
     };
@@ -359,6 +364,8 @@ export function TraderDashboard() {
     socket.on('news:broadcast', handleNews);
     socket.on('portfolio:update', handlePortfolioUpdate);
     socket.on('order:executed', handleOrderExecuted);
+    socket.on('break:started', handleBreakStarted);
+    socket.on('session:paused', handleBreakStarted);
     socket.on('break:ended', handleBreakEnded);
     socket.on('session:resumed', handleBreakEnded);
     socket.on('bankrupt:alert', handleBankruptAlert);
@@ -369,6 +376,8 @@ export function TraderDashboard() {
       socket.off('news:broadcast', handleNews);
       socket.off('portfolio:update', handlePortfolioUpdate);
       socket.off('order:executed', handleOrderExecuted);
+      socket.off('break:started', handleBreakStarted);
+      socket.off('session:paused', handleBreakStarted);
       socket.off('break:ended', handleBreakEnded);
       socket.off('session:resumed', handleBreakEnded);
       socket.off('bankrupt:alert', handleBankruptAlert);
