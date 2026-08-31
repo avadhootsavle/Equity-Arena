@@ -1,17 +1,28 @@
 import notificationMp3Asset from '../notification.mp3';
+import intermissionMp3Asset from '../intermisson-start.mp3';
 
 let audioCtx = null;
 let lastPlayTime = 0;
 let customSoundUrl = notificationMp3Asset || '/sounds/notification.mp3';
 let decodedMp3Buffer = null;
+let decodedIntermissionBuffer = null;
 let isDecoding = false;
+let isDecodingIntermission = false;
 let preloadedAudio = null;
+let preloadedIntermissionAudio = null;
 
 if (typeof window !== 'undefined') {
   try {
     preloadedAudio = new Audio(customSoundUrl);
     preloadedAudio.preload = 'auto';
     preloadedAudio.load();
+  } catch (e) {}
+
+  try {
+    preloadedIntermissionAudio = new Audio(intermissionMp3Asset || '/sounds/intermisson-start.mp3');
+    preloadedIntermissionAudio.preload = 'auto';
+    preloadedIntermissionAudio.volume = 0.30;
+    preloadedIntermissionAudio.load();
   } catch (e) {}
 }
 
@@ -61,7 +72,33 @@ async function loadAndDecodeMp3() {
   }
 }
 
-// Global user interaction listener to unlock AudioContext and decode MP3
+// Pre-fetch and decode the intermission MP3 file into a Web Audio buffer
+async function loadAndDecodeIntermissionMp3() {
+  if (decodedIntermissionBuffer || isDecodingIntermission) return;
+  isDecodingIntermission = true;
+
+  try {
+    const ctx = getAudioContext();
+    if (!ctx) return;
+
+    const urlsToTry = [intermissionMp3Asset, '/sounds/intermisson-start.mp3', '/intermisson-start.mp3'].filter(Boolean);
+    for (const url of urlsToTry) {
+      try {
+        const response = await fetch(url);
+        if (response.ok) {
+          const arrayBuffer = await response.arrayBuffer();
+          decodedIntermissionBuffer = await ctx.decodeAudioData(arrayBuffer);
+          break;
+        }
+      } catch (e) {}
+    }
+  } catch (err) {
+  } finally {
+    isDecodingIntermission = false;
+  }
+}
+
+// Global user interaction listener to unlock AudioContext and decode audio assets
 function unlockAudioOnInteraction() {
   const unlock = () => {
     const ctx = getAudioContext();
@@ -70,8 +107,12 @@ function unlockAudioOnInteraction() {
         ctx.resume().catch(() => {});
       }
       loadAndDecodeMp3();
+      loadAndDecodeIntermissionMp3();
       if (preloadedAudio) {
         preloadedAudio.load();
+      }
+      if (preloadedIntermissionAudio) {
+        preloadedIntermissionAudio.load();
       }
       window.removeEventListener('pointerdown', unlock);
       window.removeEventListener('keydown', unlock);
@@ -294,34 +335,60 @@ export function playIntermissionStartSound(breakKey) {
     lastPlayedBreakKey = String(key);
   }
 
-  try {
-    const audio = new Audio('/sounds/intermisson-start.mp3');
-    // "little low volume" -> 0.35 volume
-    audio.volume = 0.35;
-    const playPromise = audio.play();
-    if (playPromise !== undefined) {
-      playPromise.catch((err) => {
-        // Fallback to Web Audio synthesis if browser audio element is restricted
-        try {
-          const ctx = getAudioContext();
-          if (ctx) {
-            if (ctx.state === 'suspended') ctx.resume().catch(() => {});
-            const osc = ctx.createOscillator();
-            const gain = ctx.createGain();
-            osc.type = 'sine';
-            osc.frequency.setValueAtTime(440, ctx.currentTime);
-            osc.frequency.exponentialRampToValueAtTime(330, ctx.currentTime + 0.35);
-            gain.gain.setValueAtTime(0.2, ctx.currentTime);
-            gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.45);
-            osc.connect(gain);
-            gain.connect(ctx.destination);
-            osc.start(ctx.currentTime);
-            osc.stop(ctx.currentTime + 0.5);
-          }
-        } catch (e2) {}
-      });
+  const playIntermissionNow = () => {
+    const ctx = getAudioContext();
+
+    // 1. Decoded Web Audio buffer (fastest, unblocked once AudioContext is active)
+    if (ctx && decodedIntermissionBuffer) {
+      try {
+        if (ctx.state === 'suspended') {
+          ctx.resume().catch(() => {});
+        }
+        const source = ctx.createBufferSource();
+        const gainNode = ctx.createGain();
+        source.buffer = decodedIntermissionBuffer;
+        gainNode.gain.setValueAtTime(0.35, ctx.currentTime);
+        source.connect(gainNode);
+        gainNode.connect(ctx.destination);
+        source.start(0);
+        return;
+      } catch (err) {}
     }
-  } catch (err) {
-    console.warn('Intermission start audio trigger skipped:', err);
-  }
+
+    // 2. Preloaded HTML5 Audio element
+    if (preloadedIntermissionAudio) {
+      try {
+        preloadedIntermissionAudio.currentTime = 0;
+        preloadedIntermissionAudio.volume = 0.35;
+        const playPromise = preloadedIntermissionAudio.play();
+        if (playPromise !== undefined) {
+          playPromise.then(() => {}).catch(() => {
+            // If blocked by browser gesture restriction, listen for the very next gesture to play
+            const gesturePlay = () => {
+              preloadedIntermissionAudio.play().catch(() => {});
+              window.removeEventListener('pointerdown', gesturePlay);
+              window.removeEventListener('keydown', gesturePlay);
+              window.removeEventListener('touchstart', gesturePlay);
+            };
+            window.addEventListener('pointerdown', gesturePlay, { once: true });
+            window.addEventListener('keydown', gesturePlay, { once: true });
+            window.addEventListener('touchstart', gesturePlay, { once: true });
+          });
+          return;
+        }
+      } catch (e) {}
+    }
+
+    // 3. Direct HTML5 Audio instance fallback
+    try {
+      const audio = new Audio(intermissionMp3Asset || '/sounds/intermisson-start.mp3');
+      audio.volume = 0.35;
+      const p = audio.play();
+      if (p !== undefined) {
+        p.catch(() => {});
+      }
+    } catch (e) {}
+  };
+
+  playIntermissionNow();
 }
