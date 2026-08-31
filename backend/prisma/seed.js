@@ -4,6 +4,13 @@ const bcrypt = require('bcryptjs');
 const prisma = new PrismaClient();
 
 const INDIA_SECTOR_STOCKS = [
+  // --- PENNY STOCKS (~1.50–8.50 IC) ---
+  { symbol: 'ZTEL', name: 'Zenith Telelink', sector: 'Telecom', basePrice: 2.40 },
+  { symbol: 'SPTI', name: 'Spark Textile Industries', sector: 'Textiles', basePrice: 3.80 },
+  { symbol: 'KMIN', name: 'Kuber Mineral Resources', sector: 'Mining', basePrice: 4.50 },
+  { symbol: 'OMEX', name: 'Omkar Exports', sector: 'Trading/Exports', basePrice: 5.90 },
+  { symbol: 'NVPW', name: 'Navkar Power Systems', sector: 'Renewable Energy', basePrice: 7.20 },
+
   // --- LOW TIER (~30–100 IC) ---
   { symbol: 'ANAG', name: 'Annapurna Agro', sector: 'Agriculture', basePrice: 42.50 },
   { symbol: 'BRM', name: 'Bazaar Retail Mart', sector: 'Retail', basePrice: 58.00 },
