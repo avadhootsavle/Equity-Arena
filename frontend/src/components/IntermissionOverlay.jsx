@@ -13,7 +13,7 @@ export function IntermissionOverlay({ sessionData }) {
   const [isRendered, setIsRendered] = useState(false);
   const [isVisible, setIsVisible] = useState(false);
 
-  // Play "intermisson-start.mp3" at soft elevator BGM volume (0.15) strictly ONCE when break starts
+  // Play "intermisson-start.mp3" at whisper-soft elevator BGM volume (0.05) strictly ONCE when break starts
   const hasTriggeredAudioRef = useRef(false);
   const audioElRef = useRef(null);
   const breakKey = sessionData?.breakEndTime || sessionData?.id || 'session_break';
@@ -23,7 +23,7 @@ export function IntermissionOverlay({ sessionData }) {
     if (audioElRef.current) {
       try {
         audioElRef.current.currentTime = 0;
-        audioElRef.current.volume = 0.15;
+        audioElRef.current.volume = 0.05;
         audioElRef.current.play().catch(() => {});
       } catch (e) {}
     }
