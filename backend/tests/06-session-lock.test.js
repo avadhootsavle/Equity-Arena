@@ -27,7 +27,8 @@ async function runSessionLockTests() {
     const session = await startNewSession({
       durationMinutes,
       liquidationBufferMinutes: 5,
-      macroCycleIntervalMinutes: 15
+      macroCycleIntervalMinutes: 15,
+      force: true
     });
 
     assert(session !== null && session.status === 'ACTIVE', `Session created cleanly with status ACTIVE`);

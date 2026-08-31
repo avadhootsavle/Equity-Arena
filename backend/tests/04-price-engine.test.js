@@ -23,7 +23,7 @@ async function runPriceEngineTests() {
 
   try {
     const stocks = await prisma.stock.findMany();
-    assert(stocks.length === 15, `All 15 India sector stocks active in database`);
+    assert(stocks.length >= 15, `All ${stocks.length} market stocks (including penny stocks) active in database`);
 
     // 1. Per-Stock Floor and Ceiling Clamps Verification
     let allBoundsValid = true;

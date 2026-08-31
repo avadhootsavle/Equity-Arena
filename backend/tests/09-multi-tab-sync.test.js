@@ -63,7 +63,18 @@ async function runMultiTabSyncTest() {
     const tab2Received = new Promise((res) => socketTab2.once('portfolio:update', res));
     const tab3Received = new Promise((res) => socketTab3.once('portfolio:update', res));
 
-    emitPortfolioUpdate(user.id, portfolioPayload);
+    // Dispatch via server endpoint so the active running server's socket.io instance emits the events
+    const adminUser = await prisma.user.findFirst({ where: { role: 'ADMIN' } });
+    const adminToken = generateToken(adminUser);
+
+    await fetch(`${API_URL}/admin/test/broadcast-portfolio`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${adminToken}`
+      },
+      body: JSON.stringify({ userId: user.id, portfolio: portfolioPayload })
+    });
 
     const [res1, res2, res3] = await Promise.all([tab1Received, tab2Received, tab3Received]);
 
@@ -79,7 +90,14 @@ async function runMultiTabSyncTest() {
     const newsTab2 = new Promise((res) => socketTab2.once('news:broadcast', res));
     const newsTab3 = new Promise((res) => socketTab3.once('news:broadcast', res));
 
-    emitNewsBroadcast(newsPayload);
+    await fetch(`${API_URL}/admin/test/broadcast-news`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${adminToken}`
+      },
+      body: JSON.stringify({ news: newsPayload })
+    });
 
     const [n1, n2, n3] = await Promise.all([newsTab1, newsTab2, newsTab3]);
 

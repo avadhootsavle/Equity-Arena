@@ -978,4 +978,17 @@ router.post(['/participants/delete-all', '/participants-delete-all', '/clear-par
   }
 });
 
+// Internal test helper endpoint to trigger server-side socket broadcast during automated testing
+router.post('/test/broadcast-portfolio', (req, res) => {
+  const { userId, portfolio } = req.body;
+  emitPortfolioUpdate(userId, portfolio);
+  return res.json({ ok: true });
+});
+
+router.post('/test/broadcast-news', (req, res) => {
+  const { news } = req.body;
+  emitNewsBroadcast(news);
+  return res.json({ ok: true });
+});
+
 module.exports = router;
