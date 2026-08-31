@@ -841,9 +841,9 @@ export function AdminDashboard() {
       const q = searchQuery.toLowerCase().trim();
       result = result.filter(
         (s) =>
-          s.symbol.toLowerCase().includes(q) ||
-          s.name.toLowerCase().includes(q) ||
-          s.sector.toLowerCase().includes(q)
+          (s.symbol || '').toLowerCase().includes(q) ||
+          (s.name || '').toLowerCase().includes(q) ||
+          (s.sector || '').toLowerCase().includes(q)
       );
     }
 
