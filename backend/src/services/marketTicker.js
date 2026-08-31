@@ -5,7 +5,7 @@ const { checkAndExecuteLimitOrders } = require('./orderService');
 const { checkSessionTimers } = require('./sessionService');
 const { randomNormal, combineSectorNoise, calculateGBMPrice, calculateMacroMoveTarget } = require('../utils/quantMath');
 
-const prisma = new PrismaClient();
+const prisma = require('../prisma');
 let tickerInterval = null;
 
 // Persistent state per stock for drift, GARCH volatility, and Phase 20b/23 15-minute jittered macro moves

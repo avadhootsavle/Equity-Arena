@@ -9,7 +9,7 @@ const { getUserPortfolio } = require('../services/portfolioService');
 const { checkTraderBankruptcy } = require('../services/bankruptcyService');
 
 const router = express.Router();
-const prisma = new PrismaClient();
+const prisma = require('../prisma');
 
 // GET /portfolio
 router.get('/portfolio', authenticateToken, async (req, res) => {

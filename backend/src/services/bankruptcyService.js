@@ -1,7 +1,7 @@
 const { PrismaClient } = require('@prisma/client');
 const { emitBankruptAlert } = require('../socket');
 
-const prisma = new PrismaClient();
+const prisma = require('../prisma');
 
 // In-memory set of bankrupt trader IDs for current session
 const bankruptTraderIds = new Set();

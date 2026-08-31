@@ -1,8 +1,6 @@
 const { Server } = require('socket.io');
 const { verifyToken } = require('../utils/auth');
-const { PrismaClient } = require('@prisma/client');
-
-const prisma = new PrismaClient();
+const prisma = require('../prisma');
 let io = null;
 
 function initSocket(server) {

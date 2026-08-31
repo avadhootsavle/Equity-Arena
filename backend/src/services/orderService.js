@@ -1,7 +1,7 @@
 const { PrismaClient } = require('@prisma/client');
 const { emitPortfolioUpdate, broadcastPublicLeaderboard } = require('../socket');
 
-const prisma = new PrismaClient();
+const prisma = require('../prisma');
 
 /**
  * Calculates user's available wallet balance after reserving funds for PENDING BUY limit orders.

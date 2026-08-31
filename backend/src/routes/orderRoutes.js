@@ -12,7 +12,7 @@ const { getUserPortfolio } = require('../services/portfolioService');
 const { emitPortfolioUpdate } = require('../socket');
 
 const router = express.Router();
-const prisma = new PrismaClient();
+const prisma = require('../prisma');
 
 // POST /orders — Place a Limit Buy or Limit Sell Order
 router.post('/orders', authenticateToken, tradeRateLimiter, async (req, res) => {

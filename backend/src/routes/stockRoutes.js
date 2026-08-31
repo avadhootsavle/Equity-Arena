@@ -3,7 +3,7 @@ const { PrismaClient } = require('@prisma/client');
 const { authenticateToken } = require('../middleware/authMiddleware');
 
 const router = express.Router();
-const prisma = new PrismaClient();
+const prisma = require('../prisma');
 
 /**
  * Aggregates price histories into bucketed time intervals (e.g. hourly or daily)

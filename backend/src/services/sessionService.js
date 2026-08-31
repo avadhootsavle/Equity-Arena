@@ -2,7 +2,7 @@ const { PrismaClient } = require('@prisma/client');
 const { getIo } = require('../socket');
 const { clearBankruptTraders } = require('./bankruptcyService');
 
-const prisma = new PrismaClient();
+const prisma = require('../prisma');
 
 /**
  * Server-authoritative session state retriever

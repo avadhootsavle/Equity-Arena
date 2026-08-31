@@ -6,7 +6,7 @@ const { authenticateToken } = require('../middleware/authMiddleware');
 const { adminLoginRateLimiter, recordAdminFailedAttempt, clearAdminRateLimit } = require('../middleware/rateLimiter');
 
 const router = express.Router();
-const prisma = new PrismaClient();
+const prisma = require('../prisma');
 
 // POST /auth/register (Disabled — Roster pre-loading only)
 router.post('/register', async (req, res) => {

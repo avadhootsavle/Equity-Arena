@@ -1,7 +1,7 @@
 const { PrismaClient } = require('@prisma/client');
 const { getUserAvailableBalance, getUserAvailableHolding } = require('./orderService');
 
-const prisma = new PrismaClient();
+const prisma = require('../prisma');
 
 /**
  * Realized profit/loss per SELL transaction, keyed by transaction id.
