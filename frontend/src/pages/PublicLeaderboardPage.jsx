@@ -213,15 +213,15 @@ export function PublicLeaderboardPage() {
                     #1
                   </div>
 
-                  {/* Ribbon Top: Crown + #1 Label + Return Tag */}
-                  <div className="flex items-center justify-between gap-4 border-b-2 border-black pb-5 mb-6 flex-wrap">
-                    <div className="flex items-center gap-3">
+                  {/* Ribbon Top: Crown + #1 Label */}
+                  <div className="flex items-center justify-between gap-4 border-b-2 border-black pb-5 mb-6">
+                    <div className="flex items-center gap-3.5">
                       <div className="w-12 h-12 bg-[#F0B429] border-2 border-black rounded-xl shadow-[3px_3px_0px_#000000] flex items-center justify-center text-black">
                         <Crown className="w-7 h-7" />
                       </div>
                       <div>
                         <div className="flex items-center gap-2">
-                          <span className="text-xs font-mono font-black tracking-[0.2em] text-[#F0B429] uppercase">
+                          <span className="text-xs font-mono font-black tracking-[0.25em] text-[#F0B429] uppercase">
                             TOURNAMENT LEADER
                           </span>
                           <span className="px-2 py-0.5 bg-black border border-[#F0B429] text-[#F0B429] text-[9px] font-mono font-black uppercase rounded shadow-[2px_2px_0px_#000000]">
@@ -229,37 +229,24 @@ export function PublicLeaderboardPage() {
                           </span>
                         </div>
                         <span className="text-[11px] text-[#8B949E] font-mono">
-                          Current Highest Tournament Net Worth
+                          Official Tournament Standings
                         </span>
                       </div>
                     </div>
 
-                    {/* Session Return Badge (Neo-Brutalist Pill) */}
-                    <div className={`px-4 py-1.5 border-2 border-black font-mono font-black text-xs rounded shadow-[3px_3px_0px_#000000] flex items-center gap-2 ${
-                      isPositive
-                        ? 'bg-[#22C55E] text-black'
-                        : isNegative
-                        ? 'bg-[#EF4444] text-white'
-                        : 'bg-[#2D3142] text-white'
-                    }`}>
-                      <span className="text-sm">{isPositive ? '▲' : isNegative ? '▼' : '•'}</span>
-                      <span>{isPositive ? '+' : ''}{(top1.returnPercent || 0).toFixed(2)}% Session Return</span>
+                    <div className="px-4 py-1.5 bg-[#F0B429] border-2 border-black font-mono font-black text-xs text-black rounded shadow-[3px_3px_0px_#000000] flex items-center gap-2 uppercase tracking-wider">
+                      <span>★ LEADING ARENA ★</span>
                     </div>
                   </div>
 
-                  {/* Hero Champion Name Title */}
-                  <div className="text-center py-8 sm:py-14 space-y-4">
-                    <div className="inline-block bg-[#F0B429] text-black border-2 border-black px-4 py-1 rounded font-mono text-xs font-black uppercase tracking-widest shadow-[3px_3px_0px_#000000]">
+                  {/* Hero Champion Name Title — Ultra Majestic & Clean */}
+                  <div className="text-center py-12 sm:py-20 space-y-6">
+                    <div className="inline-block bg-[#F0B429] text-black border-2 border-black px-6 py-1.5 rounded-lg font-mono text-sm font-black uppercase tracking-[0.3em] shadow-[4px_4px_0px_#000000]">
                       ★ FIRST POSITION ★
                     </div>
-                    <h2 className="text-5xl sm:text-7xl lg:text-8xl font-black text-white tracking-tight font-sans drop-shadow-[0_4px_24px_rgba(0,0,0,0.8)]">
+                    <h2 className="text-6xl sm:text-8xl lg:text-9xl font-black text-white tracking-tight font-sans drop-shadow-[0_8px_32px_rgba(0,0,0,0.9)] uppercase">
                       {top1.name}
                     </h2>
-                    {top1.email && (
-                      <p className="text-sm sm:text-base font-mono text-[#8B949E]">
-                        Registered Trader: <span className="text-slate-200 font-bold">{top1.email}</span>
-                      </p>
-                    )}
                   </div>
 
                 </div>
