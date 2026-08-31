@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Coffee, Lock, Terminal, ShieldAlert, ChevronRight, AlertTriangle, Radio, Volume2 } from 'lucide-react';
+import { Coffee, Lock, Terminal, ChevronRight, Radio, Volume2 } from 'lucide-react';
 import { BreakCountdownTimer } from './GameClock';
 import { playIntermissionStartSound } from '../services/soundService';
 
@@ -9,7 +9,11 @@ export function IntermissionOverlay({ sessionData }) {
   // If session is not paused, do not render overlay
   const isPaused = sessionData?.isPaused || sessionData?.status === 'PAUSED';
 
-  // Play "intermisson-start.mp3" at full volume (1.0) strictly ONCE when break starts
+  // Smooth animation transition state
+  const [isRendered, setIsRendered] = useState(false);
+  const [isVisible, setIsVisible] = useState(false);
+
+  // Play "intermisson-start.mp3" at comfortable low volume (0.40) strictly ONCE when break starts
   const hasTriggeredAudioRef = useRef(false);
   const audioElRef = useRef(null);
   const breakKey = sessionData?.breakEndTime || sessionData?.id || 'session_break';
@@ -19,39 +23,56 @@ export function IntermissionOverlay({ sessionData }) {
     if (audioElRef.current) {
       try {
         audioElRef.current.currentTime = 0;
-        audioElRef.current.volume = 1.0;
+        audioElRef.current.volume = 0.40;
         audioElRef.current.play().catch(() => {});
       } catch (e) {}
     }
   };
 
+  // Mount/unmount animation transition: fades & scales smoothly so view doesn't abruptly flash or cut
   useEffect(() => {
-    if (isPaused && !hasTriggeredAudioRef.current) {
-      hasTriggeredAudioRef.current = true;
-      triggerAudio();
+    let timer;
+    if (isPaused) {
+      setIsRendered(true);
+      // Double rAF ensures the browser repaints the initial 0-opacity state before transitioning to 1
+      requestAnimationFrame(() => {
+        requestAnimationFrame(() => {
+          setIsVisible(true);
+        });
+      });
 
-      // If browser blocks immediate playback before interaction, play on the trader's very first click anywhere
-      const onUserGesture = () => {
+      if (!hasTriggeredAudioRef.current) {
+        hasTriggeredAudioRef.current = true;
         triggerAudio();
-        window.removeEventListener('pointerdown', onUserGesture, true);
-        window.removeEventListener('click', onUserGesture, true);
-        window.removeEventListener('keydown', onUserGesture, true);
-      };
-      window.addEventListener('pointerdown', onUserGesture, true);
-      window.addEventListener('click', onUserGesture, true);
-      window.addEventListener('keydown', onUserGesture, true);
 
-      return () => {
-        window.removeEventListener('pointerdown', onUserGesture, true);
-        window.removeEventListener('click', onUserGesture, true);
-        window.removeEventListener('keydown', onUserGesture, true);
-      };
-    } else if (!isPaused) {
+        const onUserGesture = () => {
+          triggerAudio();
+          window.removeEventListener('pointerdown', onUserGesture, true);
+          window.removeEventListener('click', onUserGesture, true);
+          window.removeEventListener('keydown', onUserGesture, true);
+        };
+        window.addEventListener('pointerdown', onUserGesture, true);
+        window.addEventListener('click', onUserGesture, true);
+        window.addEventListener('keydown', onUserGesture, true);
+
+        return () => {
+          window.removeEventListener('pointerdown', onUserGesture, true);
+          window.removeEventListener('click', onUserGesture, true);
+          window.removeEventListener('keydown', onUserGesture, true);
+        };
+      }
+    } else {
       hasTriggeredAudioRef.current = false;
+      setIsVisible(false);
+      // Keep DOM element rendered during the 350ms exit transition
+      timer = setTimeout(() => {
+        setIsRendered(false);
+      }, 350);
     }
+    return () => clearTimeout(timer);
   }, [isPaused, breakKey]);
 
-  if (!isPaused) return null;
+  if (!isRendered) return null;
 
   const sessionId = sessionData?.id ? String(sessionData.id).slice(0, 8).toUpperCase() : 'SYS-MAIN-01';
   const durationMins = sessionData?.breakDurationMinutes || 10;
@@ -62,9 +83,11 @@ export function IntermissionOverlay({ sessionData }) {
       role="dialog"
       aria-modal="true"
       aria-labelledby="intermission-title"
-      className="fixed inset-0 z-[100] bg-[#07090E] overflow-y-auto font-sans text-slate-200 select-none flex flex-col justify-between"
+      className={`fixed inset-0 z-[100] bg-[#07090E] overflow-y-auto font-sans text-slate-200 select-none flex flex-col justify-between transition-all duration-350 ease-out ${
+        isVisible ? 'opacity-100 backdrop-blur-md' : 'opacity-0 backdrop-blur-none pointer-events-none'
+      }`}
     >
-      {/* Direct HTML5 audio element rendered directly into DOM */}
+      {/* Direct HTML5 audio element rendered directly into DOM at volume 0.40 */}
       <audio
         ref={audioElRef}
         src="/sounds/intermisson-start.mp3"
@@ -109,8 +132,12 @@ export function IntermissionOverlay({ sessionData }) {
         </div>
       </header>
 
-      {/* ── Asymmetric Neo-Brutalist Main Stage ──────────────────────────────── */}
-      <main className="relative z-10 w-full max-w-5xl mx-auto px-4 sm:px-8 py-6 sm:py-10 my-auto">
+      {/* ── Asymmetric Neo-Brutalist Main Stage with Smooth Scale/Fade Animation ── */}
+      <main
+        className={`relative z-10 w-full max-w-5xl mx-auto px-4 sm:px-8 py-6 sm:py-10 my-auto transition-all duration-350 ease-out transform ${
+          isVisible ? 'opacity-100 scale-100 translate-y-0' : 'opacity-0 scale-[0.98] translate-y-2'
+        }`}
+      >
         <div className="grid lg:grid-cols-[1.1fr_360px] gap-6 lg:gap-8 items-stretch">
           
           {/* Left Panel: Neo-Brutalist Dispatch & Security Deck */}
@@ -198,10 +225,10 @@ export function IntermissionOverlay({ sessionData }) {
                   type="button"
                   onClick={triggerAudio}
                   className="flex items-center gap-1.5 px-2.5 py-1.5 bg-[#F0B429]/10 hover:bg-[#F0B429]/20 border border-[#F0B429]/40 text-[#F0B429] text-[11px] font-bold cursor-pointer transition-colors"
-                  title="Play Break Chime at Full Volume"
+                  title="Replay Break Chime"
                 >
                   <Volume2 className="w-3.5 h-3.5" />
-                  <span>PLAY CHIME (100% VOL)</span>
+                  <span>REPLAY CHIME</span>
                 </button>
               </div>
 
