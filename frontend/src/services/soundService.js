@@ -21,7 +21,7 @@ if (typeof window !== 'undefined') {
   try {
     preloadedIntermissionAudio = new Audio(intermissionMp3Asset || '/sounds/intermisson-start.mp3');
     preloadedIntermissionAudio.preload = 'auto';
-    preloadedIntermissionAudio.volume = 0.05;
+    preloadedIntermissionAudio.volume = 0.02;
     preloadedIntermissionAudio.load();
   } catch (e) {}
 }

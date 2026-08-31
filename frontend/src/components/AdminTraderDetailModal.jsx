@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { apiFetch } from '../services/api';
+import { useSocket } from '../context/SocketContext';
 import { RefreshCw, AlertCircle, CheckCircle2 } from 'lucide-react';
 
 const fmtMoney = (n, d = 2) =>
@@ -25,27 +26,60 @@ export function AdminTraderDetailModal({ traderId, isOpen, onClose }) {
   const [adjustingStockId, setAdjustingStockId] = useState(null);
   const [confirmStockAdj, setConfirmStockAdj] = useState(null);
 
+  const { socket } = useSocket();
+
   useEffect(() => {
     if (traderId && isOpen) {
-      fetchTraderDetail(traderId);
+      fetchTraderDetail(traderId, true);
+
+      // Auto-refresh periodically (every 4s) while the drill-down modal is open
+      const pollTimer = setInterval(() => {
+        fetchTraderDetail(traderId, false);
+      }, 4000);
+
+      return () => clearInterval(pollTimer);
     }
   }, [traderId, isOpen]);
+
+  // Real-time socket event listening for this specific trader
+  useEffect(() => {
+    if (!socket || !isOpen || !traderId) return;
+
+    const onLiveEvent = (payload) => {
+      // If activity, trade, or stock price changes, refresh this trader's detail silently
+      fetchTraderDetail(traderId, false);
+    };
+
+    socket.on('stock:update', onLiveEvent);
+    socket.on('stocks:batch-update', onLiveEvent);
+    socket.on('order:executed', onLiveEvent);
+    socket.on('activity:log', onLiveEvent);
+    socket.on('leaderboard:update', onLiveEvent);
+
+    return () => {
+      socket.off('stock:update', onLiveEvent);
+      socket.off('stocks:batch-update', onLiveEvent);
+      socket.off('order:executed', onLiveEvent);
+      socket.off('activity:log', onLiveEvent);
+      socket.off('leaderboard:update', onLiveEvent);
+    };
+  }, [socket, isOpen, traderId]);
 
   const showToast = (msg) => {
     setToastMsg(msg);
     setTimeout(() => setToastMsg(''), 4000);
   };
 
-  const fetchTraderDetail = async (id) => {
-    setLoading(true);
+  const fetchTraderDetail = async (id, isInitial = false) => {
+    if (isInitial) setLoading(true);
     setError('');
     try {
       const result = await apiFetch(`/admin/trader/${id}`);
       setData(result);
     } catch (err) {
-      setError(err.message || 'Failed to fetch trader details');
+      if (isInitial) setError(err.message || 'Failed to fetch trader details');
     } finally {
-      setLoading(false);
+      if (isInitial) setLoading(false);
     }
   };
 

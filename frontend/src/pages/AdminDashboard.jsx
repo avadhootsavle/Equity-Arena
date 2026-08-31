@@ -144,8 +144,8 @@ export function AdminDashboard() {
     }
   }, []);
 
-  const fetchLeaderboard = useCallback(async () => {
-    setLoadingLeaderboard(true);
+  const fetchLeaderboard = useCallback(async (isInitial = false) => {
+    if (isInitial) setLoadingLeaderboard(true);
     try {
       const data = await apiFetch('/admin/leaderboard');
       if (Array.isArray(data)) {
@@ -154,12 +154,12 @@ export function AdminDashboard() {
     } catch (err) {
       console.error('Fetch leaderboard error:', err);
     } finally {
-      setLoadingLeaderboard(false);
+      if (isInitial) setLoadingLeaderboard(false);
     }
   }, []);
 
-  const fetchParticipants = useCallback(async () => {
-    setLoadingParticipants(true);
+  const fetchParticipants = useCallback(async (isInitial = false) => {
+    if (isInitial) setLoadingParticipants(true);
     try {
       let data;
       try {
@@ -177,15 +177,15 @@ export function AdminDashboard() {
     } catch (err) {
       console.error('Fetch participants error:', err);
     } finally {
-      setLoadingParticipants(false);
+      if (isInitial) setLoadingParticipants(false);
     }
   }, []);
 
   useEffect(() => {
     fetchStocks();
     fetchNewsTemplates();
-    fetchLeaderboard();
-    fetchParticipants();
+    fetchLeaderboard(true);
+    fetchParticipants(true);
   }, [fetchStocks, fetchNewsTemplates, fetchLeaderboard, fetchParticipants]);
 
   useEffect(() => {
@@ -281,17 +281,32 @@ export function AdminDashboard() {
     const handleActivityLog = (log) => {
       if (!log) return;
       setLiveTradeFeed((prev) => [log, ...prev].slice(0, 30));
+      // Live activity (like trades, top-ups) automatically updates rankings and participant cash
+      fetchLeaderboard();
+      fetchParticipants();
+    };
+
+    const handleLeaderboardUpdate = (data) => {
+      if (Array.isArray(data)) {
+        setLeaderboard(data);
+      }
+      // Re-sync participants list silently when ranks shift
+      fetchParticipants();
     };
 
     const handleSessionStarted = () => {
       adminSession.refetchSession();
       showToast('Tournament Session Started Live!', 'success');
       setShowSessionConfigModal(false);
+      fetchLeaderboard();
+      fetchParticipants();
     };
 
     const handleSessionEnded = () => {
       adminSession.refetchSession();
       showToast('Session Ended & Floor Locked.', 'warning');
+      fetchLeaderboard();
+      fetchParticipants();
     };
 
     const handleBreakStarted = () => {
@@ -309,6 +324,7 @@ export function AdminDashboard() {
     socket.on('stocks:batch-update', handleBatchUpdate);
     socket.on('order:executed', handleTradeExecuted);
     socket.on('activity:log', handleActivityLog);
+    socket.on('leaderboard:update', handleLeaderboardUpdate);
     socket.on('session:started', handleSessionStarted);
     socket.on('session:ended', handleSessionEnded);
     socket.on('break:started', handleBreakStarted);
@@ -320,6 +336,7 @@ export function AdminDashboard() {
       socket.off('stocks:batch-update', handleBatchUpdate);
       socket.off('order:executed', handleTradeExecuted);
       socket.off('activity:log', handleActivityLog);
+      socket.off('leaderboard:update', handleLeaderboardUpdate);
       socket.off('session:started', handleSessionStarted);
       socket.off('session:ended', handleSessionEnded);
       socket.off('break:started', handleBreakStarted);
@@ -327,6 +344,17 @@ export function AdminDashboard() {
       socket.off('session:resumed', handleBreakEnded);
     };
   }, [socket, adminSession, fetchLeaderboard, fetchParticipants]);
+
+  /* ---------------- Auto-Polling Fallback ---------------- */
+  // Guaranteed real-time sync every 3 seconds so the admin panel NEVER requires manual refresh
+  useEffect(() => {
+    const autoRefreshTimer = setInterval(() => {
+      fetchLeaderboard();
+      fetchParticipants();
+    }, 3000);
+
+    return () => clearInterval(autoRefreshTimer);
+  }, [fetchLeaderboard, fetchParticipants]);
 
   /* ---------------- Session Handlers ---------------- */
   const handleStartSession = async () => {
