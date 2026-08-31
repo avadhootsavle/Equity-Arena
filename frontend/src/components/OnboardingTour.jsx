@@ -5,20 +5,38 @@ import {
   Zap, Flame, ShieldAlert, TrendingUp, TrendingDown, Crosshair,
   Volume2, Compass, Award, Sparkles, ChevronRight, Terminal
 } from 'lucide-react';
+import { useTheme } from '../context/ThemeContext';
 
 /* ==================================================================
    Equity Arena — Tournament Combat Manual (Field Playbook)
-   No corporate fluff. Pure trader psychology, hard tactical mechanics,
-   interactive live simulations, and high-energy pit floor styling.
+   Full-screen takeover, 55/45 split, stage-tuned radial glow fields,
+   high-contrast typography, and live tactile interactive preview widgets.
+   All text preserved 100% verbatim.
    ================================================================== */
 
 const ACCENT = '#F0B429';
 const UP = '#10B981';
 const DOWN = '#EF4444';
 
+/* ---------- Stage-Specific Glow Configurations (Max 0.06 Opacity) ---------- */
+// Stage 1: faint amber glow bottom left
+// Stage 2: faint green glow top right
+// Stage 3: faint amber glow center
+// Stage 4: faint blue-grey glow bottom right
+// Stage 5: faint red glow top left (urgent news)
+// Stage 6: faint red glow center (endgame)
+const STAGE_GLOWS = [
+  'radial-gradient(ellipse 900px 700px at 0% 100%, rgba(240, 180, 41, 0.06) 0%, transparent 70%)',
+  'radial-gradient(ellipse 900px 700px at 100% 0%, rgba(16, 185, 129, 0.06) 0%, transparent 70%)',
+  'radial-gradient(ellipse 850px 650px at 50% 50%, rgba(240, 180, 41, 0.06) 0%, transparent 70%)',
+  'radial-gradient(ellipse 900px 700px at 100% 100%, rgba(100, 116, 139, 0.06) 0%, transparent 70%)',
+  'radial-gradient(ellipse 900px 700px at 0% 0%, rgba(239, 68, 68, 0.06) 0%, transparent 70%)',
+  'radial-gradient(ellipse 850px 650px at 50% 50%, rgba(239, 68, 68, 0.06) 0%, transparent 70%)',
+];
+
 /* ---------- High-Impact Interactive Step Visuals ---------- */
 
-function GoalInteractiveWidget() {
+function GoalInteractiveWidget({ isLight }) {
   const [allocation, setAllocation] = useState(65); // % in stocks
   const total = 20000;
   const inStocks = Math.round((total * allocation) / 100);
@@ -27,21 +45,35 @@ function GoalInteractiveWidget() {
   const projected = total + mockGain;
 
   return (
-    <div className="rounded-3xl bg-[#0D1117]/90 border border-white/[0.12] p-6 shadow-[0_20px_60px_-15px_rgba(0,0,0,0.8)] backdrop-blur-2xl space-y-5">
-      <div className="flex items-center justify-between border-b border-white/[0.08] pb-3">
-        <div className="flex items-center gap-2">
+    <div
+      className={`rounded-2xl border transition-all p-6 sm:p-7 space-y-5 backdrop-blur-xl relative overflow-hidden ${
+        isLight
+          ? 'bg-white border-[#E2E8F0] shadow-[0_12px_40px_rgba(0,0,0,0.06)]'
+          : 'bg-[#101520] border-white/[0.1] shadow-[0_20px_50px_rgba(0,0,0,0.6)]'
+      }`}
+      style={{
+        borderTop: '2px solid #F0B429',
+        boxShadow: isLight
+          ? 'inset 0 1px 0 rgba(240,180,41,0.2), 0 12px 40px rgba(0,0,0,0.06)'
+          : 'inset 0 1px 2px rgba(240,180,41,0.18), inset 0 0 40px rgba(240,180,41,0.02), 0 20px 50px rgba(0,0,0,0.6)'
+      }}
+    >
+      <div className={`flex items-center justify-between border-b pb-3.5 ${isLight ? 'border-slate-200' : 'border-white/[0.08]'}`}>
+        <div className="flex items-center gap-2.5">
           <span className="w-2.5 h-2.5 rounded-full bg-emerald-400 animate-ping" />
           <span className="font-mono text-xs font-bold uppercase tracking-widest text-emerald-400">
             Tactical Capital Simulator
           </span>
         </div>
-        <span className="font-mono text-[11px] text-slate-400">Drag Slider</span>
+        <span className={`font-mono text-[11px] ${isLight ? 'text-slate-500' : 'text-slate-400'}`}>
+          Drag Slider
+        </span>
       </div>
 
       <div className="space-y-2">
         <div className="flex justify-between text-xs font-mono">
-          <span className="text-slate-400">Capital Deployment</span>
-          <span className="font-bold text-amber-400">{allocation}% Risk-On</span>
+          <span className={isLight ? 'text-slate-600' : 'text-slate-400'}>Capital Deployment</span>
+          <span className="font-bold text-[#F0B429]">{allocation}% Risk-On</span>
         </div>
         <input
           type="range"
@@ -49,44 +81,67 @@ function GoalInteractiveWidget() {
           max="95"
           value={allocation}
           onChange={(e) => setAllocation(Number(e.target.value))}
-          className="w-full h-2 bg-slate-800 rounded-lg appearance-none cursor-pointer accent-amber-400"
+          className="w-full h-2 bg-slate-800 rounded-lg appearance-none cursor-pointer accent-[#F0B429]"
         />
-        <div className="flex justify-between text-[10px] font-mono text-slate-500">
+        <div className={`flex justify-between text-[10px] font-mono ${isLight ? 'text-slate-500' : 'text-slate-500'}`}>
           <span>Safe / Idle (10%)</span>
           <span>Aggressive Speculation (95%)</span>
         </div>
       </div>
 
       <div className="grid grid-cols-2 gap-3 pt-1">
-        <div className="p-3.5 rounded-2xl bg-white/[0.03] border border-white/[0.06] space-y-1">
-          <span className="text-[10px] font-mono text-slate-400 uppercase tracking-wider block">Liquid Reserve</span>
-          <span className="text-xl font-mono font-black text-white">{inCash.toLocaleString()} <span className="text-xs text-amber-400">IC</span></span>
-          <span className="text-[10px] text-slate-500 block">Dry powder for dips</span>
+        <div className={`p-3.5 rounded-xl border space-y-1 ${
+          isLight
+            ? 'bg-slate-50 border-slate-200'
+            : 'bg-white/[0.03] border-white/[0.06]'
+        }`}>
+          <span className={`text-[10px] font-mono uppercase tracking-wider block ${isLight ? 'text-slate-500' : 'text-slate-400'}`}>
+            Liquid Reserve
+          </span>
+          <span className={`text-xl font-mono font-black ${isLight ? 'text-slate-900' : 'text-white'}`}>
+            {inCash.toLocaleString()} <span className="text-xs text-[#F0B429]">IC</span>
+          </span>
+          <span className={`text-[10px] block ${isLight ? 'text-slate-500' : 'text-slate-500'}`}>
+            Dry powder for dips
+          </span>
         </div>
-        <div className="p-3.5 rounded-2xl bg-amber-500/[0.06] border border-amber-500/20 space-y-1">
-          <span className="text-[10px] font-mono text-amber-400 uppercase tracking-wider block">Active Positions</span>
-          <span className="text-xl font-mono font-black text-white">{inStocks.toLocaleString()} <span className="text-xs text-amber-400">IC</span></span>
-          <span className="text-[10px] text-emerald-400 font-mono block">+{mockGain.toLocaleString()} IC at +18%</span>
+
+        <div className="p-3.5 rounded-xl bg-amber-500/[0.06] border border-amber-500/20 space-y-1">
+          <span className="text-[10px] font-mono text-[#F0B429] uppercase tracking-wider block">
+            Active Positions
+          </span>
+          <span className={`text-xl font-mono font-black ${isLight ? 'text-slate-900' : 'text-white'}`}>
+            {inStocks.toLocaleString()} <span className="text-xs text-[#F0B429]">IC</span>
+          </span>
+          <span className="text-[10px] text-emerald-400 font-mono block">
+            +{mockGain.toLocaleString()} IC at +18%
+          </span>
         </div>
       </div>
 
-      <div className="p-4 rounded-2xl bg-gradient-to-r from-emerald-500/10 via-emerald-500/5 to-transparent border border-emerald-500/30 flex items-center justify-between">
+      <div className="p-4 rounded-xl bg-gradient-to-r from-emerald-500/10 via-emerald-500/5 to-transparent border border-emerald-500/30 flex items-center justify-between">
         <div>
-          <span className="text-[11px] font-mono text-emerald-400 font-bold block uppercase tracking-wider">Projected Portfolio Value</span>
-          <span className="text-2xl font-mono font-black text-white">{projected.toLocaleString()} IC</span>
+          <span className="text-[11px] font-mono text-emerald-400 font-bold block uppercase tracking-wider">
+            Projected Portfolio Value
+          </span>
+          <span className={`text-2xl font-mono font-black ${isLight ? 'text-slate-900' : 'text-white'}`}>
+            {projected.toLocaleString()} IC
+          </span>
         </div>
         <div className="text-right">
           <span className="px-2.5 py-1 rounded-full bg-emerald-500/20 text-emerald-400 font-mono font-extrabold text-xs">
             +{(mockGain / total * 100).toFixed(1)}%
           </span>
-          <span className="text-[10px] text-slate-400 block mt-1">Leaderboard Rank #1</span>
+          <span className={`text-[10px] block mt-1 font-mono ${isLight ? 'text-slate-500' : 'text-slate-400'}`}>
+            Leaderboard Rank #1
+          </span>
         </div>
       </div>
     </div>
   );
 }
 
-function MarketInteractiveWidget() {
+function MarketInteractiveWidget({ isLight }) {
   const [activeStock, setActiveStock] = useState('ANAG');
 
   const stocks = [
@@ -98,11 +153,23 @@ function MarketInteractiveWidget() {
   const sel = stocks.find(s => s.code === activeStock) || stocks[0];
 
   return (
-    <div className="rounded-3xl bg-[#0D1117]/90 border border-white/[0.12] p-6 shadow-[0_20px_60px_-15px_rgba(0,0,0,0.8)] backdrop-blur-2xl space-y-4">
-      <div className="flex items-center justify-between border-b border-white/[0.08] pb-3">
-        <div className="flex items-center gap-2">
-          <span className="w-2.5 h-2.5 rounded-full bg-amber-400 animate-pulse" />
-          <span className="font-mono text-xs font-bold uppercase tracking-widest text-white">
+    <div
+      className={`rounded-2xl border transition-all p-6 sm:p-7 space-y-4 backdrop-blur-xl relative overflow-hidden ${
+        isLight
+          ? 'bg-white border-[#E2E8F0] shadow-[0_12px_40px_rgba(0,0,0,0.06)]'
+          : 'bg-[#101520] border-white/[0.1] shadow-[0_20px_50px_rgba(0,0,0,0.6)]'
+      }`}
+      style={{
+        borderTop: '2px solid #F0B429',
+        boxShadow: isLight
+          ? 'inset 0 1px 0 rgba(240,180,41,0.2), 0 12px 40px rgba(0,0,0,0.06)'
+          : 'inset 0 1px 2px rgba(240,180,41,0.18), inset 0 0 40px rgba(240,180,41,0.02), 0 20px 50px rgba(0,0,0,0.6)'
+      }}
+    >
+      <div className={`flex items-center justify-between border-b pb-3.5 ${isLight ? 'border-slate-200' : 'border-white/[0.08]'}`}>
+        <div className="flex items-center gap-2.5">
+          <span className="w-2.5 h-2.5 rounded-full bg-[#F0B429] animate-pulse" />
+          <span className={`font-mono text-xs font-bold uppercase tracking-widest ${isLight ? 'text-slate-900' : 'text-white'}`}>
             Live Trading Floor Feed
           </span>
         </div>
@@ -111,7 +178,7 @@ function MarketInteractiveWidget() {
         </span>
       </div>
 
-      <div className="grid grid-cols-3 gap-2">
+      <div className="grid grid-cols-3 gap-2.5">
         {stocks.map(s => {
           const isUp = s.change >= 0;
           const isActive = s.code === activeStock;
@@ -120,34 +187,44 @@ function MarketInteractiveWidget() {
               key={s.code}
               type="button"
               onClick={() => setActiveStock(s.code)}
-              className={`p-3 rounded-2xl text-left transition-all border ${
+              className={`p-3 rounded-xl text-left transition-all border cursor-pointer ${
                 isActive
-                  ? 'bg-amber-500/15 border-amber-400 shadow-[0_0_20px_rgba(240,180,41,0.2)] scale-[1.02]'
-                  : 'bg-white/[0.02] border-white/[0.06] hover:bg-white/[0.05]'
+                  ? 'bg-amber-500/15 border-[#F0B429] shadow-[0_0_20px_rgba(240,180,41,0.2)] scale-[1.02]'
+                  : isLight
+                    ? 'bg-slate-50 border-slate-200 hover:bg-slate-100'
+                    : 'bg-white/[0.02] border-white/[0.06] hover:bg-white/[0.05]'
               }`}
             >
-              <div className="font-mono font-black text-xs text-white flex items-center justify-between">
-                <span>{s.code}</span>
+              <div className="font-mono font-black text-xs flex items-center justify-between">
+                <span className={isLight ? 'text-slate-900' : 'text-white'}>{s.code}</span>
                 <span className={`text-[10px] ${isUp ? 'text-emerald-400' : 'text-rose-400'}`}>
                   {isUp ? '▲' : '▼'} {Math.abs(s.change)}%
                 </span>
               </div>
-              <div className="text-sm font-mono font-bold text-slate-200 mt-1">{s.price.toFixed(2)}</div>
+              <div className={`text-sm font-mono font-bold mt-1 ${isLight ? 'text-slate-800' : 'text-slate-200'}`}>
+                {s.price.toFixed(2)}
+              </div>
             </button>
           );
         })}
       </div>
 
-      <div className="p-4 rounded-2xl bg-gradient-to-br from-white/[0.04] to-transparent border border-white/[0.08] space-y-3">
+      <div className={`p-4 rounded-xl border space-y-3 ${
+        isLight
+          ? 'bg-slate-50/80 border-slate-200'
+          : 'bg-gradient-to-br from-white/[0.04] to-transparent border-white/[0.08]'
+      }`}>
         <div className="flex justify-between items-start">
           <div>
-            <h4 className="text-base font-bold text-white flex items-center gap-2">
+            <h4 className={`text-base font-bold flex items-center gap-2 ${isLight ? 'text-slate-900' : 'text-white'}`}>
               <span>{sel.name}</span>
               <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-slate-800 text-slate-300">
                 {sel.sector}
               </span>
             </h4>
-            <div className="text-xs text-slate-400 font-mono mt-0.5">Spot: <strong className="text-white text-sm">{sel.price.toFixed(2)} IC</strong></div>
+            <div className={`text-xs font-mono mt-0.5 ${isLight ? 'text-slate-600' : 'text-slate-400'}`}>
+              Spot: <strong className={`text-sm ${isLight ? 'text-slate-900' : 'text-white'}`}>{sel.price.toFixed(2)} IC</strong>
+            </div>
           </div>
           <span className={`px-2.5 py-1 rounded-full text-xs font-mono font-extrabold ${
             sel.change >= 0 ? 'bg-emerald-500/20 text-emerald-400' : 'bg-rose-500/20 text-rose-400'
@@ -156,9 +233,11 @@ function MarketInteractiveWidget() {
           </span>
         </div>
 
-        <div className="flex items-center justify-between text-[11px] font-mono text-slate-400 pt-2 border-t border-white/[0.06]">
-          <span>Floor Vol: <strong className="text-white">{sel.vol}</strong></span>
-          <span>Tape Drift: <strong className="text-amber-400">±2.5% / 6s</strong></span>
+        <div className={`flex items-center justify-between text-[11px] font-mono pt-2 border-t ${
+          isLight ? 'border-slate-200 text-slate-600' : 'border-white/[0.06] text-slate-400'
+        }`}>
+          <span>Floor Vol: <strong className={isLight ? 'text-slate-900' : 'text-white'}>{sel.vol}</strong></span>
+          <span>Tape Drift: <strong className="text-[#F0B429]">±2.5% / 6s</strong></span>
           <span>Action: <strong className="text-emerald-400">Click to Open Ticket</strong></span>
         </div>
       </div>
@@ -166,32 +245,48 @@ function MarketInteractiveWidget() {
   );
 }
 
-function TradeInteractiveWidget() {
+function TradeInteractiveWidget({ isLight }) {
   const [qty, setQty] = useState(5);
   const [action, setAction] = useState('BUY');
   const price = 48.50;
   const cost = (qty * price).toFixed(2);
 
   return (
-    <div className="rounded-3xl bg-[#0D1117]/90 border border-white/[0.12] p-6 shadow-[0_20px_60px_-15px_rgba(0,0,0,0.8)] backdrop-blur-2xl space-y-5">
-      <div className="flex items-center justify-between border-b border-white/[0.08] pb-3">
-        <div className="flex items-center gap-2">
-          <Zap className="w-4 h-4 text-amber-400" />
-          <span className="font-mono text-xs font-bold uppercase tracking-widest text-white">
+    <div
+      className={`rounded-2xl border transition-all p-6 sm:p-7 space-y-5 backdrop-blur-xl relative overflow-hidden ${
+        isLight
+          ? 'bg-white border-[#E2E8F0] shadow-[0_12px_40px_rgba(0,0,0,0.06)]'
+          : 'bg-[#101520] border-white/[0.1] shadow-[0_20px_50px_rgba(0,0,0,0.6)]'
+      }`}
+      style={{
+        borderTop: '2px solid #F0B429',
+        boxShadow: isLight
+          ? 'inset 0 1px 0 rgba(240,180,41,0.2), 0 12px 40px rgba(0,0,0,0.06)'
+          : 'inset 0 1px 2px rgba(240,180,41,0.18), inset 0 0 40px rgba(240,180,41,0.02), 0 20px 50px rgba(0,0,0,0.6)'
+      }}
+    >
+      <div className={`flex items-center justify-between border-b pb-3.5 ${isLight ? 'border-slate-200' : 'border-white/[0.08]'}`}>
+        <div className="flex items-center gap-2.5">
+          <Zap className="w-4 h-4 text-[#F0B429]" />
+          <span className={`font-mono text-xs font-bold uppercase tracking-widest ${isLight ? 'text-slate-900' : 'text-white'}`}>
             Live Ticket Terminal
           </span>
         </div>
-        <span className="font-mono text-xs text-slate-400">Instant Execution</span>
+        <span className={`font-mono text-xs ${isLight ? 'text-slate-500' : 'text-slate-400'}`}>
+          Instant Execution
+        </span>
       </div>
 
-      <div className="flex items-center gap-2 p-1.5 rounded-2xl bg-black/40 border border-white/[0.08]">
+      <div className={`flex items-center gap-2 p-1.5 rounded-xl border ${
+        isLight ? 'bg-slate-100 border-slate-200' : 'bg-black/40 border-white/[0.08]'
+      }`}>
         <button
           type="button"
           onClick={() => setAction('BUY')}
-          className={`flex-1 py-2 rounded-xl font-mono text-xs font-black uppercase transition-all ${
+          className={`flex-1 py-2 rounded-lg font-mono text-xs font-black uppercase transition-all cursor-pointer ${
             action === 'BUY'
               ? 'bg-emerald-500 text-slate-950 shadow-[0_0_15px_rgba(16,185,129,0.4)]'
-              : 'text-slate-400 hover:text-white'
+              : isLight ? 'text-slate-600 hover:text-slate-900' : 'text-slate-400 hover:text-white'
           }`}
         >
           ● BUY (Go Long)
@@ -199,10 +294,10 @@ function TradeInteractiveWidget() {
         <button
           type="button"
           onClick={() => setAction('SELL')}
-          className={`flex-1 py-2 rounded-xl font-mono text-xs font-black uppercase transition-all ${
+          className={`flex-1 py-2 rounded-lg font-mono text-xs font-black uppercase transition-all cursor-pointer ${
             action === 'SELL'
               ? 'bg-rose-500 text-white shadow-[0_0_15px_rgba(239,68,68,0.4)]'
-              : 'text-slate-400 hover:text-white'
+              : isLight ? 'text-slate-600 hover:text-slate-900' : 'text-slate-400 hover:text-white'
           }`}
         >
           ● SELL (Liquidate)
@@ -210,53 +305,81 @@ function TradeInteractiveWidget() {
       </div>
 
       <div className="space-y-2">
-        <span className="text-[11px] font-mono text-slate-400 block uppercase">Order Size (Shares)</span>
+        <span className={`text-[11px] font-mono block uppercase ${isLight ? 'text-slate-600' : 'text-slate-400'}`}>
+          Order Size (Shares)
+        </span>
         <div className="flex items-center gap-3">
           <button
             type="button"
             onClick={() => setQty(Math.max(1, qty - 1))}
-            className="w-12 h-12 rounded-2xl bg-white/[0.06] hover:bg-white/[0.12] border border-white/[0.1] text-xl font-mono text-white flex items-center justify-center cursor-pointer transition-all active:scale-95"
+            className={`w-12 h-12 rounded-xl border text-xl font-mono flex items-center justify-center cursor-pointer transition-all active:scale-95 ${
+              isLight
+                ? 'bg-slate-100 hover:bg-slate-200 border-slate-200 text-slate-900'
+                : 'bg-white/[0.06] hover:bg-white/[0.12] border-white/[0.1] text-white'
+            }`}
           >
             −
           </button>
-          <div className="flex-1 h-12 rounded-2xl bg-black/50 border border-white/[0.15] flex items-center justify-center font-mono text-2xl font-black text-amber-400">
+          <div className={`flex-1 h-12 rounded-xl border flex items-center justify-center font-mono text-2xl font-black text-[#F0B429] ${
+            isLight ? 'bg-slate-50 border-slate-200' : 'bg-black/50 border-white/[0.15]'
+          }`}>
             {qty}
           </div>
           <button
             type="button"
             onClick={() => setQty(qty + 1)}
-            className="w-12 h-12 rounded-2xl bg-white/[0.06] hover:bg-white/[0.12] border border-white/[0.1] text-xl font-mono text-white flex items-center justify-center cursor-pointer transition-all active:scale-95"
+            className={`w-12 h-12 rounded-xl border text-xl font-mono flex items-center justify-center cursor-pointer transition-all active:scale-95 ${
+              isLight
+                ? 'bg-slate-100 hover:bg-slate-200 border-slate-200 text-slate-900'
+                : 'bg-white/[0.06] hover:bg-white/[0.12] border-white/[0.1] text-white'
+            }`}
           >
             +
           </button>
         </div>
       </div>
 
-      <div className="p-4 rounded-2xl bg-white/[0.03] border border-white/[0.06] flex items-center justify-between font-mono">
+      <div className={`p-4 rounded-xl border flex items-center justify-between font-mono ${
+        isLight ? 'bg-slate-50 border-slate-200' : 'bg-white/[0.03] border-white/[0.06]'
+      }`}>
         <div>
-          <span className="text-[10px] text-slate-400 uppercase tracking-wider block">Est. Trade Total</span>
-          <span className="text-xl font-black text-white">{cost} IC</span>
+          <span className={`text-[10px] uppercase tracking-wider block ${isLight ? 'text-slate-500' : 'text-slate-400'}`}>
+            Est. Trade Total
+          </span>
+          <span className={`text-xl font-black ${isLight ? 'text-slate-900' : 'text-white'}`}>{cost} IC</span>
         </div>
-        <div className="text-right text-[11px] text-slate-400">
+        <div className={`text-right text-[11px] ${isLight ? 'text-slate-600' : 'text-slate-400'}`}>
           <div>Fee: <strong className="text-emerald-400">0.00 IC (Zero)</strong></div>
-          <div>Fill: <strong className="text-amber-400">Immediate</strong></div>
+          <div>Fill: <strong className="text-[#F0B429]">Immediate</strong></div>
         </div>
       </div>
     </div>
   );
 }
 
-function LimitInteractiveWidget() {
+function LimitInteractiveWidget({ isLight }) {
   const [target, setTarget] = useState(42.00);
   const livePrice = 46.50;
   const isBuyDiscount = target < livePrice;
 
   return (
-    <div className="rounded-3xl bg-[#0D1117]/90 border border-white/[0.12] p-6 shadow-[0_20px_60px_-15px_rgba(0,0,0,0.8)] backdrop-blur-2xl space-y-5">
-      <div className="flex items-center justify-between border-b border-white/[0.08] pb-3">
-        <div className="flex items-center gap-2">
-          <Crosshair className="w-4 h-4 text-amber-400" />
-          <span className="font-mono text-xs font-bold uppercase tracking-widest text-white">
+    <div
+      className={`rounded-2xl border transition-all p-6 sm:p-7 space-y-5 backdrop-blur-xl relative overflow-hidden ${
+        isLight
+          ? 'bg-white border-[#E2E8F0] shadow-[0_12px_40px_rgba(0,0,0,0.06)]'
+          : 'bg-[#101520] border-white/[0.1] shadow-[0_20px_50px_rgba(0,0,0,0.6)]'
+      }`}
+      style={{
+        borderTop: '2px solid #F0B429',
+        boxShadow: isLight
+          ? 'inset 0 1px 0 rgba(240,180,41,0.2), 0 12px 40px rgba(0,0,0,0.06)'
+          : 'inset 0 1px 2px rgba(240,180,41,0.18), inset 0 0 40px rgba(240,180,41,0.02), 0 20px 50px rgba(0,0,0,0.6)'
+      }}
+    >
+      <div className={`flex items-center justify-between border-b pb-3.5 ${isLight ? 'border-slate-200' : 'border-white/[0.08]'}`}>
+        <div className="flex items-center gap-2.5">
+          <Crosshair className="w-4 h-4 text-[#F0B429]" />
+          <span className={`font-mono text-xs font-bold uppercase tracking-widest ${isLight ? 'text-slate-900' : 'text-white'}`}>
             Automated Limit Sniper
           </span>
         </div>
@@ -267,8 +390,8 @@ function LimitInteractiveWidget() {
 
       <div className="space-y-3">
         <div className="flex justify-between items-baseline font-mono">
-          <span className="text-xs text-slate-400">Your Strike Price</span>
-          <span className="text-2xl font-black text-amber-400">{target.toFixed(2)} IC</span>
+          <span className={`text-xs ${isLight ? 'text-slate-600' : 'text-slate-400'}`}>Your Strike Price</span>
+          <span className="text-2xl font-black text-[#F0B429]">{target.toFixed(2)} IC</span>
         </div>
         <input
           type="range"
@@ -277,27 +400,27 @@ function LimitInteractiveWidget() {
           step="0.5"
           value={target}
           onChange={(e) => setTarget(Number(e.target.value))}
-          className="w-full h-2 bg-slate-800 rounded-lg appearance-none cursor-pointer accent-amber-400"
+          className="w-full h-2 bg-slate-800 rounded-lg appearance-none cursor-pointer accent-[#F0B429]"
         />
         <div className="flex justify-between text-[11px] font-mono">
-          <span className="text-slate-500">Deep Dip (35 IC)</span>
-          <span className="text-slate-300 font-bold">Current Spot: {livePrice.toFixed(2)} IC</span>
-          <span className="text-slate-500">Spike Top (55 IC)</span>
+          <span className={isLight ? 'text-slate-500' : 'text-slate-500'}>Deep Dip (35 IC)</span>
+          <span className={`font-bold ${isLight ? 'text-slate-700' : 'text-slate-300'}`}>Current Spot: {livePrice.toFixed(2)} IC</span>
+          <span className={isLight ? 'text-slate-500' : 'text-slate-500'}>Spike Top (55 IC)</span>
         </div>
       </div>
 
-      <div className={`p-4 rounded-2xl border transition-all ${
+      <div className={`p-4 rounded-xl border transition-all ${
         isBuyDiscount
           ? 'bg-emerald-500/10 border-emerald-500/30'
           : 'bg-amber-500/10 border-amber-500/30'
       }`}>
         <div className="flex items-start gap-2.5">
-          <Target className="w-5 h-5 text-amber-400 flex-shrink-0 mt-0.5" />
+          <Target className="w-5 h-5 text-[#F0B429] flex-shrink-0 mt-0.5" />
           <div className="text-xs font-mono space-y-1">
-            <span className="font-bold text-white block">
+            <span className={`font-bold block ${isLight ? 'text-slate-900' : 'text-white'}`}>
               {isBuyDiscount ? '🎯 Limit Buy Resting Below Market' : '⚡ Instant Trigger or Sell Setup'}
             </span>
-            <p className="text-slate-300 leading-relaxed">
+            <p className={`leading-relaxed ${isLight ? 'text-slate-700' : 'text-slate-300'}`}>
               {isBuyDiscount
                 ? `System reserves funds and sleeps. If spot drops ${((1 - target / livePrice) * 100).toFixed(1)}% to ${target.toFixed(2)} IC, your order fills instantly.`
                 : `Target is at/above market. Sells trigger on rallies; buys execute immediately.`}
@@ -309,7 +432,7 @@ function LimitInteractiveWidget() {
   );
 }
 
-function NewsInteractiveWidget() {
+function NewsInteractiveWidget({ isLight }) {
   const [headlineIdx, setHeadlineIdx] = useState(0);
 
   const headlines = [
@@ -342,84 +465,122 @@ function NewsInteractiveWidget() {
   const curr = headlines[headlineIdx];
 
   return (
-    <div className="rounded-3xl bg-[#0D1117]/90 border border-white/[0.12] p-6 shadow-[0_20px_60px_-15px_rgba(0,0,0,0.8)] backdrop-blur-2xl space-y-4">
-      <div className="flex items-center justify-between border-b border-white/[0.08] pb-3">
-        <div className="flex items-center gap-2">
-          <Flame className="w-4 h-4 text-amber-400" />
-          <span className="font-mono text-xs font-bold uppercase tracking-widest text-amber-400">
+    <div
+      className={`rounded-2xl border transition-all p-6 sm:p-7 space-y-4 backdrop-blur-xl relative overflow-hidden ${
+        isLight
+          ? 'bg-white border-[#E2E8F0] shadow-[0_12px_40px_rgba(0,0,0,0.06)]'
+          : 'bg-[#101520] border-white/[0.1] shadow-[0_20px_50px_rgba(0,0,0,0.6)]'
+      }`}
+      style={{
+        borderTop: '2px solid #F0B429',
+        boxShadow: isLight
+          ? 'inset 0 1px 0 rgba(240,180,41,0.2), 0 12px 40px rgba(0,0,0,0.06)'
+          : 'inset 0 1px 2px rgba(240,180,41,0.18), inset 0 0 40px rgba(240,180,41,0.02), 0 20px 50px rgba(0,0,0,0.6)'
+      }}
+    >
+      <div className={`flex items-center justify-between border-b pb-3.5 ${isLight ? 'border-slate-200' : 'border-white/[0.08]'}`}>
+        <div className="flex items-center gap-2.5">
+          <Flame className="w-4 h-4 text-[#F0B429]" />
+          <span className="font-mono text-xs font-bold uppercase tracking-widest text-[#F0B429]">
             Analyst Intelligence Wire
           </span>
         </div>
         <button
           type="button"
           onClick={() => setHeadlineIdx((headlineIdx + 1) % headlines.length)}
-          className="text-[11px] font-mono text-slate-300 hover:text-white px-2 py-0.5 rounded bg-white/[0.06] border border-white/[0.1] cursor-pointer"
+          className={`text-[11px] font-mono px-2 py-0.5 rounded border cursor-pointer transition-all ${
+            isLight
+              ? 'bg-slate-100 hover:bg-slate-200 border-slate-300 text-slate-800'
+              : 'text-slate-300 hover:text-white bg-white/[0.06] border-white/[0.1]'
+          }`}
         >
           Next Scoop ↻
         </button>
       </div>
 
-      <div className="p-5 rounded-2xl bg-gradient-to-b from-amber-500/[0.08] to-transparent border border-amber-500/25 space-y-3">
+      <div className={`p-5 rounded-xl border space-y-3 ${
+        isLight
+          ? 'bg-amber-500/[0.05] border-amber-500/25'
+          : 'bg-gradient-to-b from-amber-500/[0.08] to-transparent border-amber-500/25'
+      }`}>
         <div className="flex items-center justify-between text-[11px] font-mono">
-          <span className="text-amber-400 font-bold uppercase tracking-widest">
+          <span className="text-[#F0B429] font-bold uppercase tracking-widest">
             ● {curr.source}
           </span>
-          <span className="text-slate-400">JUST IN</span>
+          <span className={isLight ? 'text-slate-500' : 'text-slate-400'}>JUST IN</span>
         </div>
 
-        <p className="text-base font-bold text-white leading-snug">
+        <p className={`text-base font-bold leading-snug ${isLight ? 'text-slate-900' : 'text-white'}`}>
           &ldquo;{curr.headline}&rdquo;
         </p>
 
-        <div className="pt-2 border-t border-white/[0.06] flex items-center justify-between text-xs font-mono">
-          <span className="text-slate-300">Target: <strong className="text-white">{curr.target}</strong></span>
+        <div className={`pt-2 border-t flex items-center justify-between text-xs font-mono ${
+          isLight ? 'border-slate-200 text-slate-700' : 'border-white/[0.06] text-slate-300'
+        }`}>
+          <span>Target: <strong className={isLight ? 'text-slate-950' : 'text-white'}>{curr.target}</strong></span>
           <span className="font-bold px-2 py-0.5 rounded text-[11px]" style={{ color: curr.color, backgroundColor: `${curr.color}1F` }}>
             {curr.impact} ({curr.drift})
           </span>
         </div>
       </div>
 
-      <p className="text-xs font-mono text-slate-400 text-center">
+      <p className={`text-xs font-mono text-center ${isLight ? 'text-slate-600' : 'text-slate-400'}`}>
         ⚡ The edge belongs to the trader who acts in the first 5 seconds.
       </p>
     </div>
   );
 }
 
-function EndgameInteractiveWidget() {
+function EndgameInteractiveWidget({ isLight }) {
   return (
-    <div className="rounded-3xl bg-[#0D1117]/90 border border-white/[0.12] p-6 shadow-[0_20px_60px_-15px_rgba(0,0,0,0.8)] backdrop-blur-2xl space-y-4">
-      <div className="flex items-center justify-between border-b border-white/[0.08] pb-3">
-        <div className="flex items-center gap-2">
+    <div
+      className={`rounded-2xl border transition-all p-6 sm:p-7 space-y-4 backdrop-blur-xl relative overflow-hidden ${
+        isLight
+          ? 'bg-white border-[#E2E8F0] shadow-[0_12px_40px_rgba(0,0,0,0.06)]'
+          : 'bg-[#101520] border-white/[0.1] shadow-[0_20px_50px_rgba(0,0,0,0.6)]'
+      }`}
+      style={{
+        borderTop: '2px solid #F0B429',
+        boxShadow: isLight
+          ? 'inset 0 1px 0 rgba(240,180,41,0.2), 0 12px 40px rgba(0,0,0,0.06)'
+          : 'inset 0 1px 2px rgba(240,180,41,0.18), inset 0 0 40px rgba(240,180,41,0.02), 0 20px 50px rgba(0,0,0,0.6)'
+      }}
+    >
+      <div className={`flex items-center justify-between border-b pb-3.5 ${isLight ? 'border-slate-200' : 'border-white/[0.08]'}`}>
+        <div className="flex items-center gap-2.5">
           <ShieldAlert className="w-4 h-4 text-rose-400" />
           <span className="font-mono text-xs font-bold uppercase tracking-widest text-rose-400">
             Auto-Liquidation Protocol
           </span>
         </div>
-        <span className="text-xs font-mono text-amber-400 font-bold bg-amber-500/10 px-2 py-0.5 rounded border border-amber-500/20">
+        <span className="text-xs font-mono text-[#F0B429] font-bold bg-amber-500/10 px-2 py-0.5 rounded border border-amber-500/20">
           T-MINUS 5:00
         </span>
       </div>
 
       <div className="space-y-3">
-        <div className="p-4 rounded-2xl bg-rose-500/[0.08] border border-rose-500/25 space-y-2">
+        <div className="p-4 rounded-xl bg-rose-500/[0.08] border border-rose-500/25 space-y-2">
           <div className="flex items-center gap-2 text-rose-400 font-mono font-bold text-xs uppercase">
             <AlertTriangle className="w-4 h-4" />
             <span>The 5-Minute Hard Freeze</span>
           </div>
-          <p className="text-xs text-slate-300 leading-relaxed font-mono">
+          <p className={`text-xs leading-relaxed font-mono ${isLight ? 'text-slate-700' : 'text-slate-300'}`}>
             When 5 minutes remain on the master tournament clock, trading floors lock permanently. Every resting share across all traders is liquidated to cash at current market value.
           </p>
         </div>
 
-        <div className="grid grid-cols-2 gap-2 text-xs font-mono">
-          <div className="p-3 rounded-xl bg-white/[0.03] border border-white/[0.06]">
-            <span className="text-slate-400 block text-[10px] uppercase">Leaderboard Basis</span>
-            <strong className="text-white text-sm">100% Realized Cash</strong>
+        <div className="grid grid-cols-2 gap-2.5 text-xs font-mono">
+          <div className={`p-3 rounded-xl border ${
+            isLight ? 'bg-slate-50 border-slate-200' : 'bg-white/[0.03] border-white/[0.06]'
+          }`}>
+            <span className={`block text-[10px] uppercase ${isLight ? 'text-slate-500' : 'text-slate-400'}`}>Leaderboard Basis</span>
+            <strong className={`text-sm ${isLight ? 'text-slate-900' : 'text-white'}`}>100% Realized Cash</strong>
           </div>
-          <div className="p-3 rounded-xl bg-white/[0.03] border border-white/[0.06]">
-            <span className="text-slate-400 block text-[10px] uppercase">Resting Limit Orders</span>
-            <strong className="text-amber-400 text-sm">Auto-Cancelled & Refunded</strong>
+          <div className={`p-3 rounded-xl border ${
+            isLight ? 'bg-slate-50 border-slate-200' : 'bg-white/[0.03] border-white/[0.06]'
+          }`}>
+            <span className={`block text-[10px] uppercase ${isLight ? 'text-slate-500' : 'text-slate-400'}`}>Resting Limit Orders</span>
+            <strong className="text-[#F0B429] text-sm">Auto-Cancelled & Refunded</strong>
           </div>
         </div>
       </div>
@@ -427,7 +588,7 @@ function EndgameInteractiveWidget() {
   );
 }
 
-/* ---------- The Tournament Combat Steps ---------- */
+/* ---------- The Tournament Combat Steps (Exact Verbatim Content) ---------- */
 
 const STEPS = [
   {
@@ -523,6 +684,9 @@ export function OnboardingTour({ isOpen, onClose }) {
   const step = STEPS[index];
   const isLast = index === total - 1;
 
+  const { theme } = useTheme();
+  const isLight = theme === 'light';
+
   const finish = useCallback(() => {
     try {
       localStorage.setItem('equity_arena_tour_completed', 'true');
@@ -556,6 +720,7 @@ export function OnboardingTour({ isOpen, onClose }) {
   if (!isOpen) return null;
 
   const Visual = step.Visual;
+  const currentGlow = STAGE_GLOWS[index] || STAGE_GLOWS[0];
 
   return (
     <div
@@ -563,93 +728,148 @@ export function OnboardingTour({ isOpen, onClose }) {
       role="dialog"
       aria-modal="true"
       tabIndex={-1}
-      className="fixed inset-0 z-[100] bg-[#07090E] text-white overflow-y-auto focus:outline-none select-none font-sans"
+      className={`fixed inset-0 z-[100] overflow-y-auto focus:outline-none select-none font-sans transition-colors duration-300 ${
+        isLight ? 'bg-[#F0F2F7] text-slate-900' : 'bg-[#07090E] text-white'
+      }`}
     >
-      {/* High-Octane Cyber Ambient Mesh */}
-      <div aria-hidden="true" className="pointer-events-none fixed inset-0 overflow-hidden">
-        <div className="absolute -top-40 -left-40 w-[600px] h-[600px] rounded-full blur-[140px] opacity-40 bg-amber-500" />
-        <div className="absolute top-1/2 -right-40 w-[650px] h-[650px] rounded-full blur-[160px] opacity-25 bg-emerald-500" />
-        <div className="absolute -bottom-40 left-1/3 w-[700px] h-[700px] rounded-full blur-[160px] opacity-20 bg-indigo-600" />
-        <div className="absolute inset-0 bg-[#07090E]/80 backdrop-blur-3xl" />
-      </div>
+      {/* Dynamic Stage-Tuned Subtle Radial Glow Layer (Max 0.06 Opacity) */}
+      <div
+        aria-hidden="true"
+        className="pointer-events-none fixed inset-0 transition-all duration-700 ease-out"
+        style={{
+          background: currentGlow
+        }}
+      />
 
-      <div className="relative z-10 min-h-full flex flex-col justify-between">
+      <div className="relative z-10 min-h-screen flex flex-col justify-between">
         {/* Top Header Bar */}
-        <header className="sticky top-0 z-20 px-6 sm:px-12 py-4 bg-[#0A0D14]/90 border-b border-white/[0.08] backdrop-blur-2xl flex items-center justify-between">
+        <header className={`sticky top-0 z-20 px-6 sm:px-12 py-3.5 border-b backdrop-blur-xl flex items-center justify-between transition-colors ${
+          isLight
+            ? 'bg-[#F0F2F7]/90 border-slate-300/80'
+            : 'bg-[#07090E]/90 border-white/[0.08]'
+        }`}>
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-amber-500/15 border border-amber-500/40 flex items-center justify-center font-black font-mono text-amber-400 shadow-[0_0_15px_rgba(240,180,41,0.25)]">
+            <div className="w-9 h-9 rounded-xl bg-amber-500/15 border border-amber-500/40 flex items-center justify-center font-black font-mono text-[#F0B429] shadow-[0_0_15px_rgba(240,180,41,0.25)]">
               EA
             </div>
             <div>
-              <div className="text-xs font-mono font-bold tracking-[0.25em] text-amber-400 uppercase">
+              <div className="text-[11px] font-mono font-bold tracking-[0.25em] text-[#F0B429] uppercase">
                 Tournament Combat Manual
               </div>
-              <div className="text-sm font-bold text-white tracking-wide">
+              <div className={`text-sm font-bold tracking-wide ${isLight ? 'text-slate-900' : 'text-white'}`}>
                 Equity Arena Trader Playbook
               </div>
             </div>
           </div>
 
           <div className="flex items-center gap-4">
-            <span className="hidden md:inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-white/[0.04] border border-white/[0.08] text-xs font-mono text-slate-300">
-              <Compass className="w-3.5 h-3.5 text-amber-400" />
-              <span>Section {index + 1} of {total}</span>
+            {/* Small and Muted Section Indicator */}
+            <span className={`text-xs font-mono font-medium tracking-wide ${isLight ? 'text-slate-500' : 'text-slate-500'}`}>
+              Section {index + 1} of {total}
             </span>
 
+            {/* Clear DISMISS button in both modes */}
             <button
               type="button"
               onClick={finish}
-              className="flex items-center gap-2 px-4 py-2 rounded-xl bg-white/[0.05] hover:bg-white/[0.1] border border-white/[0.1] text-xs font-mono font-bold text-slate-200 hover:text-white transition-all cursor-pointer"
+              data-tour-action="dismiss"
+              className={`flex items-center gap-2 px-3.5 py-1.5 rounded-lg border text-xs font-mono font-bold transition-all cursor-pointer ${
+                isLight
+                  ? 'bg-white hover:bg-slate-100 border-slate-300 text-slate-700 hover:text-slate-950 shadow-sm'
+                  : 'bg-white/[0.06] hover:bg-white/[0.12] border-white/[0.12] text-slate-300 hover:text-white'
+              }`}
             >
               <span>DISMISS</span>
-              <X className="w-4 h-4" />
+              <X className="w-3.5 h-3.5" />
             </button>
           </div>
         </header>
 
-        {/* Center Main Stage */}
-        <main className="flex-1 w-full max-w-[1300px] mx-auto px-6 sm:px-12 py-10 sm:py-16">
-          <div className="grid lg:grid-cols-[1.1fr_0.9fr] gap-12 lg:gap-16 items-center">
-            {/* Left Content Column */}
-            <div className="space-y-6">
-              {/* Badge */}
-              <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-amber-500/10 border border-amber-500/30 text-amber-400 font-mono font-bold text-xs tracking-wider">
-                <Terminal className="w-3.5 h-3.5" />
+        {/* Center Main Stage: Full-Screen Takeover Two-Column Split (55% Left, 45% Right) */}
+        <main className="flex-1 w-full max-w-[1440px] mx-auto px-6 sm:px-12 py-8 sm:py-12 flex items-center">
+          <div className="w-full grid lg:grid-cols-[55%_45%] gap-10 lg:gap-14 items-center">
+            
+            {/* Left Content Column (55% width) */}
+            <div className="space-y-6 max-w-[720px]">
+              
+              {/* Pulsing Live Stage Pill Badge */}
+              <div className={`inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full border font-mono font-bold text-xs tracking-wider ${
+                isLight
+                  ? 'bg-white border-[#F0B429] text-[#B45309] shadow-xs'
+                  : 'bg-[#0D1117] border-[#F0B429] text-[#F0B429] shadow-[0_0_15px_rgba(240,180,41,0.15)]'
+              }`}>
+                <span className="w-2 h-2 rounded-full bg-[#F0B429] animate-pulse" />
                 <span>{step.badge}</span>
               </div>
 
-              {/* Title & Subtitle */}
+              {/* High-Impact Main Heading (52px minimum, 800 weight) */}
               <div className="space-y-3">
-                <h2 className="text-3xl sm:text-5xl font-black text-white tracking-tight leading-[1.08]">
+                <h1
+                  className={`font-extrabold tracking-tight leading-[1.05] ${
+                    isLight ? 'text-slate-950' : 'text-white'
+                  }`}
+                  style={{ fontSize: 'clamp(38px, 4.2vw, 56px)', fontWeight: 800 }}
+                >
                   {step.title}
-                </h2>
-                <p className="text-base sm:text-lg text-slate-300 font-medium leading-relaxed">
+                </h1>
+                <p className={`text-base sm:text-lg font-medium leading-relaxed ${
+                  isLight ? 'text-slate-700' : 'text-slate-300'
+                }`}>
                   {step.subtitle}
                 </p>
               </div>
 
-              {/* Core Rule Callout Pill */}
-              <div className="p-4 rounded-2xl bg-gradient-to-r from-amber-500/15 via-amber-500/5 to-transparent border-l-4 border-l-amber-400 border-y border-r border-white/[0.08]">
-                <span className="text-[11px] font-mono uppercase tracking-widest text-amber-400 font-bold block mb-1">
+              {/* Highlighted Dramatic CORE FLOOR RULE Box */}
+              <div
+                className={`p-4 sm:p-5 rounded-xl border border-y border-r transition-all ${
+                  isLight
+                    ? 'border-slate-300/80'
+                    : 'border-white/[0.08]'
+                }`}
+                style={{
+                  backgroundColor: 'rgba(240, 180, 41, 0.08)',
+                  borderLeft: '3px solid #F0B429'
+                }}
+              >
+                <span className="text-[11px] font-mono uppercase tracking-widest text-[#F0B429] font-bold block mb-1.5">
                   Core Floor Rule
                 </span>
-                <span className="text-sm sm:text-base font-bold text-white">
+                <p
+                  className={`font-semibold leading-snug ${
+                    isLight ? 'text-slate-950' : 'text-white'
+                  }`}
+                  style={{ fontSize: '17px', fontWeight: 600 }}
+                >
                   {step.coreRule}
-                </span>
+                </p>
               </div>
 
-              {/* Tactical Action Points */}
-              <div className="space-y-2.5 pt-2">
-                <span className="text-xs font-mono uppercase tracking-wider text-slate-400 font-bold block">
+              {/* Tactile BATTLEGROUND TACTICS List */}
+              <div className="space-y-2.5 pt-1">
+                <span className={`text-xs font-mono uppercase tracking-wider font-bold block ${
+                  isLight ? 'text-slate-600' : 'text-slate-400'
+                }`}>
                   Battleground Tactics
                 </span>
                 <div className="space-y-2">
                   {step.tactics.map((t, i) => (
-                    <div key={i} className="flex items-start gap-3 p-3 rounded-xl bg-white/[0.02] border border-white/[0.06]">
-                      <span className="w-5 h-5 rounded-md bg-amber-500/20 text-amber-400 font-mono font-black text-xs flex items-center justify-center flex-shrink-0 mt-0.5">
+                    <div
+                      key={i}
+                      className={`flex items-start gap-3.5 p-3 sm:p-3.5 rounded-xl border transition-all ${
+                        isLight
+                          ? 'bg-white border-slate-200 shadow-xs'
+                          : 'bg-[#101520] border-white/[0.06]'
+                      }`}
+                      style={{
+                        borderLeft: '2px solid rgba(240, 180, 41, 0.4)'
+                      }}
+                    >
+                      <span className="w-5 h-5 rounded-md bg-amber-500/20 text-[#F0B429] font-mono font-black text-xs flex items-center justify-center flex-shrink-0 mt-0.5">
                         {i + 1}
                       </span>
-                      <span className="text-xs sm:text-sm text-slate-200 leading-relaxed font-medium">
+                      <span className={`text-xs sm:text-sm font-medium leading-relaxed ${
+                        isLight ? 'text-slate-800' : 'text-slate-200'
+                      }`}>
                         {t}
                       </span>
                     </div>
@@ -657,50 +877,88 @@ export function OnboardingTour({ isOpen, onClose }) {
                 </div>
               </div>
 
-              {/* Pit Floor Pro-Tip */}
-              <div className="flex items-start gap-3 p-4 rounded-2xl bg-emerald-500/[0.08] border border-emerald-500/25 text-emerald-300 text-xs sm:text-sm leading-relaxed">
-                <Award className="w-5 h-5 text-emerald-400 flex-shrink-0 mt-0.5" />
-                <div>
-                  <strong className="text-white block font-mono text-xs uppercase mb-0.5">Pit Master Insight:</strong>
-                  <span>{step.proTip}</span>
+              {/* Personality-Packed PIT MASTER INSIGHT Box with subtle diagonal stripes */}
+              <div
+                className={`flex items-start gap-3.5 p-4 rounded-xl border relative overflow-hidden ${
+                  isLight
+                    ? 'border-emerald-600/30'
+                    : 'border-emerald-500/25'
+                }`}
+                style={{
+                  backgroundColor: isLight ? 'rgba(5, 150, 105, 0.08)' : 'rgba(16, 185, 129, 0.08)',
+                  backgroundImage: `repeating-linear-gradient(45deg, rgba(16, 185, 129, 0.03) 0, rgba(16, 185, 129, 0.03) 2px, transparent 0, transparent 8px)`
+                }}
+              >
+                <Award className="w-6 h-6 text-emerald-400 flex-shrink-0 mt-0.5" />
+                <div className="relative z-10">
+                  <strong className={`block font-mono text-xs uppercase mb-1 tracking-wider ${
+                    isLight ? 'text-emerald-800' : 'text-emerald-300'
+                  }`}>
+                    Pit Master Insight:
+                  </strong>
+                  <span
+                    className="text-xs sm:text-sm leading-relaxed"
+                    style={{ color: isLight ? '#1E293B' : '#F1F5F9' }}
+                  >
+                    {step.proTip}
+                  </span>
                 </div>
               </div>
+
             </div>
 
-            {/* Right Interactive Simulator Column */}
-            <div className="lg:sticky lg:top-28">
-              <Visual />
+            {/* Right Column: Institutional Terminal Preview Widget (45% width) */}
+            <div className="w-full">
+              <Visual isLight={isLight} />
             </div>
+
           </div>
         </main>
 
         {/* Bottom Navigation Deck */}
-        <footer className="sticky bottom-0 z-20 px-6 sm:px-12 py-5 bg-[#0A0D14]/95 border-t border-white/[0.08] backdrop-blur-2xl">
-          <div className="max-w-[1300px] mx-auto flex items-center justify-between gap-4">
-            {/* Progress Dots */}
-            <div className="flex items-center gap-2">
+        <footer className={`sticky bottom-0 z-20 px-6 sm:px-12 py-4 border-t backdrop-blur-xl transition-colors ${
+          isLight
+            ? 'bg-[#F0F2F7]/95 border-slate-300/80'
+            : 'bg-[#07090E]/95 border-white/[0.08]'
+        }`}>
+          <div className="max-w-[1440px] mx-auto flex items-center justify-between gap-4">
+            
+            {/* Progress Dots with Smooth Transitions: Active amber 10px, Inactive grey 6px */}
+            <div className="flex items-center gap-2.5">
               {STEPS.map((s, i) => (
                 <button
                   key={s.id}
                   type="button"
                   onClick={() => setIndex(i)}
-                  className={`h-2.5 rounded-full transition-all cursor-pointer ${
+                  className={`rounded-full transition-all duration-300 cursor-pointer ${
                     i === index
-                      ? 'w-10 bg-amber-400 shadow-[0_0_12px_rgba(240,180,41,0.6)]'
-                      : 'w-2.5 bg-white/20 hover:bg-white/40'
+                      ? 'w-2.5 h-2.5 bg-[#F0B429] shadow-[0_0_12px_rgba(240,180,41,0.7)] scale-100'
+                      : isLight
+                        ? 'w-1.5 h-1.5 bg-slate-300 hover:bg-slate-400'
+                        : 'w-1.5 h-1.5 bg-slate-600 hover:bg-slate-400'
                   }`}
+                  style={{
+                    width: i === index ? '10px' : '6px',
+                    height: i === index ? '10px' : '6px'
+                  }}
                   title={s.title}
                 />
               ))}
             </div>
 
-            {/* Controls */}
+            {/* Navigation Buttons: PREV & 48px NEXT STAGE / ENTER THE ARENA */}
             <div className="flex items-center gap-3">
               <button
                 type="button"
                 onClick={prev}
                 disabled={index === 0}
-                className="px-5 py-2.5 rounded-xl bg-white/[0.05] hover:bg-white/[0.1] border border-white/[0.1] font-mono text-xs font-bold text-slate-300 disabled:opacity-30 disabled:cursor-not-allowed transition-all cursor-pointer flex items-center gap-1.5"
+                data-tour-action="prev"
+                className={`px-5 py-2.5 rounded-xl border font-mono text-xs font-bold disabled:opacity-20 disabled:cursor-not-allowed transition-all cursor-pointer flex items-center gap-1.5 ${
+                  isLight
+                    ? 'bg-white hover:bg-slate-100 border-slate-300 text-slate-700 shadow-xs'
+                    : 'bg-white/[0.05] hover:bg-white/[0.1] border-white/[0.1] text-slate-300'
+                }`}
+                style={{ height: '48px' }}
               >
                 <ArrowLeft className="w-4 h-4" />
                 <span className="hidden sm:inline">PREV</span>
@@ -709,16 +967,27 @@ export function OnboardingTour({ isOpen, onClose }) {
               <button
                 type="button"
                 onClick={isLast ? finish : next}
-                className="px-6 py-2.5 rounded-xl bg-amber-400 hover:bg-amber-300 text-slate-950 font-mono text-xs font-black uppercase tracking-wider transition-all shadow-[0_0_25px_rgba(240,180,41,0.4)] active:scale-95 cursor-pointer flex items-center gap-2"
+                data-tour-action="next"
+                className={`px-7 rounded-xl font-mono text-xs font-black uppercase tracking-wider transition-all cursor-pointer flex items-center gap-2 active:scale-95 ${
+                  isLast
+                    ? 'bg-[#F0B429] hover:bg-[#ffc63d] text-slate-950 shadow-[0_0_35px_rgba(240,180,41,0.6)] animate-pulse'
+                    : 'bg-[#F0B429] hover:bg-[#f5bc38] text-slate-950 shadow-[0_0_20px_rgba(240,180,41,0.35)]'
+                }`}
+                style={{
+                  height: '48px',
+                  fontWeight: 700,
+                  minWidth: isLast ? '190px' : '150px'
+                }}
               >
                 <span>{isLast ? 'ENTER THE ARENA' : 'NEXT STAGE'}</span>
                 <ArrowRight className="w-4 h-4" />
               </button>
             </div>
+
           </div>
         </footer>
+
       </div>
     </div>
   );
 }
-
