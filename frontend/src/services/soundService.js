@@ -21,7 +21,7 @@ if (typeof window !== 'undefined') {
   try {
     preloadedIntermissionAudio = new Audio(intermissionMp3Asset || '/sounds/intermisson-start.mp3');
     preloadedIntermissionAudio.preload = 'auto';
-    preloadedIntermissionAudio.volume = 0.40;
+    preloadedIntermissionAudio.volume = 0.15;
     preloadedIntermissionAudio.load();
   } catch (e) {}
 }
@@ -336,18 +336,18 @@ export function playIntermissionStartSound(breakKey) {
   }
 
   const playIntermissionNow = () => {
-    // 1. Direct preloaded HTML5 Audio element at comfortable low volume (0.40)
+    // 1. Direct preloaded HTML5 Audio element at soft elevator BGM volume (0.15)
     if (preloadedIntermissionAudio) {
       try {
         preloadedIntermissionAudio.currentTime = 0;
-        preloadedIntermissionAudio.volume = 0.40;
+        preloadedIntermissionAudio.volume = 0.15;
         const playPromise = preloadedIntermissionAudio.play();
         if (playPromise !== undefined) {
           playPromise.catch(() => {
             // If browser autoplay policy intervenes, attach one-time listener on document
             const resumeOnGesture = () => {
               preloadedIntermissionAudio.currentTime = 0;
-              preloadedIntermissionAudio.volume = 0.40;
+              preloadedIntermissionAudio.volume = 0.15;
               preloadedIntermissionAudio.play().catch(() => {});
               window.removeEventListener('pointerdown', resumeOnGesture, true);
               window.removeEventListener('click', resumeOnGesture, true);
@@ -363,7 +363,7 @@ export function playIntermissionStartSound(breakKey) {
       } catch (e) {}
     }
 
-    // 2. Web Audio decoded buffer playback at volume 0.40 (parallel channel for guaranteed playback)
+    // 2. Web Audio decoded buffer playback at soft elevator BGM volume (0.15)
     try {
       const ctx = getAudioContext();
       if (ctx) {
@@ -374,7 +374,7 @@ export function playIntermissionStartSound(breakKey) {
           const source = ctx.createBufferSource();
           const gainNode = ctx.createGain();
           source.buffer = decodedIntermissionBuffer;
-          gainNode.gain.setValueAtTime(0.40, ctx.currentTime);
+          gainNode.gain.setValueAtTime(0.15, ctx.currentTime);
           source.connect(gainNode);
           gainNode.connect(ctx.destination);
           source.start(0);
@@ -383,10 +383,10 @@ export function playIntermissionStartSound(breakKey) {
       }
     } catch (err) {}
 
-    // 3. Fallback standalone Audio instance at volume 0.40
+    // 3. Fallback standalone Audio instance at soft elevator BGM volume (0.15)
     try {
       const audio = new Audio(intermissionMp3Asset || '/sounds/intermisson-start.mp3');
-      audio.volume = 0.40;
+      audio.volume = 0.15;
       audio.play().catch(() => {});
     } catch (e) {}
   };

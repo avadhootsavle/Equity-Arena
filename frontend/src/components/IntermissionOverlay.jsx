@@ -9,11 +9,11 @@ export function IntermissionOverlay({ sessionData }) {
   // If session is not paused, do not render overlay
   const isPaused = sessionData?.isPaused || sessionData?.status === 'PAUSED';
 
-  // Smooth animation transition state
+  // Smooth cinematic animation transition state
   const [isRendered, setIsRendered] = useState(false);
   const [isVisible, setIsVisible] = useState(false);
 
-  // Play "intermisson-start.mp3" at comfortable low volume (0.40) strictly ONCE when break starts
+  // Play "intermisson-start.mp3" at soft elevator BGM volume (0.15) strictly ONCE when break starts
   const hasTriggeredAudioRef = useRef(false);
   const audioElRef = useRef(null);
   const breakKey = sessionData?.breakEndTime || sessionData?.id || 'session_break';
@@ -23,13 +23,13 @@ export function IntermissionOverlay({ sessionData }) {
     if (audioElRef.current) {
       try {
         audioElRef.current.currentTime = 0;
-        audioElRef.current.volume = 0.40;
+        audioElRef.current.volume = 0.15;
         audioElRef.current.play().catch(() => {});
       } catch (e) {}
     }
   };
 
-  // Mount/unmount animation transition: fades & scales smoothly so view doesn't abruptly flash or cut
+  // Mount/unmount animation transition: cinematic, silky-smooth 500ms fade & subtle scale
   useEffect(() => {
     let timer;
     if (isPaused) {
@@ -64,10 +64,10 @@ export function IntermissionOverlay({ sessionData }) {
     } else {
       hasTriggeredAudioRef.current = false;
       setIsVisible(false);
-      // Keep DOM element rendered during the 350ms exit transition
+      // Keep DOM element rendered during the 500ms exit transition
       timer = setTimeout(() => {
         setIsRendered(false);
-      }, 350);
+      }, 500);
     }
     return () => clearTimeout(timer);
   }, [isPaused, breakKey]);
@@ -83,16 +83,33 @@ export function IntermissionOverlay({ sessionData }) {
       role="dialog"
       aria-modal="true"
       aria-labelledby="intermission-title"
-      className={`fixed inset-0 z-[100] bg-[#07090E] overflow-y-auto font-sans text-slate-200 select-none flex flex-col justify-between transition-all duration-350 ease-out ${
-        isVisible ? 'opacity-100 backdrop-blur-md' : 'opacity-0 backdrop-blur-none pointer-events-none'
+      className={`fixed inset-0 z-[100] bg-[#07090E]/95 overflow-y-auto font-sans text-slate-200 select-none flex flex-col justify-between transition-all duration-500 ease-[cubic-bezier(0.16,1,0.3,1)] ${
+        isVisible ? 'opacity-100 backdrop-blur-xl' : 'opacity-0 backdrop-blur-none pointer-events-none'
       }`}
     >
-      {/* Direct HTML5 audio element rendered directly into DOM at volume 0.40 */}
+      {/* Direct HTML5 audio element rendered directly into DOM at soft elevator BGM volume (0.15) */}
       <audio
         ref={audioElRef}
         src="/sounds/intermisson-start.mp3"
         preload="auto"
       />
+
+      {/* Atmospheric ambient glow spots for attractive depth */}
+      <div
+        aria-hidden="true"
+        className="pointer-events-none fixed inset-0 overflow-hidden"
+      >
+        <div
+          className={`absolute -top-40 left-1/4 w-96 h-96 bg-amber-500/10 rounded-full blur-3xl transition-opacity duration-700 ${
+            isVisible ? 'opacity-100' : 'opacity-0'
+          }`}
+        />
+        <div
+          className={`absolute -bottom-40 right-1/4 w-96 h-96 bg-emerald-500/10 rounded-full blur-3xl transition-opacity duration-700 ${
+            isVisible ? 'opacity-100' : 'opacity-0'
+          }`}
+        />
+      </div>
 
       {/* High-contrast neo-brutalist diagonal hatch background accent */}
       <div
@@ -112,7 +129,11 @@ export function IntermissionOverlay({ sessionData }) {
       />
 
       {/* ── System Status Rail / Header Chrome ──────────────────────────────── */}
-      <header className="relative z-10 w-full border-b-2 border-black bg-[#0B0F17] px-4 sm:px-8 py-2.5 flex items-center justify-between text-xs font-mono shadow-[0_2px_0_0_#F0B429]">
+      <header
+        className={`relative z-10 w-full border-b-2 border-black bg-[#0B0F17]/90 backdrop-blur-md px-4 sm:px-8 py-2.5 flex items-center justify-between text-xs font-mono shadow-[0_2px_0_0_#F0B429] transition-all duration-500 ease-[cubic-bezier(0.16,1,0.3,1)] ${
+          isVisible ? 'translate-y-0 opacity-100' : '-translate-y-4 opacity-0'
+        }`}
+      >
         <div className="flex items-center gap-3">
           <div className="flex items-center gap-2 px-2.5 py-1 bg-[#F0B429] text-black font-black tracking-widest text-[11px] border-2 border-black shadow-[2px_2px_0px_0px_#000000]">
             <Radio className="w-3.5 h-3.5 animate-pulse" />
@@ -134,14 +155,14 @@ export function IntermissionOverlay({ sessionData }) {
 
       {/* ── Asymmetric Neo-Brutalist Main Stage with Smooth Scale/Fade Animation ── */}
       <main
-        className={`relative z-10 w-full max-w-5xl mx-auto px-4 sm:px-8 py-6 sm:py-10 my-auto transition-all duration-350 ease-out transform ${
-          isVisible ? 'opacity-100 scale-100 translate-y-0' : 'opacity-0 scale-[0.98] translate-y-2'
+        className={`relative z-10 w-full max-w-5xl mx-auto px-4 sm:px-8 py-6 sm:py-10 my-auto transition-all duration-500 ease-[cubic-bezier(0.16,1,0.3,1)] transform ${
+          isVisible ? 'opacity-100 scale-100 translate-y-0' : 'opacity-0 scale-[0.96] translate-y-4'
         }`}
       >
         <div className="grid lg:grid-cols-[1.1fr_360px] gap-6 lg:gap-8 items-stretch">
           
           {/* Left Panel: Neo-Brutalist Dispatch & Security Deck */}
-          <div className="bg-[#0E121B] border-2 border-black rounded-none p-6 sm:p-7 flex flex-col justify-between relative shadow-[6px_6px_0px_0px_rgba(0,0,0,1)]">
+          <div className="bg-[#0E121B] border-2 border-black rounded-none p-6 sm:p-7 flex flex-col justify-between relative shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] transition-transform duration-300">
             
             <div className="space-y-6">
               {/* Header Group */}
@@ -225,10 +246,10 @@ export function IntermissionOverlay({ sessionData }) {
                   type="button"
                   onClick={triggerAudio}
                   className="flex items-center gap-1.5 px-2.5 py-1.5 bg-[#F0B429]/10 hover:bg-[#F0B429]/20 border border-[#F0B429]/40 text-[#F0B429] text-[11px] font-bold cursor-pointer transition-colors"
-                  title="Replay Break Chime"
+                  title="Replay Break BGM"
                 >
                   <Volume2 className="w-3.5 h-3.5" />
-                  <span>REPLAY CHIME</span>
+                  <span>BGM CHIME</span>
                 </button>
               </div>
 
@@ -305,7 +326,11 @@ export function IntermissionOverlay({ sessionData }) {
       </main>
 
       {/* ── Bottom Terminal Chrome ─────────────────────────────────────────── */}
-      <footer className="relative z-10 w-full border-t-2 border-black bg-[#0B0F17] px-4 sm:px-8 py-2 flex items-center justify-between text-[11px] font-mono text-slate-400 shadow-[0_-2px_0_0_#F0B429]">
+      <footer
+        className={`relative z-10 w-full border-t-2 border-black bg-[#0B0F17]/90 backdrop-blur-md px-4 sm:px-8 py-2 flex items-center justify-between text-[11px] font-mono text-slate-400 shadow-[0_-2px_0_0_#F0B429] transition-all duration-500 ease-[cubic-bezier(0.16,1,0.3,1)] ${
+          isVisible ? 'translate-y-0 opacity-100' : 'translate-y-4 opacity-0'
+        }`}
+      >
         <div className="flex items-center gap-2">
           <Terminal className="w-3.5 h-3.5 text-[#F0B429]" />
           <span className="font-bold text-slate-300">EQUITY ARENA ENGINE // STANDALONE TERMINAL CLIENT</span>
