@@ -588,91 +588,91 @@ function EndgameInteractiveWidget({ isLight }) {
   );
 }
 
-/* ---------- The Tournament Combat Steps (Exact Verbatim Content) ---------- */
+/* ---------- The Tournament Field Playbook (Real Trader Desk Voice) ---------- */
 
 const STEPS = [
   {
     id: 'mindset',
-    badge: 'STAGE 01 // MANDATE',
-    title: 'Grow Your 20,000 IC War Chest',
-    subtitle: 'Level playing field. Same 15 companies. Whoever stacks the largest portfolio before the closing bell takes the trophy.',
-    coreRule: 'Net Worth = Liquid Cash + Market Value of Held Shares.',
+    badge: 'SECTION 01 // CAPITAL DISCIPLINE',
+    title: 'Your 20,000 IC Bankroll',
+    subtitle: 'Every trader starts with the exact same 20,000 IC cash. The trader who protects their capital and lets winners run wins the tournament.',
+    coreRule: 'Net Worth = Liquid Cash + Live Market Value of Open Positions.',
     tactics: [
-      'Cash sitting on the sidelines earns 0% — don\'t be a spectator.',
-      'Riding a falling knife ruins your standing — cut losers relentlessly.',
-      'Every tick is real-time: your net worth moves dynamically with the market tape.'
+      'Cash isn\'t trash: keeping dry powder lets you pounce on sudden 20% panic dips.',
+      'Cut your bleeders fast: holding onto a sinking stock hoping it recovers is how accounts blow up.',
+      'The board updates live every 6 seconds: your tournament standing moves on every tick.'
     ],
-    proTip: 'A disciplined trader holding 2 winning positions beats an over-diversified trader with 10 random stocks.',
+    proTip: 'Quality over quantity. Concentrating your capital in 2 or 3 high-conviction trades will beat a messy portfolio of 10 random stocks every single time.',
     Visual: GoalInteractiveWidget
   },
   {
     id: 'radar',
-    badge: 'STAGE 02 // SURVEILLANCE',
-    title: 'Master the Trading Floor',
-    subtitle: 'Every card on your dashboard is a real-time battleground ticking every 6 seconds.',
-    coreRule: 'Color shows past trajectory — NOT future destination.',
+    badge: 'SECTION 02 // READING THE TAPE',
+    title: 'Work the Floor Like a Pro',
+    subtitle: '20 listed equities across Blue Chips, Mid Caps, and highly volatile Penny Stocks. Prices drift live every 6 seconds.',
+    coreRule: 'Green means price is above open. Red means below. Trend is your only friend.',
     tactics: [
-      'Green pills mean the stock is above today\'s open; Red means below open.',
-      'Check the 15-minute sparkline under each card before making your entry.',
-      'Click any stock card to expand its full institutional candle chart and trade ticket.'
+      'Watch the 15-minute sparkline trend on each stock card before touching the buy button.',
+      'Penny stocks (marked with the amber badge) swing wildly: high risk, explosive upside.',
+      'Click any stock card to expand its full Candlestick chart and open its execution ticket.'
     ],
-    proTip: 'Don\'t chase a green candle that just jumped 25%. Wait for the pullback or set a limit order below market.',
+    proTip: 'Never chase a green candle that just rocketed up 20%. Let momentum cool off, wait for the pullback, or leave a limit order underneath the market.',
     Visual: MarketInteractiveWidget
   },
   {
     id: 'execution',
-    badge: 'STAGE 03 // COMBAT',
-    title: 'Lightning-Fast Instant Orders',
-    subtitle: 'No slow popups. No delays. Hit Quick Buy or Quick Sell and execute instantly.',
-    coreRule: 'The fill happens at the live server price the microsecond your click registers.',
+    badge: 'SECTION 03 // TRADE EXECUTION',
+    title: 'Instant One-Click Fills',
+    subtitle: 'No broker delays, zero slippage, zero commission fees. Spot market orders fill the instant you hit the button.',
+    coreRule: 'Your order fills at the live price the exact millisecond your click hits the server.',
     tactics: [
-      'Use the stepper (− / +) or preset buttons (1, 5, 10, 50, 100) to size your position.',
-      'Quick Buy debits your wallet immediately; Quick Sell returns liquid IC immediately.',
-      'Zero brokerage fees — you trade on 100% raw spot pricing.'
+      'Size your tickets quickly using presets (+1, +5, +10, +50, +100) or the stepper buttons.',
+      'Buying draws from your available cash immediately; selling books realized IC straight back to your wallet.',
+      'Monitor your Portfolio tab on the dashboard to review your average buy price and open P&L.'
     ],
-    proTip: 'In fast market spikes, size your trades conservatively so you don\'t get trapped at the peak.',
+    proTip: 'When market volatility peaks after news drops, scale in with smaller ticket sizes so you don\'t get filled at the exact top of the wick.',
     Visual: TradeInteractiveWidget
   },
   {
     id: 'sniping',
-    badge: 'STAGE 04 // AUTOMATION',
-    title: 'Deploy Resting Limit Orders',
-    subtitle: 'Don\'t stare at the screen all day. Let limit orders execute while you study the news.',
-    coreRule: 'A Limit BUY strikes when price hits target or lower. A Limit SELL strikes when price hits target or higher.',
+    badge: 'SECTION 04 // AUTOMATION & LIMITS',
+    title: 'Automate Entries with Limit Orders',
+    subtitle: 'Don\'t glue your eyes to the screen all day. Set target strike prices and let the matching engine catch market dips for you.',
+    coreRule: 'A Limit BUY strikes when spot drops to target. A Limit SELL triggers when spot rallies to target.',
     tactics: [
-      'Set target buy prices 5% to 15% below market to catch panic dips automatically.',
-      'Target funds are safely locked in escrow so you cannot accidentally overspend.',
-      'Manage or cancel pending orders anytime in the "Limit Orders" tab with 1 click.'
+      'Set target buy prices 5% to 15% below spot to automatically scoop panic sell-offs.',
+      'Committed funds are held in secure escrow so you can never accidentally overdraw your wallet.',
+      'Track or cancel unfulfilled limit orders anytime in your "Limit Orders" panel with 1 click.'
     ],
-    proTip: 'Before stepping away for a refreshment break, plant limit buy orders at bargain price floors.',
+    proTip: 'Before stepping away or scanning the newsfeed, leave resting limit buy bids on strong stocks at attractive discount floors.',
     Visual: LimitInteractiveWidget
   },
   {
     id: 'intel',
-    badge: 'STAGE 05 // CATALYSTS',
-    title: 'Trade the Breaking News Wire',
-    subtitle: 'Analyst bulletins interrupt the trading session and trigger violent stock swings.',
-    coreRule: 'Speed is your edge: breaking bulletins broadcast to all players at the exact same millisecond.',
+    badge: 'SECTION 05 // BREAKING CATALYSTS',
+    title: 'Trade the Breaking Wire',
+    subtitle: 'Real-time analyst newsflashes hit the ticker unpredictably and trigger violent sector shifts.',
+    coreRule: 'Speed is your edge. Breaking bulletins broadcast to all terminals at the exact same millisecond.',
     tactics: [
-      'When the audible chime rings, immediately read the ticker headline.',
-      'Identify the named company and determine whether it\'s positive or negative.',
-      'Enter your trade in the first 10 seconds before the crowd bids the price away.'
+      'When the audible audio alert sounds, immediately scan the news banner at the top of your screen.',
+      'Look at the named ticker symbol and determine if the catalyst is a positive booster or negative shock.',
+      'Act inside the first 10 seconds before the rest of the room rushes in and prices adjust.'
     ],
-    proTip: 'Missed a breaking headline? Open the dedicated News Wire in the sidebar to review all past dispatches.',
+    proTip: 'Missed the breaking alert? Open the News tab on your dashboard anytime to read the full historical transcript of all session dispatches.',
     Visual: NewsInteractiveWidget
   },
   {
     id: 'endgame',
-    badge: 'STAGE 06 // THE CLOSING BELL',
-    title: 'The 5-Minute Endgame Sweep',
-    subtitle: 'The tournament timer in the header controls your fate. Know when the clock runs out.',
-    coreRule: 'With 5 minutes remaining, trading floor permanently freezes and auto-liquidates.',
+    badge: 'SECTION 06 // THE CLOSING BELL',
+    title: 'The 5-Minute Endgame Protocol',
+    subtitle: 'The session clock in your header dictates the tournament finish. Know the exact countdown rules.',
+    coreRule: 'When 5 minutes remain on the clock, trading locks permanently and auto-liquidation triggers.',
     tactics: [
-      'All stocks held across all participants are automatically sold at live spot prices.',
-      'All resting limit orders are cancelled and locked funds refunded to liquid cash.',
-      'Final tournament winners are ranked solely on total cash net worth.'
+      'Every open share across all traders is automatically liquidated to cash at spot prices.',
+      'All resting limit orders are cancelled and escrowed funds are refunded in full to cash.',
+      'The final live leaderboard podium is calculated 100% on realized cash net worth.'
     ],
-    proTip: 'Never count on a last-second manual sell. Take profits in the final stretch before the freeze locks your position.',
+    proTip: 'Don\'t gamble on a panic sell in the final 10 seconds. Lock in profits calmly in the final minutes before the 5-minute freeze takes over.',
     Visual: EndgameInteractiveWidget
   }
 ];
@@ -743,44 +743,40 @@ export function OnboardingTour({ isOpen, onClose }) {
 
       <div className="relative z-10 min-h-screen flex flex-col justify-between">
         {/* Top Header Bar */}
-        <header className={`sticky top-0 z-20 px-6 sm:px-12 py-3.5 border-b backdrop-blur-xl flex items-center justify-between transition-colors ${
+        <header className={`sticky top-0 z-20 px-6 sm:px-12 py-3.5 border-b-2 border-black backdrop-blur-xl flex items-center justify-between transition-colors ${
           isLight
-            ? 'bg-[#F0F2F7]/90 border-slate-300/80'
-            : 'bg-[#07090E]/90 border-white/[0.08]'
+            ? 'bg-[#F0F2F7]/95'
+            : 'bg-[#0A0D14]/95'
         }`}>
           <div className="flex items-center gap-3">
-            <div className="w-9 h-9 rounded-xl bg-amber-500/15 border border-amber-500/40 flex items-center justify-center font-black font-mono text-[#F0B429] shadow-[0_0_15px_rgba(240,180,41,0.25)]">
+            <div className="w-10 h-10 rounded-lg bg-[#F0B429] border-2 border-black flex items-center justify-center font-black font-mono text-black text-lg shadow-[3px_3px_0px_#000000]">
               EA
             </div>
             <div>
-              <div className="text-[11px] font-mono font-bold tracking-[0.25em] text-[#F0B429] uppercase">
-                Tournament Combat Manual
+              <div className="text-[11px] font-mono font-black tracking-[0.2em] text-[#F0B429] uppercase">
+                OFFICIAL TRADER MANUAL
               </div>
-              <div className={`text-sm font-bold tracking-wide ${isLight ? 'text-slate-900' : 'text-white'}`}>
-                Equity Arena Trader Playbook
+              <div className={`text-sm font-black tracking-wide font-sans ${isLight ? 'text-slate-900' : 'text-white'}`}>
+                Tournament Floor Field Guide
               </div>
             </div>
           </div>
 
           <div className="flex items-center gap-4">
-            {/* Small and Muted Section Indicator */}
-            <span className={`text-xs font-mono font-medium tracking-wide ${isLight ? 'text-slate-500' : 'text-slate-500'}`}>
-              Section {index + 1} of {total}
+            {/* Section Indicator */}
+            <span className="text-xs font-mono font-black tracking-wider text-black bg-[#F0B429] px-2.5 py-1 rounded border border-black shadow-[2px_2px_0px_#000000]">
+              SECTION {index + 1} OF {total}
             </span>
 
-            {/* Clear DISMISS button in both modes */}
+            {/* Clear DISMISS button */}
             <button
               type="button"
               onClick={finish}
               data-tour-action="dismiss"
-              className={`flex items-center gap-2 px-3.5 py-1.5 rounded-lg border text-xs font-mono font-bold transition-all cursor-pointer ${
-                isLight
-                  ? 'bg-white hover:bg-slate-100 border-slate-300 text-slate-700 hover:text-slate-950 shadow-sm'
-                  : 'bg-white/[0.06] hover:bg-white/[0.12] border-white/[0.12] text-slate-300 hover:text-white'
-              }`}
+              className="flex items-center gap-2 px-3.5 py-1.5 rounded-lg border-2 border-black text-xs font-mono font-black transition-all cursor-pointer bg-[#161B26] hover:bg-[#202736] text-white shadow-[3px_3px_0px_#000000] active:translate-x-[1px] active:translate-y-[1px]"
             >
-              <span>DISMISS</span>
-              <X className="w-3.5 h-3.5" />
+              <span>CLOSE MANUAL</span>
+              <X className="w-3.5 h-3.5 text-[#F0B429]" />
             </button>
           </div>
         </header>
@@ -792,84 +788,70 @@ export function OnboardingTour({ isOpen, onClose }) {
             {/* Left Content Column (55% width) */}
             <div className="space-y-6 max-w-[720px]">
               
-              {/* Pulsing Live Stage Pill Badge */}
-              <div className={`inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full border font-mono font-bold text-xs tracking-wider ${
+              {/* Bold Stage Indicator Pill */}
+              <div className={`inline-flex items-center gap-2 px-3.5 py-1.5 rounded-lg border-2 border-black font-mono font-black text-xs tracking-wider shadow-[3px_3px_0px_#000000] ${
                 isLight
-                  ? 'bg-white border-[#F0B429] text-[#B45309] shadow-xs'
-                  : 'bg-[#0D1117] border-[#F0B429] text-[#F0B429] shadow-[0_0_15px_rgba(240,180,41,0.15)]'
+                  ? 'bg-[#F0B429] text-black'
+                  : 'bg-[#F0B429] text-black'
               }`}>
-                <span className="w-2 h-2 rounded-full bg-[#F0B429] animate-pulse" />
+                <span className="w-2 h-2 rounded-full bg-black animate-ping" />
                 <span>{step.badge}</span>
               </div>
 
-              {/* High-Impact Main Heading (52px minimum, 800 weight) */}
+              {/* High-Impact Main Heading */}
               <div className="space-y-3">
                 <h1
-                  className={`font-extrabold tracking-tight leading-[1.05] ${
+                  className={`font-black tracking-tight leading-[1.05] uppercase font-sans ${
                     isLight ? 'text-slate-950' : 'text-white'
                   }`}
-                  style={{ fontSize: 'clamp(38px, 4.2vw, 56px)', fontWeight: 800 }}
+                  style={{ fontSize: 'clamp(32px, 3.8vw, 48px)' }}
                 >
                   {step.title}
                 </h1>
-                <p className={`text-base sm:text-lg font-medium leading-relaxed ${
+                <p className={`text-sm sm:text-base font-medium leading-relaxed font-sans ${
                   isLight ? 'text-slate-700' : 'text-slate-300'
                 }`}>
                   {step.subtitle}
                 </p>
               </div>
 
-              {/* Highlighted Dramatic CORE FLOOR RULE Box */}
+              {/* Highlighted Dramatic CORE FLOOR RULE Box with Solid Neo-Brutalist Shadow */}
               <div
-                className={`p-4 sm:p-5 rounded-xl border border-y border-r transition-all ${
-                  isLight
-                    ? 'border-slate-300/80'
-                    : 'border-white/[0.08]'
-                }`}
+                className="p-4 sm:p-5 rounded-xl border-2 border-black shadow-[4px_4px_0px_#000000] transition-all bg-[#0F1420]"
                 style={{
-                  backgroundColor: 'rgba(240, 180, 41, 0.08)',
-                  borderLeft: '3px solid #F0B429'
+                  borderLeft: '5px solid #F0B429'
                 }}
               >
-                <span className="text-[11px] font-mono uppercase tracking-widest text-[#F0B429] font-bold block mb-1.5">
-                  Core Floor Rule
-                </span>
+                <div className="flex items-center gap-2 mb-1.5">
+                  <span className="text-[10px] font-mono uppercase tracking-[0.2em] text-black bg-[#F0B429] px-2 py-0.5 rounded font-black">
+                    FLOOR RULE
+                  </span>
+                </div>
                 <p
-                  className={`font-semibold leading-snug ${
+                  className={`font-bold leading-snug ${
                     isLight ? 'text-slate-950' : 'text-white'
                   }`}
-                  style={{ fontSize: '17px', fontWeight: 600 }}
+                  style={{ fontSize: '16px' }}
                 >
                   {step.coreRule}
                 </p>
               </div>
 
               {/* Tactile BATTLEGROUND TACTICS List */}
-              <div className="space-y-2.5 pt-1">
-                <span className={`text-xs font-mono uppercase tracking-wider font-bold block ${
-                  isLight ? 'text-slate-600' : 'text-slate-400'
-                }`}>
-                  Battleground Tactics
+              <div className="space-y-2 pt-1">
+                <span className="text-xs font-mono uppercase tracking-wider font-bold text-[#8B949E] block">
+                  EXECUTION PLAYBOOK
                 </span>
                 <div className="space-y-2">
                   {step.tactics.map((t, i) => (
                     <div
                       key={i}
-                      className={`flex items-start gap-3.5 p-3 sm:p-3.5 rounded-xl border transition-all ${
-                        isLight
-                          ? 'bg-white border-slate-200 shadow-xs'
-                          : 'bg-[#101520] border-white/[0.06]'
-                      }`}
-                      style={{
-                        borderLeft: '2px solid rgba(240, 180, 41, 0.4)'
-                      }}
+                      className="flex items-start gap-3 p-3 rounded-xl border-2 border-black bg-[#101522] shadow-[3px_3px_0px_#000000] transition-all"
                     >
-                      <span className="w-5 h-5 rounded-md bg-amber-500/20 text-[#F0B429] font-mono font-black text-xs flex items-center justify-center flex-shrink-0 mt-0.5">
+                      <span className="w-5 h-5 rounded bg-[#F0B429] text-black font-mono font-black text-xs flex items-center justify-center flex-shrink-0 mt-0.5 border border-black shadow-[1px_1px_0px_#000000]">
                         {i + 1}
                       </span>
-                      <span className={`text-xs sm:text-sm font-medium leading-relaxed ${
-                        isLight ? 'text-slate-800' : 'text-slate-200'
-                      }`}>
+                      <span className="text-xs sm:text-sm font-medium leading-relaxed text-slate-200">
                         {t}
                       </span>
                     </div>
@@ -877,29 +859,19 @@ export function OnboardingTour({ isOpen, onClose }) {
                 </div>
               </div>
 
-              {/* Personality-Packed PIT MASTER INSIGHT Box with subtle diagonal stripes */}
+              {/* Veteran Trader Insight Box */}
               <div
-                className={`flex items-start gap-3.5 p-4 rounded-xl border relative overflow-hidden ${
-                  isLight
-                    ? 'border-emerald-600/30'
-                    : 'border-emerald-500/25'
-                }`}
+                className="flex items-start gap-3.5 p-4 rounded-xl border-2 border-black bg-[#0C1E14] shadow-[4px_4px_0px_#000000] relative overflow-hidden"
                 style={{
-                  backgroundColor: isLight ? 'rgba(5, 150, 105, 0.08)' : 'rgba(16, 185, 129, 0.08)',
-                  backgroundImage: `repeating-linear-gradient(45deg, rgba(16, 185, 129, 0.03) 0, rgba(16, 185, 129, 0.03) 2px, transparent 0, transparent 8px)`
+                  borderLeft: '5px solid #22C55E'
                 }}
               >
-                <Award className="w-6 h-6 text-emerald-400 flex-shrink-0 mt-0.5" />
+                <Award className="w-5 h-5 text-[#22C55E] flex-shrink-0 mt-0.5" />
                 <div className="relative z-10">
-                  <strong className={`block font-mono text-xs uppercase mb-1 tracking-wider ${
-                    isLight ? 'text-emerald-800' : 'text-emerald-300'
-                  }`}>
-                    Pit Master Insight:
+                  <strong className="block font-mono text-[11px] uppercase mb-1 tracking-wider text-[#22C55E] font-black">
+                    PRO TRADER TIP:
                   </strong>
-                  <span
-                    className="text-xs sm:text-sm leading-relaxed"
-                    style={{ color: isLight ? '#1E293B' : '#F1F5F9' }}
-                  >
+                  <span className="text-xs sm:text-sm leading-relaxed text-slate-200">
                     {step.proTip}
                   </span>
                 </div>
@@ -916,15 +888,15 @@ export function OnboardingTour({ isOpen, onClose }) {
         </main>
 
         {/* Bottom Navigation Deck */}
-        <footer className={`sticky bottom-0 z-20 px-6 sm:px-12 py-4 border-t backdrop-blur-xl transition-colors ${
+        <footer className={`sticky bottom-0 z-20 px-6 sm:px-12 py-4 border-t-2 border-black backdrop-blur-xl transition-colors ${
           isLight
-            ? 'bg-[#F0F2F7]/95 border-slate-300/80'
-            : 'bg-[#07090E]/95 border-white/[0.08]'
+            ? 'bg-[#F0F2F7]/95'
+            : 'bg-[#0A0D14]/95'
         }`}>
           <div className="max-w-[1440px] mx-auto flex items-center justify-between gap-4">
             
             {/* Progress Dots with Smooth Transitions: Active amber 10px, Inactive grey 6px */}
-            <div className="flex items-center gap-2.5">
+            <div className="flex items-center gap-3">
               {STEPS.map((s, i) => (
                 <button
                   key={s.id}
@@ -932,32 +904,24 @@ export function OnboardingTour({ isOpen, onClose }) {
                   onClick={() => setIndex(i)}
                   className={`rounded-full transition-all duration-300 cursor-pointer ${
                     i === index
-                      ? 'w-2.5 h-2.5 bg-[#F0B429] shadow-[0_0_12px_rgba(240,180,41,0.7)] scale-100'
+                      ? 'w-3 h-3 bg-[#F0B429] border border-black shadow-[2px_2px_0px_#000000] scale-110'
                       : isLight
-                        ? 'w-1.5 h-1.5 bg-slate-300 hover:bg-slate-400'
-                        : 'w-1.5 h-1.5 bg-slate-600 hover:bg-slate-400'
+                        ? 'w-2 h-2 bg-slate-300 hover:bg-slate-400'
+                        : 'w-2 h-2 bg-slate-700 hover:bg-slate-500'
                   }`}
-                  style={{
-                    width: i === index ? '10px' : '6px',
-                    height: i === index ? '10px' : '6px'
-                  }}
                   title={s.title}
                 />
               ))}
             </div>
 
-            {/* Navigation Buttons: PREV & 48px NEXT STAGE / ENTER THE ARENA */}
+            {/* Navigation Buttons: PREV & NEXT STAGE / ENTER THE ARENA */}
             <div className="flex items-center gap-3">
               <button
                 type="button"
                 onClick={prev}
                 disabled={index === 0}
                 data-tour-action="prev"
-                className={`px-5 py-2.5 rounded-xl border font-mono text-xs font-bold disabled:opacity-20 disabled:cursor-not-allowed transition-all cursor-pointer flex items-center gap-1.5 ${
-                  isLight
-                    ? 'bg-white hover:bg-slate-100 border-slate-300 text-slate-700 shadow-xs'
-                    : 'bg-white/[0.05] hover:bg-white/[0.1] border-white/[0.1] text-slate-300'
-                }`}
+                className="px-5 py-2.5 rounded-xl border-2 border-black font-mono text-xs font-black disabled:opacity-25 disabled:cursor-not-allowed transition-all cursor-pointer flex items-center gap-1.5 bg-[#161B26] hover:bg-[#202736] text-white shadow-[3px_3px_0px_#000000] active:translate-x-[1px] active:translate-y-[1px]"
                 style={{ height: '48px' }}
               >
                 <ArrowLeft className="w-4 h-4" />
@@ -968,14 +932,13 @@ export function OnboardingTour({ isOpen, onClose }) {
                 type="button"
                 onClick={isLast ? finish : next}
                 data-tour-action="next"
-                className={`px-7 rounded-xl font-mono text-xs font-black uppercase tracking-wider transition-all cursor-pointer flex items-center gap-2 active:scale-95 ${
+                className={`px-7 rounded-xl font-mono text-xs font-black uppercase tracking-wider transition-all cursor-pointer flex items-center gap-2 border-2 border-black shadow-[4px_4px_0px_#000000] active:translate-x-[2px] active:translate-y-[2px] ${
                   isLast
-                    ? 'bg-[#F0B429] hover:bg-[#ffc63d] text-slate-950 shadow-[0_0_35px_rgba(240,180,41,0.6)] animate-pulse'
-                    : 'bg-[#F0B429] hover:bg-[#f5bc38] text-slate-950 shadow-[0_0_20px_rgba(240,180,41,0.35)]'
+                    ? 'bg-[#22C55E] hover:bg-[#16a34a] text-black animate-bounce'
+                    : 'bg-[#F0B429] hover:bg-[#f5bc38] text-black'
                 }`}
                 style={{
                   height: '48px',
-                  fontWeight: 700,
                   minWidth: isLast ? '190px' : '150px'
                 }}
               >
