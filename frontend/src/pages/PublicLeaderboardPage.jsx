@@ -248,81 +248,18 @@ export function PublicLeaderboardPage() {
                   </div>
 
                   {/* Hero Champion Name Title */}
-                  <div className="text-center py-2 space-y-2">
-                    <div className="inline-block bg-[#F0B429] text-black border-2 border-black px-3.5 py-0.5 rounded font-mono text-[11px] font-black uppercase tracking-widest shadow-[2px_2px_0px_#000000]">
+                  <div className="text-center py-8 sm:py-14 space-y-4">
+                    <div className="inline-block bg-[#F0B429] text-black border-2 border-black px-4 py-1 rounded font-mono text-xs font-black uppercase tracking-widest shadow-[3px_3px_0px_#000000]">
                       ★ FIRST POSITION ★
                     </div>
-                    <h2 className="text-4xl sm:text-5xl lg:text-6xl font-black text-white tracking-tight font-sans drop-shadow-md">
+                    <h2 className="text-5xl sm:text-7xl lg:text-8xl font-black text-white tracking-tight font-sans drop-shadow-[0_4px_24px_rgba(0,0,0,0.8)]">
                       {top1.name}
                     </h2>
                     {top1.email && (
-                      <p className="text-xs font-mono text-[#8B949E]">
+                      <p className="text-sm sm:text-base font-mono text-[#8B949E]">
                         Registered Trader: <span className="text-slate-200 font-bold">{top1.email}</span>
                       </p>
                     )}
-                  </div>
-
-                  {/* 3 Neo-Brutalist Stat Blocks with Hard Black Borders & Solid Shadows */}
-                  <div className="mt-6 pt-6 border-t-2 border-black grid grid-cols-1 sm:grid-cols-3 gap-4">
-                    
-                    {/* Metric 1: Total Portfolio Value (Gold Theme) */}
-                    <div className="p-4 bg-[#0A0D14] border-2 border-black rounded-xl shadow-[4px_4px_0px_#000000] relative">
-                      <div className="absolute top-2 right-2 px-1.5 py-0.5 bg-[#F0B429] border border-black rounded text-[9px] font-mono font-black text-black">
-                        EQUITY
-                      </div>
-                      <span className="text-[10px] font-mono uppercase tracking-wider text-[#8B949E] block mb-1 font-bold">
-                        TOTAL PORTFOLIO VALUE
-                      </span>
-                      <div className="text-2xl sm:text-3xl font-mono font-black text-[#F0B429] tracking-tight">
-                        {top1.totalValue.toLocaleString('en-US', {
-                          minimumFractionDigits: 2,
-                          maximumFractionDigits: 2
-                        })}
-                        <span className="text-xs font-normal text-slate-400 ml-1.5 font-sans font-bold">IC</span>
-                      </div>
-                    </div>
-
-                    {/* Metric 2: Net Gain / Deficit */}
-                    <div className="p-4 bg-[#0A0D14] border-2 border-black rounded-xl shadow-[4px_4px_0px_#000000] relative">
-                      <div className={`absolute top-2 right-2 px-1.5 py-0.5 border border-black rounded text-[9px] font-mono font-black text-black ${
-                        profitDelta >= 0 ? 'bg-[#22C55E]' : 'bg-[#EF4444] text-white'
-                      }`}>
-                        {profitDelta >= 0 ? 'PROFIT' : 'LOSS'}
-                      </div>
-                      <span className="text-[10px] font-mono uppercase tracking-wider text-[#8B949E] block mb-1 font-bold">
-                        NET GAIN / DEFICIT
-                      </span>
-                      <div className={`text-2xl sm:text-3xl font-mono font-black tracking-tight ${
-                        profitDelta > 0
-                          ? 'text-[#22C55E]'
-                          : profitDelta < 0
-                          ? 'text-[#EF4444]'
-                          : 'text-white'
-                      }`}>
-                        {profitDelta > 0 ? '+' : ''}
-                        {profitDelta.toLocaleString('en-US', {
-                          minimumFractionDigits: 2,
-                          maximumFractionDigits: 2
-                        })}
-                        <span className="text-xs font-normal text-slate-400 ml-1.5 font-mono">IC</span>
-                      </div>
-                    </div>
-
-                    {/* Metric 3: Standing Status */}
-                    <div className="p-4 bg-[#0A0D14] border-2 border-black rounded-xl shadow-[4px_4px_0px_#000000] flex flex-col justify-center relative">
-                      <span className="text-[10px] font-mono uppercase tracking-wider text-[#8B949E] block mb-1 font-bold">
-                        ARENA STANDING
-                      </span>
-                      <div className="flex items-center gap-2">
-                        <span className="text-xl sm:text-2xl font-mono font-black text-white">
-                          #1 of {leaderboard.length}
-                        </span>
-                        <span className="text-[10px] font-mono font-black text-black uppercase px-2 py-0.5 rounded bg-[#F0B429] border border-black shadow-[2px_2px_0px_#000000]">
-                          LEADER
-                        </span>
-                      </div>
-                    </div>
-
                   </div>
 
                 </div>
