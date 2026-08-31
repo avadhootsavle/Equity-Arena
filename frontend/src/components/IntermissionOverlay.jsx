@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Coffee, Clock, Radio, ShieldCheck } from 'lucide-react';
+import { Radio, ShieldCheck } from 'lucide-react';
 import { BreakCountdownTimer } from './GameClock';
 import { playIntermissionStartSound } from '../services/soundService';
 
@@ -77,6 +77,10 @@ export function IntermissionOverlay({ sessionData }) {
   const durationMins = sessionData?.breakDurationMinutes || 10;
   const breakNote = sessionData?.breakNote?.trim();
 
+  // If admin has set a custom message, show ONLY the admin message.
+  // If no note was entered, fallback gracefully to standard notification.
+  const displayMessage = breakNote || "Standard tournament intermission in effect. Trading floor unlocks automatically upon timer expiry.";
+
   return (
     <div
       role="dialog"
@@ -147,67 +151,50 @@ export function IntermissionOverlay({ sessionData }) {
         </div>
       </header>
 
-      {/* ── Clean, High-Impact Focused Main Stage ───────────────────────────── */}
+      {/* ── Focused Stage: Live Countdown + ONLY Admin Message ──────────────── */}
       <main
-        className={`relative z-10 w-full max-w-4xl mx-auto px-4 sm:px-8 py-4 sm:py-6 my-auto transition-all duration-500 ease-[cubic-bezier(0.16,1,0.3,1)] transform ${
+        className={`relative z-10 w-full max-w-4xl mx-auto px-4 sm:px-8 py-6 sm:py-10 my-auto transition-all duration-500 ease-[cubic-bezier(0.16,1,0.3,1)] transform ${
           isVisible ? 'opacity-100 scale-100 translate-y-0' : 'opacity-0 scale-[0.96] translate-y-4'
         }`}
       >
-        <div className="space-y-5 sm:space-y-6">
+        <div className="space-y-6 sm:space-y-8">
           
-          {/* Top Stage Branding & Title */}
-          <div className="text-center space-y-2">
-            <div className="inline-flex items-center gap-2 px-3 py-1 bg-[#F0B429]/10 border-2 border-[#F0B429]/30 shadow-[2px_2px_0px_0px_#F0B429]">
-              <Coffee className="w-3.5 h-3.5 text-[#F0B429]" />
-              <span className="text-[11px] font-mono font-black text-[#F0B429] tracking-[0.2em] uppercase">
-                TOURNAMENT INTERMISSION
-              </span>
-            </div>
-            
-            <h1 id="intermission-title" className="text-3xl sm:text-4xl md:text-5xl font-black text-white tracking-tight uppercase">
-              Trading Floor Paused
-            </h1>
-            
-            <p className="text-xs sm:text-sm text-slate-400 max-w-lg mx-auto font-medium">
-              Take a short break while trading resumes shortly. Your positions and cash balances are protected.
-            </p>
-          </div>
-
-          {/* ── BIG HERO COUNTDOWN TIMER ────────────────────────────────────── */}
-          <div className="bg-[#0B0F18] border-2 border-black p-5 sm:p-6 shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] relative">
+          {/* Hero Live Countdown Timer Block */}
+          <div className="bg-[#0B0F18] border-2 border-black p-5 sm:p-7 shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] relative">
             <div className="flex items-center justify-between border-b-2 border-white/[0.08] pb-3 mb-4 font-mono">
-              <div className="flex items-center gap-2 text-slate-300 font-bold text-xs tracking-wider">
-                <Clock className="w-4 h-4 text-[#F0B429]" />
-                <span>MARKET OPENS IN</span>
-              </div>
+              <span className="text-slate-300 font-bold text-xs tracking-widest uppercase">
+                MARKET OPENS IN
+              </span>
               <span className="text-xs font-bold text-slate-400">
                 DURATION: <strong className="text-[#F0B429] font-black">{durationMins} MINUTES</strong>
               </span>
             </div>
 
             {/* Extra Large Big Bold Digits */}
-            <div className="py-1 sm:py-2">
+            <div className="py-2">
               <BreakCountdownTimer sessionData={sessionData} size="xl" />
             </div>
           </div>
 
-          {/* ── BIG PROMINENT ADMIN DISPATCH (HERO CALLOUT) ─────────────────── */}
-          <div className="bg-[#101522] border-2 border-[#F0B429] p-5 sm:p-7 shadow-[5px_5px_0px_0px_#F0B429] relative overflow-hidden">
-            <div className="flex items-center justify-between pb-2.5 mb-3 border-b-2 border-[#F0B429]/30 font-mono">
-              <div className="flex items-center gap-2">
+          {/* ── HERO ADMIN DISPATCH (EXCLUSIVELY THE ADMIN'S MESSAGE) ───────── */}
+          <div className="bg-[#101522] border-2 border-[#F0B429] p-6 sm:p-9 shadow-[6px_6px_0px_0px_#F0B429] relative overflow-hidden">
+            
+            {/* Header Rail: Official Announcement & Target Audience */}
+            <div className="flex items-center justify-between pb-3 mb-4 border-b-2 border-[#F0B429]/30 font-mono">
+              <div className="flex items-center gap-2.5">
                 <span className="w-2.5 h-2.5 bg-[#F0B429] animate-ping" />
-                <span className="bg-[#F0B429] text-black font-black text-xs px-2.5 py-0.5 tracking-widest uppercase">
+                <span className="bg-[#F0B429] text-black font-black text-xs sm:text-sm px-3 py-1 tracking-widest uppercase">
                   OFFICIAL ANNOUNCEMENT
                 </span>
               </div>
-              <span className="text-[11px] text-[#F0B429] uppercase tracking-widest font-bold hidden sm:inline">
+              <span className="text-xs text-[#F0B429] uppercase tracking-widest font-black hidden sm:inline">
                 ALL TRADERS
               </span>
             </div>
 
-            {/* Huge, Clean, Bold Font Typography */}
-            <p className="text-lg sm:text-2xl md:text-3xl font-black text-white leading-snug tracking-tight">
-              {breakNote || "Standard tournament intermission in effect. Trading floor unlocks automatically upon timer expiry."}
+            {/* Pure, Clean Admin Message Typography */}
+            <p id="intermission-title" className="text-xl sm:text-3xl md:text-4xl font-black text-white leading-snug tracking-tight">
+              {displayMessage}
             </p>
           </div>
 
