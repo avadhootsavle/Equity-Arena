@@ -138,11 +138,10 @@ async function triggerOrganicRamp(stockId, targetPrice, rampSteps = 6) {
     const maxPrice = Math.round((stock.basePrice || stock.currentPrice) * 2.50 * 100) / 100;
     const boundedTarget = Math.min(maxPrice, Math.max(minPrice, Math.round(targetPrice * 100) / 100));
 
+    state.macroTargetPrice = boundedTarget;
     state.macroRampActive = true;
     state.macroRampStep = 0;
     state.macroTotalRampSteps = Math.max(3, rampSteps);
-    const totalDelta = boundedTarget - stock.currentPrice;
-    state.macroStepIncrement = totalDelta / state.macroTotalRampSteps;
 
     // Immediately trigger an initial organic tick step so the user sees instant feedback
     setImmediate(async () => {
@@ -214,11 +213,10 @@ async function tickMarket() {
         }
 
         if (targetPrice !== undefined && targetPrice !== stock.currentPrice) {
+          state.macroTargetPrice = targetPrice;
           state.macroRampActive = true;
           state.macroRampStep = 0;
           state.macroTotalRampSteps = Math.max(3, rampSteps);
-          const totalDelta = targetPrice - stock.currentPrice;
-          state.macroStepIncrement = totalDelta / state.macroTotalRampSteps;
         }
       }
 
@@ -255,10 +253,13 @@ async function tickMarket() {
         maxPrice
       });
 
-      // 3. Layer 2: Apply smooth macro ramp increment if active
+      // 3. Layer 2: Apply smooth organic macro ramp increment if active
       if (state.macroRampActive) {
-        rawPrice += state.macroStepIncrement;
         state.macroRampStep += 1;
+        const remainingSteps = Math.max(1, state.macroTotalRampSteps - state.macroRampStep + 1);
+        const stepAmount = (state.macroTargetPrice - stock.currentPrice) / remainingSteps;
+        rawPrice = stock.currentPrice + stepAmount + (stockNoise * (stock.currentPrice * 0.005));
+        
         if (state.macroRampStep >= state.macroTotalRampSteps) {
           state.macroRampActive = false;
         }
