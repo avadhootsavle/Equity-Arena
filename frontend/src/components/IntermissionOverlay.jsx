@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Coffee, Lock, Terminal, ChevronRight, Radio, Volume2 } from 'lucide-react';
+import { Coffee, Lock, Terminal, ChevronRight, Radio } from 'lucide-react';
 import { BreakCountdownTimer } from './GameClock';
 import { playIntermissionStartSound } from '../services/soundService';
 
@@ -236,21 +236,9 @@ export function IntermissionOverlay({ sessionData }) {
 
             {/* Lock Security Footer Strip */}
             <div className="pt-4 mt-6 border-t-2 border-white/[0.08] flex flex-wrap items-center justify-between gap-3 text-xs font-mono">
-              <div className="flex items-center gap-3">
-                <div className="flex items-center gap-2 bg-black px-3 py-1.5 border border-white/[0.15]">
-                  <Lock className="w-4 h-4 text-[#F0B429]" />
-                  <span className="text-white font-bold tracking-wider">CONSOLE ACCESS LOCKED</span>
-                </div>
-                
-                <button
-                  type="button"
-                  onClick={triggerAudio}
-                  className="flex items-center gap-1.5 px-2.5 py-1.5 bg-[#F0B429]/10 hover:bg-[#F0B429]/20 border border-[#F0B429]/40 text-[#F0B429] text-[11px] font-bold cursor-pointer transition-colors"
-                  title="Replay Break BGM"
-                >
-                  <Volume2 className="w-3.5 h-3.5" />
-                  <span>BGM CHIME</span>
-                </button>
+              <div className="flex items-center gap-2 bg-black px-3 py-1.5 border border-white/[0.15]">
+                <Lock className="w-4 h-4 text-[#F0B429]" />
+                <span className="text-white font-bold tracking-wider">CONSOLE ACCESS LOCKED</span>
               </div>
 
               <div className="text-slate-400 text-[11px]">
