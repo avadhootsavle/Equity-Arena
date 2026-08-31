@@ -46,6 +46,7 @@ export function AdminDashboard() {
   const [customNewsStockId, setCustomNewsStockId] = useState('');
   const [customNewsDirection, setCustomNewsDirection] = useState('RISE'); // 'RISE' | 'FALL'
   const [customNewsPercent, setCustomNewsPercent] = useState('15');
+  const [customNewsDelaySeconds, setCustomNewsDelaySeconds] = useState(30);
   const [sendingNews, setSendingNews] = useState(false);
 
   const [templates, setTemplates] = useState([]);
@@ -497,6 +498,7 @@ export function AdminDashboard() {
     if (!newsMessage.trim()) return;
     setSendingNews(true);
     try {
+      const delay = Math.max(0, parseInt(customNewsDelaySeconds, 10) || 30);
       const res = await apiFetch('/admin/news/broadcast', {
         method: 'POST',
         body: JSON.stringify({
@@ -504,12 +506,12 @@ export function AdminDashboard() {
           stockId: customNewsStockId || null,
           direction: customNewsDirection,
           effectPercent: parseFloat(customNewsPercent) || 15,
-          delaySeconds: 15
+          delaySeconds: delay
         })
       });
 
       playNewsChime();
-      showToast(res.message || 'Custom market news broadcasted live!', 'success');
+      showToast(res.message || `Custom news broadcasted! Affects market in ${delay}s.`, 'success');
       setNewsMessage('');
       setCustomNewsStockId('');
       setCustomNewsConfirm(false);
@@ -1381,7 +1383,7 @@ export function AdminDashboard() {
                 </div>
 
                 {/* % Impact (2 cols) */}
-                <div className="sm:col-span-2 flex items-center gap-1">
+                <div className="sm:col-span-2 flex items-center gap-1" title="Percentage impact">
                   <input
                     type="number"
                     disabled={!customNewsStockId}
@@ -1394,6 +1396,26 @@ export function AdminDashboard() {
                   />
                 </div>
               </div>
+
+              {/* Delay Time Setting */}
+              {customNewsStockId && (
+                <div className="flex items-center justify-between pt-1 border-t border-[#2D3142]/60 text-[11px] text-[#7B82A0]">
+                  <span className="flex items-center gap-1">
+                    <span>⏱ Affects stock after delay:</span>
+                  </span>
+                  <div className="flex items-center gap-1.5">
+                    <input
+                      type="number"
+                      min="0"
+                      max="600"
+                      value={customNewsDelaySeconds}
+                      onChange={(e) => setCustomNewsDelaySeconds(e.target.value)}
+                      className="w-14 h-6 bg-[#1A1D27] border border-[#2D3142] rounded text-center text-xs text-white focus:outline-none focus:border-[#F0B429] font-bold"
+                    />
+                    <span>seconds ({customNewsDelaySeconds || 0}s)</span>
+                  </div>
+                </div>
+              )}
             </div>
 
             {!customNewsConfirm ? (
@@ -1404,7 +1426,7 @@ export function AdminDashboard() {
                 className="w-full py-2 bg-[#F0B429] text-black font-extrabold text-xs rounded-lg uppercase tracking-wider hover:bg-[#d9a120] transition-colors disabled:opacity-50 cursor-pointer shadow-xs"
               >
                 {customNewsStockId
-                  ? `BROADCAST NEWS & STEER ${stocks.find((s) => s.id === customNewsStockId)?.symbol || 'STOCK'} ${customNewsDirection} (+${customNewsPercent}%)`
+                  ? `BROADCAST NEWS & STEER ${stocks.find((s) => s.id === customNewsStockId)?.symbol || 'STOCK'} ${customNewsDirection} (+${customNewsPercent}%) IN ${customNewsDelaySeconds || 30}s`
                   : 'BROADCAST CUSTOM NEWS'}
               </button>
             ) : (
