@@ -20,6 +20,7 @@ import { Reveal, BackToTopButton } from '../components/Reveal';
 import { ToastStack } from '../components/ToastStack';
 import { StockDetailModal } from '../components/StockDetailModal';
 import { OnboardingTour } from '../components/OnboardingTour';
+import { IntermissionOverlay } from '../components/IntermissionOverlay';
 import { NewsToast } from '../components/NewsToast';
 import { playNewsChime } from '../services/soundService';
 
@@ -974,79 +975,14 @@ export function TraderDashboard() {
 
       <OnboardingTour isOpen={isTourOpen} onClose={() => setIsTourOpen(false)} />
 
-      {/* Full-Screen Break Intermission Overlay on Trader Side */}
-      {(sessionData?.status === 'PAUSED' || sessionData?.isPaused) && (
-        <div className="fixed inset-0 z-50 bg-[#0A0D12]/95 backdrop-blur-2xl overflow-y-auto flex flex-col items-center justify-between p-6 sm:p-10 font-sans text-center animate-fadeIn select-none">
-          {/* Ambient Glow Orbs */}
-          <div className="absolute top-1/4 left-1/2 -translate-x-1/2 -translate-y-1/2 w-96 h-96 bg-amber-500/10 rounded-full blur-3xl pointer-events-none" />
-          <div className="absolute bottom-10 left-1/3 w-80 h-80 bg-amber-600/5 rounded-full blur-3xl pointer-events-none" />
-
-          {/* Top Header Bar */}
-          <div className="w-full max-w-4xl mx-auto flex items-center justify-between py-3 px-5 rounded-2xl bg-white/[0.03] border border-white/[0.08] backdrop-blur-md shadow-2xl relative z-10">
-            <div className="flex items-center gap-3">
-              <div className="w-8 h-8 rounded-lg bg-amber-500/15 border border-amber-500/30 flex items-center justify-center">
-                <Coffee className="w-4 h-4 text-amber-400 animate-pulse" />
-              </div>
-              <div className="text-left">
-                <div className="text-xs sm:text-sm font-bold text-white tracking-wide flex items-center gap-2">
-                  <span>EQUITY ARENA INTERMISSION</span>
-                </div>
-                <div className="text-[10px] sm:text-xs text-amber-400/80 font-mono">Official Tournament Break</div>
-              </div>
-            </div>
-
-            <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-amber-500/15 border border-amber-500/30 text-amber-400 text-xs font-mono font-bold tracking-wider uppercase">
-              <span className="w-2 h-2 rounded-full bg-amber-400 animate-ping" />
-              <span>MARKET PAUSED</span>
-            </div>
-          </div>
-
-          {/* Center Stage Hero */}
-          <div className="my-auto py-8 sm:py-12 space-y-8 max-w-2xl mx-auto w-full relative z-10">
-            {/* Glowing Icon Shield */}
-            <div className="relative inline-block">
-              <div className="absolute -inset-2 bg-gradient-to-r from-amber-500/30 to-amber-600/20 rounded-full blur-xl animate-pulse"></div>
-              <div className="relative w-24 h-24 sm:w-28 sm:h-28 rounded-3xl bg-gradient-to-b from-[#1E232B] to-[#12161C] border border-amber-500/40 flex items-center justify-center shadow-[0_10px_35px_-5px_rgba(240,180,41,0.25)] mx-auto">
-                <Coffee className="w-12 h-12 sm:w-14 sm:h-14 text-amber-400 drop-shadow-[0_0_12px_rgba(240,180,41,0.6)]" />
-              </div>
-            </div>
-
-            {/* Countdown Section */}
-            <div className="space-y-3">
-              <div className="text-xs font-mono font-extrabold text-amber-400/90 uppercase tracking-[0.3em] flex items-center justify-center gap-2">
-                <span className="w-1.5 h-1.5 rounded-full bg-amber-400" />
-                TRADING RESUMES IN
-                <span className="w-1.5 h-1.5 rounded-full bg-amber-400" />
-              </div>
-              <BreakCountdownTimer sessionData={sessionData} />
-            </div>
-
-            {/* Message Card */}
-            <div className="p-6 sm:p-8 rounded-3xl bg-gradient-to-b from-[#161B22]/90 to-[#0F1318]/90 border border-white/[0.08] shadow-[0_20px_50px_rgba(0,0,0,0.5)] space-y-3 backdrop-blur-xl">
-              <h4 className="text-base sm:text-lg font-bold text-white tracking-tight">
-                Take a breather. Refreshments are on us! ☕
-              </h4>
-              <p className="text-xs sm:text-sm text-slate-400 leading-relaxed max-w-md mx-auto">
-                Review your game strategy and hydrate. As soon as the timer hits zero, the trading floor will instantly unlock.
-              </p>
-              {sessionData?.breakNote && (
-                <div className="mt-4 pt-4 border-t border-white/[0.08]">
-                  <div className="inline-flex items-center gap-2 text-xs sm:text-sm text-amber-300 font-semibold bg-amber-500/10 px-4 py-2.5 rounded-xl border border-amber-500/20">
-                    <span>📢</span>
-                    <span>{sessionData.breakNote}</span>
-                  </div>
-                </div>
-              )}
-            </div>
-          </div>
-
-          {/* Footer Security / Lock Pill */}
-          <div className="w-full max-w-md mx-auto py-3 px-5 rounded-full bg-white/[0.02] border border-white/[0.06] text-[11px] sm:text-xs text-slate-400 flex items-center justify-center gap-2 font-mono relative z-10">
-            <Lock className="w-3.5 h-3.5 text-amber-400 flex-shrink-0" />
-            <span>Floor locked • Orders & spot pricing safely frozen</span>
-          </div>
-        </div>
-      )}
+      {/* Full-Screen Deliberately-Designed Trading Terminal Intermission Screen */}
+      <IntermissionOverlay
+        sessionData={sessionData}
+        onReviewStrategy={() => {
+          // Trader can review their active portfolio / strategy
+          setActiveTab('PORTFOLIO');
+        }}
+      />
     </div>
   );
 }

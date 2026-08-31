@@ -195,40 +195,32 @@ export function BreakCountdownTimer({ sessionData, size = 'lg' }) {
   }
 
   return (
-    <div className="flex items-center justify-center gap-3 select-none">
-      {/* Minutes block */}
+    <div className="flex items-center justify-center gap-2 select-none font-mono">
+      {/* Minutes ledger digit */}
       <div className="flex flex-col items-center">
-        <div className="relative group">
-          <div className="absolute -inset-1 bg-gradient-to-r from-amber-500 to-amber-600 rounded-2xl blur-md opacity-30 group-hover:opacity-60 transition duration-300"></div>
-          <div className="relative w-20 sm:w-24 h-24 sm:h-28 bg-[#161B22] border border-amber-500/30 rounded-2xl flex items-center justify-center shadow-2xl overflow-hidden">
-            <div className="absolute top-0 inset-x-0 h-1/2 bg-white/[0.03] border-b border-white/[0.05]"></div>
-            <span className="font-mono text-4xl sm:text-5xl font-black text-amber-400 tracking-tight drop-shadow-[0_0_15px_rgba(240,180,41,0.5)]">
-              {mins}
-            </span>
-          </div>
+        <div className="px-3.5 py-2 rounded-xs bg-[#0B0F17] border border-white/[0.12] text-center min-w-[70px] shadow-sm">
+          <span className="font-mono text-3xl sm:text-4xl font-bold tracking-tight text-[#F0B429] tabular-nums">
+            {mins}
+          </span>
         </div>
-        <span className="text-[11px] font-mono font-bold tracking-[0.25em] text-amber-500/70 uppercase mt-2">
+        <span className="text-[9px] font-mono tracking-[0.2em] text-slate-500 uppercase mt-1.5">
           MINUTES
         </span>
       </div>
 
-      {/* Colon divider */}
-      <div className="flex flex-col items-center justify-center pb-5">
-        <span className="font-mono text-4xl sm:text-5xl font-black text-amber-400/80 animate-pulse">:</span>
+      {/* Ticker separator */}
+      <div className="flex flex-col items-center justify-center pb-4 text-slate-600">
+        <span className="font-mono text-2xl font-semibold">:</span>
       </div>
 
-      {/* Seconds block */}
+      {/* Seconds ledger digit */}
       <div className="flex flex-col items-center">
-        <div className="relative group">
-          <div className="absolute -inset-1 bg-gradient-to-r from-amber-500 to-amber-600 rounded-2xl blur-md opacity-30 group-hover:opacity-60 transition duration-300"></div>
-          <div className="relative w-20 sm:w-24 h-24 sm:h-28 bg-[#161B22] border border-amber-500/30 rounded-2xl flex items-center justify-center shadow-2xl overflow-hidden">
-            <div className="absolute top-0 inset-x-0 h-1/2 bg-white/[0.03] border-b border-white/[0.05]"></div>
-            <span className="font-mono text-4xl sm:text-5xl font-black text-amber-400 tracking-tight drop-shadow-[0_0_15px_rgba(240,180,41,0.5)]">
-              {secs}
-            </span>
-          </div>
+        <div className="px-3.5 py-2 rounded-xs bg-[#0B0F17] border border-white/[0.12] text-center min-w-[70px] shadow-sm">
+          <span className="font-mono text-3xl sm:text-4xl font-bold tracking-tight text-[#F0B429] tabular-nums">
+            {secs}
+          </span>
         </div>
-        <span className="text-[11px] font-mono font-bold tracking-[0.25em] text-amber-500/70 uppercase mt-2">
+        <span className="text-[9px] font-mono tracking-[0.2em] text-slate-500 uppercase mt-1.5">
           SECONDS
         </span>
       </div>
