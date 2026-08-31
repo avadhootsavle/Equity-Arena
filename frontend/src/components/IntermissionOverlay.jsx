@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Coffee, Lock, Terminal, ShieldAlert, ChevronRight, AlertTriangle, Radio } from 'lucide-react';
+import { Coffee, Lock, Terminal, ShieldAlert, ChevronRight, AlertTriangle, Radio, Volume2 } from 'lucide-react';
 import { BreakCountdownTimer } from './GameClock';
 import { playIntermissionStartSound } from '../services/soundService';
 
@@ -9,14 +9,43 @@ export function IntermissionOverlay({ sessionData }) {
   // If session is not paused, do not render overlay
   const isPaused = sessionData?.isPaused || sessionData?.status === 'PAUSED';
 
-  // Play "intermisson-start.mp3" at low volume strictly ONCE when break starts
+  // Play "intermisson-start.mp3" at full volume (1.0) strictly ONCE when break starts
   const hasTriggeredAudioRef = useRef(false);
+  const audioElRef = useRef(null);
   const breakKey = sessionData?.breakEndTime || sessionData?.id || 'session_break';
+
+  const triggerAudio = () => {
+    playIntermissionStartSound(breakKey);
+    if (audioElRef.current) {
+      try {
+        audioElRef.current.currentTime = 0;
+        audioElRef.current.volume = 1.0;
+        audioElRef.current.play().catch(() => {});
+      } catch (e) {}
+    }
+  };
 
   useEffect(() => {
     if (isPaused && !hasTriggeredAudioRef.current) {
       hasTriggeredAudioRef.current = true;
-      playIntermissionStartSound(breakKey);
+      triggerAudio();
+
+      // If browser blocks immediate playback before interaction, play on the trader's very first click anywhere
+      const onUserGesture = () => {
+        triggerAudio();
+        window.removeEventListener('pointerdown', onUserGesture, true);
+        window.removeEventListener('click', onUserGesture, true);
+        window.removeEventListener('keydown', onUserGesture, true);
+      };
+      window.addEventListener('pointerdown', onUserGesture, true);
+      window.addEventListener('click', onUserGesture, true);
+      window.addEventListener('keydown', onUserGesture, true);
+
+      return () => {
+        window.removeEventListener('pointerdown', onUserGesture, true);
+        window.removeEventListener('click', onUserGesture, true);
+        window.removeEventListener('keydown', onUserGesture, true);
+      };
     } else if (!isPaused) {
       hasTriggeredAudioRef.current = false;
     }
@@ -35,6 +64,13 @@ export function IntermissionOverlay({ sessionData }) {
       aria-labelledby="intermission-title"
       className="fixed inset-0 z-[100] bg-[#07090E] overflow-y-auto font-sans text-slate-200 select-none flex flex-col justify-between"
     >
+      {/* Direct HTML5 audio element rendered directly into DOM */}
+      <audio
+        ref={audioElRef}
+        src="/sounds/intermisson-start.mp3"
+        preload="auto"
+      />
+
       {/* High-contrast neo-brutalist diagonal hatch background accent */}
       <div
         aria-hidden="true"
@@ -152,10 +188,23 @@ export function IntermissionOverlay({ sessionData }) {
 
             {/* Lock Security Footer Strip */}
             <div className="pt-4 mt-6 border-t-2 border-white/[0.08] flex flex-wrap items-center justify-between gap-3 text-xs font-mono">
-              <div className="flex items-center gap-2 bg-black px-3 py-1.5 border border-white/[0.15]">
-                <Lock className="w-4 h-4 text-[#F0B429]" />
-                <span className="text-white font-bold tracking-wider">CONSOLE ACCESS LOCKED</span>
+              <div className="flex items-center gap-3">
+                <div className="flex items-center gap-2 bg-black px-3 py-1.5 border border-white/[0.15]">
+                  <Lock className="w-4 h-4 text-[#F0B429]" />
+                  <span className="text-white font-bold tracking-wider">CONSOLE ACCESS LOCKED</span>
+                </div>
+                
+                <button
+                  type="button"
+                  onClick={triggerAudio}
+                  className="flex items-center gap-1.5 px-2.5 py-1.5 bg-[#F0B429]/10 hover:bg-[#F0B429]/20 border border-[#F0B429]/40 text-[#F0B429] text-[11px] font-bold cursor-pointer transition-colors"
+                  title="Play Break Chime at Full Volume"
+                >
+                  <Volume2 className="w-3.5 h-3.5" />
+                  <span>PLAY CHIME (100% VOL)</span>
+                </button>
               </div>
+
               <div className="text-slate-400 text-[11px]">
                 Trading resumes automatically when timer reaches 00:00
               </div>
