@@ -21,7 +21,7 @@ import { apiFetch } from '../services/api';
  * Super attractive, Neo-Brutalist Post-Game Tournament Performance & Scorecard Terminal.
  * Mounts when the 3-hour game concludes and auto-liquidation occurs.
  */
-export function PostGameScorecard({ user, sessionData, onWatchLeaderboard }) {
+export function PostGameScorecard({ user, portfolio, sessionData, onWatchLeaderboard }) {
   const [leaderboard, setLeaderboard] = useState([]);
   const [loadingLeaderboard, setLoadingLeaderboard] = useState(true);
   const [copied, setCopied] = useState(false);
@@ -46,21 +46,33 @@ export function PostGameScorecard({ user, sessionData, onWatchLeaderboard }) {
     return () => { mounted = false; };
   }, []);
 
-  // Compute player stats from user and standings
+  // Compute player stats from user, portfolio, and standings
   const stats = useMemo(() => {
-    const finalBalance = Number(user?.walletBalance) || 20000;
-    const initialBalance = 20000;
-    const netPnL = finalBalance - initialBalance;
-    const netPnLPercent = Math.round(((netPnL / initialBalance) * 100) * 100) / 100;
-    const isProfitable = netPnL >= 0;
+    // Priority: portfolio value (liquidated cash) -> user.walletBalance -> match from leaderboard
+    let finalBalance = 20000;
+    if (portfolio?.totalPortfolioValue !== undefined && portfolio.totalPortfolioValue > 0) {
+      finalBalance = Number(portfolio.totalPortfolioValue);
+    } else if (portfolio?.walletBalance !== undefined && portfolio.walletBalance > 0) {
+      finalBalance = Number(portfolio.walletBalance);
+    } else if (user?.walletBalance !== undefined && user.walletBalance > 0) {
+      finalBalance = Number(user.walletBalance);
+    }
 
-    // Find rank in tournament standings
+    // Find rank & exact balance in tournament standings if present
     let rank = null;
     let totalPlayers = leaderboard.length || 1;
     const userIndex = leaderboard.findIndex(p => p.id === user?.id || p.email === user?.email);
     if (userIndex !== -1) {
       rank = userIndex + 1;
+      if (leaderboard[userIndex].totalPortfolioValue !== undefined) {
+        finalBalance = Number(leaderboard[userIndex].totalPortfolioValue);
+      }
     }
+
+    const initialBalance = 20000;
+    const netPnL = finalBalance - initialBalance;
+    const netPnLPercent = Math.round(((netPnL / initialBalance) * 100) * 100) / 100;
+    const isProfitable = netPnL >= 0;
 
     // Top percentile calculation
     const percentile = rank ? Math.max(1, Math.round((rank / totalPlayers) * 100)) : 50;

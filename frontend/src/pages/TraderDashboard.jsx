@@ -705,6 +705,7 @@ export function TraderDashboard() {
     return (
       <PostGameScorecard
         user={user}
+        portfolio={portfolio}
         sessionData={sessionData}
         onWatchLeaderboard={() => window.open('/leaderboard', '_blank')}
       />
