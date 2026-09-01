@@ -21,7 +21,7 @@ import { ToastStack } from '../components/ToastStack';
 import { StockDetailModal } from '../components/StockDetailModal';
 import { OnboardingTour } from '../components/OnboardingTour';
 import { IntermissionOverlay } from '../components/IntermissionOverlay';
-import { NewsToast } from '../components/NewsToast';
+import { NewsToast, RumorToast } from '../components/NewsToast';
 import { playNewsChime, playIntermissionStartSound } from '../services/soundService';
 
 import {
@@ -46,6 +46,8 @@ import {
   CheckCircle2
 } from 'lucide-react';
 
+import { useSearchParams } from 'react-router-dom';
+
 const fmtMoney = (n, d = 2) =>
   Number(n || 0).toLocaleString('en-US', {
     minimumFractionDigits: d,
@@ -57,11 +59,53 @@ const fmtMoney = (n, d = 2) =>
 export function TraderDashboard() {
   const { user } = useAuth();
   const { socket } = useSocket();
+  const [searchParams, setSearchParams] = useSearchParams();
 
   /* ---------------------------------------------------------------
      Core state
      --------------------------------------------------------------- */
-  const [activeTab, setActiveTab] = useState('DASHBOARD');
+  const initialTab = useMemo(() => {
+    const tabParam = searchParams.get('tab')?.toUpperCase();
+    if (['DASHBOARD', 'MARKET'].includes(tabParam)) return 'DASHBOARD';
+    if (['PORTFOLIO', 'STOCKS', 'MYSTOCKS'].includes(tabParam)) return 'PORTFOLIO';
+    if (['ORDERS', 'LIMIT'].includes(tabParam)) return 'ORDERS';
+    if (['NEWS'].includes(tabParam)) return 'NEWS';
+    return 'DASHBOARD';
+  }, [searchParams]);
+
+  const [activeTab, setActiveTabState] = useState(initialTab);
+
+  const setActiveTab = useCallback((tab) => {
+    setActiveTabState(tab);
+    setSearchParams((prev) => {
+      const next = new URLSearchParams(prev);
+      if (tab === 'DASHBOARD') {
+        next.set('tab', 'market');
+      } else if (tab === 'PORTFOLIO') {
+        next.set('tab', 'stocks');
+      } else if (tab === 'ORDERS') {
+        next.set('tab', 'orders');
+      } else if (tab === 'NEWS') {
+        next.set('tab', 'news');
+      }
+      return next;
+    }, { replace: true });
+  }, [setSearchParams]);
+
+  // Synchronize dynamic browser tab title so user clearly sees "Market" or other active view
+  useEffect(() => {
+    if (activeTab === 'DASHBOARD') {
+      document.title = 'Market — Equity Arena';
+    } else if (activeTab === 'PORTFOLIO') {
+      document.title = 'My Stocks — Equity Arena';
+    } else if (activeTab === 'ORDERS') {
+      document.title = 'Limit Orders — Equity Arena';
+    } else if (activeTab === 'NEWS') {
+      document.title = 'News Wire — Equity Arena';
+    } else {
+      document.title = 'Equity Arena — Trading Terminal';
+    }
+  }, [activeTab]);
   const [searchQuery, setSearchQuery] = useState('');
 
   const [stocks, setStocks] = useState([]);
@@ -83,6 +127,7 @@ export function TraderDashboard() {
   const [newsFeed, setNewsFeed] = useState([]);
   const [loadingNews, setLoadingNews] = useState(false);
   const [activeNewsToast, setActiveNewsToast] = useState(null);
+  const [activeRumorToast, setActiveRumorToast] = useState(null);
 
   // One shared session source feeds the clock, the banner and the lock state
   const sessionData = useSession();
@@ -359,9 +404,15 @@ export function TraderDashboard() {
       }
     };
 
+    const handleRumor = (data) => {
+      if (!data) return;
+      setActiveRumorToast(data);
+    };
+
     socket.on('connect', handleConnect);
     socket.on('stock:update', handleStockUpdate);
     socket.on('news:broadcast', handleNews);
+    socket.on('rumor:leak', handleRumor);
     socket.on('portfolio:update', handlePortfolioUpdate);
     socket.on('order:executed', handleOrderExecuted);
     socket.on('break:started', handleBreakStarted);
@@ -374,6 +425,7 @@ export function TraderDashboard() {
       socket.off('connect', handleConnect);
       socket.off('stock:update', handleStockUpdate);
       socket.off('news:broadcast', handleNews);
+      socket.off('rumor:leak', handleRumor);
       socket.off('portfolio:update', handlePortfolioUpdate);
       socket.off('order:executed', handleOrderExecuted);
       socket.off('break:started', handleBreakStarted);
@@ -872,11 +924,28 @@ export function TraderDashboard() {
           {/* =============== PORTFOLIO TAB ("MY STOCKS") =============== */}
           {activeTab === 'PORTFOLIO' && (
             <div className="space-y-8">
-              {/* "Your Money Overview" section */}
+              {/* "Your Money Overview" section with Open Market in New Tab Option */}
               <div className="space-y-3 border-b theme-border pb-8">
-                <h3 className="text-[18px] font-bold theme-text-main font-heading">
-                  Your Money Overview
-                </h3>
+                <div className="flex flex-wrap items-center justify-between gap-3">
+                  <div>
+                    <h3 className="text-[18px] font-bold theme-text-main font-heading">
+                      Your Money Overview
+                    </h3>
+                    <p className="text-[12px] theme-text-dim">
+                      Live portfolio valuation and active investment summary
+                    </p>
+                  </div>
+
+                  <button
+                    type="button"
+                    onClick={() => window.open('/trader?tab=market', '_blank')}
+                    title="Open live Market terminal in a new tab"
+                    className="px-3.5 py-1.5 rounded-lg border-2 border-black font-mono text-xs font-bold transition-all cursor-pointer bg-[#F0B429] hover:bg-[#ffc63d] text-black shadow-[3px_3px_0px_#000000] active:translate-x-[1px] active:translate-y-[1px] inline-flex items-center gap-2"
+                  >
+                    <span>Open Market in New Tab</span>
+                    <ArrowUpRight className="w-4 h-4" />
+                  </button>
+                </div>
                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                   <StatTile
                     label="AVAILABLE CASH"
@@ -919,7 +988,8 @@ export function TraderDashboard() {
                   stocks={stocks}
                   onSell={handleOpenDetail}
                   onShowChart={handleSelectFromFloor}
-                  onNavigateMarket={() => setActiveTab('FLOOR')}
+                  onNavigateMarket={() => setActiveTab('DASHBOARD')}
+                  onOpenMarketNewTab={() => window.open('/trader?tab=market', '_blank')}
                 />
               </div>
 
@@ -953,6 +1023,7 @@ export function TraderDashboard() {
       <ToastStack toasts={toasts} onDismiss={dismissToast} />
 
       <NewsToast news={activeNewsToast} onClose={() => setActiveNewsToast(null)} />
+      <RumorToast rumor={activeRumorToast} onClose={() => setActiveRumorToast(null)} />
 
       <StockDetailModal
         stock={liveDetailStock}

@@ -2,7 +2,7 @@ const express = require('express');
 const bcrypt = require('bcryptjs');
 const { PrismaClient } = require('@prisma/client');
 const { authenticateToken, requireAdmin } = require('../middleware/authMiddleware');
-const { emitStockUpdate, emitNewsBroadcast, emitPortfolioUpdate, emitActivityLog, broadcastPublicLeaderboard } = require('../socket');
+const { emitStockUpdate, emitNewsBroadcast, emitFlashEventBroadcast, emitRumorBroadcast, emitPortfolioUpdate, emitActivityLog, broadcastPublicLeaderboard } = require('../socket');
 const { checkAndExecuteLimitOrders } = require('../services/orderService');
 const { applyNewsImpact, steerMacroMoveForNews, triggerOrganicRamp } = require('../services/marketTicker');
 const { getUsedTemplateIds, markTemplateUsed } = require('../services/sessionService');
@@ -198,13 +198,118 @@ router.post(['/market/adjust-all', '/stocks/adjust-all'], async (req, res) => {
     // Broadcast updated leaderboard standings to all clients & admin
     broadcastPublicLeaderboard();
 
+// POST /admin/market/flash-event — Trigger dramatic room-wide market events (Black Swan, Bull Run, Penny Pump)
+router.post('/market/flash-event', async (req, res) => {
+  try {
+    const { type } = req.body; // 'CRASH' | 'BULL_RUN' | 'PENNY_PUMP'
+    let eventTitle = '';
+    let eventHeadline = '';
+    let affectedStocks = [];
+    let percentChange = 0;
+
+    const allStocks = await prisma.stock.findMany();
+    if (allStocks.length === 0) {
+      return res.status(400).json({ error: 'No stocks in market' });
+    }
+
+    if (type === 'CRASH') {
+      eventTitle = 'BLACK SWAN CRASH';
+      eventHeadline = '🚨 EMERGENCY FLASH: Macro Liquidity Crunch Hits Exchange! Broad Selling Wave.';
+      percentChange = -15;
+      affectedStocks = allStocks;
+    } else if (type === 'BULL_RUN') {
+      eventTitle = 'MARKET BOOM RALLY';
+      eventHeadline = '🚀 BREAKING BULL RUN: Global Sovereign Fund Inflow Sparks Market-Wide Buying Frenzy!';
+      percentChange = 18;
+      affectedStocks = allStocks;
+    } else if (type === 'PENNY_PUMP') {
+      // Pick random penny/low-cost stock
+      const pennyStocks = allStocks.filter(s => s.currentPrice < 150);
+      const chosen = pennyStocks.length > 0
+        ? pennyStocks[Math.floor(Math.random() * pennyStocks.length)]
+        : allStocks[Math.floor(Math.random() * allStocks.length)];
+
+      eventTitle = 'PENNY STOCK SQUEEZE';
+      eventHeadline = `⚡ SHORT SQUEEZE ALERT: Massive Whale Buy Order Hits ${chosen.name} (${chosen.symbol})!`;
+      percentChange = 38;
+      affectedStocks = [chosen];
+    } else {
+      return res.status(400).json({ error: 'Invalid event type. Use CRASH, BULL_RUN, or PENNY_PUMP.' });
+    }
+
+    // Apply immediate price shift and price histories
+    for (const stock of affectedStocks) {
+      const rawNewPrice = stock.currentPrice * (1 + percentChange / 100);
+      const newPrice = Math.max(0.50, Math.round(rawNewPrice * 100) / 100);
+      const highVolume = Math.floor(Math.random() * 80000) + 70000;
+
+      const [updatedStock, newHistory] = await prisma.$transaction([
+        prisma.stock.update({
+          where: { id: stock.id },
+          data: { currentPrice: newPrice }
+        }),
+        prisma.priceHistory.create({
+          data: {
+            stockId: stock.id,
+            price: newPrice,
+            volume: highVolume
+          }
+        })
+      ]);
+
+      const pChange = stock.basePrice > 0
+        ? Math.round((((newPrice - stock.basePrice) / stock.basePrice) * 100) * 100) / 100
+        : 0;
+
+      emitStockUpdate({
+        stockId: updatedStock.id,
+        symbol: updatedStock.symbol,
+        name: updatedStock.name,
+        newPrice: updatedStock.currentPrice,
+        volume: newHistory.volume,
+        percentChange: pChange,
+        timestamp: newHistory.timestamp
+      });
+
+      await checkAndExecuteLimitOrders(updatedStock.id, newPrice);
+    }
+
+    // Create and broadcast breaking news
+    const news = await prisma.news.create({
+      data: {
+        message: eventHeadline,
+        stockId: affectedStocks.length === 1 ? affectedStocks[0].id : null
+      }
+    });
+
+    emitNewsBroadcast({
+      id: news.id,
+      message: news.message,
+      stockId: news.stockId,
+      stockSymbol: affectedStocks.length === 1 ? affectedStocks[0].symbol : null,
+      timestamp: news.timestamp
+    });
+
+    // Emit special flash-event animation banner
+    emitFlashEventBroadcast({
+      type,
+      title: eventTitle,
+      headline: eventHeadline,
+      percentChange,
+      affectedCount: affectedStocks.length,
+      timestamp: Date.now()
+    });
+
+    broadcastPublicLeaderboard();
+
     return res.json({
-      message: `Adjusted all ${updatedStocks.length} stocks by ${parsedPercent >= 0 ? '+' : ''}${parsedPercent}%`,
-      stocksCount: updatedStocks.length
+      message: `${eventTitle} triggered successfully across ${affectedStocks.length} stocks (${percentChange >= 0 ? '+' : ''}${percentChange}%)`,
+      type,
+      affectedCount: affectedStocks.length
     });
   } catch (err) {
-    console.error('Market-wide adjust error:', err);
-    return res.status(500).json({ error: 'Failed to adjust market prices' });
+    console.error('Market flash event error:', err);
+    return res.status(500).json({ error: 'Failed to trigger market flash event' });
   }
 });
 
@@ -331,6 +436,102 @@ router.get(['/news-templates', '/news/templates'], async (req, res) => {
   }
 });
 
+// POST /admin/news/trigger-rumor (Exclusive rumor leaked to selected traders only)
+router.post('/news/trigger-rumor', async (req, res) => {
+  try {
+    const { templateId, targetUserIds, leakCount = 8, delaySeconds = 25 } = req.body;
+    const template = await prisma.newsTemplate.findUnique({ where: { id: templateId } });
+    if (!template) {
+      return res.status(404).json({ error: 'Template not found' });
+    }
+
+    let luckyTraders = [];
+    let luckyIds = [];
+
+    if (Array.isArray(targetUserIds) && targetUserIds.length > 0) {
+      // Leaked strictly to explicitly selected traders!
+      luckyTraders = await prisma.user.findMany({
+        where: { id: { in: targetUserIds } },
+        select: { id: true, name: true, email: true }
+      });
+      luckyIds = luckyTraders.map(t => t.id);
+    } else {
+      // Fallback: pick random subset
+      const traders = await prisma.user.findMany({
+        where: { role: 'TRADER', isTestAccount: false },
+        select: { id: true, name: true, email: true }
+      });
+
+      if (traders.length === 0) {
+        return res.status(400).json({ error: 'No active traders found to leak rumor to.' });
+      }
+
+      const shuffled = [...traders].sort(() => 0.5 - Math.random());
+      const selectedCount = Math.min(traders.length, Math.max(1, parseInt(leakCount, 10) || Math.ceil(traders.length * 0.2)));
+      luckyTraders = shuffled.slice(0, selectedCount);
+      luckyIds = luckyTraders.map(t => t.id);
+    }
+
+    if (luckyIds.length === 0) {
+      return res.status(400).json({ error: 'No traders selected for rumor leak.' });
+    }
+
+    const rumorPayload = {
+      id: 'rumor-' + Date.now(),
+      headline: template.headline,
+      sector: template.sector,
+      effectPercent: template.effectPercent,
+      timestamp: new Date().toISOString(),
+      expiresInSeconds: parseInt(delaySeconds, 10) || 25
+    };
+
+    // Emit private whisper to lucky traders
+    emitRumorBroadcast(luckyIds, rumorPayload);
+
+    // Schedule public news drop after delay
+    setTimeout(async () => {
+      try {
+        markTemplateUsed(template.id);
+        const news = await prisma.news.create({
+          data: {
+            message: template.headline,
+            stockId: null
+          }
+        });
+        emitNewsBroadcast({
+          id: news.id,
+          message: news.message,
+          stockId: null,
+          stockSymbol: null,
+          timestamp: news.timestamp
+        });
+
+        let effects = [];
+        if (template.stockEffects) {
+          try {
+            effects = JSON.parse(template.stockEffects);
+          } catch (e) {
+            effects = [{ sector: template.sector, effectPercent: template.effectPercent }];
+          }
+        } else {
+          effects = [{ sector: template.sector, effectPercent: template.effectPercent }];
+        }
+        await steerMacroMoveForNews(effects, 15);
+      } catch (err) {
+        console.error('Error executing delayed public news from rumor:', err);
+      }
+    }, (parseInt(delaySeconds, 10) || 25) * 1000);
+
+    return res.json({
+      message: `Insider rumor leaked to ${luckyIds.length} traders! Public release scheduled in ${delaySeconds}s.`,
+      luckyTraders: luckyTraders.map(t => t.name || t.email)
+    });
+  } catch (err) {
+    console.error('Trigger rumor error:', err);
+    return res.status(500).json({ error: 'Failed to leak rumor' });
+  }
+});
+
 // POST /admin/news/trigger-template
 router.post('/news/trigger-template', async (req, res) => {
   try {
@@ -342,7 +543,6 @@ router.post('/news/trigger-template', async (req, res) => {
       return res.status(404).json({ error: 'News template not found' });
     }
 
-    // Mark template as used in current session
     markTemplateUsed(template.id);
 
     const news = await prisma.news.create({
@@ -352,7 +552,6 @@ router.post('/news/trigger-template', async (req, res) => {
       }
     });
 
-    // Broadcast headline immediately (without revealing stock targets to traders!)
     emitNewsBroadcast({
       id: news.id,
       message: news.message,
@@ -361,7 +560,6 @@ router.post('/news/trigger-template', async (req, res) => {
       timestamp: news.timestamp
     });
 
-    // Parse multi-stock or single-stock effects
     let effects = [];
     if (template.stockEffects) {
       try {
@@ -373,7 +571,6 @@ router.post('/news/trigger-template', async (req, res) => {
       effects = [{ sector: template.sector, effectPercent: template.effectPercent }];
     }
 
-    // Phase 23: Steer targeted stock(s)' next scheduled 15-minute macro move directly!
     await steerMacroMoveForNews(effects, delay);
 
     return res.json({

@@ -1,5 +1,5 @@
 import React, { useMemo } from 'react';
-import { Wallet, ArrowRight, TrendingUp, TrendingDown } from 'lucide-react';
+import { Wallet, ArrowRight, TrendingUp, TrendingDown, ExternalLink } from 'lucide-react';
 import { useTheme } from '../context/ThemeContext';
 
 const fmt = (n, d = 2) =>
@@ -23,7 +23,7 @@ function badgeColour(key = '') {
 /* ------------------------------------------------------------------
    My Stocks Component
    ------------------------------------------------------------------ */
-export function MyStocks({ holdings = [], stocks = [], onSell, onShowChart, onNavigateMarket }) {
+export function MyStocks({ holdings = [], stocks = [], onSell, onShowChart, onNavigateMarket, onOpenMarketNewTab }) {
   const { theme } = useTheme();
   const isDark = theme === 'dark';
 
@@ -81,7 +81,7 @@ export function MyStocks({ holdings = [], stocks = [], onSell, onShowChart, onNa
         </div>
 
         {rows.length > 0 && (
-          <div className="flex items-center gap-6">
+          <div className="flex items-center gap-4 sm:gap-6">
             <div className="text-right font-mono">
               <div className="text-[10px] text-[#7B82A0] uppercase tracking-wider font-semibold">
                 Invested
@@ -98,6 +98,16 @@ export function MyStocks({ holdings = [], stocks = [], onSell, onShowChart, onNa
                 {fmt(totalWorth)} IC
               </div>
             </div>
+
+            <button
+              type="button"
+              onClick={onOpenMarketNewTab || (() => window.open('/trader?tab=market', '_blank'))}
+              title="Open Market in a new tab"
+              className="px-3 py-1.5 rounded-lg border-2 border-black font-mono text-xs font-bold transition-all cursor-pointer bg-[#F0B429] hover:bg-[#ffc63d] text-black shadow-[2px_2px_0px_#000000] active:translate-x-[1px] active:translate-y-[1px] inline-flex items-center gap-1.5 shrink-0"
+            >
+              <span>Open Market</span>
+              <ExternalLink className="w-3.5 h-3.5" />
+            </button>
           </div>
         )}
       </div>
@@ -116,14 +126,25 @@ export function MyStocks({ holdings = [], stocks = [], onSell, onShowChart, onNa
             <p className="text-[13px] text-[#6B7280] dark:text-[#7B82A0] mt-1 max-w-sm mx-auto">
               Buy some stocks from the market to build your portfolio and start earning returns.
             </p>
-            <button
-              type="button"
-              onClick={onNavigateMarket}
-              className="mt-5 px-5 py-2.5 bg-[#F0B429] hover:bg-[#f5bc38] text-black font-extrabold text-xs font-mono uppercase tracking-wider rounded-lg shadow inline-flex items-center gap-2 transition-all hover:scale-[1.02] active:scale-[0.98] cursor-pointer"
-            >
-              <span>Go to Market</span>
-              <ArrowRight className="w-4 h-4" />
-            </button>
+            <div className="mt-5 flex items-center justify-center gap-3 flex-wrap">
+              <button
+                type="button"
+                onClick={onNavigateMarket}
+                className="px-5 py-2.5 bg-[#F0B429] hover:bg-[#f5bc38] text-black font-extrabold text-xs font-mono uppercase tracking-wider rounded-lg shadow inline-flex items-center gap-2 transition-all hover:scale-[1.02] active:scale-[0.98] cursor-pointer"
+              >
+                <span>Go to Market</span>
+                <ArrowRight className="w-4 h-4" />
+              </button>
+
+              <button
+                type="button"
+                onClick={onOpenMarketNewTab || (() => window.open('/trader?tab=market', '_blank'))}
+                className="px-4 py-2.5 bg-[#161B26] hover:bg-[#202736] border border-white/10 text-white font-bold text-xs font-mono uppercase tracking-wider rounded-lg shadow inline-flex items-center gap-2 transition-all cursor-pointer"
+              >
+                <span>Open Market in New Tab</span>
+                <ExternalLink className="w-4 h-4 text-[#F0B429]" />
+              </button>
+            </div>
           </div>
         ) : (
           <table className="w-full text-[13px] font-sans">

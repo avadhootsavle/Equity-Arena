@@ -63,6 +63,16 @@ export function AdminDashboard() {
   const [delaySeconds, setDelaySeconds] = useState(60);
   const [triggeringTemplateId, setTriggeringTemplateId] = useState(null);
 
+  /* Exclusive Rumor Modal State */
+  const [rumorTargetModalTpl, setRumorTargetModalTpl] = useState(null);
+  const [selectedRumorTraderIds, setSelectedRumorTraderIds] = useState([]);
+  const [rumorSearchQuery, setRumorSearchQuery] = useState('');
+  const [rumorDelaySeconds, setRumorDelaySeconds] = useState(25);
+
+  /* Flash Market Events State */
+  const [triggeringFlashEvent, setTriggeringFlashEvent] = useState(false);
+  const [confirmFlashEvent, setConfirmFlashEvent] = useState(null); // 'CRASH' | 'BULL_RUN' | 'PENNY_PUMP'
+
   const [leaderboard, setLeaderboard] = useState([]);
   const [loadingLeaderboard, setLoadingLeaderboard] = useState(false);
   const [liveTradeFeed, setLiveTradeFeed] = useState([]);
@@ -518,6 +528,59 @@ export function AdminDashboard() {
       showToast(err.message || 'Failed to broadcast news template', 'error');
     } finally {
       setTriggeringTemplateId(null);
+    }
+  };
+
+  const handleTriggerRumor = async (templateId, userIds = null, delaySec = null) => {
+    setTriggeringTemplateId(templateId);
+    try {
+      const res = await apiFetch('/admin/news/trigger-rumor', {
+        method: 'POST',
+        body: JSON.stringify({
+          templateId,
+          targetUserIds: userIds,
+          delaySeconds: delaySec !== null ? delaySec : (parseInt(rumorDelaySeconds, 10) || 25)
+        })
+      });
+
+      playNewsChime();
+      showToast(res.message || 'Confidential rumor leaked to selected traders!', 'success');
+
+      if (!usedTemplateIds.includes(templateId)) {
+        setUsedTemplateIds((prev) => [...prev, templateId]);
+      }
+      setRecentlySentTplIds((prev) => [...prev, templateId]);
+      setTimeout(() => {
+        setRecentlySentTplIds((prev) => prev.filter((id) => id !== templateId));
+      }, 3000);
+
+      setInlineConfirmTplId(null);
+      setRumorTargetModalTpl(null);
+      setSelectedRumorTraderIds([]);
+    } catch (err) {
+      showToast(err.message || 'Failed to leak rumor', 'error');
+    } finally {
+      setTriggeringTemplateId(null);
+    }
+  };
+
+  const handleTriggerFlashEvent = async (type) => {
+    setTriggeringFlashEvent(true);
+    try {
+      const res = await apiFetch('/admin/market/flash-event', {
+        method: 'POST',
+        body: JSON.stringify({ type })
+      });
+
+      playNewsChime();
+      showToast(res.message || 'Market flash event triggered live!', 'success');
+      setConfirmFlashEvent(null);
+      fetchStocks();
+      fetchLeaderboard();
+    } catch (err) {
+      showToast(err.message || 'Failed to trigger flash event', 'error');
+    } finally {
+      setTriggeringFlashEvent(false);
     }
   };
 
@@ -1321,10 +1384,23 @@ export function AdminDashboard() {
                             <button
                               type="button"
                               disabled={triggeringTemplateId === t.id}
+                              onClick={() => {
+                                setRumorTargetModalTpl(t);
+                                setSelectedRumorTraderIds([]);
+                                setRumorSearchQuery('');
+                              }}
+                              title="Open trader picker to leak rumor to selected traders"
+                              className="h-7 px-3 bg-[#EC4899]/20 hover:bg-[#EC4899]/40 border border-[#EC4899]/60 text-[#F472B6] font-extrabold text-xs rounded-lg uppercase transition-all cursor-pointer shadow-sm flex items-center gap-1"
+                            >
+                              <span>⚡ LEAK RUMOR...</span>
+                            </button>
+                            <button
+                              type="button"
+                              disabled={triggeringTemplateId === t.id}
                               onClick={() => handleTriggerTemplate(t.id)}
                               className="h-7 px-3.5 bg-[#F0B429] hover:bg-[#d9a120] text-black font-extrabold text-xs rounded-lg uppercase transition-all cursor-pointer shadow-sm"
                             >
-                              {triggeringTemplateId === t.id ? 'SENDING...' : 'CONFIRM SEND'}
+                              {triggeringTemplateId === t.id ? 'SENDING...' : 'BROADCAST ALL'}
                             </button>
                             <button
                               type="button"
@@ -1569,6 +1645,105 @@ export function AdminDashboard() {
                     A-Z
                   </button>
                 </div>
+              </div>
+            </div>
+
+            {/* Flash Market Events (Black Swan, Bull Run, Penny Squeeze) */}
+            <div className="mb-2 p-2 bg-[#121622] border-2 border-black rounded-lg shadow-[2px_2px_0px_#000000] flex flex-wrap items-center justify-between gap-2 font-mono shrink-0">
+              <div className="flex items-center gap-1.5 text-xs font-black text-[#F0B429] uppercase">
+                <span>⚡ FLASH MARKET EVENTS:</span>
+              </div>
+
+              <div className="flex items-center gap-2 flex-wrap">
+                {/* Black Swan Crash */}
+                {confirmFlashEvent === 'CRASH' ? (
+                  <div className="flex items-center gap-1 bg-[#EF4444]/20 border border-[#EF4444] px-2 py-0.5 rounded text-xs">
+                    <span className="text-[#EF4444] font-bold">Trigger -15% Crash?</span>
+                    <button
+                      type="button"
+                      disabled={triggeringFlashEvent}
+                      onClick={() => handleTriggerFlashEvent('CRASH')}
+                      className="px-2 py-0.5 bg-[#EF4444] text-white font-black rounded uppercase cursor-pointer text-[10px]"
+                    >
+                      {triggeringFlashEvent ? 'CRASHING...' : 'CONFIRM'}
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setConfirmFlashEvent(null)}
+                      className="px-1.5 py-0.5 bg-black/40 text-slate-400 rounded text-[10px] cursor-pointer"
+                    >
+                      ✕
+                    </button>
+                  </div>
+                ) : (
+                  <button
+                    type="button"
+                    onClick={() => setConfirmFlashEvent('CRASH')}
+                    className="px-2.5 py-1 bg-[#EF4444]/15 hover:bg-[#EF4444]/30 border border-[#EF4444]/50 text-[#EF4444] font-extrabold text-[10.5px] rounded-md transition-all cursor-pointer flex items-center gap-1"
+                  >
+                    <span>🚨 BLACK SWAN (-15%)</span>
+                  </button>
+                )}
+
+                {/* Market Boom Rally */}
+                {confirmFlashEvent === 'BULL_RUN' ? (
+                  <div className="flex items-center gap-1 bg-[#22C55E]/20 border border-[#22C55E] px-2 py-0.5 rounded text-xs">
+                    <span className="text-[#22C55E] font-bold">Trigger +18% Rally?</span>
+                    <button
+                      type="button"
+                      disabled={triggeringFlashEvent}
+                      onClick={() => handleTriggerFlashEvent('BULL_RUN')}
+                      className="px-2 py-0.5 bg-[#22C55E] text-black font-black rounded uppercase cursor-pointer text-[10px]"
+                    >
+                      {triggeringFlashEvent ? 'PUMPING...' : 'CONFIRM'}
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setConfirmFlashEvent(null)}
+                      className="px-1.5 py-0.5 bg-black/40 text-slate-400 rounded text-[10px] cursor-pointer"
+                    >
+                      ✕
+                    </button>
+                  </div>
+                ) : (
+                  <button
+                    type="button"
+                    onClick={() => setConfirmFlashEvent('BULL_RUN')}
+                    className="px-2.5 py-1 bg-[#22C55E]/15 hover:bg-[#22C55E]/30 border border-[#22C55E]/50 text-[#22C55E] font-extrabold text-[10.5px] rounded-md transition-all cursor-pointer flex items-center gap-1"
+                  >
+                    <span>🚀 BOOM RALLY (+18%)</span>
+                  </button>
+                )}
+
+                {/* Penny Stock Squeeze */}
+                {confirmFlashEvent === 'PENNY_PUMP' ? (
+                  <div className="flex items-center gap-1 bg-[#EC4899]/20 border border-[#EC4899] px-2 py-0.5 rounded text-xs">
+                    <span className="text-[#EC4899] font-bold">Pump Random Penny (+38%)?</span>
+                    <button
+                      type="button"
+                      disabled={triggeringFlashEvent}
+                      onClick={() => handleTriggerFlashEvent('PENNY_PUMP')}
+                      className="px-2 py-0.5 bg-[#EC4899] text-black font-black rounded uppercase cursor-pointer text-[10px]"
+                    >
+                      {triggeringFlashEvent ? 'PUMPING...' : 'CONFIRM'}
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setConfirmFlashEvent(null)}
+                      className="px-1.5 py-0.5 bg-black/40 text-slate-400 rounded text-[10px] cursor-pointer"
+                    >
+                      ✕
+                    </button>
+                  </div>
+                ) : (
+                  <button
+                    type="button"
+                    onClick={() => setConfirmFlashEvent('PENNY_PUMP')}
+                    className="px-2.5 py-1 bg-[#EC4899]/15 hover:bg-[#EC4899]/30 border border-[#EC4899]/50 text-[#EC4899] font-extrabold text-[10.5px] rounded-md transition-all cursor-pointer flex items-center gap-1"
+                  >
+                    <span>⚡ PENNY SQUEEZE (+38%)</span>
+                  </button>
+                )}
               </div>
             </div>
 
@@ -2727,6 +2902,177 @@ export function AdminDashboard() {
               >
                 {deletingAll ? 'DELETING ALL...' : 'CONFIRM DELETE ALL'}
               </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Exclusive Rumor Target Selection Modal */}
+      {rumorTargetModalTpl && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 font-mono animate-fadeIn backdrop-blur-xs p-4">
+          <div className="bg-[#140D1B] border-2 border-[#EC4899] rounded-2xl p-5 sm:p-6 max-w-lg w-full space-y-4 text-white shadow-[6px_6px_0px_#000000] max-h-[90vh] flex flex-col">
+            {/* Header */}
+            <div className="flex items-center justify-between border-b border-[#EC4899]/30 pb-3 shrink-0">
+              <div className="flex items-center gap-2">
+                <div className="w-8 h-8 rounded-lg bg-[#EC4899] text-black font-black flex items-center justify-center text-sm shadow-[2px_2px_0px_#000000]">
+                  ⚡
+                </div>
+                <div>
+                  <h3 className="text-xs font-black text-[#F472B6] uppercase tracking-wider">
+                    LEAK CONFIDENTIAL RUMOR
+                  </h3>
+                  <span className="text-[10px] text-slate-400">
+                    Target specific traders before public market news drop
+                  </span>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => {
+                  setRumorTargetModalTpl(null);
+                  setSelectedRumorTraderIds([]);
+                }}
+                className="text-[#7B82A0] hover:text-white cursor-pointer"
+              >
+                ✕
+              </button>
+            </div>
+
+            {/* Headline Preview */}
+            <div className="p-3 bg-black/40 border border-[#EC4899]/20 rounded-xl space-y-1 shrink-0">
+              <div className="text-[10px] text-[#F472B6] font-bold uppercase tracking-wider">
+                HEADLINE TO LEAK:
+              </div>
+              <p className="text-xs font-bold text-white font-sans">
+                "{rumorTargetModalTpl.headline}"
+              </p>
+              <div className="text-[10px] text-slate-400 flex items-center gap-2 pt-1">
+                <span>Sector: <strong className="text-white">{rumorTargetModalTpl.sector}</strong></span>
+                <span>Effect: <strong className={rumorTargetModalTpl.effectPercent >= 0 ? 'text-emerald-400' : 'text-rose-400'}>{rumorTargetModalTpl.effectPercent >= 0 ? '+' : ''}{rumorTargetModalTpl.effectPercent}%</strong></span>
+              </div>
+            </div>
+
+            {/* Search & Selection Controls */}
+            <div className="space-y-2 shrink-0">
+              <div className="flex items-center justify-between text-xs">
+                <span className="text-slate-300 font-bold">
+                  SELECT RECIPIENT TRADERS ({selectedRumorTraderIds.length} selected):
+                </span>
+                <div className="flex items-center gap-2 text-[10px]">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const allIds = participants.filter(p => p.role !== 'ADMIN').map(p => p.id);
+                      setSelectedRumorTraderIds(allIds);
+                    }}
+                    className="text-[#F472B6] hover:underline cursor-pointer"
+                  >
+                    Select All
+                  </button>
+                  <span className="text-slate-600">|</span>
+                  <button
+                    type="button"
+                    onClick={() => setSelectedRumorTraderIds([])}
+                    className="text-slate-400 hover:underline cursor-pointer"
+                  >
+                    Clear
+                  </button>
+                </div>
+              </div>
+
+              <input
+                type="text"
+                placeholder="Search trader by name or email..."
+                value={rumorSearchQuery}
+                onChange={(e) => setRumorSearchQuery(e.target.value)}
+                className="w-full h-8 bg-[#0A070E] border border-[#EC4899]/30 rounded-lg px-3 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-[#EC4899]"
+              />
+            </div>
+
+            {/* Trader Multi-Select Scrollable List */}
+            <div className="flex-1 overflow-y-auto pr-1 space-y-1 text-xs min-h-[140px] max-h-[220px]">
+              {participants
+                .filter(p => p.role !== 'ADMIN')
+                .filter(p => {
+                  if (!rumorSearchQuery.trim()) return true;
+                  const q = rumorSearchQuery.toLowerCase();
+                  return (p.name || '').toLowerCase().includes(q) || (p.email || '').toLowerCase().includes(q);
+                })
+                .map((trader) => {
+                  const isChecked = selectedRumorTraderIds.includes(trader.id);
+                  return (
+                    <label
+                      key={trader.id}
+                      className={`flex items-center justify-between p-2 rounded-lg border cursor-pointer transition-all ${
+                        isChecked
+                          ? 'bg-[#EC4899]/20 border-[#EC4899] text-white'
+                          : 'bg-[#0F0A14] border-[#2D1B36] text-slate-300 hover:bg-[#1A1224]'
+                      }`}
+                    >
+                      <div className="flex items-center gap-2.5 min-w-0">
+                        <input
+                          type="checkbox"
+                          checked={isChecked}
+                          onChange={(e) => {
+                            if (e.target.checked) {
+                              setSelectedRumorTraderIds(prev => [...prev, trader.id]);
+                            } else {
+                              setSelectedRumorTraderIds(prev => prev.filter(id => id !== trader.id));
+                            }
+                          }}
+                          className="w-4 h-4 accent-[#EC4899] cursor-pointer"
+                        />
+                        <span className="font-bold truncate">{trader.name}</span>
+                        <span className="text-[10px] text-slate-500 truncate hidden sm:inline">
+                          ({trader.email})
+                        </span>
+                      </div>
+
+                      <span className="text-[10px] font-mono font-bold text-[#F472B6]">
+                        {isChecked ? 'SELECTED' : 'Click to select'}
+                      </span>
+                    </label>
+                  );
+                })}
+            </div>
+
+            {/* Delay Setting + Action Buttons */}
+            <div className="pt-3 border-t border-[#EC4899]/30 flex flex-wrap items-center justify-between gap-3 shrink-0">
+              <div className="flex items-center gap-1.5 text-xs text-slate-300">
+                <span>Public drop in:</span>
+                <input
+                  type="number"
+                  min="5"
+                  max="120"
+                  value={rumorDelaySeconds}
+                  onChange={(e) => setRumorDelaySeconds(parseInt(e.target.value, 10) || 25)}
+                  className="w-14 h-7 bg-[#0A070E] border border-[#EC4899]/40 text-center rounded text-xs text-white focus:outline-none focus:border-[#EC4899] font-bold"
+                />
+                <span>seconds</span>
+              </div>
+
+              <div className="flex items-center gap-2">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setRumorTargetModalTpl(null);
+                    setSelectedRumorTraderIds([]);
+                  }}
+                  className="px-3 py-1.5 rounded-lg bg-[#2D1B36] text-slate-400 hover:text-white text-xs font-bold cursor-pointer"
+                >
+                  CANCEL
+                </button>
+                <button
+                  type="button"
+                  disabled={triggeringTemplateId === rumorTargetModalTpl.id || selectedRumorTraderIds.length === 0}
+                  onClick={() => handleTriggerRumor(rumorTargetModalTpl.id, selectedRumorTraderIds, rumorDelaySeconds)}
+                  className="px-4 py-1.5 rounded-lg bg-[#EC4899] hover:bg-[#db2777] text-white text-xs font-black uppercase transition-all cursor-pointer shadow-[2px_2px_0px_#000000] disabled:opacity-40"
+                >
+                  {triggeringTemplateId === rumorTargetModalTpl.id
+                    ? 'LEAKING...'
+                    : `LEAK TO ${selectedRumorTraderIds.length} TRADERS`}
+                </button>
+              </div>
             </div>
           </div>
         </div>

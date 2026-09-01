@@ -120,3 +120,107 @@ export function NewsToast({ news, onClose }) {
     </div>
   );
 }
+
+export function RumorToast({ rumor, onClose }) {
+  const [progress, setProgress] = useState(100);
+  const playedRef = useRef(null);
+
+  useEffect(() => {
+    if (!rumor) return;
+
+    const rumorKey = rumor.id || `${rumor.timestamp}-${rumor.headline}`;
+    if (playedRef.current !== rumorKey) {
+      playedRef.current = rumorKey;
+      playNewsChime();
+    }
+
+    const duration = (rumor.expiresInSeconds || 25) * 1000;
+    const startTime = Date.now();
+
+    const timer = setInterval(() => {
+      const elapsed = Date.now() - startTime;
+      const remainingPercent = Math.max(0, 100 - (elapsed / duration) * 100);
+      setProgress(remainingPercent);
+
+      if (elapsed >= duration) {
+        clearInterval(timer);
+        onClose();
+      }
+    }, 50);
+
+    return () => clearInterval(timer);
+  }, [rumor, onClose]);
+
+  if (!rumor) return null;
+
+  return (
+    <div className="fixed top-14 right-4 sm:right-6 z-50 max-w-md w-full animate-slide-in-right pointer-events-auto">
+      {/* Outer Neo-Brutal Glow Wrapper */}
+      <div className="relative group rounded-2xl border-2 border-[#EC4899] bg-[#140D1B] p-4 sm:p-5 shadow-[6px_6px_0px_#000000] overflow-hidden">
+        
+        {/* Subtle Ambient Radial Highlight */}
+        <div className="absolute -top-10 -right-10 w-36 h-36 bg-[#EC4899]/20 rounded-full blur-2xl pointer-events-none" />
+
+        {/* Header Row */}
+        <div className="flex items-center justify-between gap-3 pb-3 border-b border-[#EC4899]/30">
+          <div className="flex items-center gap-2.5 min-w-0">
+            <div className="w-7 h-7 rounded-lg bg-[#EC4899] text-black font-black flex items-center justify-center border border-black shadow-[2px_2px_0px_#000000] text-xs">
+              ⚡
+            </div>
+
+            <div className="flex items-center gap-2 truncate">
+              <span className="text-[11px] font-black tracking-widest text-[#F472B6] uppercase font-mono">
+                INSIDER RUMOR LEAK
+              </span>
+              <span className="px-2 py-0.5 rounded text-[9px] font-black uppercase tracking-wider bg-[#EC4899] text-black font-mono">
+                CONFIDENTIAL
+              </span>
+            </div>
+          </div>
+
+          <button
+            onClick={onClose}
+            className="w-6 h-6 rounded-lg bg-black/40 hover:bg-black/80 border border-white/20 text-slate-300 hover:text-white transition-all flex items-center justify-center cursor-pointer"
+            title="Dismiss"
+          >
+            <X className="w-3.5 h-3.5" />
+          </button>
+        </div>
+
+        {/* Message Body */}
+        <div className="py-3">
+          <p className="text-[13.5px] sm:text-[14.5px] font-bold text-white leading-relaxed font-sans">
+            "{rumor.headline}"
+          </p>
+          <div className="mt-2 flex items-center gap-2 text-xs font-mono text-[#F472B6]">
+            <span>Sector: <strong>{rumor.sector}</strong></span>
+            {rumor.effectPercent && (
+              <span className={rumor.effectPercent >= 0 ? 'text-emerald-400 font-bold' : 'text-rose-400 font-bold'}>
+                ({rumor.effectPercent >= 0 ? '+' : ''}{rumor.effectPercent}%)
+              </span>
+            )}
+          </div>
+        </div>
+
+        {/* Status Strip */}
+        <div className="flex items-center justify-between text-[11px] font-mono pt-2 border-t border-[#EC4899]/30">
+          <span className="text-slate-400 text-[10px]">
+            ⚠️ Leaked to select traders only! Public in:
+          </span>
+          <span className="text-[11px] text-[#F472B6] font-black tracking-wider">
+            {Math.ceil((progress / 100) * (rumor.expiresInSeconds || 25))}s
+          </span>
+        </div>
+
+        {/* Bottom Progress Bar */}
+        <div className="absolute bottom-0 left-0 right-0 h-[3px] bg-black/50">
+          <div
+            className="h-full bg-gradient-to-r from-[#EC4899] to-[#F43F5E] transition-all duration-75 ease-linear shadow-[0_0_8px_rgba(236,72,153,0.8)]"
+            style={{ width: `${progress}%` }}
+          />
+        </div>
+
+      </div>
+    </div>
+  );
+}

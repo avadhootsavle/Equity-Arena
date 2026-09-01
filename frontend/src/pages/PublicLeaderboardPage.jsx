@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { io } from 'socket.io-client';
-import { Crown } from 'lucide-react';
+import { Crown, Trophy, Medal, Flame } from 'lucide-react';
 import { apiFetch } from '../services/api';
 import { GameClock } from '../components/GameClock';
 
@@ -9,7 +9,18 @@ export function PublicLeaderboardPage() {
   const [leaderboard, setLeaderboard] = useState([]);
   const [session, setSession] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [viewMode, setViewMode] = useState('TOP1'); // 'TOP1' | 'TOP5'
+  const [autoCycle, setAutoCycle] = useState(false);
   const prevRankMap = useRef(new Map());
+
+  // Auto-cycle view mode every 15s if enabled
+  useEffect(() => {
+    if (!autoCycle) return;
+    const interval = setInterval(() => {
+      setViewMode((prev) => (prev === 'TOP1' ? 'TOP5' : 'TOP1'));
+    }, 15000);
+    return () => clearInterval(interval);
+  }, [autoCycle]);
 
   // Set document page title
   useEffect(() => {
@@ -166,8 +177,34 @@ export function PublicLeaderboardPage() {
           </span>
         </div>
 
-        {/* Right: Timer + Live Badge */}
-        <div className="flex items-center gap-3">
+        {/* Right: View Mode Toggle + Timer + Live Badge */}
+        <div className="flex items-center gap-2.5 sm:gap-3">
+          {/* Top 1 / Top 5 Mode Switcher */}
+          <div className="flex items-center bg-black/60 p-1 rounded-lg border-2 border-black shadow-[2px_2px_0px_#000000]">
+            <button
+              type="button"
+              onClick={() => setViewMode('TOP1')}
+              className={`px-2.5 py-1 text-xs font-mono font-black rounded transition-all cursor-pointer ${
+                viewMode === 'TOP1'
+                  ? 'bg-[#F0B429] text-black shadow-[1px_1px_0px_#000000]'
+                  : 'text-slate-400 hover:text-white'
+              }`}
+            >
+              TOP 1
+            </button>
+            <button
+              type="button"
+              onClick={() => setViewMode('TOP5')}
+              className={`px-2.5 py-1 text-xs font-mono font-black rounded transition-all cursor-pointer ${
+                viewMode === 'TOP5'
+                  ? 'bg-[#F0B429] text-black shadow-[1px_1px_0px_#000000]'
+                  : 'text-slate-400 hover:text-white'
+              }`}
+            >
+              TOP 5
+            </button>
+          </div>
+
           {isSessionActive && (
             <div className="bg-[#121622] border-2 border-black px-3 py-1 rounded shadow-[3px_3px_0px_#000000] flex items-center gap-2 font-mono">
               <GameClock sessionData={session} size="sm" />
@@ -180,7 +217,7 @@ export function PublicLeaderboardPage() {
         </div>
       </header>
 
-      {/* CENTER STAGE: FIT-TO-SCREEN GRAND NEO-BRUTALIST CHAMPION PODIUM */}
+      {/* CENTER STAGE: FIT-TO-SCREEN GRAND NEO-BRUTALIST DISPLAY */}
       <main className="relative z-10 flex-1 flex flex-col justify-center max-w-5xl mx-auto w-full my-auto py-2">
         {loading ? (
           <div className="py-20 text-center font-mono text-[#F0B429] animate-pulse text-lg">
@@ -196,12 +233,9 @@ export function PublicLeaderboardPage() {
           <div className="text-center bg-[#121622] border-3 border-black rounded-xl p-8 shadow-[6px_6px_0px_#000000]">
             <span className="text-slate-400 font-mono text-xs">Awaiting active participants on the leaderboard...</span>
           </div>
-        ) : (
+        ) : viewMode === 'TOP1' ? (
           (() => {
             const top1 = leaderboard[0];
-            const isPositive = (top1.returnPercent || 0) > 0;
-            const isNegative = (top1.returnPercent || 0) < 0;
-            const profitDelta = (top1.totalValue || 0) - 20000;
 
             return (
               <div className="relative w-full">
@@ -253,6 +287,75 @@ export function PublicLeaderboardPage() {
               </div>
             );
           })()
+        ) : (
+          /* TOP 5 TOURNAMENT LEADERS PODIUM VIEW */
+          <div className="space-y-3 w-full">
+            <div className="flex items-center justify-between px-2 font-mono">
+              <span className="text-xs font-black text-[#F0B429] uppercase tracking-[0.2em] flex items-center gap-2">
+                <Trophy className="w-4 h-4" /> TOP 5 COMPETITORS
+              </span>
+              <span className="text-[10px] text-slate-500 uppercase tracking-wider">
+                Ranked by Portfolio Net Worth
+              </span>
+            </div>
+
+            <div className="space-y-2.5">
+              {leaderboard.slice(0, 5).map((trader, idx) => {
+                const isChampion = idx === 0;
+                const isRunnerUp = idx === 1;
+                const isThird = idx === 2;
+
+                const badgeBg = isChampion
+                  ? 'bg-[#F0B429] text-black'
+                  : isRunnerUp
+                  ? 'bg-slate-300 text-black'
+                  : isThird
+                  ? 'bg-amber-700 text-white'
+                  : 'bg-[#1A2030] text-slate-300';
+
+                return (
+                  <motion.div
+                    key={trader.id || trader.name}
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: idx * 0.05 }}
+                    className={`flex items-center justify-between p-3.5 sm:p-4 rounded-xl border-2 border-black shadow-[4px_4px_0px_#000000] ${
+                      isChampion
+                        ? 'bg-[#151A28] border-l-6 border-l-[#F0B429]'
+                        : 'bg-[#101420] border-l-4 border-l-slate-700'
+                    }`}
+                  >
+                    <div className="flex items-center gap-3.5 min-w-0">
+                      <span className={`w-8 h-8 rounded-lg font-mono font-black text-sm flex items-center justify-center border border-black shadow-[1px_1px_0px_#000000] shrink-0 ${badgeBg}`}>
+                        #{idx + 1}
+                      </span>
+                      <div className="min-w-0">
+                        <div className="flex items-center gap-2">
+                          <span className="font-extrabold text-base sm:text-lg text-white truncate uppercase font-sans">
+                            {trader.name}
+                          </span>
+                          {isChampion && (
+                            <span className="px-2 py-0.5 bg-[#F0B429] text-black text-[9px] font-mono font-black uppercase rounded shadow-[1px_1px_0px_#000000]">
+                              CURRENT LEADER
+                            </span>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="text-right font-mono shrink-0">
+                      <span className="text-[10px] text-slate-400 block uppercase tracking-wider">
+                        ARENA STANDING
+                      </span>
+                      <span className="text-sm sm:text-base font-black text-[#F0B429]">
+                        POS #{idx + 1}
+                      </span>
+                    </div>
+                  </motion.div>
+                );
+              })}
+            </div>
+          </div>
         )}
       </main>
 

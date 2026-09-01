@@ -143,6 +143,17 @@ function emitNewsBroadcast(data) {
   }
 }
 
+function emitFlashEventBroadcast(eventData) {
+  try {
+    if (io) {
+      io.to('traders').emit('market:flash-event', eventData);
+      io.emit('market:flash-event', eventData); // also notify public leaderboard
+    }
+  } catch (err) {
+    console.error('[Socket emitFlashEventBroadcast error]:', err.message);
+  }
+}
+
 function emitPortfolioUpdate(userId, portfolioData) {
   try {
     if (io && userId) io.to(`user:${userId}`).emit('portfolio:update', portfolioData);
@@ -241,12 +252,25 @@ async function broadcastPublicLeaderboard() {
   }
 }
 
+function emitRumorBroadcast(userIds, rumorData) {
+  try {
+    if (!io || !Array.isArray(userIds)) return;
+    userIds.forEach((userId) => {
+      io.to(`user:${userId}`).emit('rumor:leak', rumorData);
+    });
+  } catch (err) {
+    console.error('[Socket emitRumorBroadcast error]:', err.message);
+  }
+}
+
 module.exports = {
   initSocket,
   getIo,
   emitStockUpdate,
   emitStocksBatchUpdate,
   emitNewsBroadcast,
+  emitFlashEventBroadcast,
+  emitRumorBroadcast,
   emitPortfolioUpdate,
   emitBankruptAlert,
   emitActivityLog,
