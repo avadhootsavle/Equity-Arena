@@ -31,187 +31,187 @@ const ACTUAL_INDIA_STOCKS = [
 const ACTUAL_NEWS_TEMPLATES = [
   // 1. Banking (+)
   {
-    headline: 'RBI cuts interest rates by 25 basis points; banks expect huge rise in loan demand.',
+    headline: 'RBI cuts repo rate by 25 basis points; Indian banks expect huge surge in home and business loans.',
     sector: 'Banking',
     effectPercent: 15.0,
     difficulty: 'EASY',
     stockEffects: JSON.stringify([{ sector: 'Banking', effectPercent: 15.0 }]),
-    notes: 'Rate cut directly benefits HDFC Bank and ICICI Bank'
+    notes: 'RBI rate cut directly boosts lending margins for HDFC Bank and ICICI Bank'
   },
   // 2. Banking (-)
   {
-    headline: 'Banking regulator introduces stricter reserve norms; banks face margin pressure.',
+    headline: 'RBI raises cash reserve ratio (CRR); Indian private banks face higher cost of funds.',
     sector: 'Banking',
     effectPercent: -14.0,
     difficulty: 'EASY',
     stockEffects: JSON.stringify([{ sector: 'Banking', effectPercent: -14.0 }]),
-    notes: 'Margin contraction hits private banking lenders'
+    notes: 'Tighter liquidity by RBI squeezes bank lending margins'
   },
   // 3. IT (+)
   {
-    headline: 'Major US tech firms sign billion-dollar artificial intelligence contracts with Indian IT leaders.',
+    headline: 'Digital India and global tech giants sign multi-billion dollar AI deals with Indian IT majors.',
     sector: 'IT',
     effectPercent: 18.0,
     difficulty: 'EASY',
     stockEffects: JSON.stringify([{ sector: 'IT', effectPercent: 18.0 }]),
-    notes: 'AI spending boom boosts TCS and Infosys revenues'
+    notes: 'Booming AI tech order wins boost TCS and Infosys revenues'
   },
   // 4. IT (-)
   {
-    headline: 'Global client IT budgets cut amid economic slowdown; project rollouts postponed.',
+    headline: 'Indian IT sector faces visa restrictions and delayed enterprise project rollouts overseas.',
     sector: 'IT',
     effectPercent: -15.0,
     difficulty: 'EASY',
     stockEffects: JSON.stringify([{ sector: 'IT', effectPercent: -15.0 }]),
-    notes: 'Weak enterprise tech demand impacts IT consulting firms'
+    notes: 'Delayed client billing impacts Indian software exporters'
   },
   // 5. Defence (+)
   {
-    headline: 'Ministry of Defence signs major contracts for new fighter jets and advanced radar systems.',
+    headline: 'Defence Ministry awards historic ₹45,000 Crore "Make in India" contract for indigenous fighter jets and radars.',
     sector: 'Defence',
     effectPercent: 22.0,
     difficulty: 'EASY',
     stockEffects: JSON.stringify([{ sector: 'Defence', effectPercent: 22.0 }]),
-    notes: 'Defence modernization powers order backlogs for HAL and BEL'
+    notes: 'Defence procurement accelerates order backlogs for HAL and BEL'
   },
   // 6. Defence (-)
   {
-    headline: 'Parliament delays annual defence procurement budget approval pending parliamentary review.',
+    headline: 'Ministry of Defence defers annual procurement trials pending parliamentary standing committee review.',
     sector: 'Defence',
     effectPercent: -14.0,
     difficulty: 'EASY',
     stockEffects: JSON.stringify([{ sector: 'Defence', effectPercent: -14.0 }]),
-    notes: 'Contract award delays temporarily slow defence revenue recognition'
+    notes: 'Trial postponements temporarily delay defence revenue realization'
   },
   // 7. Pharma (+)
   {
-    headline: 'US FDA approves key blockbuster generic medicines with zero inspection observations.',
+    headline: 'US FDA gives clean approval to Indian manufacturing facilities of Sun Pharma and Cipla with zero observations.',
     sector: 'Pharma',
     effectPercent: 19.0,
     difficulty: 'EASY',
     stockEffects: JSON.stringify([{ sector: 'Pharma', effectPercent: 19.0 }]),
-    notes: 'Clean US FDA clearance opens major export markets for Sun Pharma and Cipla'
+    notes: 'US export clearance opens massive revenue channels for Indian pharma leaders'
   },
   // 8. Pharma (-)
   {
-    headline: 'Global raw material prices for active pharma ingredients jump sharply overnight.',
+    headline: 'National Pharmaceutical Pricing Authority (NPPA) enforces strict price caps on essential Indian medicines.',
     sector: 'Pharma',
     effectPercent: -13.0,
     difficulty: 'EASY',
     stockEffects: JSON.stringify([{ sector: 'Pharma', effectPercent: -13.0 }]),
-    notes: 'Input cost inflation squeezes pharmaceutical operating margins'
+    notes: 'Domestic price controls compress pharmaceutical profit margins'
   },
   // 9. Telecom (+)
   {
-    headline: 'Telecom operators report massive surge in mobile data usage following nationwide 5G rollout.',
+    headline: 'TRAI reports record mobile data consumption in India following massive 5G network expansion.',
     sector: 'Telecom',
     effectPercent: 17.0,
     difficulty: 'EASY',
     stockEffects: JSON.stringify([{ sector: 'Telecom', effectPercent: 17.0 }]),
-    notes: '5G adoption and higher ARPU boost Bharti Airtel and Vodafone Idea'
+    notes: 'Rapid 5G adoption boosts ARPU for Bharti Airtel and Vodafone Idea'
   },
   // 10. Telecom (-)
   {
-    headline: 'Telecom regulator orders steep compensation cuts on call termination tariffs.',
+    headline: 'Department of Telecommunications (DoT) demands higher spectrum fee dues from Indian telecom operators.',
     sector: 'Telecom',
     effectPercent: -16.0,
     difficulty: 'EASY',
     stockEffects: JSON.stringify([{ sector: 'Telecom', effectPercent: -16.0 }]),
-    notes: 'Tariff reductions lower cellular carrier operating revenue'
+    notes: 'Higher regulatory statutory levies hurt telecom cash flows'
   },
   // 11. Automobile (+)
   {
-    headline: 'Festive season car and commercial vehicle bookings surge to all-time record highs.',
+    headline: 'Diwali festive season car and SUV deliveries smash all-time Indian auto sales records.',
     sector: 'Automobile',
     effectPercent: 18.0,
     difficulty: 'EASY',
     stockEffects: JSON.stringify([{ sector: 'Automobile', effectPercent: 18.0 }]),
-    notes: 'High vehicle delivery numbers boost Tata Motors and M&M'
+    notes: 'Record festive demand triggers stock rally for Tata Motors and M&M'
   },
   // 12. Automobile (-)
   {
-    headline: 'Global supply chain snags cause severe semiconductor chip shortages for automakers.',
+    headline: 'Indian auto component manufacturers face production slowdown due to semiconductor import delays.',
     sector: 'Automobile',
     effectPercent: -15.0,
     difficulty: 'EASY',
     stockEffects: JSON.stringify([{ sector: 'Automobile', effectPercent: -15.0 }]),
-    notes: 'Assembly line cutbacks delay vehicle deliveries'
+    notes: 'Assembly line bottlenecks slow vehicle delivery times across India'
   },
   // 13. Energy (+)
   {
-    headline: 'Government discovers massive offshore oil and gas reserve; state energy production expands.',
+    headline: 'Ministry of Petroleum confirms massive deepwater natural gas discovery in the Krishna-Godavari Basin.',
     sector: 'Energy',
     effectPercent: 18.0,
     difficulty: 'EASY',
     stockEffects: JSON.stringify([{ sector: 'Energy', effectPercent: 18.0 }]),
-    notes: 'New reserves and refining margins boost Reliance and ONGC'
+    notes: 'Major domestic gas discovery significantly increases valuations of Reliance and ONGC'
   },
   // 14. Energy (-)
   {
-    headline: 'Government slaps surprise windfall tax on domestic crude oil production and refining.',
+    headline: 'Finance Ministry slaps surprise windfall tax on Indian domestic crude production and fuel exports.',
     sector: 'Energy',
     effectPercent: -16.0,
     difficulty: 'EASY',
     stockEffects: JSON.stringify([{ sector: 'Energy', effectPercent: -16.0 }]),
-    notes: 'Export taxes and refining levies eat into oil & energy earnings'
+    notes: 'Windfall export tax cuts into refinery and extraction margins'
   },
   // 15. Real Estate (+)
   {
-    headline: 'Luxury housing registrations break 10-year records as mortgage demand skyrockets.',
+    headline: 'Mumbai and Delhi-NCR luxury apartment registrations reach 10-year high amid booming Indian homeownership.',
     sector: 'Real Estate',
     effectPercent: 18.0,
     difficulty: 'EASY',
     stockEffects: JSON.stringify([{ sector: 'Real Estate', effectPercent: 18.0 }]),
-    notes: 'Record pre-sales boost property developers DLF and Godrej Properties'
+    notes: 'Surging housing demand powers pre-sales for DLF and Godrej Properties'
   },
   // 16. Real Estate (-)
   {
-    headline: 'Cement and steel building material prices spike 15%, slowing major real estate projects.',
+    headline: 'State governments across India increase municipal stamp duty and construction cess by 2%.',
     sector: 'Real Estate',
     effectPercent: -14.0,
     difficulty: 'EASY',
     stockEffects: JSON.stringify([{ sector: 'Real Estate', effectPercent: -14.0 }]),
-    notes: 'Higher construction costs dampen property development profits'
+    notes: 'Higher property taxes cool urban real estate booking momentum'
   },
   // 17. Renewable Energy (+)
   {
-    headline: 'Government announces 30% capital subsidy package for green wind and solar power projects.',
+    headline: 'Ministry of New & Renewable Energy announces ₹20,000 Crore PM-Surya Ghar solar subsidy scheme.',
     sector: 'Renewable Energy',
     effectPercent: 22.0,
     difficulty: 'EASY',
     stockEffects: JSON.stringify([{ sector: 'Renewable Energy', effectPercent: 22.0 }]),
-    notes: 'Clean energy push accelerates orders for Suzlon and financing for IREDA'
+    notes: 'National solar push accelerates turbine orders for Suzlon and financing for IREDA'
   },
   // 18. Renewable Energy (-)
   {
-    headline: 'Grid connection delays and transmission bottlenecks temporarily halt green energy projects.',
+    headline: 'Power Grid Corporation reports transmission congestion, temporarily capping green power evacuation.',
     sector: 'Renewable Energy',
     effectPercent: -16.0,
     difficulty: 'EASY',
     stockEffects: JSON.stringify([{ sector: 'Renewable Energy', effectPercent: -16.0 }]),
-    notes: 'Grid delays hold up revenue realization for renewable developers'
+    notes: 'Transmission delays postpone revenue realization for clean energy firms'
   },
   // 19. Metals (+)
   {
-    headline: 'Global infrastructure building boom triggers major shortage of steel and industrial iron ore.',
+    headline: 'National Infrastructure Pipeline (NIP) orders massive domestic steel and iron ore supply for expressways.',
     sector: 'Metals',
     effectPercent: 20.0,
     difficulty: 'EASY',
     stockEffects: JSON.stringify([{ sector: 'Metals', effectPercent: 20.0 }]),
-    notes: 'Heavy metal demand drives price surge for SAIL and NMDC'
+    notes: 'Heavy infrastructure push sparks major rally for SAIL and NMDC'
   },
   // 20. Metals (-)
   {
-    headline: 'Imported cheap metal dumping floods domestic market, pushing steel and ore prices down.',
+    headline: 'Government cuts import duties on foreign steel, allowing cheap imported steel into Indian markets.',
     sector: 'Metals',
     effectPercent: -16.0,
     difficulty: 'EASY',
     stockEffects: JSON.stringify([{ sector: 'Metals', effectPercent: -16.0 }]),
-    notes: 'Price undercutting forces margin pressure on domestic metal producers'
+    notes: 'Cheaper imported metal squeezes domestic steel producers margins'
   },
   // 21. Banking (+) & Real Estate (+)
   {
-    headline: 'Home loan interest rates drop to multi-year lows, sparking massive surge in new apartment bookings.',
+    headline: 'Indian banks slash home loan interest rates to 7.9%, sparking unprecedented wave of new home registrations.',
     sector: 'Banking',
     effectPercent: 16.0,
     difficulty: 'MEDIUM',
@@ -219,11 +219,11 @@ const ACTUAL_NEWS_TEMPLATES = [
       { sector: 'Banking', effectPercent: 15.0 },
       { sector: 'Real Estate', effectPercent: 18.0 }
     ]),
-    notes: 'Lower mortgage rates fuel both bank lending and real estate property sales'
+    notes: 'Lower interest rates drive loan growth for banks and apartment bookings for developers'
   },
   // 22. Renewable Energy (+) & Metals (+)
   {
-    headline: 'Nationwide high-speed electric railway and solar grid expansion drives huge demand for industrial steel.',
+    headline: 'Indian Railways approves 100% green energy transition, placing huge contracts for solar panels and track steel.',
     sector: 'Renewable Energy',
     effectPercent: 17.0,
     difficulty: 'MEDIUM',
@@ -231,11 +231,11 @@ const ACTUAL_NEWS_TEMPLATES = [
       { sector: 'Renewable Energy', effectPercent: 18.0 },
       { sector: 'Metals', effectPercent: 16.0 }
     ]),
-    notes: 'Green energy transit infrastructure boosts renewable energy and steel manufacturers'
+    notes: 'Railway electrification drives joint boom in green energy and industrial steel'
   },
   // 23. Automobile (+) & Metals (+)
   {
-    headline: 'Automakers report 25% jump in SUV manufacturing, ordering massive quantities of domestic steel.',
+    headline: 'Indian carmakers report 30% surge in commercial vehicle production, placing record bulk orders for domestic steel.',
     sector: 'Automobile',
     effectPercent: 15.0,
     difficulty: 'MEDIUM',
@@ -243,11 +243,11 @@ const ACTUAL_NEWS_TEMPLATES = [
       { sector: 'Automobile', effectPercent: 16.0 },
       { sector: 'Metals', effectPercent: 14.0 }
     ]),
-    notes: 'Booming car assembly directly drives metal supplier purchase orders'
+    notes: 'Surging auto manufacturing directly increases domestic steel demand'
   },
   // 24. IT (+) & Telecom (+)
   {
-    headline: 'Cloud computing adoption across India hits 80%, driving record bandwidth and enterprise tech contracts.',
+    headline: 'Digital India initiative connects 50,000 gram panchayats with high-speed fiber, awarding contracts to IT and telecom leaders.',
     sector: 'IT',
     effectPercent: 16.0,
     difficulty: 'MEDIUM',
@@ -255,11 +255,11 @@ const ACTUAL_NEWS_TEMPLATES = [
       { sector: 'IT', effectPercent: 17.0 },
       { sector: 'Telecom', effectPercent: 15.0 }
     ]),
-    notes: 'Cloud rollout lifts both IT systems providers and telecom data networks'
+    notes: 'Rural digital rollout accelerates IT software deployments and telecom data growth'
   },
   // 25. Energy (+) & Automobile (-)
   {
-    headline: 'Global crude oil prices jump 12% following tanker delays, raising petrol and diesel pump costs.',
+    headline: 'International crude oil hits $95 per barrel; Indian fuel retailers raise petrol and diesel pump prices.',
     sector: 'Energy',
     effectPercent: 18.0,
     difficulty: 'MEDIUM',
@@ -267,11 +267,11 @@ const ACTUAL_NEWS_TEMPLATES = [
       { sector: 'Energy', effectPercent: 18.0 },
       { sector: 'Automobile', effectPercent: -12.0 }
     ]),
-    notes: 'Oil companies benefit from higher crude while vehicle buyer sentiment cools'
+    notes: 'Higher fuel prices boost energy explorer earnings while cooling consumer car purchasing sentiment'
   },
   // 26. Defence (+) & IT (+)
   {
-    headline: 'Armed forces award major military cyber-defence and electronic radar contract to domestic consortium.',
+    headline: 'Indian Armed Forces award major Tri-Service secure military cloud network contract to domestic defence consortium.',
     sector: 'Defence',
     effectPercent: 20.0,
     difficulty: 'MEDIUM',
@@ -279,11 +279,11 @@ const ACTUAL_NEWS_TEMPLATES = [
       { sector: 'Defence', effectPercent: 20.0 },
       { sector: 'IT', effectPercent: 14.0 }
     ]),
-    notes: 'High-tech defence contracts boost aerospace manufacturers and IT software integrators'
+    notes: 'High-tech defence contract lifts electronic equipment makers and IT system architects'
   },
   // 27. Real Estate (-) & Banking (-)
   {
-    headline: 'Property registration tax hike implemented across top metro cities, cooling buyer inquiries.',
+    headline: 'State stamp duty and registration charges hiked by 1.5% in top metros, leading to temporary slump in home loans.',
     sector: 'Real Estate',
     effectPercent: -14.0,
     difficulty: 'MEDIUM',
@@ -291,7 +291,7 @@ const ACTUAL_NEWS_TEMPLATES = [
       { sector: 'Real Estate', effectPercent: -15.0 },
       { sector: 'Banking', effectPercent: -10.0 }
     ]),
-    notes: 'Real estate slowdown reduces property sales and dampens mortgage loan volumes'
+    notes: 'Property registration tax hike slows residential sales and mortgage disbursals'
   }
 ];
 
@@ -427,7 +427,7 @@ async function main() {
     console.log(`   [${i + 1}/20] Stock: ${stock.symbol} (${stock.name}) [${stock.sector}] — ${stock.currentPrice.toFixed(2)} IC`);
   }
 
-  // 4. Seed Intuitive, Simple News Templates
+  // 4. Seed Intuitive, Simple Indian-Centric News Templates
   for (const template of ACTUAL_NEWS_TEMPLATES) {
     await prisma.newsTemplate.create({
       data: {
@@ -440,7 +440,7 @@ async function main() {
       }
     });
   }
-  console.log(`✅ Seeded ${ACTUAL_NEWS_TEMPLATES.length} Simple & Intuitive News Templates.`);
+  console.log(`✅ Seeded ${ACTUAL_NEWS_TEMPLATES.length} India-Centric News Templates.`);
 
   console.log('🎉 ACTUAL TOURNAMENT database seeding completed successfully!');
 }
