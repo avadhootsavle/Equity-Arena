@@ -485,11 +485,19 @@ export function TraderDashboard() {
   const isTradingLocked =
     !sessionData || sessionData.status !== 'ACTIVE' || sessionData.isTradingLocked;
 
-  // Session has completed 3 hours, ended, or auto-liquidated completely
+  // Session has completed, ended, or auto-liquidated (converted 100% to cash)
   const isSessionFinished = 
-    sessionData?.status === 'ENDED' || 
-    (sessionData?.status === 'LIQUIDATING' && sessionData?.remainingSeconds === 0) ||
-    (sessionData?.id && sessionData?.status !== 'NOT_STARTED' && sessionData?.remainingSeconds === 0 && !sessionData?.isPaused);
+    Boolean(
+      sessionData?.id &&
+      sessionData?.status !== 'NOT_STARTED' &&
+      !sessionData?.isPaused &&
+      (
+        sessionData?.status === 'ENDED' ||
+        sessionData?.status === 'LIQUIDATING' ||
+        sessionData?.isLiquidated ||
+        (sessionData?.remainingSeconds !== undefined && sessionData?.remainingSeconds <= 300 && sessionData?.status === 'ACTIVE')
+      )
+    );
 
   const baseCash =
     portfolio.availableWalletBalance !== undefined
