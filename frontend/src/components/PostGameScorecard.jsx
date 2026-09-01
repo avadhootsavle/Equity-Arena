@@ -5,7 +5,6 @@ import {
   Award, 
   TrendingUp, 
   TrendingDown, 
-  ExternalLink, 
   CheckCircle2, 
   Flame, 
   ShieldCheck, 
@@ -171,14 +170,9 @@ export function PostGameScorecard({ user, portfolio, sessionData, onWatchLeaderb
         </div>
 
         <div className="flex items-center gap-2">
-          <button
-            type="button"
-            onClick={onWatchLeaderboard || (() => window.open('/leaderboard', '_blank'))}
-            className="px-3.5 py-1.5 bg-[#F0B429] hover:bg-[#ffc63d] text-black font-mono text-xs font-black uppercase rounded-lg border-2 border-black shadow-[2px_2px_0px_#000000] active:translate-x-[1px] active:translate-y-[1px] cursor-pointer flex items-center gap-1.5"
-          >
-            <span>WATCH LIVE PODIUM</span>
-            <ExternalLink className="w-3.5 h-3.5" />
-          </button>
+          <span className="px-3 py-1 bg-black border border-[#22C55E] text-[#22C55E] font-mono text-[11px] font-black uppercase rounded shadow-[2px_2px_0px_#000000]">
+            TRADING CONCLUDED
+          </span>
         </div>
       </header>
 
