@@ -198,6 +198,16 @@ router.post(['/market/adjust-all', '/stocks/adjust-all'], async (req, res) => {
     // Broadcast updated leaderboard standings to all clients & admin
     broadcastPublicLeaderboard();
 
+    return res.json({
+      message: `Adjusted all ${updatedStocks.length} stocks by ${parsedPercent >= 0 ? '+' : ''}${parsedPercent}%`,
+      stocksCount: updatedStocks.length
+    });
+  } catch (err) {
+    console.error('Market-wide adjust error:', err);
+    return res.status(500).json({ error: 'Failed to adjust market prices' });
+  }
+});
+
 // POST /admin/market/flash-event — Trigger dramatic room-wide market events (Black Swan, Bull Run, Penny Pump)
 router.post('/market/flash-event', async (req, res) => {
   try {
