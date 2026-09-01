@@ -105,11 +105,11 @@ export function PostGameScorecard({ user, sessionData, onWatchLeaderboard }) {
   }, []);
 
   const handleShare = () => {
-    const text = `🏆 I just finished the Equity Arena 3-Hour Live Trading Tournament!\n` +
-      `👤 Trader: ${user?.name || 'Student'}\n` +
-      `📊 Final Portfolio: ${stats.finalBalance.toLocaleString('en-IN')} IC (${stats.isProfitable ? '+' : ''}${stats.netPnLPercent}%)\n` +
-      `🏅 Rank: ${stats.rank ? `#${stats.rank} of ${stats.totalPlayers}` : 'Top Finisher'}\n` +
-      `#EquityArena #TradingTournament`;
+    const text = `EQUITY ARENA — OFFICIAL TOURNAMENT RESULTS\n` +
+      `Trader: ${user?.name || 'Student'}\n` +
+      `Final Portfolio: ${stats.finalBalance.toLocaleString('en-IN')} IC (${stats.isProfitable ? '+' : ''}${stats.netPnLPercent}%)\n` +
+      `Rank: ${stats.rank ? `#${stats.rank} of ${stats.totalPlayers}` : 'Top Finisher'}\n` +
+      `Event: 3-Hour Trading Arena`;
 
     if (navigator.clipboard) {
       navigator.clipboard.writeText(text);
@@ -198,7 +198,7 @@ export function PostGameScorecard({ user, sessionData, onWatchLeaderboard }) {
           <div className="flex flex-wrap items-center justify-between gap-3 border-b-2 border-black/80 pb-4">
             <div className="flex items-center gap-2">
               <span className="px-3 py-1 bg-black border border-[#F0B429] text-[#F0B429] font-mono text-xs font-black uppercase rounded-md shadow-[2px_2px_0px_#000000]">
-                ⚡ OFFICIAL TOURNAMENT SCORECARD
+                OFFICIAL TOURNAMENT SCORECARD
               </span>
               <span className="text-xs font-mono text-slate-400">
                 3-Hour Session Complete

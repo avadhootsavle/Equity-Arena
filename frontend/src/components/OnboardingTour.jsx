@@ -418,7 +418,7 @@ function LimitInteractiveWidget({ isLight }) {
           <Target className="w-5 h-5 text-[#F0B429] flex-shrink-0 mt-0.5" />
           <div className="text-xs font-mono space-y-1">
             <span className={`font-bold block ${isLight ? 'text-slate-900' : 'text-white'}`}>
-              {isBuyDiscount ? '🎯 Limit Buy Resting Below Market' : '⚡ Instant Trigger or Sell Setup'}
+              {isBuyDiscount ? 'Limit Buy Resting Below Market' : 'Instant Trigger or Sell Setup'}
             </span>
             <p className={`leading-relaxed ${isLight ? 'text-slate-700' : 'text-slate-300'}`}>
               {isBuyDiscount
@@ -524,8 +524,8 @@ function NewsInteractiveWidget({ isLight }) {
         </div>
       </div>
 
-      <p className={`text-xs font-mono text-center ${isLight ? 'text-slate-600' : 'text-slate-400'}`}>
-        ⚡ The edge belongs to the trader who acts in the first 5 seconds.
+      <p className={`text-xs font-mono text-center font-bold ${isLight ? 'text-slate-600' : 'text-slate-400'}`}>
+        The edge belongs to the trader who acts in the first 5 seconds.
       </p>
     </div>
   );

@@ -165,7 +165,7 @@ export function RumorToast({ rumor, onClose }) {
         <div className="flex items-center justify-between gap-3 pb-3 border-b border-[#EC4899]/30">
           <div className="flex items-center gap-2.5 min-w-0">
             <div className="w-7 h-7 rounded-lg bg-[#EC4899] text-black font-black flex items-center justify-center border border-black shadow-[2px_2px_0px_#000000] text-xs">
-              ⚡
+              <Radio className="w-4 h-4 text-black" />
             </div>
 
             <div className="flex items-center gap-2 truncate">
@@ -204,8 +204,8 @@ export function RumorToast({ rumor, onClose }) {
 
         {/* Status Strip */}
         <div className="flex items-center justify-between text-[11px] font-mono pt-2 border-t border-[#EC4899]/30">
-          <span className="text-slate-400 text-[10px]">
-            ⚠️ Leaked to select traders only! Public in:
+          <span className="text-slate-400 text-[10px] uppercase font-semibold">
+            Confidential to select traders. Public in:
           </span>
           <span className="text-[11px] text-[#F472B6] font-black tracking-wider">
             {Math.ceil((progress / 100) * (rumor.expiresInSeconds || 25))}s

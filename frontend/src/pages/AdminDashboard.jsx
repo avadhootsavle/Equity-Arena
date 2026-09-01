@@ -110,7 +110,7 @@ export function AdminDashboard() {
   /* Break Modal State */
   const [showBreakModal, setShowBreakModal] = useState(false);
   const [breakMinutes, setBreakMinutes] = useState(10);
-  const [breakNote, setBreakNote] = useState("☕ Refreshment Break — Grab snacks, water, and take a quick rest!");
+  const [breakNote, setBreakNote] = useState("Refreshment Break — Strategy debrief and intermission in progress.");
 
   /* Session Configurator Modal State */
   const [showSessionConfigModal, setShowSessionConfigModal] = useState(false);

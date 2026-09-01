@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { io } from 'socket.io-client';
-import { Crown, Trophy, Medal, Flame } from 'lucide-react';
+import { Crown, Trophy, Medal, Flame, Clock } from 'lucide-react';
 import { apiFetch } from '../services/api';
 import { GameClock } from '../components/GameClock';
 
@@ -224,8 +224,10 @@ export function PublicLeaderboardPage() {
             Loading real-time rankings...
           </div>
         ) : !isSessionActive && leaderboard.length === 0 ? (
-          <div className="text-center bg-[#121622] border-3 border-black rounded-xl p-8 shadow-[6px_6px_0px_#000000]">
-            <div className="text-5xl mb-3 text-[#F0B429]">⏳</div>
+          <div className="text-center bg-[#121622] border-3 border-black rounded-xl p-8 shadow-[6px_6px_0px_#000000] flex flex-col items-center">
+            <div className="w-16 h-16 rounded-2xl bg-[#F0B429]/15 border-2 border-[#F0B429] flex items-center justify-center mb-4 text-[#F0B429] shadow-[3px_3px_0px_#000000]">
+              <Clock className="w-8 h-8 text-[#F0B429]" />
+            </div>
             <h2 className="text-2xl font-bold text-white mb-1 font-mono">Session Inactive</h2>
             <p className="text-xs font-mono text-slate-400">Standings will activate once the competition begins.</p>
           </div>
@@ -269,14 +271,14 @@ export function PublicLeaderboardPage() {
                     </div>
 
                     <div className="px-4 py-1.5 bg-[#F0B429] border-2 border-black font-mono font-black text-xs text-black rounded shadow-[3px_3px_0px_#000000] flex items-center gap-2 uppercase tracking-wider">
-                      <span>★ LEADING ARENA ★</span>
+                      <span>LEADING ARENA</span>
                     </div>
                   </div>
 
                   {/* Hero Champion Name Title — Ultra Majestic & Clean */}
                   <div className="text-center py-12 sm:py-20 space-y-6">
                     <div className="inline-block bg-[#F0B429] text-black border-2 border-black px-6 py-1.5 rounded-lg font-mono text-sm font-black uppercase tracking-[0.3em] shadow-[4px_4px_0px_#000000]">
-                      ★ FIRST POSITION ★
+                      FIRST POSITION
                     </div>
                     <h2 className="text-6xl sm:text-8xl lg:text-9xl font-black text-white tracking-tight font-sans drop-shadow-[0_8px_32px_rgba(0,0,0,0.9)] uppercase">
                       {top1.name}

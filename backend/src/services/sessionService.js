@@ -56,7 +56,7 @@ async function getCurrentSession() {
       remainingSeconds,
       breakRemainingSeconds,
       breakDurationMinutes: session.breakDurationMinutes || 10,
-      breakNote: session.breakNote || "☕ Refreshment Break — Grab snacks, water, and take a quick rest!",
+      breakNote: session.breakNote || "Refreshment Break — Strategy debrief and intermission in progress.",
       volatilityLevel: activeVolatilityLevel,
       volatilityCustomPercent: activeVolatilityCustomPercent,
       isLiquidated: false,
@@ -225,7 +225,7 @@ async function pauseSession(options = {}) {
   const now = new Date();
   const breakMins = parseInt(options.breakMinutes || options.durationMinutes, 10) || 10;
   const breakEnd = new Date(now.getTime() + breakMins * 60 * 1000);
-  const defaultNote = "☕ Refreshment Break — Grab snacks, water, and take a quick rest!";
+  const defaultNote = "Refreshment Break — Strategy debrief and intermission in progress.";
   const note = (options.note && typeof options.note === 'string' && options.note.trim())
     ? options.note.trim()
     : defaultNote;
