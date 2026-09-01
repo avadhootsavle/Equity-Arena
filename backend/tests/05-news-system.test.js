@@ -26,7 +26,7 @@ async function runNewsSystemTests() {
 
     // 1. Verify News Template Seed Pool
     const templates = await prisma.newsTemplate.findMany();
-    assert(templates.length >= 30, `Verified ${templates.length} Analyst News Templates seeded in pool`);
+    assert(templates.length >= 25, `Verified ${templates.length} Analyst News Templates seeded in pool`);
 
     // 2. Multi-Stock News Template (2-Stock Cause-and-Effect)
     const multiStockTemplate = templates.find((t) => {
