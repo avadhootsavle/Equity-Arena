@@ -21,6 +21,7 @@ import { ToastStack } from '../components/ToastStack';
 import { StockDetailModal } from '../components/StockDetailModal';
 import { OnboardingTour } from '../components/OnboardingTour';
 import { IntermissionOverlay } from '../components/IntermissionOverlay';
+import { PostGameScorecard } from '../components/PostGameScorecard';
 import { NewsToast, RumorToast } from '../components/NewsToast';
 import { playNewsChime, playIntermissionStartSound } from '../services/soundService';
 
@@ -484,6 +485,12 @@ export function TraderDashboard() {
   const isTradingLocked =
     !sessionData || sessionData.status !== 'ACTIVE' || sessionData.isTradingLocked;
 
+  // Session has completed 3 hours, ended, or auto-liquidated completely
+  const isSessionFinished = 
+    sessionData?.status === 'ENDED' || 
+    (sessionData?.status === 'LIQUIDATING' && sessionData?.remainingSeconds === 0) ||
+    (sessionData?.id && sessionData?.status !== 'NOT_STARTED' && sessionData?.remainingSeconds === 0 && !sessionData?.isPaused);
+
   const baseCash =
     portfolio.availableWalletBalance !== undefined
       ? portfolio.availableWalletBalance
@@ -686,6 +693,16 @@ export function TraderDashboard() {
   /* ---------------------------------------------------------------
      Render
      --------------------------------------------------------------- */
+  if (isSessionFinished) {
+    return (
+      <PostGameScorecard
+        user={user}
+        sessionData={sessionData}
+        onWatchLeaderboard={() => window.open('/leaderboard', '_blank')}
+      />
+    );
+  }
+
   return (
     <div className="min-h-screen theme-bg-main theme-text-main">
       <Sidebar activeTab={activeTab} setActiveTab={setActiveTab} counts={navCounts} />
