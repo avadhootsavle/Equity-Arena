@@ -485,7 +485,7 @@ export function TraderDashboard() {
   const isTradingLocked =
     !sessionData || sessionData.status !== 'ACTIVE' || sessionData.isTradingLocked;
 
-  // Session has completed, ended, or auto-liquidated (converted 100% to cash)
+  // Session has reached liquidation phase or ended completely
   const isSessionFinished = 
     Boolean(
       sessionData?.id &&
@@ -493,9 +493,7 @@ export function TraderDashboard() {
       !sessionData?.isPaused &&
       (
         sessionData?.status === 'ENDED' ||
-        sessionData?.status === 'LIQUIDATING' ||
-        sessionData?.isLiquidated ||
-        (sessionData?.remainingSeconds !== undefined && sessionData?.remainingSeconds <= 300 && sessionData?.status === 'ACTIVE')
+        sessionData?.status === 'LIQUIDATING'
       )
     );
 
