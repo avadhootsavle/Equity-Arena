@@ -1,439 +1,376 @@
 const { PrismaClient } = require('@prisma/client');
 const bcrypt = require('bcryptjs');
+const fs = require('fs');
+const path = require('path');
 
 const prisma = new PrismaClient();
 
-const INDIA_SECTOR_STOCKS = [
-  // --- PENNY STOCKS (~1.50–8.50 IC) ---
-  { symbol: 'ZTEL', name: 'Zenith Telelink', sector: 'Telecom', basePrice: 2.40 },
-  { symbol: 'SPTI', name: 'Spark Textile Industries', sector: 'Textiles', basePrice: 3.80 },
-  { symbol: 'KMIN', name: 'Kuber Mineral Resources', sector: 'Mining', basePrice: 4.50 },
-  { symbol: 'OMEX', name: 'Omkar Exports', sector: 'Trading/Exports', basePrice: 5.90 },
-  { symbol: 'NVPW', name: 'Navkar Power Systems', sector: 'Renewable Energy', basePrice: 7.20 },
-
-  // --- LOW TIER (~30–100 IC) ---
-  { symbol: 'ANAG', name: 'Annapurna Agro', sector: 'Agriculture', basePrice: 42.50 },
-  { symbol: 'BRM', name: 'Bazaar Retail Mart', sector: 'Retail', basePrice: 58.00 },
-  { symbol: 'SWST', name: 'Swarna Studios', sector: 'Media/Entertainment', basePrice: 66.40 },
-  { symbol: 'SGE', name: 'Surya Green Energy', sector: 'Renewable Energy', basePrice: 78.20 },
-  { symbol: 'GSL', name: 'Ganga Shipping Lines', sector: 'Shipping/Logistics', basePrice: 89.50 },
-
-  // --- MID TIER (~100–500 IC) ---
-  { symbol: 'ABAL', name: 'AirBharat Airlines', sector: 'Aviation', basePrice: 145.00 },
-  { symbol: 'BWT', name: 'BharatWave Telecom', sector: 'Telecom', basePrice: 185.00 },
-  { symbol: 'HTM', name: 'Hindustan TurboMotors', sector: 'Automobile', basePrice: 260.00 },
-  { symbol: 'SANP', name: 'Sanjeevani Pharma', sector: 'Pharmaceuticals', basePrice: 340.00 },
-  { symbol: 'NITI', name: 'Nimbus InfoTech India', sector: 'Technology', basePrice: 420.00 },
-  { symbol: 'MRI', name: 'Meridian Realty India', sector: 'Real Estate', basePrice: 490.00 },
-
-  // --- HIGH TIER (~1,000–4,000 IC) ---
-  { symbol: 'BPTE', name: 'Bharat PetroEnergy', sector: 'Oil & Gas', basePrice: 1250.00 },
-  { symbol: 'IDW', name: 'Indus Defence Works', sector: 'Defense', basePrice: 1850.00 },
-  { symbol: 'RTB', name: 'Rashtriya Trust Bank', sector: 'Banking/Finance', basePrice: 2650.00 },
-  { symbol: 'SGM', name: 'Suvarna Gold Mining', sector: 'Precious Metals', basePrice: 3500.00 }
+const ACTUAL_INDIA_STOCKS = [
+  { symbol: 'HDFC', name: 'HDFC Bank', sector: 'Banking', basePrice: 1800.00 },
+  { symbol: 'ICIC', name: 'ICICI Bank', sector: 'Banking', basePrice: 1250.00 },
+  { symbol: 'TCS', name: 'TCS', sector: 'IT', basePrice: 4200.00 },
+  { symbol: 'INFY', name: 'Infosys', sector: 'IT', basePrice: 1600.00 },
+  { symbol: 'HAL', name: 'HAL', sector: 'Defence', basePrice: 5000.00 },
+  { symbol: 'BEL', name: 'BEL', sector: 'Defence', basePrice: 420.00 },
+  { symbol: 'SUNP', name: 'Sun Pharma', sector: 'Pharma', basePrice: 1900.00 },
+  { symbol: 'CIPL', name: 'Cipla', sector: 'Pharma', basePrice: 1500.00 },
+  { symbol: 'AIRT', name: 'Bharti Airtel', sector: 'Telecom', basePrice: 1850.00 },
+  { symbol: 'IDEA', name: 'Vodafone Idea', sector: 'Telecom', basePrice: 18.00 },
+  { symbol: 'TATA', name: 'Tata Motors', sector: 'Automobile', basePrice: 950.00 },
+  { symbol: 'M&M', name: 'Mahindra & Mahindra', sector: 'Automobile', basePrice: 3000.00 },
+  { symbol: 'RELI', name: 'Reliance Industries', sector: 'Energy', basePrice: 2900.00 },
+  { symbol: 'ONGC', name: 'ONGC', sector: 'Energy', basePrice: 350.00 },
+  { symbol: 'DLF', name: 'DLF', sector: 'Real Estate', basePrice: 850.00 },
+  { symbol: 'GODR', name: 'Godrej Properties', sector: 'Real Estate', basePrice: 2700.00 },
+  { symbol: 'SUZL', name: 'Suzlon', sector: 'Renewable Energy', basePrice: 75.00 },
+  { symbol: 'IRED', name: 'IREDA', sector: 'Renewable Energy', basePrice: 95.00 },
+  { symbol: 'SAIL', name: 'SAIL', sector: 'Metals', basePrice: 98.00 },
+  { symbol: 'NMDC', name: 'NMDC', sector: 'Metals', basePrice: 90.00 }
 ];
 
-const ANALYST_NEWS_TEMPLATES = [
-  // --- EASY (Obvious single-sector signals) ---
+const ACTUAL_NEWS_TEMPLATES = [
+  // 1. Banking (+)
   {
-    headline: "Bumper monsoon rainfall driven by favorable weather patterns has pushed crop yields to a 5-year high nationwide.",
-    sector: "Agriculture",
-    effectPercent: 18.0,
-    difficulty: "EASY",
-    stockEffects: JSON.stringify([{ sector: "Agriculture", effectPercent: 18.0 }]),
-    notes: "Direct positive impact on agricultural processors"
+    headline: 'RBI cuts repo rate by 25 basis points; Indian banks expect huge surge in home and business loans.',
+    sector: 'Banking',
+    effectPercent: 15.0,
+    difficulty: 'EASY',
+    stockEffects: JSON.stringify([{ sector: 'Banking', effectPercent: 15.0 }]),
+    notes: 'RBI rate cut directly boosts lending margins for HDFC Bank and ICICI Bank'
   },
+  // 2. Banking (-)
   {
-    headline: "Global defense ministries announced a 15% increase in procurement budgets following heightened regional security concerns.",
-    sector: "Defense",
+    headline: 'RBI raises cash reserve ratio (CRR); Indian private banks face higher cost of funds.',
+    sector: 'Banking',
+    effectPercent: -14.0,
+    difficulty: 'EASY',
+    stockEffects: JSON.stringify([{ sector: 'Banking', effectPercent: -14.0 }]),
+    notes: 'Tighter liquidity by RBI squeezes bank lending margins'
+  },
+  // 3. IT (+)
+  {
+    headline: 'Digital India and global tech giants sign multi-billion dollar AI deals with Indian IT majors.',
+    sector: 'IT',
+    effectPercent: 18.0,
+    difficulty: 'EASY',
+    stockEffects: JSON.stringify([{ sector: 'IT', effectPercent: 18.0 }]),
+    notes: 'Booming AI tech order wins boost TCS and Infosys revenues'
+  },
+  // 4. IT (-)
+  {
+    headline: 'Indian IT sector faces visa restrictions and delayed enterprise project rollouts overseas.',
+    sector: 'IT',
+    effectPercent: -15.0,
+    difficulty: 'EASY',
+    stockEffects: JSON.stringify([{ sector: 'IT', effectPercent: -15.0 }]),
+    notes: 'Delayed client billing impacts Indian software exporters'
+  },
+  // 5. Defence (+)
+  {
+    headline: 'Defence Ministry awards historic ₹45,000 Crore "Make in India" contract for indigenous fighter jets and radars.',
+    sector: 'Defence',
     effectPercent: 22.0,
-    difficulty: "EASY",
-    stockEffects: JSON.stringify([{ sector: "Defense", effectPercent: 22.0 }]),
-    notes: "Order backlog expansion boosts defense contractors"
+    difficulty: 'EASY',
+    stockEffects: JSON.stringify([{ sector: 'Defence', effectPercent: 22.0 }]),
+    notes: 'Defence procurement accelerates order backlogs for HAL and BEL'
   },
+  // 6. Defence (-)
   {
-    headline: "A major phase-III clinical trial achieved its primary efficacy endpoint with zero adverse events reported.",
-    sector: "Pharmaceuticals",
-    effectPercent: 24.0,
-    difficulty: "EASY",
-    stockEffects: JSON.stringify([{ sector: "Pharmaceuticals", effectPercent: 24.0 }]),
-    notes: "Breakthrough clinical trial drives pharma rally"
-  },
-  {
-    headline: "The Ministry of New Energy announced a 30% capital subsidy for grid-scale solar and wind storage installations.",
-    sector: "Renewable Energy",
-    effectPercent: 20.0,
-    difficulty: "EASY",
-    stockEffects: JSON.stringify([{ sector: "Renewable Energy", effectPercent: 20.0 }]),
-    notes: "Capital subsidies boost clean energy developers"
-  },
-  {
-    headline: "A surprise summer blockbuster movie generated record box office revenues during its opening weekend.",
-    sector: "Media/Entertainment",
-    effectPercent: 16.0,
-    difficulty: "EASY",
-    stockEffects: JSON.stringify([{ sector: "Media/Entertainment", effectPercent: 16.0 }]),
-    notes: "Box office surge boosts media studio cash flow"
-  },
-  {
-    headline: "Spot gold prices surged 4% in heavy international trading following currency devaluation fears across emerging markets.",
-    sector: "Precious Metals",
-    effectPercent: 20.0,
-    difficulty: "EASY",
-    stockEffects: JSON.stringify([{ sector: "Precious Metals", effectPercent: 20.0 }]),
-    notes: "Safe haven gold demand drives precious metals rally"
-  },
-  {
-    headline: "Key auto component suppliers reported severe microchip shortages following factory downtime overseas.",
-    sector: "Automobile",
-    effectPercent: -16.0,
-    difficulty: "EASY",
-    stockEffects: JSON.stringify([{ sector: "Automobile", effectPercent: -16.0 }]),
-    notes: "Component shortages force vehicle assembly cutbacks"
-  },
-  {
-    headline: "A severe maritime blockage in a major shipping canal has stranded container vessels, causing 2-week transit delays.",
-    sector: "Shipping/Logistics",
-    effectPercent: -18.0,
-    difficulty: "EASY",
-    stockEffects: JSON.stringify([{ sector: "Shipping/Logistics", effectPercent: -18.0 }]),
-    notes: "Freight delays spike operational costs for shipping lines"
-  },
-
-  // --- MEDIUM (Requires sector knowledge & multi-sector connections) ---
-  {
-    headline: "The central bank cut its benchmark repo rate by 50 basis points to stimulate domestic credit expansion.",
-    sector: "Banking/Finance",
-    effectPercent: 16.0,
-    difficulty: "MEDIUM",
-    stockEffects: JSON.stringify([
-      { sector: "Banking/Finance", effectPercent: 16.0 },
-      { sector: "Real Estate", effectPercent: 18.0 }
-    ]),
-    notes: "Rate cut lowers borrowing costs for banks and home buyers"
-  },
-  {
-    headline: "New tariffs of 15% were announced on imported semiconductor components and tech hardware overnight.",
-    sector: "Technology",
-    effectPercent: -15.0,
-    difficulty: "MEDIUM",
-    stockEffects: JSON.stringify([
-      { sector: "Technology", effectPercent: -15.0 },
-      { sector: "Defense", effectPercent: 12.0 }
-    ]),
-    notes: "Hardware tariffs squeeze tech margins while domestic defense gains allocation"
-  },
-  {
-    headline: "A coordinated cyberattack disrupted checkout and payment systems across major e-commerce platforms overnight.",
-    sector: "Retail",
+    headline: 'Ministry of Defence defers annual procurement trials pending parliamentary standing committee review.',
+    sector: 'Defence',
     effectPercent: -14.0,
-    difficulty: "MEDIUM",
-    stockEffects: JSON.stringify([
-      { sector: "Retail", effectPercent: -14.0 },
-      { sector: "Telecom", effectPercent: -10.0 }
-    ]),
-    notes: "Downtime hits retail sales volume and telecom infrastructure trust"
+    difficulty: 'EASY',
+    stockEffects: JSON.stringify([{ sector: 'Defence', effectPercent: -14.0 }]),
+    notes: 'Trial postponements temporarily delay defence revenue realization'
   },
+  // 7. Pharma (+)
   {
-    headline: "Government approved a massive 500 billion IC infrastructure development package for highway and urban transit grids.",
-    sector: "Real Estate",
-    effectPercent: 18.0,
-    difficulty: "MEDIUM",
-    stockEffects: JSON.stringify([
-      { sector: "Real Estate", effectPercent: 18.0 },
-      { sector: "Shipping/Logistics", effectPercent: 14.0 }
-    ]),
-    notes: "Transit expansion boosts property valuations and logistics efficiency"
-  },
-  {
-    headline: "International airline passenger traffic reached all-time summer highs while jet fuel prices stabilized.",
-    sector: "Aviation",
+    headline: 'US FDA gives clean approval to Indian manufacturing facilities of Sun Pharma and Cipla with zero observations.',
+    sector: 'Pharma',
     effectPercent: 19.0,
-    difficulty: "MEDIUM",
-    stockEffects: JSON.stringify([
-      { sector: "Aviation", effectPercent: 19.0 },
-      { sector: "Retail", effectPercent: 10.0 }
-    ]),
-    notes: "Travel boom increases airline passenger yields and duty-free retail"
+    difficulty: 'EASY',
+    stockEffects: JSON.stringify([{ sector: 'Pharma', effectPercent: 19.0 }]),
+    notes: 'US export clearance opens massive revenue channels for Indian pharma leaders'
   },
+  // 8. Pharma (-)
   {
-    headline: "Nationwide 5G network expansion completed 3 months ahead of schedule, covering 90% of metro centers.",
-    sector: "Telecom",
+    headline: 'National Pharmaceutical Pricing Authority (NPPA) enforces strict price caps on essential Indian medicines.',
+    sector: 'Pharma',
+    effectPercent: -13.0,
+    difficulty: 'EASY',
+    stockEffects: JSON.stringify([{ sector: 'Pharma', effectPercent: -13.0 }]),
+    notes: 'Domestic price controls compress pharmaceutical profit margins'
+  },
+  // 9. Telecom (+)
+  {
+    headline: 'TRAI reports record mobile data consumption in India following massive 5G network expansion.',
+    sector: 'Telecom',
     effectPercent: 17.0,
-    difficulty: "MEDIUM",
-    stockEffects: JSON.stringify([
-      { sector: "Telecom", effectPercent: 17.0 },
-      { sector: "Technology", effectPercent: 14.0 }
-    ]),
-    notes: "High-speed network rollout drives data subscription and tech service revenue"
+    difficulty: 'EASY',
+    stockEffects: JSON.stringify([{ sector: 'Telecom', effectPercent: 17.0 }]),
+    notes: 'Rapid 5G adoption boosts ARPU for Bharti Airtel and Vodafone Idea'
   },
+  // 10. Telecom (-)
   {
-    headline: "Regulatory authorities introduced strict price caps on essential generic life-saving medications.",
-    sector: "Pharmaceuticals",
-    effectPercent: -14.0,
-    difficulty: "MEDIUM",
-    stockEffects: JSON.stringify([
-      { sector: "Pharmaceuticals", effectPercent: -14.0 },
-      { sector: "Agriculture", effectPercent: 8.0 }
-    ]),
-    notes: "Price capping squeezes drug manufacturer margins"
-  },
-  {
-    headline: "Eviction notices and commercial property lease defaults rose 8% across secondary business districts.",
-    sector: "Real Estate",
-    effectPercent: -15.0,
-    difficulty: "MEDIUM",
-    stockEffects: JSON.stringify([
-      { sector: "Real Estate", effectPercent: -15.0 },
-      { sector: "Banking/Finance", effectPercent: -10.0 }
-    ]),
-    notes: "Commercial property weakness increases non-performing loans for banks"
-  },
-
-  // --- HARD (Ambiguous, complex reasoning, opposite multi-sector moves) ---
-  {
-    headline: "Military conflict escalates near a vital energy strait, threatening international crude oil supply lines.",
-    sector: "Oil & Gas",
-    effectPercent: 20.0,
-    difficulty: "HARD",
-    stockEffects: JSON.stringify([
-      { sector: "Oil & Gas", effectPercent: 20.0 },
-      { sector: "Aviation", effectPercent: -18.0 }
-    ]),
-    notes: "Oil price surge benefits energy producers but crushes airline fuel margins"
-  },
-  {
-    headline: "The central bank unexpectedly raised cash reserve ratios by 75 basis points to curb overheating inflation.",
-    sector: "Banking/Finance",
+    headline: 'Department of Telecommunications (DoT) demands higher spectrum fee dues from Indian telecom operators.',
+    sector: 'Telecom',
     effectPercent: -16.0,
-    difficulty: "HARD",
-    stockEffects: JSON.stringify([
-      { sector: "Banking/Finance", effectPercent: -16.0 },
-      { sector: "Precious Metals", effectPercent: 15.0 }
-    ]),
-    notes: "Tight monetary policy pressures bank liquidity while driving safe-haven gold demand"
+    difficulty: 'EASY',
+    stockEffects: JSON.stringify([{ sector: 'Telecom', effectPercent: -16.0 }]),
+    notes: 'Higher regulatory statutory levies hurt telecom cash flows'
   },
+  // 11. Automobile (+)
   {
-    headline: "Electric vehicle adoption rates surpassed 25% of monthly car sales, supported by state battery mandates.",
-    sector: "Automobile",
-    effectPercent: 16.0,
-    difficulty: "HARD",
-    stockEffects: JSON.stringify([
-      { sector: "Automobile", effectPercent: 16.0 },
-      { sector: "Oil & Gas", effectPercent: -14.0 }
-    ]),
-    notes: "EV surge boosts motor manufacturers while signaling long-term gasoline demand decline"
-  },
-  {
-    headline: "A prolonged heatwave drove record electricity grid demand, forcing peak-load emergency dispatching.",
-    sector: "Renewable Energy",
+    headline: 'Diwali festive season car and SUV deliveries smash all-time Indian auto sales records.',
+    sector: 'Automobile',
     effectPercent: 18.0,
-    difficulty: "HARD",
-    stockEffects: JSON.stringify([
-      { sector: "Renewable Energy", effectPercent: 18.0 },
-      { sector: "Agriculture", effectPercent: -12.0 }
-    ]),
-    notes: "Peak power demand drives clean energy generation while drought hurts crop yields"
+    difficulty: 'EASY',
+    stockEffects: JSON.stringify([{ sector: 'Automobile', effectPercent: 18.0 }]),
+    notes: 'Record festive demand triggers stock rally for Tata Motors and M&M'
   },
+  // 12. Automobile (-)
   {
-    headline: "Domestic currency weakened 3.5% against the US Dollar amidst global trade balance adjustments.",
-    sector: "Technology",
-    effectPercent: 15.0,
-    difficulty: "HARD",
-    stockEffects: JSON.stringify([
-      { sector: "Technology", effectPercent: 15.0 },
-      { sector: "Shipping/Logistics", effectPercent: -12.0 }
-    ]),
-    notes: "Export-heavy IT services benefit from dollar realization while import logistics cost spikes"
+    headline: 'Indian auto component manufacturers face production slowdown due to semiconductor import delays.',
+    sector: 'Automobile',
+    effectPercent: -15.0,
+    difficulty: 'EASY',
+    stockEffects: JSON.stringify([{ sector: 'Automobile', effectPercent: -15.0 }]),
+    notes: 'Assembly line bottlenecks slow vehicle delivery times across India'
   },
+  // 13. Energy (+)
   {
-    headline: "Unseasonal unseasonal hailstorms damaged wheat and sugarcane belts across central agricultural states.",
-    sector: "Agriculture",
+    headline: 'Ministry of Petroleum confirms massive deepwater natural gas discovery in the Krishna-Godavari Basin.',
+    sector: 'Energy',
+    effectPercent: 18.0,
+    difficulty: 'EASY',
+    stockEffects: JSON.stringify([{ sector: 'Energy', effectPercent: 18.0 }]),
+    notes: 'Major domestic gas discovery significantly increases valuations of Reliance and ONGC'
+  },
+  // 14. Energy (-)
+  {
+    headline: 'Finance Ministry slaps surprise windfall tax on Indian domestic crude production and fuel exports.',
+    sector: 'Energy',
     effectPercent: -16.0,
-    difficulty: "HARD",
-    stockEffects: JSON.stringify([
-      { sector: "Agriculture", effectPercent: -16.0 },
-      { sector: "Precious Metals", effectPercent: 10.0 }
-    ]),
-    notes: "Crop destruction hurts agro processors while rural hedging drives gold purchases"
+    difficulty: 'EASY',
+    stockEffects: JSON.stringify([{ sector: 'Energy', effectPercent: -16.0 }]),
+    notes: 'Windfall export tax cuts into refinery and extraction margins'
   },
+  // 15. Real Estate (+)
   {
-    headline: "A major streaming platform announced a joint venture with a leading national telecom operator for exclusive content.",
-    sector: "Media/Entertainment",
-    effectPercent: 17.0,
-    difficulty: "HARD",
-    stockEffects: JSON.stringify([
-      { sector: "Media/Entertainment", effectPercent: 17.0 },
-      { sector: "Telecom", effectPercent: 12.0 }
-    ]),
-    notes: "Content partnership drives subscriber monetization for both media and telecom"
-  },
-  {
-    headline: "Stringent new carbon emission compliance penalties were enacted across heavy industrial manufacturing sectors.",
-    sector: "Renewable Energy",
-    effectPercent: 16.0,
-    difficulty: "HARD",
-    stockEffects: JSON.stringify([
-      { sector: "Renewable Energy", effectPercent: 16.0 },
-      { sector: "Automobile", effectPercent: -10.0 }
-    ]),
-    notes: "Carbon penalties favor renewable energy offset providers while raising automaker compliance costs"
-  },
-
-  // --- REALISTIC CROSS-SECTOR CAUSE-AND-EFFECT TEMPLATES ---
-  {
-    headline: "A major digital banking platform reported a security incident affecting online transactions overnight. Technology providers linked to the platform's infrastructure are also facing scrutiny.",
-    sector: "Banking/Finance",
-    effectPercent: -15.0,
-    difficulty: "MEDIUM",
-    stockEffects: JSON.stringify([
-      { sector: "Banking/Finance", effectPercent: -15.0 },
-      { sector: "Technology", effectPercent: -12.0 }
-    ]),
-    notes: "Cybersecurity incident at digital banking hub impacts both banking operations and core tech infrastructure suppliers."
-  },
-  {
-    headline: "A leading bank announced a new AI-driven fraud detection system built with a domestic technology partner, cutting processing times significantly.",
-    sector: "Banking/Finance",
-    effectPercent: 16.0,
-    difficulty: "MEDIUM",
-    stockEffects: JSON.stringify([
-      { sector: "Banking/Finance", effectPercent: 16.0 },
-      { sector: "Technology", effectPercent: 15.0 }
-    ]),
-    notes: "Fintech infrastructure partnership accelerates digital banking efficiency and software licensing revenue."
-  },
-  {
-    headline: "Fuel costs for commercial shipping have risen sharply following new export restrictions from a major oil-producing region.",
-    sector: "Oil & Gas",
+    headline: 'Mumbai and Delhi-NCR luxury apartment registrations reach 10-year high amid booming Indian homeownership.',
+    sector: 'Real Estate',
     effectPercent: 18.0,
-    difficulty: "HARD",
-    stockEffects: JSON.stringify([
-      { sector: "Oil & Gas", effectPercent: 18.0 },
-      { sector: "Shipping/Logistics", effectPercent: -16.0 }
-    ]),
-    notes: "Crude oil export limits boost energy producer cash flows while inflating maritime shipping bunker fuel expenses."
+    difficulty: 'EASY',
+    stockEffects: JSON.stringify([{ sector: 'Real Estate', effectPercent: 18.0 }]),
+    notes: 'Surging housing demand powers pre-sales for DLF and Godrej Properties'
   },
+  // 16. Real Estate (-)
   {
-    headline: "A telecom provider announced a major content-streaming partnership with a domestic studio, bundling data plans with entertainment subscriptions.",
-    sector: "Telecom",
-    effectPercent: 15.0,
-    difficulty: "MEDIUM",
-    stockEffects: JSON.stringify([
-      { sector: "Telecom", effectPercent: 15.0 },
-      { sector: "Media/Entertainment", effectPercent: 18.0 }
-    ]),
-    notes: "Streaming and mobile data bundle accelerates subscriber adoption for both telecom operator and studio."
-  },
-  {
-    headline: "Regulators approved a new agricultural biotech treatment developed jointly by a pharmaceutical firm and an agri-sciences team, expected to boost crop yields nationwide.",
-    sector: "Pharmaceuticals",
-    effectPercent: 16.0,
-    difficulty: "MEDIUM",
-    stockEffects: JSON.stringify([
-      { sector: "Pharmaceuticals", effectPercent: 16.0 },
-      { sector: "Agriculture", effectPercent: 17.0 }
-    ]),
-    notes: "Agri-pharma biotech breakthrough enhances crop yield expectations and pharmaceutical licensing income."
-  },
-  {
-    headline: "New emissions regulations require increased use of specialty metals in vehicle manufacturing, raising input costs for automakers.",
-    sector: "Precious Metals",
-    effectPercent: 18.0,
-    difficulty: "HARD",
-    stockEffects: JSON.stringify([
-      { sector: "Precious Metals", effectPercent: 18.0 },
-      { sector: "Automobile", effectPercent: -15.0 }
-    ]),
-    notes: "Catalytic emissions compliance spikes precious metals spot prices while compressing automaker gross margins."
-  },
-  {
-    headline: "The central bank signaled a shift in mortgage lending policy aimed at cooling the housing market.",
-    sector: "Banking/Finance",
+    headline: 'State governments across India increase municipal stamp duty and construction cess by 2%.',
+    sector: 'Real Estate',
     effectPercent: -14.0,
-    difficulty: "MEDIUM",
-    stockEffects: JSON.stringify([
-      { sector: "Banking/Finance", effectPercent: -14.0 },
-      { sector: "Real Estate", effectPercent: -16.0 }
-    ]),
-    notes: "Mortgage credit tightening dampens housing sales velocity and financial sector loan growth."
+    difficulty: 'EASY',
+    stockEffects: JSON.stringify([{ sector: 'Real Estate', effectPercent: -14.0 }]),
+    notes: 'Higher property taxes cool urban real estate booking momentum'
   },
+  // 17. Renewable Energy (+)
   {
-    headline: "A major retail chain reported a data outage linked to its telecom infrastructure provider, disrupting online orders for several hours.",
-    sector: "Retail",
-    effectPercent: -15.0,
-    difficulty: "MEDIUM",
-    stockEffects: JSON.stringify([
-      { sector: "Retail", effectPercent: -15.0 },
-      { sector: "Telecom", effectPercent: -12.0 }
-    ]),
-    notes: "Network infrastructure disruption halts e-commerce sales and damages telecom service reliability ratings."
+    headline: 'Ministry of New & Renewable Energy announces ₹20,000 Crore PM-Surya Ghar solar subsidy scheme.',
+    sector: 'Renewable Energy',
+    effectPercent: 22.0,
+    difficulty: 'EASY',
+    stockEffects: JSON.stringify([{ sector: 'Renewable Energy', effectPercent: 22.0 }]),
+    notes: 'National solar push accelerates turbine orders for Suzlon and financing for IREDA'
   },
+  // 18. Renewable Energy (-)
   {
-    headline: "Government redirected discretionary aerospace infrastructure spending toward emergency defense procurement for sovereign border defense.",
-    sector: "Defense",
+    headline: 'Power Grid Corporation reports transmission congestion, temporarily capping green power evacuation.',
+    sector: 'Renewable Energy',
+    effectPercent: -16.0,
+    difficulty: 'EASY',
+    stockEffects: JSON.stringify([{ sector: 'Renewable Energy', effectPercent: -16.0 }]),
+    notes: 'Transmission delays postpone revenue realization for clean energy firms'
+  },
+  // 19. Metals (+)
+  {
+    headline: 'National Infrastructure Pipeline (NIP) orders massive domestic steel and iron ore supply for expressways.',
+    sector: 'Metals',
     effectPercent: 20.0,
-    difficulty: "HARD",
-    stockEffects: JSON.stringify([
-      { sector: "Defense", effectPercent: 20.0 },
-      { sector: "Aviation", effectPercent: -14.0 }
-    ]),
-    notes: "Aerospace budget reallocation accelerates defense order backlogs while delaying commercial aviation subsidies."
+    difficulty: 'EASY',
+    stockEffects: JSON.stringify([{ sector: 'Metals', effectPercent: 20.0 }]),
+    notes: 'Heavy infrastructure push sparks major rally for SAIL and NMDC'
   },
+  // 20. Metals (-)
   {
-    headline: "State transport authorities announced capital rebates for commercial delivery fleets adopting grid-connected electric vehicles.",
-    sector: "Renewable Energy",
-    effectPercent: 17.0,
-    difficulty: "EASY",
+    headline: 'Government cuts import duties on foreign steel, allowing cheap imported steel into Indian markets.',
+    sector: 'Metals',
+    effectPercent: -16.0,
+    difficulty: 'EASY',
+    stockEffects: JSON.stringify([{ sector: 'Metals', effectPercent: -16.0 }]),
+    notes: 'Cheaper imported metal squeezes domestic steel producers margins'
+  },
+  // 21. Banking (+) & Real Estate (+)
+  {
+    headline: 'Indian banks slash home loan interest rates to 7.9%, sparking unprecedented wave of new home registrations.',
+    sector: 'Banking',
+    effectPercent: 16.0,
+    difficulty: 'MEDIUM',
     stockEffects: JSON.stringify([
-      { sector: "Renewable Energy", effectPercent: 17.0 },
-      { sector: "Automobile", effectPercent: 15.0 }
+      { sector: 'Banking', effectPercent: 15.0 },
+      { sector: 'Real Estate', effectPercent: 18.0 }
     ]),
-    notes: "Fleet electrification incentives boost renewable power demand and commercial motor vehicle production."
+    notes: 'Lower interest rates drive loan growth for banks and apartment bookings for developers'
+  },
+  // 22. Renewable Energy (+) & Metals (+)
+  {
+    headline: 'Indian Railways approves 100% green energy transition, placing huge contracts for solar panels and track steel.',
+    sector: 'Renewable Energy',
+    effectPercent: 17.0,
+    difficulty: 'MEDIUM',
+    stockEffects: JSON.stringify([
+      { sector: 'Renewable Energy', effectPercent: 18.0 },
+      { sector: 'Metals', effectPercent: 16.0 }
+    ]),
+    notes: 'Railway electrification drives joint boom in green energy and industrial steel'
+  },
+  // 23. Automobile (+) & Metals (+)
+  {
+    headline: 'Indian carmakers report 30% surge in commercial vehicle production, placing record bulk orders for domestic steel.',
+    sector: 'Automobile',
+    effectPercent: 15.0,
+    difficulty: 'MEDIUM',
+    stockEffects: JSON.stringify([
+      { sector: 'Automobile', effectPercent: 16.0 },
+      { sector: 'Metals', effectPercent: 14.0 }
+    ]),
+    notes: 'Surging auto manufacturing directly increases domestic steel demand'
+  },
+  // 24. IT (+) & Telecom (+)
+  {
+    headline: 'Digital India initiative connects 50,000 gram panchayats with high-speed fiber, awarding contracts to IT and telecom leaders.',
+    sector: 'IT',
+    effectPercent: 16.0,
+    difficulty: 'MEDIUM',
+    stockEffects: JSON.stringify([
+      { sector: 'IT', effectPercent: 17.0 },
+      { sector: 'Telecom', effectPercent: 15.0 }
+    ]),
+    notes: 'Rural digital rollout accelerates IT software deployments and telecom data growth'
+  },
+  // 25. Energy (+) & Automobile (-)
+  {
+    headline: 'International crude oil hits $95 per barrel; Indian fuel retailers raise petrol and diesel pump prices.',
+    sector: 'Energy',
+    effectPercent: 18.0,
+    difficulty: 'MEDIUM',
+    stockEffects: JSON.stringify([
+      { sector: 'Energy', effectPercent: 18.0 },
+      { sector: 'Automobile', effectPercent: -12.0 }
+    ]),
+    notes: 'Higher fuel prices boost energy explorer earnings while cooling consumer car purchasing sentiment'
+  },
+  // 26. Defence (+) & IT (+)
+  {
+    headline: 'Indian Armed Forces award major Tri-Service secure military cloud network contract to domestic defence consortium.',
+    sector: 'Defence',
+    effectPercent: 20.0,
+    difficulty: 'MEDIUM',
+    stockEffects: JSON.stringify([
+      { sector: 'Defence', effectPercent: 20.0 },
+      { sector: 'IT', effectPercent: 14.0 }
+    ]),
+    notes: 'High-tech defence contract lifts electronic equipment makers and IT system architects'
+  },
+  // 27. Real Estate (-) & Banking (-)
+  {
+    headline: 'State stamp duty and registration charges hiked by 1.5% in top metros, leading to temporary slump in home loans.',
+    sector: 'Real Estate',
+    effectPercent: -14.0,
+    difficulty: 'MEDIUM',
+    stockEffects: JSON.stringify([
+      { sector: 'Real Estate', effectPercent: -15.0 },
+      { sector: 'Banking', effectPercent: -10.0 }
+    ]),
+    notes: 'Property registration tax hike slows residential sales and mortgage disbursals'
   }
 ];
-
-function getRandomPrice40to80() {
-  const val = Math.random() * (80 - 40) + 40;
-  return Math.round(val * 100) / 100;
-}
 
 function getRandomVolume(min = 5000, max = 15000) {
   return Math.floor(Math.random() * (max - min + 1)) + min;
 }
 
 async function main() {
-  console.log('🌱 Starting database seeding...');
+  console.log('🌱 Starting ACTUAL TOURNAMENT database seeding...');
 
+  // 1. Clean previous trading logs, holdings, orders, and stocks
   await prisma.adminAuditLog.deleteMany();
   await prisma.transaction.deleteMany();
   await prisma.holding.deleteMany();
+  await prisma.order.deleteMany();
   await prisma.priceHistory.deleteMany();
   await prisma.news.deleteMany();
   await prisma.newsTemplate.deleteMany();
   await prisma.stock.deleteMany();
-  await prisma.user.deleteMany();
 
-  // Create Admin User ONLY (No new trader/user created at seeding)
-  const adminPasswordHash = await bcrypt.hash('010428', 10);
-  const adminUser = await prisma.user.create({
-    data: {
-      name: 'Admin User',
-      email: 'avadhoot@krishna.kavya',
-      passwordHash: adminPasswordHash,
-      role: 'ADMIN',
-      walletBalance: 20000,
-      isTestAccount: false
+  // 2. Preserve or restore Admin and Registered Traders
+  const existingUsers = await prisma.user.findMany();
+  console.log(`ℹ️ Found ${existingUsers.length} existing users in database.`);
+
+  if (existingUsers.length === 0) {
+    const backupPath = path.join(__dirname, '../scripts/participants-live-roster.json');
+    if (fs.existsSync(backupPath)) {
+      const savedUsers = JSON.parse(fs.readFileSync(backupPath, 'utf8'));
+      console.log(`📦 Restoring ${savedUsers.length} participants from roster backup...`);
+      for (const u of savedUsers) {
+        await prisma.user.create({
+          data: {
+            id: u.id,
+            name: u.name,
+            email: u.email,
+            phone: u.phone,
+            passwordHash: u.passwordHash,
+            role: u.role,
+            walletBalance: 20000,
+            isTestAccount: u.isTestAccount || false,
+            isPreloaded: true,
+            hasLoggedIn: false
+          }
+        });
+      }
     }
-  });
-  console.log(`✅ Created Admin user: ${adminUser.email}`);
+  } else {
+    // Reset all trader wallets back to fresh 20,000 IC
+    await prisma.user.updateMany({
+      where: { role: 'TRADER' },
+      data: { walletBalance: 20000, hasLoggedIn: false }
+    });
+    console.log('✅ Reset all registered participants back to 20,000 IC wallet balance.');
+  }
 
+  // Ensure Admin User exists
+  const adminPasswordHash = await bcrypt.hash('010428', 10);
+  const existingAdmin = await prisma.user.findFirst({ where: { role: 'ADMIN' } });
+  if (!existingAdmin) {
+    await prisma.user.create({
+      data: {
+        name: 'Admin User',
+        email: 'avadhoot@krishna.kavya',
+        passwordHash: adminPasswordHash,
+        role: 'ADMIN',
+        walletBalance: 20000,
+        isTestAccount: false
+      }
+    });
+    console.log('✅ Created Admin user: avadhoot@krishna.kavya');
+  }
+
+  // 3. Seed the 20 Actual Stocks with Dynamic Price Histories
   const now = Date.now();
   const ONE_HOUR = 60 * 60 * 1000;
   const ONE_DAY = 24 * ONE_HOUR;
 
-  for (let i = 0; i < INDIA_SECTOR_STOCKS.length; i++) {
-    const item = INDIA_SECTOR_STOCKS[i];
+  for (let i = 0; i < ACTUAL_INDIA_STOCKS.length; i++) {
+    const item = ACTUAL_INDIA_STOCKS[i];
     const basePrice = item.basePrice;
     const minPrice = Math.max(1.00, Math.round(basePrice * 0.20 * 100) / 100);
     const maxPrice = Math.round(basePrice * 2.50 * 100) / 100;
@@ -487,17 +424,25 @@ async function main() {
         }
       }
     });
-    console.log(`   [${i + 1}/15] Stock: ${stock.symbol} (${stock.name}) [${stock.sector}] — ${stock.currentPrice.toFixed(2)} IC`);
+    console.log(`   [${i + 1}/20] Stock: ${stock.symbol} (${stock.name}) [${stock.sector}] — ${stock.currentPrice.toFixed(2)} IC`);
   }
 
-  for (const template of ANALYST_NEWS_TEMPLATES) {
+  // 4. Seed Intuitive, Simple Indian-Centric News Templates
+  for (const template of ACTUAL_NEWS_TEMPLATES) {
     await prisma.newsTemplate.create({
-      data: template
+      data: {
+        headline: template.headline,
+        sector: template.sector,
+        effectPercent: template.effectPercent,
+        difficulty: template.difficulty,
+        stockEffects: template.stockEffects,
+        notes: template.notes
+      }
     });
   }
-  console.log(`✅ Seeded ${ANALYST_NEWS_TEMPLATES.length} Analyst-Style News Templates.`);
+  console.log(`✅ Seeded ${ACTUAL_NEWS_TEMPLATES.length} India-Centric News Templates.`);
 
-  console.log(`🎉 Database seeding completed successfully!`);
+  console.log('🎉 ACTUAL TOURNAMENT database seeding completed successfully!');
 }
 
 main()

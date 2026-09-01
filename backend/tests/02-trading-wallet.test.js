@@ -38,7 +38,7 @@ async function runTradingWalletTests() {
     });
 
     const stock = await prisma.stock.findFirst({
-      where: { currentPrice: { lte: 50 } }
+      orderBy: { currentPrice: 'asc' }
     });
 
     assert(stock !== null, `Target stock found: ${stock?.symbol} @ ${stock?.currentPrice.toFixed(2)} IC`);

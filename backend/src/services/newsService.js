@@ -279,7 +279,7 @@ async function ensureNewsTemplatesSeeded() {
       }
     }
     const count = await prisma.newsTemplate.count();
-    console.log(`✅ Verified ${count} Analyst News Templates in database (34 total pool).`);
+    console.log(`✅ Verified ${count} Analyst News Templates in database (${ALL_NEWS_TEMPLATES.length} total pool).`);
   } catch (err) {
     console.error('Error seeding news templates:', err.message);
   }
