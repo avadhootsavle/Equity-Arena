@@ -69,10 +69,6 @@ export function AdminDashboard() {
   const [rumorSearchQuery, setRumorSearchQuery] = useState('');
   const [rumorDelaySeconds, setRumorDelaySeconds] = useState(25);
 
-  /* Flash Market Events State */
-  const [triggeringFlashEvent, setTriggeringFlashEvent] = useState(false);
-  const [confirmFlashEvent, setConfirmFlashEvent] = useState(null); // 'CRASH' | 'BULL_RUN' | 'PENNY_PUMP'
-
   const [leaderboard, setLeaderboard] = useState([]);
   const [loadingLeaderboard, setLoadingLeaderboard] = useState(false);
   const [liveTradeFeed, setLiveTradeFeed] = useState([]);
@@ -561,26 +557,6 @@ export function AdminDashboard() {
       showToast(err.message || 'Failed to leak rumor', 'error');
     } finally {
       setTriggeringTemplateId(null);
-    }
-  };
-
-  const handleTriggerFlashEvent = async (type) => {
-    setTriggeringFlashEvent(true);
-    try {
-      const res = await apiFetch('/admin/market/flash-event', {
-        method: 'POST',
-        body: JSON.stringify({ type })
-      });
-
-      playNewsChime();
-      showToast(res.message || 'Market flash event triggered live!', 'success');
-      setConfirmFlashEvent(null);
-      fetchStocks();
-      fetchLeaderboard();
-    } catch (err) {
-      showToast(err.message || 'Failed to trigger flash event', 'error');
-    } finally {
-      setTriggeringFlashEvent(false);
     }
   };
 
@@ -1647,106 +1623,6 @@ export function AdminDashboard() {
                 </div>
               </div>
             </div>
-
-            {/* Flash Market Events (Black Swan, Bull Run, Penny Squeeze) */}
-            <div className="mb-2 p-2 bg-[#121622] border-2 border-black rounded-lg shadow-[2px_2px_0px_#000000] flex flex-wrap items-center justify-between gap-2 font-mono shrink-0">
-              <div className="flex items-center gap-1.5 text-xs font-black text-[#F0B429] uppercase">
-                <span>⚡ FLASH MARKET EVENTS:</span>
-              </div>
-
-              <div className="flex items-center gap-2 flex-wrap">
-                {/* Black Swan Crash */}
-                {confirmFlashEvent === 'CRASH' ? (
-                  <div className="flex items-center gap-1 bg-[#EF4444]/20 border border-[#EF4444] px-2 py-0.5 rounded text-xs">
-                    <span className="text-[#EF4444] font-bold">Trigger -15% Crash?</span>
-                    <button
-                      type="button"
-                      disabled={triggeringFlashEvent}
-                      onClick={() => handleTriggerFlashEvent('CRASH')}
-                      className="px-2 py-0.5 bg-[#EF4444] text-white font-black rounded uppercase cursor-pointer text-[10px]"
-                    >
-                      {triggeringFlashEvent ? 'CRASHING...' : 'CONFIRM'}
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => setConfirmFlashEvent(null)}
-                      className="px-1.5 py-0.5 bg-black/40 text-slate-400 rounded text-[10px] cursor-pointer"
-                    >
-                      ✕
-                    </button>
-                  </div>
-                ) : (
-                  <button
-                    type="button"
-                    onClick={() => setConfirmFlashEvent('CRASH')}
-                    className="px-2.5 py-1 bg-[#EF4444]/15 hover:bg-[#EF4444]/30 border border-[#EF4444]/50 text-[#EF4444] font-extrabold text-[10.5px] rounded-md transition-all cursor-pointer flex items-center gap-1"
-                  >
-                    <span>🚨 BLACK SWAN (-15%)</span>
-                  </button>
-                )}
-
-                {/* Market Boom Rally */}
-                {confirmFlashEvent === 'BULL_RUN' ? (
-                  <div className="flex items-center gap-1 bg-[#22C55E]/20 border border-[#22C55E] px-2 py-0.5 rounded text-xs">
-                    <span className="text-[#22C55E] font-bold">Trigger +18% Rally?</span>
-                    <button
-                      type="button"
-                      disabled={triggeringFlashEvent}
-                      onClick={() => handleTriggerFlashEvent('BULL_RUN')}
-                      className="px-2 py-0.5 bg-[#22C55E] text-black font-black rounded uppercase cursor-pointer text-[10px]"
-                    >
-                      {triggeringFlashEvent ? 'PUMPING...' : 'CONFIRM'}
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => setConfirmFlashEvent(null)}
-                      className="px-1.5 py-0.5 bg-black/40 text-slate-400 rounded text-[10px] cursor-pointer"
-                    >
-                      ✕
-                    </button>
-                  </div>
-                ) : (
-                  <button
-                    type="button"
-                    onClick={() => setConfirmFlashEvent('BULL_RUN')}
-                    className="px-2.5 py-1 bg-[#22C55E]/15 hover:bg-[#22C55E]/30 border border-[#22C55E]/50 text-[#22C55E] font-extrabold text-[10.5px] rounded-md transition-all cursor-pointer flex items-center gap-1"
-                  >
-                    <span>🚀 BOOM RALLY (+18%)</span>
-                  </button>
-                )}
-
-                {/* Penny Stock Squeeze */}
-                {confirmFlashEvent === 'PENNY_PUMP' ? (
-                  <div className="flex items-center gap-1 bg-[#EC4899]/20 border border-[#EC4899] px-2 py-0.5 rounded text-xs">
-                    <span className="text-[#EC4899] font-bold">Pump Random Penny (+38%)?</span>
-                    <button
-                      type="button"
-                      disabled={triggeringFlashEvent}
-                      onClick={() => handleTriggerFlashEvent('PENNY_PUMP')}
-                      className="px-2 py-0.5 bg-[#EC4899] text-black font-black rounded uppercase cursor-pointer text-[10px]"
-                    >
-                      {triggeringFlashEvent ? 'PUMPING...' : 'CONFIRM'}
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => setConfirmFlashEvent(null)}
-                      className="px-1.5 py-0.5 bg-black/40 text-slate-400 rounded text-[10px] cursor-pointer"
-                    >
-                      ✕
-                    </button>
-                  </div>
-                ) : (
-                  <button
-                    type="button"
-                    onClick={() => setConfirmFlashEvent('PENNY_PUMP')}
-                    className="px-2.5 py-1 bg-[#EC4899]/15 hover:bg-[#EC4899]/30 border border-[#EC4899]/50 text-[#EC4899] font-extrabold text-[10.5px] rounded-md transition-all cursor-pointer flex items-center gap-1"
-                  >
-                    <span>⚡ PENNY SQUEEZE (+38%)</span>
-                  </button>
-                )}
-              </div>
-            </div>
-
             {/* Scrollable Compact Stock Rows with Subtle Hover Highlight */}
             <div className="flex-1 overflow-y-auto pr-1 space-y-1.5 min-h-0 font-mono">
               {loadingStocks ? (

@@ -2,7 +2,7 @@ const express = require('express');
 const bcrypt = require('bcryptjs');
 const { PrismaClient } = require('@prisma/client');
 const { authenticateToken, requireAdmin } = require('../middleware/authMiddleware');
-const { emitStockUpdate, emitNewsBroadcast, emitFlashEventBroadcast, emitRumorBroadcast, emitPortfolioUpdate, emitActivityLog, broadcastPublicLeaderboard } = require('../socket');
+const { emitStockUpdate, emitNewsBroadcast, emitRumorBroadcast, emitPortfolioUpdate, emitActivityLog, broadcastPublicLeaderboard } = require('../socket');
 const { checkAndExecuteLimitOrders } = require('../services/orderService');
 const { applyNewsImpact, steerMacroMoveForNews, triggerOrganicRamp } = require('../services/marketTicker');
 const { getUsedTemplateIds, markTemplateUsed } = require('../services/sessionService');
@@ -205,121 +205,6 @@ router.post(['/market/adjust-all', '/stocks/adjust-all'], async (req, res) => {
   } catch (err) {
     console.error('Market-wide adjust error:', err);
     return res.status(500).json({ error: 'Failed to adjust market prices' });
-  }
-});
-
-// POST /admin/market/flash-event — Trigger dramatic room-wide market events (Black Swan, Bull Run, Penny Pump)
-router.post('/market/flash-event', async (req, res) => {
-  try {
-    const { type } = req.body; // 'CRASH' | 'BULL_RUN' | 'PENNY_PUMP'
-    let eventTitle = '';
-    let eventHeadline = '';
-    let affectedStocks = [];
-    let percentChange = 0;
-
-    const allStocks = await prisma.stock.findMany();
-    if (allStocks.length === 0) {
-      return res.status(400).json({ error: 'No stocks in market' });
-    }
-
-    if (type === 'CRASH') {
-      eventTitle = 'BLACK SWAN CRASH';
-      eventHeadline = '🚨 EMERGENCY FLASH: Macro Liquidity Crunch Hits Exchange! Broad Selling Wave.';
-      percentChange = -15;
-      affectedStocks = allStocks;
-    } else if (type === 'BULL_RUN') {
-      eventTitle = 'MARKET BOOM RALLY';
-      eventHeadline = '🚀 BREAKING BULL RUN: Global Sovereign Fund Inflow Sparks Market-Wide Buying Frenzy!';
-      percentChange = 18;
-      affectedStocks = allStocks;
-    } else if (type === 'PENNY_PUMP') {
-      // Pick random penny/low-cost stock
-      const pennyStocks = allStocks.filter(s => s.currentPrice < 150);
-      const chosen = pennyStocks.length > 0
-        ? pennyStocks[Math.floor(Math.random() * pennyStocks.length)]
-        : allStocks[Math.floor(Math.random() * allStocks.length)];
-
-      eventTitle = 'PENNY STOCK SQUEEZE';
-      eventHeadline = `⚡ SHORT SQUEEZE ALERT: Massive Whale Buy Order Hits ${chosen.name} (${chosen.symbol})!`;
-      percentChange = 38;
-      affectedStocks = [chosen];
-    } else {
-      return res.status(400).json({ error: 'Invalid event type. Use CRASH, BULL_RUN, or PENNY_PUMP.' });
-    }
-
-    // Apply immediate price shift and price histories
-    for (const stock of affectedStocks) {
-      const rawNewPrice = stock.currentPrice * (1 + percentChange / 100);
-      const newPrice = Math.max(0.50, Math.round(rawNewPrice * 100) / 100);
-      const highVolume = Math.floor(Math.random() * 80000) + 70000;
-
-      const [updatedStock, newHistory] = await prisma.$transaction([
-        prisma.stock.update({
-          where: { id: stock.id },
-          data: { currentPrice: newPrice }
-        }),
-        prisma.priceHistory.create({
-          data: {
-            stockId: stock.id,
-            price: newPrice,
-            volume: highVolume
-          }
-        })
-      ]);
-
-      const pChange = stock.basePrice > 0
-        ? Math.round((((newPrice - stock.basePrice) / stock.basePrice) * 100) * 100) / 100
-        : 0;
-
-      emitStockUpdate({
-        stockId: updatedStock.id,
-        symbol: updatedStock.symbol,
-        name: updatedStock.name,
-        newPrice: updatedStock.currentPrice,
-        volume: newHistory.volume,
-        percentChange: pChange,
-        timestamp: newHistory.timestamp
-      });
-
-      await checkAndExecuteLimitOrders(updatedStock.id, newPrice);
-    }
-
-    // Create and broadcast breaking news
-    const news = await prisma.news.create({
-      data: {
-        message: eventHeadline,
-        stockId: affectedStocks.length === 1 ? affectedStocks[0].id : null
-      }
-    });
-
-    emitNewsBroadcast({
-      id: news.id,
-      message: news.message,
-      stockId: news.stockId,
-      stockSymbol: affectedStocks.length === 1 ? affectedStocks[0].symbol : null,
-      timestamp: news.timestamp
-    });
-
-    // Emit special flash-event animation banner
-    emitFlashEventBroadcast({
-      type,
-      title: eventTitle,
-      headline: eventHeadline,
-      percentChange,
-      affectedCount: affectedStocks.length,
-      timestamp: Date.now()
-    });
-
-    broadcastPublicLeaderboard();
-
-    return res.json({
-      message: `${eventTitle} triggered successfully across ${affectedStocks.length} stocks (${percentChange >= 0 ? '+' : ''}${percentChange}%)`,
-      type,
-      affectedCount: affectedStocks.length
-    });
-  } catch (err) {
-    console.error('Market flash event error:', err);
-    return res.status(500).json({ error: 'Failed to trigger market flash event' });
   }
 });
 
