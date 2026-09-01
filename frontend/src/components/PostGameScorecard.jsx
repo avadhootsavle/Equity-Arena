@@ -6,7 +6,6 @@ import {
   TrendingUp, 
   TrendingDown, 
   ExternalLink, 
-  Sparkles, 
   CheckCircle2, 
   Flame, 
   ShieldCheck, 
@@ -72,15 +71,8 @@ export function PostGameScorecard({ user, portfolio, sessionData, onWatchLeaderb
     const netPnLPercent = Math.round(((netPnL / initialBalance) * 100) * 100) / 100;
     const isProfitable = netPnL >= 0;
 
-    // Top percentile calculation
-    const percentile = rank ? Math.max(1, Math.round((rank / totalPlayers) * 100)) : 50;
-
-    // Badges computation
+    // Badges computation — based on personal performance, keeping rank suspenseful for ceremony
     const badges = [];
-    if (rank === 1) badges.push({ title: 'Arena Champion', desc: 'Finished #1 Overall', icon: Crown, color: '#F0B429' });
-    else if (rank && rank <= 3) badges.push({ title: 'Podium Finisher', desc: 'Top 3 Competitor', icon: Trophy, color: '#F59E0B' });
-    else if (rank && rank <= 10) badges.push({ title: 'Top 10 Master', desc: 'Elite Trader Decile', icon: Award, color: '#3B82F6' });
-
     if (netPnLPercent >= 50) {
       badges.push({ title: 'Alpha Bull', desc: '+50% Portfolio Boom', icon: Flame, color: '#EF4444' });
     } else if (isProfitable) {
@@ -88,16 +80,14 @@ export function PostGameScorecard({ user, portfolio, sessionData, onWatchLeaderb
     }
 
     badges.push({ title: 'Diamond Hands', desc: 'Survived 3-Hour Arena', icon: ShieldCheck, color: '#A855F7' });
-    badges.push({ title: 'Fully Liquidated', desc: 'All Positions Cleared', icon: Coins, color: '#06B6D4' });
+    badges.push({ title: 'Fully Liquidated', desc: '100% Cash Secured', icon: Coins, color: '#06B6D4' });
 
     return {
       finalBalance,
       netPnL,
       netPnLPercent,
       isProfitable,
-      rank,
       totalPlayers,
-      percentile,
       badges
     };
   }, [user, leaderboard]);
@@ -217,7 +207,7 @@ export function PostGameScorecard({ user, portfolio, sessionData, onWatchLeaderb
             </div>
           </div>
 
-          {/* Hero Welcome & Ranking Highlight */}
+          {/* Hero Welcome & Official Notice */}
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-6">
             <div>
               <span className="text-xs font-mono text-[#F0B429] font-black uppercase tracking-widest">
@@ -231,70 +221,50 @@ export function PostGameScorecard({ user, portfolio, sessionData, onWatchLeaderb
               </p>
             </div>
 
-            {/* Rank Podium Badge */}
-            <div className="bg-[#0B0D13] border-3 border-black rounded-2xl p-4 sm:p-5 text-center shrink-0 shadow-[4px_4px_0px_#000000] min-w-[150px]">
-              <span className="text-[10px] font-mono text-slate-400 uppercase font-black tracking-wider block">
-                FINAL TOURNAMENT STANDING
+            {/* Official Ceremony Announcement Notice */}
+            <div className="bg-[#0B0D13] border-3 border-[#F0B429] rounded-2xl p-4 sm:p-5 text-center shrink-0 shadow-[4px_4px_0px_#000000] min-w-[200px]">
+              <span className="text-[10px] font-mono text-[#F0B429] uppercase font-black tracking-wider block">
+                FINAL TOURNAMENT RANKINGS
               </span>
-              <div className="text-4xl sm:text-5xl font-black font-mono text-[#F0B429] my-1">
-                {loadingLeaderboard ? (
-                  <span className="text-2xl animate-pulse">CALC...</span>
-                ) : stats.rank ? (
-                  `#${stats.rank}`
-                ) : (
-                  'TOP'
-                )}
+              <div className="text-xl sm:text-2xl font-black font-mono text-white my-1">
+                ANNOUNCING LIVE
               </div>
               <span className="text-[11px] font-mono text-slate-300 font-bold block">
-                out of {stats.totalPlayers} participants
+                Podium Ceremony in Progress
               </span>
             </div>
           </div>
 
           {/* Key Metric Financial Pillars */}
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3.5 font-mono">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 font-mono">
             {/* Final Cash Liquidated */}
-            <div className="bg-[#0F121C] border-2 border-black rounded-xl p-4 shadow-[3px_3px_0px_#000000]">
-              <span className="text-[10px] uppercase font-bold text-slate-400 block tracking-wider">
+            <div className="bg-[#0F121C] border-2 border-black rounded-xl p-5 shadow-[4px_4px_0px_#000000]">
+              <span className="text-xs uppercase font-bold text-slate-400 block tracking-wider">
                 FINAL PORTFOLIO (LIQUID CASH)
               </span>
-              <div className="text-2xl sm:text-3xl font-black text-white mt-1">
-                {stats.finalBalance.toLocaleString('en-IN', { maximumFractionDigits: 2 })} <span className="text-sm text-[#F0B429]">IC</span>
+              <div className="text-3xl sm:text-4xl font-black text-white mt-1.5">
+                {stats.finalBalance.toLocaleString('en-IN', { maximumFractionDigits: 2 })} <span className="text-base text-[#F0B429]">IC</span>
               </div>
-              <span className="text-[10px] text-slate-500 mt-0.5 block">
-                Started with 20,000.00 IC
+              <span className="text-xs text-slate-500 mt-1 block">
+                Initial starting capital: 20,000.00 IC
               </span>
             </div>
 
             {/* Total Net Profit / Loss */}
-            <div className="bg-[#0F121C] border-2 border-black rounded-xl p-4 shadow-[3px_3px_0px_#000000]">
-              <span className="text-[10px] uppercase font-bold text-slate-400 block tracking-wider">
+            <div className="bg-[#0F121C] border-2 border-black rounded-xl p-5 shadow-[4px_4px_0px_#000000]">
+              <span className="text-xs uppercase font-bold text-slate-400 block tracking-wider">
                 NET ARENA RETURN (P&L)
               </span>
-              <div className={`text-2xl sm:text-3xl font-black mt-1 flex items-center gap-1.5 ${
+              <div className={`text-3xl sm:text-4xl font-black mt-1.5 flex items-center gap-2 ${
                 stats.isProfitable ? 'text-emerald-400' : 'text-rose-400'
               }`}>
-                {stats.isProfitable ? <TrendingUp className="w-6 h-6" /> : <TrendingDown className="w-6 h-6" />}
+                {stats.isProfitable ? <TrendingUp className="w-7 h-7" /> : <TrendingDown className="w-7 h-7" />}
                 <span>
                   {stats.netPnL >= 0 ? '+' : ''}{stats.netPnL.toLocaleString('en-IN', { maximumFractionDigits: 2 })} IC
                 </span>
               </div>
-              <span className="text-[10px] text-slate-500 mt-0.5 block">
+              <span className="text-xs text-slate-500 mt-1 block font-bold">
                 ROI: {stats.netPnLPercent >= 0 ? '+' : ''}{stats.netPnLPercent}%
-              </span>
-            </div>
-
-            {/* Performance Percentile */}
-            <div className="bg-[#0F121C] border-2 border-black rounded-xl p-4 shadow-[3px_3px_0px_#000000]">
-              <span className="text-[10px] uppercase font-bold text-slate-400 block tracking-wider">
-                TOURNAMENT PERCENTILE
-              </span>
-              <div className="text-2xl sm:text-3xl font-black text-[#F0B429] mt-1 flex items-center gap-1">
-                <Sparkles className="w-5 h-5 text-[#F0B429]" />
-                <span>Top {stats.percentile}%</span>
-              </div>
-              <span className="text-[10px] text-slate-500 mt-0.5 block">
-                Against {stats.totalPlayers} college peers
               </span>
             </div>
           </div>
