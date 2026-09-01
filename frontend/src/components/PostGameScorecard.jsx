@@ -10,9 +10,7 @@ import {
   CheckCircle2, 
   Flame, 
   ShieldCheck, 
-  Share2, 
-  Download,
-  Coins,
+  Coins, 
   Crown
 } from 'lucide-react';
 import { apiFetch } from '../services/api';
@@ -203,9 +201,6 @@ export function PostGameScorecard({ user, portfolio, sessionData, onWatchLeaderb
           ref={scorecardRef}
           className="bg-[#151926] border-3 border-black rounded-3xl p-6 sm:p-8 md:p-10 shadow-[10px_10px_0px_#000000] space-y-6 relative overflow-hidden"
         >
-          {/* Subtle Watermark Trophy */}
-          <Trophy className="absolute -right-8 -bottom-8 w-80 h-80 text-white/3 pointer-events-none" />
-
           {/* Banner Tag */}
           <div className="flex flex-wrap items-center justify-between gap-3 border-b-2 border-black/80 pb-4">
             <div className="flex items-center gap-2">
@@ -337,31 +332,14 @@ export function PostGameScorecard({ user, portfolio, sessionData, onWatchLeaderb
             </div>
           </div>
 
-          {/* Action Bar: Share & Save */}
-          <div className="pt-3 border-t-2 border-black/80 flex flex-wrap items-center justify-between gap-3">
-            <div className="text-[11px] font-mono text-slate-400">
+          {/* Clean Terminal Footer */}
+          <div className="pt-4 border-t-2 border-black/80 flex flex-wrap items-center justify-between gap-2 text-xs font-mono">
+            <span className="text-slate-400">
               Session verified by Equity Arena Engine • Official College Tournament
-            </div>
-
-            <div className="flex items-center gap-2">
-              <button
-                type="button"
-                onClick={handleShare}
-                className="px-3.5 py-2 bg-[#2D3142] hover:bg-[#3D4258] text-white font-mono text-xs font-bold rounded-lg border-2 border-black shadow-[2px_2px_0px_#000000] active:translate-x-[1px] active:translate-y-[1px] cursor-pointer flex items-center gap-1.5"
-              >
-                <Share2 className="w-3.5 h-3.5 text-[#F0B429]" />
-                <span>{copied ? 'COPIED SUMMARY!' : 'SHARE SCORE'}</span>
-              </button>
-
-              <button
-                type="button"
-                onClick={handlePrintOrSave}
-                className="px-3.5 py-2 bg-white hover:bg-slate-200 text-black font-mono text-xs font-black uppercase rounded-lg border-2 border-black shadow-[2px_2px_0px_#000000] active:translate-x-[1px] active:translate-y-[1px] cursor-pointer flex items-center gap-1.5"
-              >
-                <Download className="w-3.5 h-3.5 text-black" />
-                <span>SAVE / PRINT</span>
-              </button>
-            </div>
+            </span>
+            <span className="px-2.5 py-1 bg-black border border-emerald-500 text-emerald-400 font-bold rounded shadow-[2px_2px_0px_#000000]">
+              OFFICIAL RESULTS FINALIZED
+            </span>
           </div>
         </motion.div>
       </main>
