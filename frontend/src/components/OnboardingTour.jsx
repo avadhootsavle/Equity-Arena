@@ -198,48 +198,55 @@ function MarketInteractiveWidget({ isLight }) {
       }}
     >
       {/* Header */}
-      <div className={`flex items-center justify-between border-b pb-3 ${isLight ? 'border-slate-200' : 'border-white/[0.08]'}`}>
-        <div className="flex items-center gap-2">
-          <Building className="w-4 h-4 text-[#F0B429]" />
-          <span className={`font-mono text-xs font-bold uppercase tracking-widest ${isLight ? 'text-slate-900' : 'text-white'}`}>
-            20 Listed Indian Equities Directory
-          </span>
+      <div className={`flex items-center justify-between border-b pb-3.5 ${isLight ? 'border-slate-300' : 'border-white/15'}`}>
+        <div className="flex items-center gap-2.5">
+          <div className="w-7 h-7 rounded-lg bg-[#F0B429] flex items-center justify-center text-black font-black">
+            <Building className="w-4 h-4" />
+          </div>
+          <div>
+            <span className={`font-mono text-xs font-black uppercase tracking-wider block ${isLight ? 'text-slate-900' : 'text-white'}`}>
+              20 Listed Equities Directory
+            </span>
+            <span className={`text-[11px] font-medium block ${isLight ? 'text-slate-600' : 'text-slate-400'}`}>
+              Click any stock below to inspect its business profile
+            </span>
+          </div>
         </div>
-        <span className="text-[10px] font-mono text-emerald-400 bg-emerald-500/10 px-2 py-0.5 rounded border border-emerald-500/20 font-bold">
-          20 / 20 STOCKS ACTIVE
+        <span className="text-[11px] font-mono text-emerald-400 bg-emerald-500/15 px-2.5 py-1 rounded-md border border-emerald-500/30 font-bold">
+          20 / 20 ACTIVE
         </span>
       </div>
 
       {/* Search & Filter Bar */}
-      <div className="space-y-2">
+      <div className="space-y-2.5">
         <div className="relative">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-slate-400" />
+          <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
           <input
             type="text"
-            placeholder="Search stock code, name, sector..."
+            placeholder="Search stock code (e.g. M&M, HAAL, RELI, SUZL)..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className={`w-full pl-9 pr-3 py-1.5 text-xs font-mono rounded-lg border transition-all focus:outline-none focus:border-[#F0B429] ${
+            className={`w-full pl-10 pr-4 py-2 text-xs font-mono rounded-lg border-2 transition-all focus:outline-none focus:border-[#F0B429] ${
               isLight
-                ? 'bg-slate-50 border-slate-200 text-slate-900 placeholder:text-slate-400'
-                : 'bg-white/[0.04] border-white/[0.08] text-white placeholder:text-slate-500'
+                ? 'bg-slate-50 border-slate-300 text-slate-900 placeholder:text-slate-500 font-bold'
+                : 'bg-black/50 border-white/15 text-white placeholder:text-slate-400 font-bold'
             }`}
           />
         </div>
 
         {/* Filter Badges */}
-        <div className="flex items-center gap-1.5 overflow-x-auto pb-1 scrollbar-none text-[10px] font-mono">
+        <div className="flex items-center gap-1.5 overflow-x-auto pb-1 scrollbar-none text-[11px] font-mono">
           {['ALL', 'PENNY', 'Automobile', 'Banking', 'IT', 'Defence & Aerospace', 'Pharmaceuticals', 'Telecommunications', 'Renewable Energy', 'Metals & Mining', 'Real Estate', 'Energy (Oil & Gas)'].map(sec => (
             <button
               key={sec}
               type="button"
               onClick={() => setSectorFilter(sec)}
-              className={`px-2 py-0.5 rounded whitespace-nowrap transition-all cursor-pointer font-bold ${
+              className={`px-2.5 py-1 rounded-md whitespace-nowrap transition-all cursor-pointer font-black text-[11px] border ${
                 sectorFilter === sec
-                  ? 'bg-[#F0B429] text-black shadow-sm'
+                  ? 'bg-[#F0B429] text-black border-black shadow-[2px_2px_0px_#000000]'
                   : isLight
-                    ? 'bg-slate-100 text-slate-600 hover:bg-slate-200'
-                    : 'bg-white/[0.05] text-slate-400 hover:text-white'
+                    ? 'bg-white border-slate-300 text-slate-700 hover:bg-slate-100 hover:text-black'
+                    : 'bg-white/10 border-white/10 text-slate-300 hover:bg-white/20 hover:text-white'
               }`}
             >
               {sec === 'PENNY' ? '⚡ PENNY (<100 IC)' : sec}
@@ -249,7 +256,7 @@ function MarketInteractiveWidget({ isLight }) {
       </div>
 
       {/* Scrollable Stock Selector Grid */}
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 max-h-[160px] overflow-y-auto pr-1">
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 max-h-[175px] overflow-y-auto pr-1">
         {filteredStocks.map(s => {
           const isUp = s.change >= 0;
           const isActive = s.code === activeStock;
@@ -258,28 +265,30 @@ function MarketInteractiveWidget({ isLight }) {
               key={s.code}
               type="button"
               onClick={() => setActiveStock(s.code)}
-              className={`p-2 rounded-lg text-left transition-all border cursor-pointer ${
+              className={`p-2.5 rounded-lg text-left transition-all border-2 cursor-pointer ${
                 isActive
-                  ? 'bg-amber-500/20 border-[#F0B429] shadow-[0_0_12px_rgba(240,180,41,0.25)] scale-[1.02]'
+                  ? 'bg-[#F0B429]/20 border-[#F0B429] shadow-[0_0_14px_rgba(240,180,41,0.35)] ring-1 ring-[#F0B429]'
                   : isLight
-                    ? 'bg-slate-50 border-slate-200 hover:bg-slate-100'
-                    : 'bg-white/[0.02] border-white/[0.06] hover:bg-white/[0.05]'
+                    ? 'bg-slate-50 border-slate-300 hover:border-slate-400 hover:bg-white'
+                    : 'bg-[#141A28] border-white/10 hover:border-white/25 hover:bg-[#1A2234]'
               }`}
             >
               <div className="font-mono font-black text-xs flex items-center justify-between">
-                <span className={isLight ? 'text-slate-900' : 'text-white'}>{s.code}</span>
+                <span className={`text-sm ${isActive ? 'text-[#F0B429]' : isLight ? 'text-slate-900' : 'text-white'}`}>
+                  {s.code}
+                </span>
                 {s.isPenny && (
-                  <span className="text-[8px] bg-amber-500/20 text-[#F0B429] px-1 py-0.2 rounded font-bold">
+                  <span className="text-[9px] bg-pink-500/25 text-pink-400 border border-pink-500/40 px-1.5 py-0.2 rounded font-black tracking-wider">
                     PENNY
                   </span>
                 )}
               </div>
-              <div className="flex items-baseline justify-between mt-0.5">
-                <span className={`text-[11px] font-mono font-bold ${isLight ? 'text-slate-800' : 'text-slate-200'}`}>
-                  {s.price.toFixed(2)}
+              <div className="flex items-baseline justify-between mt-1">
+                <span className={`text-xs font-mono font-black ${isLight ? 'text-slate-900' : 'text-slate-100'}`}>
+                  {s.price.toFixed(2)} IC
                 </span>
-                <span className={`text-[9px] font-mono font-bold ${isUp ? 'text-emerald-400' : 'text-rose-400'}`}>
-                  {isUp ? '▲' : '▼'}{Math.abs(s.change)}%
+                <span className={`text-[10px] font-mono font-extrabold ${isUp ? 'text-emerald-400' : 'text-rose-400'}`}>
+                  {isUp ? '▲ +' : '▼ -'}{Math.abs(s.change)}%
                 </span>
               </div>
             </button>
@@ -287,56 +296,70 @@ function MarketInteractiveWidget({ isLight }) {
         })}
       </div>
 
-      {/* Selected Stock Sector Profile & 1-Line Description Card */}
-      <div className={`p-3.5 rounded-xl border space-y-2 transition-all ${
+      {/* Selected Stock Sector Profile & High-Readability 1-Line Description Card */}
+      <div className={`p-4 rounded-xl border-2 space-y-3 transition-all ${
         isLight
-          ? 'bg-amber-500/[0.04] border-amber-500/30'
-          : 'bg-gradient-to-br from-amber-500/[0.08] to-transparent border-amber-500/30'
+          ? 'bg-amber-500/[0.08] border-amber-500/40 shadow-sm'
+          : 'bg-[#161D2B] border-amber-500/50 shadow-[0_4px_20px_rgba(0,0,0,0.5)]'
       }`}>
-        <div className="flex justify-between items-start">
-          <div>
-            <h4 className={`text-sm font-black flex items-center gap-2 ${isLight ? 'text-slate-900' : 'text-white'}`}>
-              <span className="text-[#F0B429] font-mono font-black">{sel.code}</span>
-              <span>—</span>
-              <span>{sel.name}</span>
-            </h4>
-            <div className="flex items-center gap-2 mt-0.5">
-              <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-slate-800 text-amber-300 font-bold">
-                {sel.sector}
+        <div className="flex justify-between items-start gap-2">
+          <div className="space-y-1">
+            <div className="flex items-center gap-2 flex-wrap">
+              <span className="text-[#F0B429] font-mono font-black text-base tracking-wide bg-black/40 px-2 py-0.5 rounded border border-[#F0B429]/40">
+                {sel.code}
+              </span>
+              <span className={`text-sm sm:text-base font-black ${isLight ? 'text-slate-900' : 'text-white'}`}>
+                {sel.name}
+              </span>
+            </div>
+            <div className="flex items-center gap-2">
+              <span className="text-[11px] font-mono px-2.5 py-0.5 rounded-md bg-[#232936] text-[#F0B429] font-black border border-[#F0B429]/30">
+                Sector: {sel.sector}
               </span>
               {sel.isPenny && (
-                <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-amber-500/20 text-amber-400 font-bold border border-amber-500/30">
-                  Penny Speculation
+                <span className="text-[11px] font-mono px-2.5 py-0.5 rounded-md bg-pink-500/20 text-pink-300 font-black border border-pink-500/40">
+                  ⚡ Penny Speculation (&lt;100 IC)
                 </span>
               )}
             </div>
           </div>
-          <div className="text-right font-mono">
-            <span className={`text-xs font-black block ${isLight ? 'text-slate-900' : 'text-white'}`}>
+          <div className="text-right font-mono shrink-0">
+            <span className={`text-base font-black block ${isLight ? 'text-slate-900' : 'text-white'}`}>
               {sel.price.toFixed(2)} IC
             </span>
-            <span className={`text-[10px] font-bold ${sel.change >= 0 ? 'text-emerald-400' : 'text-rose-400'}`}>
+            <span className={`text-xs font-bold ${sel.change >= 0 ? 'text-emerald-400' : 'text-rose-400'}`}>
               {sel.change >= 0 ? '▲ +' : '▼ -'}{Math.abs(sel.change)}% Spot
             </span>
           </div>
         </div>
 
-        {/* 1-Line Description Box */}
-        <div className={`p-2.5 rounded-lg border font-mono text-xs leading-relaxed ${
-          isLight ? 'bg-white border-amber-500/20 text-slate-800' : 'bg-black/40 border-amber-500/20 text-slate-200'
+        {/* Large, High-Contrast 1-Line Description Box */}
+        <div className={`p-3.5 rounded-lg border-2 leading-relaxed ${
+          isLight 
+            ? 'bg-white border-amber-500/40 text-slate-900 shadow-xs' 
+            : 'bg-[#0B0E14] border-amber-500/40 text-slate-100 shadow-inner'
         }`}>
-          <div className="flex items-start gap-1.5">
-            <span className="text-[#F0B429] font-bold">▸</span>
-            <span className="font-medium">{sel.desc}</span>
+          <div className="flex items-start gap-2.5">
+            <div className="w-5 h-5 rounded-full bg-[#F0B429] text-black font-black flex items-center justify-center text-xs shrink-0 mt-0.5">
+              i
+            </div>
+            <div>
+              <span className="text-[10px] font-mono font-black uppercase text-[#F0B429] tracking-wider block mb-0.5">
+                Company & Business Summary:
+              </span>
+              <p className="text-sm font-semibold leading-snug">
+                {sel.desc}
+              </p>
+            </div>
           </div>
         </div>
 
-        <div className={`flex items-center justify-between text-[10px] font-mono pt-1.5 border-t ${
-          isLight ? 'border-slate-200 text-slate-600' : 'border-white/[0.06] text-slate-400'
+        <div className={`flex items-center justify-between text-xs font-mono pt-2 border-t ${
+          isLight ? 'border-slate-300 text-slate-700' : 'border-white/10 text-slate-300'
         }`}>
-          <span>Volume: <strong className={isLight ? 'text-slate-900' : 'text-white'}>{sel.vol}</strong></span>
-          <span>Drift: <strong className="text-[#F0B429]">±1.5% / 6s</strong></span>
-          <span>Match Engine: <strong className="text-emerald-400">Zero Slippage</strong></span>
+          <span>Volume: <strong className={isLight ? 'text-slate-900 font-black' : 'text-white font-black'}>{sel.vol}</strong></span>
+          <span>Drift: <strong className="text-[#F0B429] font-black">±1.5% / 6s</strong></span>
+          <span>Execution: <strong className="text-emerald-400 font-black">Instant Fill</strong></span>
         </div>
       </div>
     </div>
