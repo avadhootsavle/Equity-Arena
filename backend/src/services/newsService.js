@@ -1,349 +1,394 @@
 const prisma = require('../prisma');
 
+// ALL_NEWS_TEMPLATES — 40 carefully crafted news events
+// Each template uses ACTUAL stock symbols from the database:
+// IDW (Defence), BPTE (Oil & Gas), HTM (Automobile), NITI (Technology),
+// RTB (Banking), MRI (Real Estate), SANP (Pharmaceuticals),
+// BWT/ZTEL (Telecom), SGE/NVPW (Renewable Energy), KMIN/SGM (Mining/Metals),
+// ABAL (Aviation), ANAG (Agriculture), BRM (Retail), GSL (Shipping),
+// OMEX (Exports), SPTI (Textiles), SWST (Media/Entertainment)
+
 const ALL_NEWS_TEMPLATES = [
-  // 1. Defence & Aerospace (Affects HAAL, BEEL, and Metal suppliers SAAL)
+  // 1. Defence
   {
-    "headline": "Border tensions escalate; government orders urgent emergency military fighter jets and missile radar defense systems.",
-    "sector": "Defence & Aerospace",
+    "headline": "Border tensions escalate; government places urgent emergency orders for fighter jets, missiles, and radar defence systems.",
+    "sector": "Defense",
     "effectPercent": 25,
     "difficulty": "EASY",
-    "stockEffects": "[{\"symbol\":\"HAAL\",\"effectPercent\":25},{\"symbol\":\"BEEL\",\"effectPercent\":22},{\"symbol\":\"SAAL\",\"effectPercent\":10}]",
-    "notes": "Emergency defense orders boost military aircraft (HAAL), radar electronics (BEEL), and industrial steel (SAAL)"
+    "stockEffects": "[{\"symbol\":\"IDW\",\"effectPercent\":25},{\"symbol\":\"BPTE\",\"effectPercent\":8}]",
+    "notes": "Emergency defence orders boost IDW; fuel demand rises for BPTE"
   },
   {
-    "headline": "Foreign air forces award multi-billion dollar export contract for Indian fighter aircraft and naval radar equipment.",
-    "sector": "Defence & Aerospace",
+    "headline": "Foreign governments award multi-billion dollar export contract for Indian-built defence equipment and radar systems.",
+    "sector": "Defense",
     "effectPercent": 22,
     "difficulty": "EASY",
-    "stockEffects": "[{\"symbol\":\"HAAL\",\"effectPercent\":22},{\"symbol\":\"BEEL\",\"effectPercent\":20}]",
-    "notes": "International export contracts expand revenue for HAAL and BEEL"
+    "stockEffects": "[{\"symbol\":\"IDW\",\"effectPercent\":22},{\"symbol\":\"HTM\",\"effectPercent\":6}]",
+    "notes": "Export contracts expand IDW revenue; military vehicle demand ripples into HTM"
   },
   {
-    "headline": "International peace treaty signed; government cuts military defense budget by 40% and halts new weapon tenders.",
-    "sector": "Defence & Aerospace",
+    "headline": "International peace treaty signed; government cuts military defence budget by 40% and freezes all new weapon tenders.",
+    "sector": "Defense",
     "effectPercent": -20,
     "difficulty": "EASY",
-    "stockEffects": "[{\"symbol\":\"HAAL\",\"effectPercent\":-20},{\"symbol\":\"BEEL\",\"effectPercent\":-18}]",
-    "notes": "Peace accords and defense budget cuts drop orders for HAAL and BEEL"
+    "stockEffects": "[{\"symbol\":\"IDW\",\"effectPercent\":-20},{\"symbol\":\"BPTE\",\"effectPercent\":-6}]",
+    "notes": "Peace deal collapses defence orders for IDW; fuel demand drops for BPTE"
   },
   {
-    "headline": "Ministry of Defence postpones major weapons modernisation program by two years; procurement contracts frozen.",
-    "sector": "Defence & Aerospace",
+    "headline": "Ministry of Defence postpones major weapons upgrade programme by two years; procurement contracts frozen.",
+    "sector": "Defense",
     "effectPercent": -16,
     "difficulty": "EASY",
-    "stockEffects": "[{\"symbol\":\"HAAL\",\"effectPercent\":-16},{\"symbol\":\"BEEL\",\"effectPercent\":-15}]",
-    "notes": "Procurement freeze temporarily halts defense revenue growth for HAAL and BEEL"
+    "stockEffects": "[{\"symbol\":\"IDW\",\"effectPercent\":-16}]",
+    "notes": "Procurement freeze halts defence revenue growth for IDW"
   },
 
-  // 2. Energy (Oil & Gas) + Automobile Interlinked
+  // 2. Oil & Gas + Automobile Interlinked
   {
-    "headline": "War in Middle East and Russia shuts down major pipelines; global crude oil prices spike above $120/barrel.",
-    "sector": "Energy (Oil & Gas)",
+    "headline": "War shuts down major Middle East pipelines; global crude oil prices spike above $120 per barrel.",
+    "sector": "Oil & Gas",
     "effectPercent": 24,
     "difficulty": "EASY",
-    "stockEffects": "[{\"symbol\":\"RELI\",\"effectPercent\":24},{\"symbol\":\"ONGC\",\"effectPercent\":22},{\"symbol\":\"TATV\",\"effectPercent\":-12}]",
-    "notes": "High crude oil prices boom oil producers (RELI, ONGC) while fuel inflation hurts car buyers (TATV)"
+    "stockEffects": "[{\"symbol\":\"BPTE\",\"effectPercent\":24},{\"symbol\":\"HTM\",\"effectPercent\":-10},{\"symbol\":\"ANAG\",\"effectPercent\":-8}]",
+    "notes": "Oil price spike boosts BPTE; higher fuel costs hurt HTM auto sales and ANAG farm logistics"
   },
   {
-    "headline": "Geologists discover massive offshore crude oil and natural gas fields; domestic production capacity expected to double.",
-    "sector": "Energy (Oil & Gas)",
+    "headline": "Geologists discover massive offshore crude oil and natural gas fields; domestic energy production expected to double.",
+    "sector": "Oil & Gas",
     "effectPercent": 20,
     "difficulty": "EASY",
-    "stockEffects": "[{\"symbol\":\"ONGC\",\"effectPercent\":22},{\"symbol\":\"RELI\",\"effectPercent\":18}]",
-    "notes": "Huge domestic energy discovery increases asset valuation for ONGC and RELI"
+    "stockEffects": "[{\"symbol\":\"BPTE\",\"effectPercent\":22},{\"symbol\":\"GSL\",\"effectPercent\":10}]",
+    "notes": "Big domestic oil discovery lifts BPTE; more tanker shipments boost GSL"
   },
   {
-    "headline": "Global crude oil surplus floods international market; crude petrol prices crash by 35% overnight.",
-    "sector": "Energy (Oil & Gas)",
+    "headline": "Global crude oil surplus floods international markets; petrol prices crash 35% overnight.",
+    "sector": "Oil & Gas",
     "effectPercent": -20,
     "difficulty": "EASY",
-    "stockEffects": "[{\"symbol\":\"RELI\",\"effectPercent\":-20},{\"symbol\":\"ONGC\",\"effectPercent\":-22},{\"symbol\":\"TATV\",\"effectPercent\":10}]",
-    "notes": "Oil price crash cuts exploration profits (ONGC, RELI) while cheaper fuel boosts automobile demand (TATV)"
+    "stockEffects": "[{\"symbol\":\"BPTE\",\"effectPercent\":-20},{\"symbol\":\"HTM\",\"effectPercent\":10},{\"symbol\":\"ABAL\",\"effectPercent\":12}]",
+    "notes": "Oil price crash hurts BPTE earnings; cheaper fuel boosts car demand (HTM) and airline costs drop (ABAL)"
   },
   {
     "headline": "Government imposes surprise windfall profit tax on all crude oil exploration and petroleum exports.",
-    "sector": "Energy (Oil & Gas)",
+    "sector": "Oil & Gas",
     "effectPercent": -17,
     "difficulty": "EASY",
-    "stockEffects": "[{\"symbol\":\"RELI\",\"effectPercent\":-17},{\"symbol\":\"ONGC\",\"effectPercent\":-18}]",
-    "notes": "Windfall taxes sharply reduce net revenues of domestic energy producers RELI and ONGC"
+    "stockEffects": "[{\"symbol\":\"BPTE\",\"effectPercent\":-17},{\"symbol\":\"GSL\",\"effectPercent\":-6}]",
+    "notes": "Windfall tax cuts BPTE net revenue; petroleum shipping via GSL also hit"
   },
 
-  // 3. Automobile + Metals & Mining Interlinked
+  // 3. Automobile + Retail Interlinked
   {
-    "headline": "Diwali holiday festival sees record-breaking demand; millions of Indians buy new cars, SUVs, and commercial trucks.",
+    "headline": "Festive season sees record-breaking demand; millions of Indians buy new cars, SUVs, and commercial trucks.",
     "sector": "Automobile",
     "effectPercent": 22,
     "difficulty": "EASY",
-    "stockEffects": "[{\"symbol\":\"TATV\",\"effectPercent\":22},{\"symbol\":\"M&M\",\"effectPercent\":24},{\"symbol\":\"HDFB\",\"effectPercent\":10}]",
-    "notes": "Festive car shopping boom drives automaker sales (TATV, M&M) and retail auto loans (HDFB)"
+    "stockEffects": "[{\"symbol\":\"HTM\",\"effectPercent\":22},{\"symbol\":\"BRM\",\"effectPercent\":14},{\"symbol\":\"RTB\",\"effectPercent\":8}]",
+    "notes": "Festive car rush drives HTM sales; auto accessories boost BRM; more auto loans go through RTB"
   },
   {
-    "headline": "Government greenlights massive national subsidies for electric vehicles (EVs); buyers rush to purchase electric SUVs and buses.",
+    "headline": "Government gives massive subsidies for electric vehicles; buyers rush to buy electric cars and buses.",
     "sector": "Automobile",
     "effectPercent": 20,
     "difficulty": "EASY",
-    "stockEffects": "[{\"symbol\":\"TATV\",\"effectPercent\":22},{\"symbol\":\"M&M\",\"effectPercent\":20}]",
-    "notes": "EV subsidies accelerate bookings for top electric automakers TATV and M&M"
+    "stockEffects": "[{\"symbol\":\"HTM\",\"effectPercent\":20},{\"symbol\":\"NVPW\",\"effectPercent\":14},{\"symbol\":\"SGE\",\"effectPercent\":12}]",
+    "notes": "EV subsidies lift HTM; charging stations boost renewable power demand for NVPW and SGE"
   },
   {
-    "headline": "Severe computer microchip shortage shuts down vehicle assembly factories; car and SUV deliveries delayed by 6 months.",
+    "headline": "Severe computer chip shortage shuts down vehicle assembly factories; car deliveries delayed by 6 months.",
     "sector": "Automobile",
     "effectPercent": -18,
     "difficulty": "EASY",
-    "stockEffects": "[{\"symbol\":\"TATV\",\"effectPercent\":-18},{\"symbol\":\"M&M\",\"effectPercent\":-17}]",
-    "notes": "Microchip shortages halt assembly lines and stop vehicle sales for TATV and M&M"
+    "stockEffects": "[{\"symbol\":\"HTM\",\"effectPercent\":-18},{\"symbol\":\"BRM\",\"effectPercent\":-8}]",
+    "notes": "Factory shutdowns stop vehicle sales for HTM; auto accessories also fall at BRM"
   },
   {
-    "headline": "Steel raw material prices surge 40%; automakers forced to hike vehicle prices, causing consumer car bookings to drop.",
+    "headline": "Steel prices surge 40%; automakers forced to hike car prices, causing consumer bookings to drop sharply.",
     "sector": "Automobile",
     "effectPercent": -16,
     "difficulty": "EASY",
-    "stockEffects": "[{\"symbol\":\"TATV\",\"effectPercent\":-16},{\"symbol\":\"M&M\",\"effectPercent\":-15},{\"symbol\":\"SAAL\",\"effectPercent\":14}]",
-    "notes": "Higher steel prices hurt automaker margins (TATV, M&M) while boosting steelmakers (SAAL)"
+    "stockEffects": "[{\"symbol\":\"HTM\",\"effectPercent\":-16},{\"symbol\":\"KMIN\",\"effectPercent\":14},{\"symbol\":\"SGM\",\"effectPercent\":12}]",
+    "notes": "Higher steel prices hurt HTM margins while boosting mining stocks KMIN and SGM"
   },
 
-  // 4. IT (Information Technology)
+  // 4. Technology / IT
   {
-    "headline": "Global enterprise software boom explodes; top American and European banks sign multi-billion dollar tech deals with Indian IT giants.",
-    "sector": "IT",
+    "headline": "Global enterprise software boom: major American and European banks sign multi-billion dollar tech deals with Indian IT companies.",
+    "sector": "Technology",
     "effectPercent": 22,
     "difficulty": "EASY",
-    "stockEffects": "[{\"symbol\":\"TCX\",\"effectPercent\":22},{\"symbol\":\"INFS\",\"effectPercent\":20}]",
-    "notes": "Global enterprise software contracts directly lift TCX and INFS"
+    "stockEffects": "[{\"symbol\":\"NITI\",\"effectPercent\":22},{\"symbol\":\"RTB\",\"effectPercent\":6}]",
+    "notes": "Large overseas IT contracts lift NITI; digital banking integration boosts RTB"
   },
   {
-    "headline": "Fortune 500 companies migrate entire global IT infrastructure to Indian cloud service providers; software backlogs hit record high.",
-    "sector": "IT",
+    "headline": "Fortune 500 companies migrate entire global IT systems to Indian cloud providers; software backlogs hit record high.",
+    "sector": "Technology",
     "effectPercent": 18,
     "difficulty": "EASY",
-    "stockEffects": "[{\"symbol\":\"TCX\",\"effectPercent\":18},{\"symbol\":\"INFS\",\"effectPercent\":19}]",
-    "notes": "Massive cloud contracts fuel multi-year revenue growth for TCX and INFS"
+    "stockEffects": "[{\"symbol\":\"NITI\",\"effectPercent\":19},{\"symbol\":\"SWST\",\"effectPercent\":8}]",
+    "notes": "Cloud migration contracts grow NITI multi-year revenue; digital media demand boosts SWST"
   },
   {
-    "headline": "US and Europe enter severe economic recession; global corporations freeze all software spending and cancel IT consulting contracts.",
-    "sector": "IT",
+    "headline": "US and Europe enter severe recession; global companies freeze all software spending and cancel IT contracts.",
+    "sector": "Technology",
     "effectPercent": -19,
     "difficulty": "EASY",
-    "stockEffects": "[{\"symbol\":\"TCX\",\"effectPercent\":-19},{\"symbol\":\"INFS\",\"effectPercent\":-18}]",
-    "notes": "US recession freezes corporate IT spending budgets, cutting TCX and INFS revenues"
+    "stockEffects": "[{\"symbol\":\"NITI\",\"effectPercent\":-19},{\"symbol\":\"OMEX\",\"effectPercent\":-10}]",
+    "notes": "US recession freezes IT budgets for NITI; export demand for OMEX also drops"
   },
   {
-    "headline": "Foreign governments impose strict work visa curbs and heavy offshore project taxes on Indian software engineers.",
-    "sector": "IT",
+    "headline": "Foreign governments impose strict work visa curbs and heavy taxes on Indian offshore software engineers.",
+    "sector": "Technology",
     "effectPercent": -16,
     "difficulty": "EASY",
-    "stockEffects": "[{\"symbol\":\"TCX\",\"effectPercent\":-16},{\"symbol\":\"INFS\",\"effectPercent\":-15}]",
-    "notes": "Visa restrictions increase project delivery costs and slow billing for TCX and INFS"
+    "stockEffects": "[{\"symbol\":\"NITI\",\"effectPercent\":-16}]",
+    "notes": "Visa restrictions increase delivery costs and slow billing for NITI"
   },
 
   // 5. Banking + Real Estate Interlinked
   {
-    "headline": "Reserve Bank of India (RBI) cuts interest rates sharply; borrowing becomes super cheap and home loan applications double.",
-    "sector": "Banking",
+    "headline": "Reserve Bank of India cuts interest rates sharply; borrowing becomes cheap and home loan applications double.",
+    "sector": "Banking/Finance",
     "effectPercent": 20,
     "difficulty": "EASY",
-    "stockEffects": "[{\"symbol\":\"HDFB\",\"effectPercent\":20},{\"symbol\":\"ICCO\",\"effectPercent\":19},{\"symbol\":\"DLEF\",\"effectPercent\":15},{\"symbol\":\"GODR\",\"effectPercent\":15}]",
-    "notes": "Rate cuts spark surge in banking loans (HDFB, ICCO) and fuel housing boom for builders (DLEF, GODR)"
+    "stockEffects": "[{\"symbol\":\"RTB\",\"effectPercent\":20},{\"symbol\":\"MRI\",\"effectPercent\":16},{\"symbol\":\"SPTI\",\"effectPercent\":6}]",
+    "notes": "Rate cut fuels bank lending (RTB) and housing demand (MRI); cheaper credit helps textile businesses (SPTI)"
   },
   {
-    "headline": "Indian corporate sector reports record quarterly profits; commercial bank deposit inflows and business credit reach all-time highs.",
-    "sector": "Banking",
+    "headline": "Indian corporate sector reports record quarterly profits; commercial bank deposits and business credit reach all-time highs.",
+    "sector": "Banking/Finance",
     "effectPercent": 17,
     "difficulty": "EASY",
-    "stockEffects": "[{\"symbol\":\"HDFB\",\"effectPercent\":17},{\"symbol\":\"ICCO\",\"effectPercent\":18}]",
-    "notes": "Strong corporate business expansion boosts commercial credit for HDFB and ICCO"
+    "stockEffects": "[{\"symbol\":\"RTB\",\"effectPercent\":17},{\"symbol\":\"BRM\",\"effectPercent\":10}]",
+    "notes": "Strong business profits expand bank revenues (RTB) and fuel consumer spending (BRM)"
   },
   {
-    "headline": "RBI warns of rising unpaid loan defaults; enforces heavy penalties and strict restrictions on commercial bank lending.",
-    "sector": "Banking",
+    "headline": "RBI warns of rising loan defaults; enforces heavy penalties and strict restrictions on commercial bank lending.",
+    "sector": "Banking/Finance",
     "effectPercent": -18,
     "difficulty": "EASY",
-    "stockEffects": "[{\"symbol\":\"HDFB\",\"effectPercent\":-18},{\"symbol\":\"ICCO\",\"effectPercent\":-19}]",
-    "notes": "Lending restrictions and loan default provisions hit banking profits for HDFB and ICCO"
+    "stockEffects": "[{\"symbol\":\"RTB\",\"effectPercent\":-18},{\"symbol\":\"MRI\",\"effectPercent\":-10}]",
+    "notes": "Lending restrictions hit bank profits (RTB); housing project financing slows (MRI)"
   },
   {
-    "headline": "RBI unexpectedly hikes Cash Reserve Ratio (CRR); commercial banks forced to lock away billions in zero-interest cash reserves.",
-    "sector": "Banking",
+    "headline": "RBI unexpectedly hikes Cash Reserve Ratio; banks forced to lock billions in zero-interest reserves.",
+    "sector": "Banking/Finance",
     "effectPercent": -15,
     "difficulty": "EASY",
-    "stockEffects": "[{\"symbol\":\"HDFB\",\"effectPercent\":-15},{\"symbol\":\"ICCO\",\"effectPercent\":-16}]",
-    "notes": "Tighter liquidity compresses lending margins for HDFB and ICCO"
+    "stockEffects": "[{\"symbol\":\"RTB\",\"effectPercent\":-15},{\"symbol\":\"OMEX\",\"effectPercent\":-8}]",
+    "notes": "Tighter liquidity compresses lending margins (RTB); trade finance costs rise for exporters (OMEX)"
   },
 
   // 6. Pharmaceuticals
   {
-    "headline": "New global flu virus outbreak detected; hospitals worldwide place massive bulk orders for Indian medicines and antibiotic treatments.",
+    "headline": "New global flu virus outbreak detected; hospitals worldwide place massive orders for Indian medicines and antibiotics.",
     "sector": "Pharmaceuticals",
     "effectPercent": 24,
     "difficulty": "EASY",
-    "stockEffects": "[{\"symbol\":\"SURY\",\"effectPercent\":24},{\"symbol\":\"CPLX\",\"effectPercent\":22}]",
-    "notes": "Global virus outbreak triggers huge worldwide demand for medicines from SURY and CPLX"
+    "stockEffects": "[{\"symbol\":\"SANP\",\"effectPercent\":24},{\"symbol\":\"GSL\",\"effectPercent\":10}]",
+    "notes": "Global virus scare triggers huge medicine demand for SANP; cargo shipments boost GSL"
   },
   {
-    "headline": "US FDA approves Indian generic cancer and respiratory medicines with zero manufacturing inspection objections.",
+    "headline": "US FDA approves Indian generic cancer and respiratory medicines with zero manufacturing objections.",
     "sector": "Pharmaceuticals",
     "effectPercent": 19,
     "difficulty": "EASY",
-    "stockEffects": "[{\"symbol\":\"SURY\",\"effectPercent\":18},{\"symbol\":\"CPLX\",\"effectPercent\":20}]",
-    "notes": "Clean US FDA approval unlocks lucrative export sales for SURY and CPLX"
+    "stockEffects": "[{\"symbol\":\"SANP\",\"effectPercent\":20},{\"symbol\":\"OMEX\",\"effectPercent\":8}]",
+    "notes": "Clean FDA approval unlocks lucrative US export sales for SANP; export volumes grow for OMEX"
   },
   {
-    "headline": "Health Ministry imposes strict government price caps on all essential drugs and medicines, reducing maximum retail prices.",
+    "headline": "Health Ministry imposes strict government price caps on all essential drugs, cutting maximum retail prices.",
     "sector": "Pharmaceuticals",
     "effectPercent": -18,
     "difficulty": "EASY",
-    "stockEffects": "[{\"symbol\":\"SURY\",\"effectPercent\":-18},{\"symbol\":\"CPLX\",\"effectPercent\":-17}]",
-    "notes": "Strict retail medicine price caps reduce profit margins for SURY and CPLX"
+    "stockEffects": "[{\"symbol\":\"SANP\",\"effectPercent\":-18}]",
+    "notes": "Drug price caps directly reduce SANP profit margins"
   },
   {
-    "headline": "US regulators issue import ban warnings on Indian pharmaceutical factories following quality inspection audits.",
+    "headline": "US regulators issue import ban warnings on Indian pharma factories following quality inspection failures.",
     "sector": "Pharmaceuticals",
     "effectPercent": -16,
     "difficulty": "EASY",
-    "stockEffects": "[{\"symbol\":\"SURY\",\"effectPercent\":-16},{\"symbol\":\"CPLX\",\"effectPercent\":-15}]",
-    "notes": "Regulatory import bans freeze international medicine shipments for SURY and CPLX"
+    "stockEffects": "[{\"symbol\":\"SANP\",\"effectPercent\":-16},{\"symbol\":\"OMEX\",\"effectPercent\":-10}]",
+    "notes": "Regulatory bans freeze medicine exports for SANP; export business for OMEX also hit"
   },
 
   // 7. Telecommunications
   {
-    "headline": "Mobile 5G internet streaming and online video usage hits all-time high; telecom monthly mobile recharge rates rise 20%.",
-    "sector": "Telecommunications",
+    "headline": "Mobile 5G internet usage hits all-time high; telecom companies hike monthly recharge rates by 20%.",
+    "sector": "Telecom",
     "effectPercent": 20,
     "difficulty": "EASY",
-    "stockEffects": "[{\"symbol\":\"AIRT\",\"effectPercent\":20},{\"symbol\":\"IDEA\",\"effectPercent\":25}]",
-    "notes": "Higher data usage and mobile recharge tariffs boost telecom revenue for AIRT and IDEA"
+    "stockEffects": "[{\"symbol\":\"BWT\",\"effectPercent\":20},{\"symbol\":\"ZTEL\",\"effectPercent\":22},{\"symbol\":\"SWST\",\"effectPercent\":8}]",
+    "notes": "Higher data tariffs boost BWT and ZTEL revenues; streaming content demand lifts SWST"
   },
   {
-    "headline": "Telecom regulator waives annual spectrum license fees and announces massive rural mobile network expansion grants.",
-    "sector": "Telecommunications",
+    "headline": "Telecom regulator waives spectrum license fees and announces massive rural mobile network expansion grants.",
+    "sector": "Telecom",
     "effectPercent": 18,
     "difficulty": "EASY",
-    "stockEffects": "[{\"symbol\":\"AIRT\",\"effectPercent\":17},{\"symbol\":\"IDEA\",\"effectPercent\":24}]",
-    "notes": "Spectrum fee relief directly improves cash flows for telecom operators AIRT and IDEA"
+    "stockEffects": "[{\"symbol\":\"BWT\",\"effectPercent\":17},{\"symbol\":\"ZTEL\",\"effectPercent\":20}]",
+    "notes": "Spectrum fee relief directly improves cash flows for BWT and ZTEL"
   },
   {
-    "headline": "Major undersea fiber-optic internet cables get severed in the ocean; widespread mobile internet blackout across Indian cities.",
-    "sector": "Telecommunications",
+    "headline": "Major undersea internet cables get severed; widespread mobile internet blackout hits Indian cities.",
+    "sector": "Telecom",
     "effectPercent": -18,
     "difficulty": "EASY",
-    "stockEffects": "[{\"symbol\":\"AIRT\",\"effectPercent\":-18},{\"symbol\":\"IDEA\",\"effectPercent\":-22}]",
-    "notes": "Severe network blackout disrupts telecom operations for AIRT and IDEA"
+    "stockEffects": "[{\"symbol\":\"BWT\",\"effectPercent\":-18},{\"symbol\":\"ZTEL\",\"effectPercent\":-22},{\"symbol\":\"SWST\",\"effectPercent\":-10}]",
+    "notes": "Network blackout disrupts operations for BWT and ZTEL; streaming stops for SWST"
   },
   {
-    "headline": "Supreme Court demands immediate payment of billions in overdue statutory government licensing dues from mobile telecom carriers.",
-    "sector": "Telecommunications",
+    "headline": "Supreme Court demands immediate payment of billions in overdue government licensing dues from telecom carriers.",
+    "sector": "Telecom",
     "effectPercent": -16,
     "difficulty": "EASY",
-    "stockEffects": "[{\"symbol\":\"AIRT\",\"effectPercent\":-15},{\"symbol\":\"IDEA\",\"effectPercent\":-24}]",
-    "notes": "Heavy government penalty payouts severely strain telecom balance sheets for AIRT and IDEA"
+    "stockEffects": "[{\"symbol\":\"BWT\",\"effectPercent\":-15},{\"symbol\":\"ZTEL\",\"effectPercent\":-20}]",
+    "notes": "Heavy government penalty payouts severely strain balance sheets for BWT and ZTEL"
   },
 
-  // 8. Real Estate + Metals & Mining Interlinked
+  // 8. Real Estate + Mining Interlinked
   {
-    "headline": "Homebuyers flood property market in Mumbai and Delhi; luxury residential apartments sell out within 24 hours of launch.",
+    "headline": "Homebuyers flood property markets in Mumbai and Delhi; luxury apartments sell out within 24 hours of launch.",
     "sector": "Real Estate",
     "effectPercent": 22,
     "difficulty": "EASY",
-    "stockEffects": "[{\"symbol\":\"DLEF\",\"effectPercent\":22},{\"symbol\":\"GODR\",\"effectPercent\":20},{\"symbol\":\"SAAL\",\"effectPercent\":10}]",
-    "notes": "Residential housing boom drives record sales for builders (DLEF, GODR) and building steel (SAAL)"
+    "stockEffects": "[{\"symbol\":\"MRI\",\"effectPercent\":22},{\"symbol\":\"KMIN\",\"effectPercent\":10},{\"symbol\":\"RTB\",\"effectPercent\":8}]",
+    "notes": "Housing boom drives record sales for MRI; building material mining demand rises (KMIN); home loans grow (RTB)"
   },
   {
-    "headline": "Multinational companies sign record corporate office lease agreements in major tech parks across Bengaluru and Gurugram.",
+    "headline": "Multinational companies sign record office lease deals in Bengaluru and Gurugram tech parks.",
     "sector": "Real Estate",
     "effectPercent": 18,
     "difficulty": "EASY",
-    "stockEffects": "[{\"symbol\":\"DLEF\",\"effectPercent\":19},{\"symbol\":\"GODR\",\"effectPercent\":17}]",
-    "notes": "Commercial office leasing boom elevates commercial builder valuations for DLEF and GODR"
+    "stockEffects": "[{\"symbol\":\"MRI\",\"effectPercent\":19},{\"symbol\":\"NITI\",\"effectPercent\":6}]",
+    "notes": "Commercial office leasing boom drives MRI valuations; tech companies in those parks (NITI) also benefit"
   },
   {
-    "headline": "Government hikes property registration stamp duty and cement costs soar; apartment buyers postpone new home purchases.",
+    "headline": "Government hikes property stamp duty and cement costs soar; apartment buyers postpone purchases.",
     "sector": "Real Estate",
     "effectPercent": -18,
     "difficulty": "EASY",
-    "stockEffects": "[{\"symbol\":\"DLEF\",\"effectPercent\":-18},{\"symbol\":\"GODR\",\"effectPercent\":-17}]",
-    "notes": "Higher property taxes freeze new housing bookings for DLEF and GODR"
+    "stockEffects": "[{\"symbol\":\"MRI\",\"effectPercent\":-18},{\"symbol\":\"RTB\",\"effectPercent\":-8}]",
+    "notes": "Higher property taxes freeze housing bookings (MRI) and reduce home loan demand (RTB)"
   },
   {
-    "headline": "National environmental tribunal halts residential township construction in major metro cities due to groundwater concerns.",
+    "headline": "National tribunal halts residential township construction in major cities due to groundwater concerns.",
     "sector": "Real Estate",
     "effectPercent": -15,
     "difficulty": "EASY",
-    "stockEffects": "[{\"symbol\":\"DLEF\",\"effectPercent\":-15},{\"symbol\":\"GODR\",\"effectPercent\":-14}]",
-    "notes": "Construction stay orders delay project deliveries for DLEF and GODR"
+    "stockEffects": "[{\"symbol\":\"MRI\",\"effectPercent\":-15},{\"symbol\":\"GSL\",\"effectPercent\":-6}]",
+    "notes": "Construction stay orders delay project deliveries for MRI; building material shipping falls for GSL"
   },
 
   // 9. Renewable Energy
   {
-    "headline": "Government announces ₹50,000 Crore mega subsidy package for green solar parks and giant wind turbine electricity projects.",
+    "headline": "Government announces massive ₹50,000 crore subsidy package for solar parks and wind turbine electricity projects.",
     "sector": "Renewable Energy",
     "effectPercent": 26,
     "difficulty": "EASY",
-    "stockEffects": "[{\"symbol\":\"SUZL\",\"effectPercent\":26},{\"symbol\":\"IRED\",\"effectPercent\":28}]",
-    "notes": "Mega green energy subsidies trigger massive rally for SUZL and IRED"
+    "stockEffects": "[{\"symbol\":\"SGE\",\"effectPercent\":26},{\"symbol\":\"NVPW\",\"effectPercent\":28},{\"symbol\":\"HTM\",\"effectPercent\":8}]",
+    "notes": "Green energy subsidies trigger massive rally for SGE and NVPW; electric vehicle demand helps HTM"
   },
   {
-    "headline": "State electricity boards sign 25-year guaranteed clean power purchase contracts at fixed tariffs with wind and solar producers.",
+    "headline": "State electricity boards sign 25-year guaranteed clean power purchase contracts with wind and solar producers.",
     "sector": "Renewable Energy",
     "effectPercent": 20,
     "difficulty": "EASY",
-    "stockEffects": "[{\"symbol\":\"SUZL\",\"effectPercent\":20},{\"symbol\":\"IRED\",\"effectPercent\":22}]",
-    "notes": "Guaranteed long-term power purchase tariffs secure future revenues for SUZL and IRED"
+    "stockEffects": "[{\"symbol\":\"SGE\",\"effectPercent\":20},{\"symbol\":\"NVPW\",\"effectPercent\":22}]",
+    "notes": "Long-term power purchase tariffs secure future revenues for SGE and NVPW"
   },
   {
-    "headline": "National electricity grid fails to connect newly built green power plants; wind and solar developers face severe payment delays.",
+    "headline": "Electricity grid fails to connect new green power plants; solar and wind developers face severe payment delays.",
     "sector": "Renewable Energy",
     "effectPercent": -20,
     "difficulty": "EASY",
-    "stockEffects": "[{\"symbol\":\"SUZL\",\"effectPercent\":-20},{\"symbol\":\"IRED\",\"effectPercent\":-22}]",
-    "notes": "Grid connectivity failure stalls revenue for green energy developers SUZL and IRED"
+    "stockEffects": "[{\"symbol\":\"SGE\",\"effectPercent\":-20},{\"symbol\":\"NVPW\",\"effectPercent\":-22},{\"symbol\":\"BPTE\",\"effectPercent\":8}]",
+    "notes": "Grid failures stall green energy revenue (SGE, NVPW); fossil fuel demand rises helping BPTE"
   },
   {
-    "headline": "Heavy imported solar panel customs duties imposed; green electricity project installation costs skyrocket across the country.",
+    "headline": "Heavy import duties on solar panels imposed; renewable energy project costs skyrocket across India.",
     "sector": "Renewable Energy",
     "effectPercent": -16,
     "difficulty": "EASY",
-    "stockEffects": "[{\"symbol\":\"SUZL\",\"effectPercent\":-16},{\"symbol\":\"IRED\",\"effectPercent\":-18}]",
-    "notes": "Higher equipment costs squeeze clean energy project margins for SUZL and IRED"
+    "stockEffects": "[{\"symbol\":\"SGE\",\"effectPercent\":-16},{\"symbol\":\"NVPW\",\"effectPercent\":-18},{\"symbol\":\"BPTE\",\"effectPercent\":6}]",
+    "notes": "Higher equipment costs squeeze clean energy margins (SGE, NVPW); traditional energy BPTE gains"
   },
 
-  // 10. Metals & Mining
+  // 10. Mining / Metals / Agriculture Multi-Sector
   {
-    "headline": "Government launches mega national highway, bullet train, and airport construction drive; demand for steel and iron ore skyrockets.",
-    "sector": "Metals & Mining",
+    "headline": "Government launches mega highway, bullet train, and airport construction drive; demand for minerals and metals skyrockets.",
+    "sector": "Mining",
     "effectPercent": 24,
     "difficulty": "EASY",
-    "stockEffects": "[{\"symbol\":\"SAAL\",\"effectPercent\":24},{\"symbol\":\"NMDC\",\"effectPercent\":22}]",
-    "notes": "National infrastructure construction consumes enormous amounts of steel (SAAL) and iron ore (NMDC)"
+    "stockEffects": "[{\"symbol\":\"KMIN\",\"effectPercent\":24},{\"symbol\":\"SGM\",\"effectPercent\":22},{\"symbol\":\"GSL\",\"effectPercent\":10}]",
+    "notes": "National infrastructure consumes minerals (KMIN), precious metals (SGM), and boosts material shipping (GSL)"
   },
   {
-    "headline": "International steel and iron ore benchmark prices jump 25% due to major supply bottlenecks in global iron ore mines.",
-    "sector": "Metals & Mining",
-    "effectPercent": 19,
+    "headline": "International gold prices hit all-time high; investors globally rush to buy gold and precious metal funds.",
+    "sector": "Precious Metals",
+    "effectPercent": 22,
     "difficulty": "EASY",
-    "stockEffects": "[{\"symbol\":\"SAAL\",\"effectPercent\":19},{\"symbol\":\"NMDC\",\"effectPercent\":20}]",
-    "notes": "Global commodity rally lifts domestic steel (SAAL) and iron ore (NMDC) profit margins"
+    "stockEffects": "[{\"symbol\":\"SGM\",\"effectPercent\":24},{\"symbol\":\"KMIN\",\"effectPercent\":14}]",
+    "notes": "Gold rush directly lifts Suvarna Gold Mining (SGM); related mineral mines (KMIN) also benefit"
   },
   {
-    "headline": "Foreign countries dump cheap imported steel into India at rock-bottom prices; domestic steel and iron ore demand collapses.",
-    "sector": "Metals & Mining",
+    "headline": "Foreign countries dump cheap imported steel and metals into India; domestic mineral demand collapses.",
+    "sector": "Mining",
     "effectPercent": -20,
     "difficulty": "EASY",
-    "stockEffects": "[{\"symbol\":\"SAAL\",\"effectPercent\":-20},{\"symbol\":\"NMDC\",\"effectPercent\":-18}]",
-    "notes": "Foreign steel dumping undercuts domestic steelmakers (SAAL) and iron miners (NMDC)"
+    "stockEffects": "[{\"symbol\":\"KMIN\",\"effectPercent\":-20},{\"symbol\":\"SGM\",\"effectPercent\":-15},{\"symbol\":\"SPTI\",\"effectPercent\":-8}]",
+    "notes": "Metal dumping undercuts domestic miners (KMIN, SGM); textile input costs also impacted (SPTI)"
   },
   {
-    "headline": "Ministry of Mines slaps heavy royalty export taxes on raw iron ore shipments and enforces strict mining production limits.",
-    "sector": "Metals & Mining",
-    "effectPercent": -17,
+    "headline": "Good monsoon season boosts farm output; agriculture exports hit record high and food prices stabilise across India.",
+    "sector": "Agriculture",
+    "effectPercent": 20,
     "difficulty": "EASY",
-    "stockEffects": "[{\"symbol\":\"NMDC\",\"effectPercent\":-18},{\"symbol\":\"SAAL\",\"effectPercent\":-15}]",
-    "notes": "Mining taxes and environmental output caps reduce mineral profits for NMDC and SAAL"
+    "stockEffects": "[{\"symbol\":\"ANAG\",\"effectPercent\":22},{\"symbol\":\"GSL\",\"effectPercent\":10},{\"symbol\":\"OMEX\",\"effectPercent\":14}]",
+    "notes": "Bumper harvest lifts Annapurna Agro (ANAG); more cargo shipments boost GSL; agri exports rise for OMEX"
+  },
+  {
+    "headline": "Severe drought destroys crops across major farming states; food prices spike and rural consumer spending collapses.",
+    "sector": "Agriculture",
+    "effectPercent": -20,
+    "difficulty": "EASY",
+    "stockEffects": "[{\"symbol\":\"ANAG\",\"effectPercent\":-22},{\"symbol\":\"BRM\",\"effectPercent\":-10},{\"symbol\":\"OMEX\",\"effectPercent\":-12}]",
+    "notes": "Drought devastates ANAG earnings; rural retail spending falls (BRM); agri export volumes drop (OMEX)"
   }
 ];
 
 async function ensureNewsTemplatesSeeded() {
   try {
+    // Delete all existing templates and re-seed with correct symbols
+    const existingCount = await prisma.newsTemplate.count();
+    if (existingCount > 0) {
+      // Check if existing templates have old symbols (HAAL, BEEL, RELI, etc.)
+      const oldTemplate = await prisma.newsTemplate.findFirst({
+        where: {
+          OR: [
+            { stockEffects: { contains: '"HAAL"' } },
+            { stockEffects: { contains: '"RELI"' } },
+            { stockEffects: { contains: '"SURY"' } },
+            { stockEffects: { contains: '"TATV"' } },
+            { stockEffects: { contains: '"HDFB"' } },
+            { stockEffects: { contains: '"DLEF"' } },
+            { stockEffects: { contains: '"SUZL"' } },
+            { stockEffects: { contains: '"NMDC"' } },
+            { stockEffects: { contains: '"SAAL"' } },
+            { stockEffects: { contains: '"TCX"' } },
+            { stockEffects: { contains: '"AIRT"' } },
+          ]
+        }
+      });
+
+      if (oldTemplate) {
+        console.log('⚠️  Old stock symbol templates detected — clearing and re-seeding with correct symbols...');
+        await prisma.newsTemplate.deleteMany({});
+        console.log('✅ Old templates cleared.');
+      }
+    }
+
     for (const tpl of ALL_NEWS_TEMPLATES) {
       const existing = await prisma.newsTemplate.findFirst({
         where: { headline: tpl.headline }

@@ -44,7 +44,7 @@ router.post('/orders', authenticateToken, tradeRateLimiter, async (req, res) => 
       return res.status(400).json({ error: 'type must be BUY or SELL' });
     }
 
-    const parsedTargetPrice = parseFloat(targetPrice);
+    const parsedTargetPrice = Math.round(parseFloat(targetPrice) * 100) / 100;
     const parsedQuantity = parseInt(quantity, 10);
 
     if (isNaN(parsedTargetPrice) || parsedTargetPrice <= 0) {
@@ -161,7 +161,7 @@ const handleUpdateOrder = async (req, res) => {
       return res.status(400).json({ error: `Cannot edit order with status ${existingOrder.status}` });
     }
 
-    const newTargetPrice = targetPrice !== undefined ? parseFloat(targetPrice) : existingOrder.targetPrice;
+    const newTargetPrice = targetPrice !== undefined ? Math.round(parseFloat(targetPrice) * 100) / 100 : existingOrder.targetPrice;
     const newQuantity = quantity !== undefined ? parseInt(quantity, 10) : existingOrder.quantity;
 
     if (isNaN(newTargetPrice) || newTargetPrice <= 0) {

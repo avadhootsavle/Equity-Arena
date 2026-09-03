@@ -1,5 +1,5 @@
 const { PrismaClient } = require('@prisma/client');
-const { emitPortfolioUpdate, broadcastPublicLeaderboard } = require('../socket');
+const { emitPortfolioUpdate, broadcastPublicLeaderboard, emitActivityLog } = require('../socket');
 
 const prisma = require('../prisma');
 
@@ -131,7 +131,8 @@ async function checkAndExecuteLimitOrders(stockId, currentPrice) {
         if (!orderUser) return;
 
         if (order.type === 'BUY') {
-          const totalCost = currentPrice * order.quantity;
+          const totalCost = Math.round(currentPrice * order.quantity * 100) / 100;
+          if (orderUser.walletBalance < totalCost) return;
 
           // Deduct cost from user wallet
           await tx.user.update({
@@ -196,8 +197,22 @@ async function checkAndExecuteLimitOrders(stockId, currentPrice) {
             message: `Limit Buy executed! Bought ${order.quantity} shares of ${order.stock.symbol} at ${currentPrice.toFixed(2)} IC (Target: ${order.targetPrice.toFixed(2)} IC).`
           });
 
+          // Live Admin Activity Feed Broadcast
+          try {
+            emitActivityLog({
+              id: transactionRecord.id,
+              traderId: order.userId,
+              traderName: orderUser.name || 'Trader',
+              symbol: order.stock.symbol,
+              quantity: order.quantity,
+              price: currentPrice,
+              action: `LIMIT BOUGHT ${order.quantity} ${order.stock.symbol}`,
+              timestamp: Date.now()
+            });
+          } catch (e) {}
+
         } else if (order.type === 'SELL') {
-          const totalProceeds = currentPrice * order.quantity;
+          const totalProceeds = Math.round(currentPrice * order.quantity * 100) / 100;
 
           const existingHolding = await tx.holding.findUnique({
             where: { userId_stockId: { userId: order.userId, stockId: order.stockId } }
@@ -252,16 +267,32 @@ async function checkAndExecuteLimitOrders(stockId, currentPrice) {
             transaction: transactionRecord,
             message: `Limit Sell executed! Sold ${order.quantity} shares of ${order.stock.symbol} at ${currentPrice.toFixed(2)} IC (Target: ${order.targetPrice.toFixed(2)} IC).`
           });
+
+          // Live Admin Activity Feed Broadcast
+          try {
+            emitActivityLog({
+              id: transactionRecord.id,
+              traderId: order.userId,
+              traderName: orderUser.name || 'Trader',
+              symbol: order.stock.symbol,
+              quantity: order.quantity,
+              price: currentPrice,
+              action: `LIMIT SOLD ${order.quantity} ${order.stock.symbol}`,
+              timestamp: Date.now()
+            });
+          } catch (e) {}
         }
       });
 
-      // Emit full refreshed portfolio data for the order owner
+      // Emit full refreshed portfolio data for the order owner and check bankruptcy
       try {
         const { getUserPortfolio } = require('./portfolioService');
+        const { checkTraderBankruptcy } = require('./bankruptcyService');
         const portfolio = await getUserPortfolio(order.userId);
         if (portfolio) {
           emitPortfolioUpdate(order.userId, portfolio);
         }
+        await checkTraderBankruptcy(order.userId);
       } catch (err) {
         // Safe guard
       }

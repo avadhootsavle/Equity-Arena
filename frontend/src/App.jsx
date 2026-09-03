@@ -20,6 +20,7 @@ export function App() {
               <Routes>
                 {/* Public Live Leaderboard for Teachers & Audience (No Login Required) */}
                 <Route path="/board" element={<PublicLeaderboardPage />} />
+                <Route path="/leaderboard" element={<PublicLeaderboardPage />} />
                 <Route path="/leaderboard-live" element={<PublicLeaderboardPage />} />
 
                 {/* Single Unified Login Page for Everyone */}
