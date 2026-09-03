@@ -5,632 +5,475 @@ import {
   Zap, Flame, ShieldAlert, TrendingUp, TrendingDown, Crosshair,
   Volume2, Compass, Award, Sparkles, ChevronRight, Terminal, Search,
   Building, LayoutDashboard, Layers, BarChart2, ShieldCheck, CheckCircle2,
-  DollarSign, Activity, ShoppingBag, Radio, RefreshCw
+  DollarSign, Activity, ShoppingBag, Radio, RefreshCw, Coffee
 } from "lucide-react";
 import { useTheme } from "../context/ThemeContext";
 
 /* ==================================================================
-   Equity Arena — Redesigned Official Trader Field Manual
-   100% In-App Features, Super Attractive Neo-Brutalist HUD,
-   Dynamic Interactive Terminal Simulators, Real-Time Market Feed.
+   Equity Arena — Official Trader Field Manual (Simple & Super Attractive)
+   100% In-App Website Features Only:
+   1. 3-Hour Tournament Schedule & 15-Minute Intermission Break
+   2. 20 Listed Stocks (Stock list on left, clear description on right)
+   3. Limit Orders: Limit Buy vs Limit Sell (Clear Visual Explanations)
+   4. Breaking News Wire & Real-Time Sector Impact
+   5. 5-Minute Auto-Liquidation & Final Winner Podium
    ================================================================== */
 
 const ACCENT = "#F0B429";
 const UP = "#10B981";
 const DOWN = "#EF4444";
 
-/* ---------- Stage-Specific Glow Configurations ---------- */
 const STAGE_GLOWS = [
-  "radial-gradient(ellipse 900px 700px at 0% 100%, rgba(240, 180, 41, 0.08) 0%, transparent 70%)",
-  "radial-gradient(ellipse 900px 700px at 100% 0%, rgba(16, 185, 129, 0.08) 0%, transparent 70%)",
-  "radial-gradient(ellipse 850px 650px at 50% 50%, rgba(240, 180, 41, 0.08) 0%, transparent 70%)",
-  "radial-gradient(ellipse 900px 700px at 100% 100%, rgba(59, 130, 246, 0.08) 0%, transparent 70%)",
-  "radial-gradient(ellipse 900px 700px at 0% 0%, rgba(239, 68, 68, 0.08) 0%, transparent 70%)",
-  "radial-gradient(ellipse 850px 650px at 50% 50%, rgba(240, 180, 41, 0.08) 0%, transparent 70%)",
+  "radial-gradient(ellipse 900px 700px at 0% 100%, rgba(240, 180, 41, 0.09) 0%, transparent 70%)",
+  "radial-gradient(ellipse 900px 700px at 100% 0%, rgba(16, 185, 129, 0.09) 0%, transparent 70%)",
+  "radial-gradient(ellipse 850px 650px at 50% 50%, rgba(59, 130, 246, 0.09) 0%, transparent 70%)",
+  "radial-gradient(ellipse 900px 700px at 0% 0%, rgba(239, 68, 68, 0.09) 0%, transparent 70%)",
+  "radial-gradient(ellipse 850px 650px at 50% 50%, rgba(240, 180, 41, 0.09) 0%, transparent 70%)",
 ];
 
-/* =========================================================================
-   INTERACTIVE TERMINAL WIDGETS (SIMULATING WEBSITE FEATURES EXACTLY)
-   ========================================================================= */
-
-/* 1. TOPBAR & WALLET SIMULATOR */
-function WalletInteractiveWidget({ isLight }) {
-  const [allocation, setAllocation] = useState(60);
-  const total = 20000;
-  const inStocks = Math.round((total * allocation) / 100);
-  const inCash = total - inStocks;
-  const mockGain = Math.round(inStocks * 0.22);
-  const netWorth = total + mockGain;
-
+/* 1. TOURNAMENT STRUCTURE & 15-MIN BREAK SIMULATOR */
+function ScheduleInteractiveWidget({ isLight }) {
   return (
     <div
       className={`rounded-2xl border-2 transition-all p-5 sm:p-6 space-y-4 backdrop-blur-xl relative overflow-hidden ${
-        isLight
-          ? "bg-white border-black shadow-[4px_4px_0px_#000000]"
-          : "bg-[#0F1420] border-black shadow-[4px_4px_0px_#000000]"
+        isLight ? "bg-white border-black shadow-[4px_4px_0px_#000000]" : "bg-[#0F1420] border-black shadow-[4px_4px_0px_#000000]"
       }`}
       style={{ borderTop: "4px solid #F0B429" }}
     >
-      {/* Live Website TopBar Replica Header */}
       <div className={`flex items-center justify-between border-b pb-3 ${isLight ? "border-slate-200" : "border-white/10"}`}>
         <div className="flex items-center gap-2">
-          <div className="w-6 h-6 rounded bg-[#F0B429] flex items-center justify-center font-mono font-black text-xs text-black border border-black">
-            EA
-          </div>
+          <Clock className="w-4 h-4 text-[#F0B429]" />
           <span className={`font-mono text-xs font-black uppercase tracking-wider ${isLight ? "text-slate-900" : "text-white"}`}>
-            Website TopBar & Balance HUD
+            3-Hour Tournament Timeline
           </span>
         </div>
-        <div className="flex items-center gap-2">
-          <span className="flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-emerald-500/15 border border-emerald-500/30 text-emerald-400 font-mono text-[10px] font-extrabold">
-            <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
-            MARKET OPEN
-          </span>
-        </div>
-      </div>
-
-      {/* Website TopBar Wallet Component */}
-      <div className="flex items-center justify-between p-3 rounded-xl border-2 border-black bg-[#161D2B] shadow-[2px_2px_0px_#000000]">
-        <div className="flex items-center gap-2">
-          <Wallet className="w-4 h-4 text-[#F0B429]" />
-          <span className="text-xs font-mono uppercase tracking-wider text-slate-300 font-bold">
-            Available Cash:
-          </span>
-        </div>
-        <span className="text-base font-mono font-black text-[#F0B429]">
-          {inCash.toLocaleString()} <span className="text-xs">IC</span>
+        <span className="text-[10px] font-mono text-emerald-400 bg-emerald-500/15 px-2 py-0.5 rounded border border-emerald-500/30 font-black">
+          LIVE MATCH TIMER
         </span>
       </div>
 
-      {/* Allocation Slider */}
-      <div className="space-y-1.5 pt-1">
-        <div className="flex justify-between text-xs font-mono">
-          <span className={isLight ? "text-slate-600 font-bold" : "text-slate-400 font-bold"}>
-            Portfolio Deployment:
-          </span>
-          <span className="font-mono font-black text-[#F0B429]">{allocation}% Invested</span>
+      <div className="space-y-2.5 font-mono">
+        <div className="p-3 rounded-xl border-2 border-black bg-emerald-500/10 flex items-center justify-between shadow-[2px_2px_0px_#000000]">
+          <div className="flex items-center gap-2.5">
+            <span className="w-7 h-7 rounded-lg bg-emerald-500 text-black font-black text-xs flex items-center justify-center border border-black">
+              01
+            </span>
+            <div>
+              <span className="text-xs font-black text-emerald-400 block">Round 1: First Trading Session</span>
+              <span className="text-[10px] text-slate-300">Live order fills, news spikes & portfolio building</span>
+            </div>
+          </div>
+          <span className="text-xs font-black text-white">~80 MINS</span>
         </div>
-        <input
-          type="range"
-          min="10"
-          max="90"
-          value={allocation}
-          onChange={(e) => setAllocation(Number(e.target.value))}
-          className="w-full h-2.5 bg-slate-800 rounded-lg appearance-none cursor-pointer accent-[#F0B429]"
-        />
-        <div className="flex justify-between text-[10px] font-mono text-slate-400">
-          <span>10% Conservative</span>
-          <span>90% Maximum Aggression</span>
+
+        <div className="p-3 rounded-xl border-2 border-black bg-[#F0B429]/15 flex items-center justify-between shadow-[2px_2px_0px_#000000]">
+          <div className="flex items-center gap-2.5">
+            <span className="w-7 h-7 rounded-lg bg-[#F0B429] text-black font-black text-xs flex items-center justify-center border border-black">
+              <Coffee className="w-4 h-4" />
+            </span>
+            <div>
+              <span className="text-xs font-black text-[#F0B429] block">15-Minute Intermission Break</span>
+              <span className="text-[10px] text-slate-300">Trading paused, chimes sound, review strategy</span>
+            </div>
+          </div>
+          <span className="text-xs font-black text-[#F0B429]">15 MINS</span>
+        </div>
+
+        <div className="p-3 rounded-xl border-2 border-black bg-rose-500/10 flex items-center justify-between shadow-[2px_2px_0px_#000000]">
+          <div className="flex items-center gap-2.5">
+            <span className="w-7 h-7 rounded-lg bg-rose-500 text-white font-black text-xs flex items-center justify-center border border-black">
+              02
+            </span>
+            <div>
+              <span className="text-xs font-black text-rose-400 block">Round 2: The Final Showdown</span>
+              <span className="text-[10px] text-slate-300">High-intensity catalysts + 5-min final lock</span>
+            </div>
+          </div>
+          <span className="text-xs font-black text-white">~85 MINS</span>
         </div>
       </div>
 
-      {/* Portfolio Value Summary Tile */}
-      <div className="grid grid-cols-2 gap-2.5 pt-1 font-mono">
-        <div className={`p-3 rounded-xl border-2 border-black ${isLight ? "bg-slate-50" : "bg-[#141A28]"}`}>
-          <span className="text-[10px] uppercase text-slate-400 font-bold block">Invested Capital</span>
-          <span className={`text-base font-black ${isLight ? "text-slate-900" : "text-white"}`}>
-            {inStocks.toLocaleString()} IC
-          </span>
-          <span className="text-[10px] text-emerald-400 font-bold block mt-0.5">+{mockGain.toLocaleString()} IC Gain</span>
+      <div className="p-3 rounded-xl border-2 border-black bg-[#161D2B] flex items-center justify-between font-mono shadow-[2px_2px_0px_#000000]">
+        <div className="flex items-center gap-2">
+          <Wallet className="w-4 h-4 text-[#F0B429]" />
+          <span className="text-xs text-slate-300 font-bold">Starting Cash:</span>
         </div>
-        <div className="p-3 rounded-xl border-2 border-black bg-emerald-500/10 border-emerald-500/30">
-          <span className="text-[10px] uppercase text-emerald-400 font-bold block">Live Total Net Worth</span>
-          <span className="text-base font-black text-emerald-400 block">
-            {netWorth.toLocaleString()} IC
-          </span>
-          <span className="text-[10px] text-slate-300 font-bold block mt-0.5">Rank #1 Leaderboard</span>
-        </div>
+        <span className="text-sm font-black text-[#F0B429]">20,000 IC Liquid</span>
       </div>
     </div>
   );
 }
 
-/* 2. 20-STOCK LIVE MARKET DIRECTORY WIDGET */
-function MarketInteractiveWidget({ isLight }) {
+/* 2. STOCKS DIRECTORY (LIST ON LEFT, DESCRIPTION ON RIGHT) */
+function StockDirectoryWidget({ isLight }) {
   const [activeStock, setActiveStock] = useState("M&M");
-  const [sectorFilter, setSectorFilter] = useState("ALL");
   const [searchQuery, setSearchQuery] = useState("");
 
   const ALL_STOCKS = [
-    { code: "HDFB", name: "HDFB Bank", sector: "Banking", price: 1800.00, change: 3.4, vol: "1.4M", desc: "Leading private bank providing retail banking, loans, mortgages, and credit facilities across India." },
-    { code: "ICCO", name: "ICICO Bank", sector: "Banking", price: 1250.00, change: -1.8, vol: "1.1M", desc: "Premier financial powerhouse known for digital consumer banking, corporate lending, and retail credit." },
-    { code: "TCX", name: "TCX", sector: "IT", price: 4200.00, change: 2.6, vol: "890K", desc: "Global leader in IT services, cloud infrastructure migration, and enterprise software consultancy." },
-    { code: "INFS", name: "Infisys", sector: "IT", price: 1600.00, change: -0.9, vol: "1.8M", desc: "Top Indian digital IT giant delivering enterprise technology, AI modernization, and cloud software solutions." },
-    { code: "HAAL", name: "HAAL", sector: "Defence & Aerospace", price: 5000.00, change: 6.2, vol: "720K", desc: "Premier state-backed aerospace contractor manufacturing military fighter aircraft and defense helicopters." },
-    { code: "BEEL", name: "BEEL", sector: "Defence & Aerospace", price: 420.00, change: 1.5, vol: "2.3M", desc: "High-tech defense electronics manufacturer producing tactical radar, sonar, and avionics systems." },
-    { code: "SURY", name: "Suryan Pharma", sector: "Pharmaceuticals", price: 1900.00, change: -2.1, vol: "640K", desc: "Major pharmaceutical giant developing specialty generic formulations, therapies, and active drugs." },
-    { code: "CPLX", name: "Ciplex", sector: "Pharmaceuticals", price: 1500.00, change: 4.1, vol: "910K", desc: "Global healthcare and pharmaceutical company specializing in respiratory medications and lifesaving treatments." },
-    { code: "AIRT", name: "Bharat Airtell", sector: "Telecommunications", price: 1850.00, change: 1.2, vol: "1.5M", desc: "Leading telecom provider delivering high-speed 5G mobile networks, broadband, and enterprise connectivity." },
-    { code: "TATV", name: "Tatva Motors", sector: "Automobile", price: 950.00, change: 3.8, vol: "3.1M", desc: "Leading automotive powerhouse manufacturing passenger cars, electric vehicles, and commercial heavy trucks." },
-    { code: "M&M", name: "M&M", sector: "Automobile", price: 3000.00, change: 4.5, vol: "1.2M", desc: "India’s top utility vehicle and tractor manufacturer specializing in rugged SUVs, farm machinery, and EVs." },
-    { code: "RELI", name: "Reliants Industries", sector: "Energy (Oil & Gas)", price: 2900.00, change: -1.2, vol: "2.0M", desc: "Mega-conglomerate dominating oil refining, petrochemicals, energy infrastructure, and retail." },
-    { code: "ONGC", name: "ONGCO", sector: "Energy (Oil & Gas)", price: 350.00, change: 0.8, vol: "4.5M", desc: "India’s largest upstream crude oil and natural gas exploration and offshore production company." },
-    { code: "DLEF", name: "DLEF", sector: "Real Estate", price: 850.00, change: 2.1, vol: "1.3M", desc: "Premier real estate builder developing luxury residential townships and prime commercial offices." },
-    { code: "GODR", name: "Godrej Properties", sector: "Real Estate", price: 2700.00, change: -1.5, vol: "550K", desc: "Top-tier sustainable real estate developer creating modern premium housing and urban living projects." },
-    { code: "IDEA", name: "Vodfone Idea", sector: "Telecommunications", price: 18.00, change: 8.5, vol: "12.4M", desc: "Turnaround telecom operator expanding high-frequency 4G/5G mobile subscriber coverage." },
-    { code: "SUZL", name: "Suzlan", sector: "Renewable Energy", price: 75.00, change: 5.8, vol: "8.7M", desc: "Wind energy technology leader supplying commercial wind turbines and green renewable power solutions." },
-    { code: "IRED", name: "IREDAA", sector: "Renewable Energy", price: 95.00, change: 7.2, vol: "6.2M", desc: "Non-banking financial agency financing national green energy, solar grids, and clean power initiatives." },
-    { code: "SAAL", name: "SAAIL", sector: "Metals & Mining", price: 98.00, change: -2.4, vol: "5.1M", desc: "State-owned steelmaking giant supplying industrial steel for mega infrastructure, railways, and construction." },
-    { code: "NMDC", name: "NMDCX", sector: "Metals & Mining", price: 90.00, change: 1.9, vol: "4.8M", desc: "India’s largest iron ore miner supplying essential raw mineral ores to domestic blast furnaces." }
+    { code: "HDFB", name: "HDFB Bank", sector: "Banking", price: 1800.00, change: 3.4, desc: "Leading private bank providing retail banking, home loans, mortgages, and commercial credit across India." },
+    { code: "ICCO", name: "ICICO Bank", sector: "Banking", price: 1250.00, change: -1.8, desc: "Premier financial powerhouse known for digital consumer banking, corporate lending, and retail credit." },
+    { code: "TCX", name: "TCX", sector: "IT", price: 4200.00, change: 2.6, desc: "Global leader in IT services, cloud migration, and enterprise software consultancy." },
+    { code: "INFS", name: "Infisys", sector: "IT", price: 1600.00, change: -0.9, desc: "Top Indian digital IT giant delivering enterprise technology, AI solutions, and software engineering." },
+    { code: "HAAL", name: "HAAL", sector: "Defence & Aerospace", price: 5000.00, change: 6.2, desc: "Premier state-backed aerospace contractor manufacturing military fighter aircraft and defense helicopters." },
+    { code: "BEEL", name: "BEEL", sector: "Defence & Aerospace", price: 420.00, change: 1.5, desc: "High-tech defense electronics manufacturer producing tactical radar, sonar, and avionics systems." },
+    { code: "SURY", name: "Suryan Pharma", sector: "Pharmaceuticals", price: 1900.00, change: -2.1, desc: "Major pharmaceutical giant developing specialty generic formulations, therapies, and active drugs." },
+    { code: "CPLX", name: "Ciplex", sector: "Pharmaceuticals", price: 1500.00, change: 4.1, desc: "Global healthcare and pharmaceutical company specializing in respiratory medications and treatments." },
+    { code: "AIRT", name: "Bharat Airtell", sector: "Telecommunications", price: 1850.00, change: 1.2, desc: "Leading telecom provider delivering high-speed 5G mobile networks, broadband, and enterprise connectivity." },
+    { code: "IDEA", name: "Vodfone Idea", sector: "Telecommunications", price: 18.00, change: 8.5, desc: "Turnaround telecom operator expanding mobile subscriber coverage across Indian telecom circles." },
+    { code: "TATV", name: "Tatva Motors", sector: "Automobile", price: 950.00, change: 3.8, desc: "Leading automotive powerhouse manufacturing passenger cars, electric vehicles, and commercial heavy trucks." },
+    { code: "M&M", name: "M&M", sector: "Automobile", price: 3000.00, change: 4.5, desc: "India’s top utility vehicle and tractor manufacturer specializing in rugged SUVs, farm machinery, and EVs." },
+    { code: "RELI", name: "Reliants Industries", sector: "Energy (Oil & Gas)", price: 2900.00, change: -1.2, desc: "Mega-conglomerate dominating oil refining, petrochemicals, energy infrastructure, and retail." },
+    { code: "ONGC", name: "ONGCO", sector: "Energy (Oil & Gas)", price: 350.00, change: 0.8, desc: "India’s largest upstream crude oil and natural gas exploration and offshore production company." },
+    { code: "DLEF", name: "DLEF", sector: "Real Estate", price: 850.00, change: 2.1, desc: "Premier real estate builder developing luxury residential townships and prime commercial offices." },
+    { code: "GODR", name: "Godrej Properties", sector: "Real Estate", price: 2700.00, change: -1.5, desc: "Top-tier sustainable real estate developer creating modern premium housing and urban living projects." },
+    { code: "SUZL", name: "Suzlan", sector: "Renewable Energy", price: 75.00, change: 5.8, desc: "Wind energy technology leader supplying commercial wind turbines and green renewable power solutions." },
+    { code: "IRED", name: "IREDAA", sector: "Renewable Energy", price: 95.00, change: 7.2, desc: "Non-banking financial agency financing national green energy, solar grids, and clean power initiatives." },
+    { code: "SAAL", name: "SAAIL", sector: "Metals & Mining", price: 98.00, change: -2.4, desc: "State-owned steelmaking giant supplying industrial steel for mega infrastructure, railways, and construction." },
+    { code: "NMDC", name: "NMDCX", sector: "Metals & Mining", price: 90.00, change: 1.9, desc: "India’s largest iron ore miner supplying essential raw mineral ores to domestic blast furnaces." }
   ];
 
-  const filteredStocks = ALL_STOCKS.filter(s => {
-    const matchesSector = sectorFilter === "ALL" || s.sector === sectorFilter;
-    const matchesSearch = searchQuery.trim() === "" || 
-      s.code.toLowerCase().includes(searchQuery.toLowerCase()) || 
-      s.name.toLowerCase().includes(searchQuery.toLowerCase()) || 
-      s.sector.toLowerCase().includes(searchQuery.toLowerCase());
-    return matchesSector && matchesSearch;
-  });
+  const filtered = ALL_STOCKS.filter(s =>
+    searchQuery.trim() === "" ||
+    s.code.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    s.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    s.sector.toLowerCase().includes(searchQuery.toLowerCase())
+  );
 
   const sel = ALL_STOCKS.find(s => s.code === activeStock) || ALL_STOCKS[0];
 
   return (
     <div
-      className={`rounded-2xl border-2 transition-all p-5 sm:p-6 space-y-3.5 backdrop-blur-xl relative overflow-hidden ${
-        isLight
-          ? "bg-white border-black shadow-[4px_4px_0px_#000000]"
-          : "bg-[#0F1420] border-black shadow-[4px_4px_0px_#000000]"
+      className={`rounded-2xl border-2 transition-all p-4 sm:p-5 space-y-3 backdrop-blur-xl relative overflow-hidden ${
+        isLight ? "bg-white border-black shadow-[4px_4px_0px_#000000]" : "bg-[#0F1420] border-black shadow-[4px_4px_0px_#000000]"
       }`}
       style={{ borderTop: "4px solid #F0B429" }}
     >
-      {/* Header */}
-      <div className={`flex items-center justify-between border-b pb-3 ${isLight ? "border-slate-300" : "border-white/15"}`}>
+      <div className="flex items-center justify-between gap-2 border-b border-white/10 pb-2.5">
         <div className="flex items-center gap-2">
-          <div className="w-6 h-6 rounded bg-[#F0B429] flex items-center justify-center text-black font-black text-xs">
-            <Building className="w-3.5 h-3.5" />
-          </div>
-          <div>
-            <span className={`font-mono text-xs font-black uppercase tracking-wider block ${isLight ? "text-slate-900" : "text-white"}`}>
-              20 Listed Equities Directory
-            </span>
-          </div>
-        </div>
-        <span className="text-[10px] font-mono text-emerald-400 bg-emerald-500/15 px-2 py-0.5 rounded border border-emerald-500/30 font-black">
-          20 / 20 STOCKS ACTIVE
-        </span>
-      </div>
-
-      {/* Search Bar */}
-      <div className="relative">
-        <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-slate-400" />
-        <input
-          type="text"
-          placeholder="Search ticker, name, sector (e.g. M&M, HAAL, RELI)..."
-          value={searchQuery}
-          onChange={(e) => setSearchQuery(e.target.value)}
-          className={`w-full pl-9 pr-3 py-1.5 text-xs font-mono rounded-lg border-2 transition-all focus:outline-none focus:border-[#F0B429] ${
-            isLight
-              ? "bg-slate-50 border-slate-300 text-slate-900 placeholder:text-slate-500 font-bold"
-              : "bg-black/50 border-white/15 text-white placeholder:text-slate-400 font-bold"
-          }`}
-        />
-      </div>
-
-      {/* Sector Pills */}
-      <div className="flex items-center gap-1.5 overflow-x-auto pb-1 scrollbar-none text-[10px] font-mono">
-        {["ALL", "Automobile", "Banking", "IT", "Defence & Aerospace", "Pharmaceuticals", "Telecommunications", "Renewable Energy", "Metals & Mining", "Real Estate", "Energy (Oil & Gas)"].map(sec => (
-          <button
-            key={sec}
-            type="button"
-            onClick={() => setSectorFilter(sec)}
-            className={`px-2 py-0.5 rounded-md whitespace-nowrap transition-all cursor-pointer font-black border ${
-              sectorFilter === sec
-                ? "bg-[#F0B429] text-black border-black shadow-[2px_2px_0px_#000000]"
-                : isLight
-                  ? "bg-white border-slate-300 text-slate-700 hover:bg-slate-100"
-                  : "bg-white/10 border-white/10 text-slate-300 hover:bg-white/20"
-            }`}
-          >
-            {sec}
-          </button>
-        ))}
-      </div>
-
-      {/* Grid of Stock Cards */}
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-1.5 max-h-[140px] overflow-y-auto pr-1">
-        {filteredStocks.map(s => {
-          const isUp = s.change >= 0;
-          const isActive = s.code === activeStock;
-          return (
-            <button
-              key={s.code}
-              type="button"
-              onClick={() => setActiveStock(s.code)}
-              className={`p-2 rounded-lg text-left transition-all border-2 cursor-pointer ${
-                isActive
-                  ? "bg-[#F0B429]/20 border-[#F0B429] shadow-[0_0_10px_rgba(240,180,41,0.3)] ring-1 ring-[#F0B429]"
-                  : isLight
-                    ? "bg-slate-50 border-slate-300 hover:bg-white"
-                    : "bg-[#141A28] border-white/10 hover:bg-[#1A2234]"
-              }`}
-            >
-              <div className="font-mono font-black text-xs flex items-center justify-between">
-                <span className={isActive ? "text-[#F0B429]" : isLight ? "text-slate-900" : "text-white"}>
-                  {s.code}
-                </span>
-                <span className="text-[9px] font-mono text-slate-400 truncate max-w-[55px]">
-                  {s.sector.split(" ")[0]}
-                </span>
-              </div>
-              <div className="flex items-baseline justify-between mt-0.5">
-                <span className={`text-[11px] font-mono font-black ${isLight ? "text-slate-900" : "text-slate-100"}`}>
-                  {s.price.toFixed(2)}
-                </span>
-                <span className={`text-[9px] font-mono font-extrabold ${isUp ? "text-emerald-400" : "text-rose-400"}`}>
-                  {isUp ? "▲" : "▼"}{Math.abs(s.change)}%
-                </span>
-              </div>
-            </button>
-          );
-        })}
-      </div>
-
-      {/* Selected Stock Company Profile Card */}
-      <div className={`p-3.5 rounded-xl border-2 space-y-2 ${
-        isLight ? "bg-amber-500/[0.08] border-black shadow-[2px_2px_0px_#000000]" : "bg-[#161D2B] border-black shadow-[2px_2px_0px_#000000]"
-      }`}>
-        <div className="flex justify-between items-start">
-          <div>
-            <div className="flex items-center gap-1.5">
-              <span className="text-[#F0B429] font-mono font-black text-sm px-1.5 py-0.2 rounded bg-black/50 border border-[#F0B429]/40">
-                {sel.code}
-              </span>
-              <span className={`text-xs sm:text-sm font-black ${isLight ? "text-slate-900" : "text-white"}`}>
-                {sel.name}
-              </span>
-            </div>
-            <span className="text-[10px] font-mono text-slate-400 block mt-0.5">
-              Sector: <strong className="text-[#F0B429]">{sel.sector}</strong>
-            </span>
-          </div>
-          <div className="text-right font-mono">
-            <span className={`text-sm font-black block ${isLight ? "text-slate-900" : "text-white"}`}>
-              {sel.price.toFixed(2)} IC
-            </span>
-            <span className={`text-[10px] font-bold ${sel.change >= 0 ? "text-emerald-400" : "text-rose-400"}`}>
-              {sel.change >= 0 ? "▲ +" : "▼ -"}{Math.abs(sel.change)}% Spot
-            </span>
-          </div>
-        </div>
-
-        {/* 1-Line Description Callout */}
-        <div className={`p-2.5 rounded-lg border leading-relaxed ${
-          isLight ? "bg-white border-amber-500/40 text-slate-900" : "bg-[#0B0E14] border-amber-500/40 text-slate-100"
-        }`}>
-          <div className="flex items-start gap-2">
-            <span className="text-[#F0B429] font-bold text-xs mt-0.5">▸</span>
-            <p className="text-xs font-semibold leading-snug">
-              {sel.desc}
-            </p>
-          </div>
-        </div>
-      </div>
-    </div>
-  );
-}
-
-/* 3. STOCK DETAIL MODAL & INSTANT TRADE TICKET */
-function TradeInteractiveWidget({ isLight }) {
-  const [qty, setQty] = useState(5);
-  const [action, setAction] = useState("BUY");
-  const price = 950.00; // Tatva Motors
-  const cost = (qty * price).toFixed(2);
-
-  return (
-    <div
-      className={`rounded-2xl border-2 transition-all p-5 sm:p-6 space-y-4 backdrop-blur-xl relative overflow-hidden ${
-        isLight
-          ? "bg-white border-black shadow-[4px_4px_0px_#000000]"
-          : "bg-[#0F1420] border-black shadow-[4px_4px_0px_#000000]"
-      }`}
-      style={{ borderTop: "4px solid #F0B429" }}
-    >
-      <div className={`flex items-center justify-between border-b pb-3 ${isLight ? "border-slate-200" : "border-white/10"}`}>
-        <div className="flex items-center gap-2">
-          <Zap className="w-4 h-4 text-[#F0B429]" />
-          <span className={`font-mono text-xs font-black uppercase tracking-wider ${isLight ? "text-slate-900" : "text-white"}`}>
-            Trade Ticket Terminal (TATV)
+          <Building className="w-4 h-4 text-[#F0B429]" />
+          <span className="font-mono text-xs font-black uppercase text-white">
+            20 Listed Stocks
           </span>
         </div>
-        <span className="font-mono text-[11px] text-emerald-400 font-bold">
-          Zero Brokerage & Slippage
-        </span>
+        <div className="relative w-44">
+          <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3 h-3 text-slate-400" />
+          <input
+            type="text"
+            placeholder="Search stock..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            className="w-full pl-7 pr-2 py-1 text-[11px] font-mono rounded border border-white/15 bg-black/40 text-white focus:outline-none focus:border-[#F0B429]"
+          />
+        </div>
       </div>
 
-      {/* Buy / Sell Tab Switch */}
-      <div className="grid grid-cols-2 gap-2 p-1 rounded-xl border-2 border-black bg-black/40">
-        <button
-          type="button"
-          onClick={() => setAction("BUY")}
-          className={`py-2 rounded-lg font-mono text-xs font-black uppercase transition-all cursor-pointer flex items-center justify-center gap-1.5 ${
-            action === "BUY"
-              ? "bg-emerald-500 text-black border-2 border-black shadow-[2px_2px_0px_#000000]"
-              : "text-slate-400 hover:text-white"
-          }`}
-        >
-          <span>●</span>
-          <span>BUY (LONG)</span>
-        </button>
-        <button
-          type="button"
-          onClick={() => setAction("SELL")}
-          className={`py-2 rounded-lg font-mono text-xs font-black uppercase transition-all cursor-pointer flex items-center justify-center gap-1.5 ${
-            action === "SELL"
-              ? "bg-rose-500 text-white border-2 border-black shadow-[2px_2px_0px_#000000]"
-              : "text-slate-400 hover:text-white"
-          }`}
-        >
-          <span>●</span>
-          <span>SELL (LIQUIDATE)</span>
-        </button>
-      </div>
-
-      {/* Quantity Stepper & Presets */}
-      <div className="space-y-2">
-        <div className="flex justify-between items-center text-xs font-mono">
-          <span className="text-slate-400 font-bold uppercase">Order Shares:</span>
-          <div className="flex gap-1">
-            {[1, 5, 10, 50].map((preset) => (
+      <div className="grid grid-cols-1 sm:grid-cols-[165px_1fr] gap-3">
+        <div className="space-y-1.5 max-h-[250px] overflow-y-auto pr-1 font-mono">
+          {filtered.map(s => {
+            const isActive = s.code === activeStock;
+            const isUp = s.change >= 0;
+            return (
               <button
-                key={preset}
+                key={s.code}
                 type="button"
-                onClick={() => setQty(preset)}
-                className={`px-2 py-0.5 rounded text-[10px] font-mono font-bold border transition-all cursor-pointer ${
-                  qty === preset
-                    ? "bg-[#F0B429] text-black border-black"
-                    : "bg-white/5 border-white/10 text-slate-300 hover:bg-white/15"
+                onClick={() => setActiveStock(s.code)}
+                className={`w-full p-2 rounded-lg text-left transition-all border cursor-pointer flex items-center justify-between text-xs ${
+                  isActive
+                    ? "bg-[#F0B429] text-black border-black font-black shadow-[2px_2px_0px_#000000]"
+                    : "bg-[#161D2B] border-white/10 text-white hover:bg-white/10"
                 }`}
               >
-                +{preset}
+                <div>
+                  <span className="font-black block">{s.code}</span>
+                  <span className={`text-[9px] block truncate max-w-[80px] ${isActive ? "text-black/80" : "text-slate-400"}`}>
+                    {s.sector}
+                  </span>
+                </div>
+                <div className="text-right">
+                  <span className="font-bold text-[11px] block">{s.price.toFixed(0)} IC</span>
+                  <span className={`text-[9px] font-bold ${isActive ? "text-black" : isUp ? "text-emerald-400" : "text-rose-400"}`}>
+                    {isUp ? "+" : ""}{s.change}%
+                  </span>
+                </div>
               </button>
-            ))}
-          </div>
+            );
+          })}
         </div>
 
-        <div className="flex items-center gap-2">
-          <button
-            type="button"
-            onClick={() => setQty(Math.max(1, qty - 1))}
-            className="w-11 h-11 rounded-xl border-2 border-black bg-[#1A2234] hover:bg-[#253048] text-white font-mono text-xl font-bold flex items-center justify-center cursor-pointer active:scale-95 shadow-[2px_2px_0px_#000000]"
-          >
-            −
-          </button>
-          <div className="flex-1 h-11 rounded-xl border-2 border-black bg-black/60 flex items-center justify-center font-mono text-xl font-black text-[#F0B429] shadow-[2px_2px_0px_#000000]">
-            {qty} Shares
-          </div>
-          <button
-            type="button"
-            onClick={() => setQty(qty + 1)}
-            className="w-11 h-11 rounded-xl border-2 border-black bg-[#1A2234] hover:bg-[#253048] text-white font-mono text-xl font-bold flex items-center justify-center cursor-pointer active:scale-95 shadow-[2px_2px_0px_#000000]"
-          >
-            +
-          </button>
-        </div>
-      </div>
+        <div className="p-4 rounded-xl border-2 border-black bg-[#161D2B] space-y-3 shadow-[2px_2px_0px_#000000] flex flex-col justify-between">
+          <div className="space-y-2">
+            <div className="flex items-center justify-between border-b border-white/10 pb-2">
+              <div>
+                <span className="text-lg font-black font-mono text-[#F0B429] block">
+                  {sel.code} — {sel.name}
+                </span>
+                <span className="text-xs font-mono text-slate-300 font-bold">
+                  Sector: <strong className="text-white">{sel.sector}</strong>
+                </span>
+              </div>
+              <div className="text-right font-mono">
+                <span className="text-base font-black text-white block">{sel.price.toFixed(2)} IC</span>
+                <span className={`text-xs font-bold ${sel.change >= 0 ? "text-emerald-400" : "text-rose-400"}`}>
+                  {sel.change >= 0 ? "▲ +" : "▼ -"}{Math.abs(sel.change)}% Spot
+                </span>
+              </div>
+            </div>
 
-      {/* Total & Instant Execution Button */}
-      <div className="p-3 rounded-xl border-2 border-black bg-[#161D2B] flex items-center justify-between font-mono shadow-[2px_2px_0px_#000000]">
-        <div>
-          <span className="text-[10px] text-slate-400 uppercase font-bold block">Est. Order Value</span>
-          <span className="text-base font-black text-white">{cost} IC</span>
-        </div>
-        <div className="text-right text-[10px] text-slate-300">
-          <span className="block text-emerald-400 font-bold">Execution: 0ms</span>
-          <span className="block text-[#F0B429] font-bold">Fee: 0.00 IC</span>
+            <div className="space-y-1">
+              <span className="text-[10px] font-mono uppercase text-[#F0B429] font-black tracking-wider block">
+                What this company does:
+              </span>
+              <p className="text-sm text-slate-100 font-medium leading-relaxed bg-black/40 p-3 rounded-lg border border-white/10">
+                {sel.desc}
+              </p>
+            </div>
+          </div>
+
+          <div className="flex items-center justify-between text-[11px] font-mono text-slate-400 pt-2 border-t border-white/10">
+            <span>Market: <strong className="text-white">NSE / BSE India</strong></span>
+            <span>Update: <strong className="text-[#F0B429]">Every 6s</strong></span>
+          </div>
         </div>
       </div>
     </div>
   );
 }
 
-/* 4. LIMIT ORDERS ENGINE */
-function LimitInteractiveWidget({ isLight }) {
-  const [target, setTarget] = useState(850.00);
-  const livePrice = 950.00; // TATV spot price
-  const isBuyDiscount = target < livePrice;
+/* 3. LIMIT BUY & LIMIT SELL ENGINE (CLEARLY EXPLAINED) */
+function LimitOrdersExplainerWidget({ isLight }) {
+  const [tab, setTab] = useState("BUY");
 
   return (
     <div
       className={`rounded-2xl border-2 transition-all p-5 sm:p-6 space-y-4 backdrop-blur-xl relative overflow-hidden ${
-        isLight
-          ? "bg-white border-black shadow-[4px_4px_0px_#000000]"
-          : "bg-[#0F1420] border-black shadow-[4px_4px_0px_#000000]"
+        isLight ? "bg-white border-black shadow-[4px_4px_0px_#000000]" : "bg-[#0F1420] border-black shadow-[4px_4px_0px_#000000]"
       }`}
       style={{ borderTop: "4px solid #F0B429" }}
     >
       <div className={`flex items-center justify-between border-b pb-3 ${isLight ? "border-slate-200" : "border-white/10"}`}>
         <div className="flex items-center gap-2">
           <Crosshair className="w-4 h-4 text-[#F0B429]" />
-          <span className={`font-mono text-xs font-black uppercase tracking-wider ${isLight ? "text-slate-900" : "text-white"}`}>
-            Limit Order Engine (TATV)
+          <span className="font-mono text-xs font-black uppercase text-white">
+            Limit Order Simulator (TATV Spot: 950 IC)
           </span>
         </div>
-        <span className="text-[10px] font-mono text-emerald-400 bg-emerald-500/15 px-2 py-0.5 rounded border border-emerald-500/30 font-black">
-          AUTOMATION ACTIVE
-        </span>
       </div>
 
-      <div className="space-y-2">
-        <div className="flex justify-between items-baseline font-mono">
-          <span className="text-xs text-slate-400 font-bold">Target Strike Price:</span>
-          <span className="text-xl font-black text-[#F0B429]">{target.toFixed(2)} IC</span>
-        </div>
-        <input
-          type="range"
-          min="700"
-          max="1150"
-          step="10"
-          value={target}
-          onChange={(e) => setTarget(Number(e.target.value))}
-          className="w-full h-2.5 bg-slate-800 rounded-lg appearance-none cursor-pointer accent-[#F0B429]"
-        />
-        <div className="flex justify-between text-[10px] font-mono text-slate-400">
-          <span>Dip Bid (700 IC)</span>
-          <span className="font-bold text-white">Current Spot: {livePrice.toFixed(2)} IC</span>
-          <span>Spike Sell (1150 IC)</span>
-        </div>
+      <div className="grid grid-cols-2 gap-2 p-1 rounded-xl border-2 border-black bg-black/50">
+        <button
+          type="button"
+          onClick={() => setTab("BUY")}
+          className={`py-2 rounded-lg font-mono text-xs font-black uppercase transition-all cursor-pointer flex items-center justify-center gap-1.5 ${
+            tab === "BUY"
+              ? "bg-emerald-500 text-black border-2 border-black shadow-[2px_2px_0px_#000000]"
+              : "text-slate-400 hover:text-white"
+          }`}
+        >
+          <TrendingDown className="w-3.5 h-3.5" />
+          <span>1. LIMIT BUY (DIP SNIPER)</span>
+        </button>
+        <button
+          type="button"
+          onClick={() => setTab("SELL")}
+          className={`py-2 rounded-lg font-mono text-xs font-black uppercase transition-all cursor-pointer flex items-center justify-center gap-1.5 ${
+            tab === "SELL"
+              ? "bg-rose-500 text-white border-2 border-black shadow-[2px_2px_0px_#000000]"
+              : "text-slate-400 hover:text-white"
+          }`}
+        >
+          <TrendingUp className="w-3.5 h-3.5" />
+          <span>2. LIMIT SELL (PROFIT TARGET)</span>
+        </button>
       </div>
 
-      <div className={`p-3.5 rounded-xl border-2 border-black transition-all ${
-        isBuyDiscount
-          ? "bg-emerald-500/10 border-emerald-500/40"
-          : "bg-amber-500/10 border-amber-500/40"
-      }`}>
-        <div className="flex items-start gap-2.5">
-          <Target className="w-5 h-5 text-[#F0B429] flex-shrink-0 mt-0.5" />
-          <div className="text-xs font-mono space-y-1">
-            <span className={`font-bold block ${isLight ? "text-slate-900" : "text-white"}`}>
-              {isBuyDiscount ? "Resting Limit Buy in Escrow" : "Resting Limit Sell Target"}
+      {tab === "BUY" ? (
+        <div className="p-4 rounded-xl border-2 border-black bg-emerald-500/10 border-emerald-500/30 space-y-3 font-mono shadow-[2px_2px_0px_#000000]">
+          <div className="flex items-center justify-between">
+            <span className="text-xs font-black text-emerald-400 uppercase">How Limit Buy Works:</span>
+            <span className="text-[10px] bg-emerald-500/20 text-emerald-300 px-2 py-0.5 rounded font-black">
+              Target Price &lt; Spot Price
             </span>
-            <p className="text-slate-300 text-[11px] leading-relaxed">
-              {isBuyDiscount
-                ? `Funds safely reserved in escrow. If spot drops ${((1 - target / livePrice) * 100).toFixed(1)}% to ${target.toFixed(2)} IC, your order automatically fills.`
-                : "Target is above spot. Order triggers automatically when market rallies."}
-            </p>
+          </div>
+          <div className="p-3 rounded-lg bg-black/40 border border-white/10 space-y-1.5 text-xs text-slate-200">
+            <div className="flex items-center gap-2">
+              <span className="text-[#F0B429] font-black">1.</span>
+              <span>You set a strike price below market: <strong>850 IC</strong> (Spot is 950 IC).</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <span className="text-[#F0B429] font-black">2.</span>
+              <span>Your funds are safely held in <strong>Escrow</strong> (Locked Funds).</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <span className="text-[#F0B429] font-black">3.</span>
+              <span>When the price drops to 850 IC, the engine <strong>fills your buy automatically</strong>!</span>
+            </div>
           </div>
         </div>
-      </div>
+      ) : (
+        <div className="p-4 rounded-xl border-2 border-black bg-rose-500/10 border-rose-500/30 space-y-3 font-mono shadow-[2px_2px_0px_#000000]">
+          <div className="flex items-center justify-between">
+            <span className="text-xs font-black text-rose-400 uppercase">How Limit Sell Works:</span>
+            <span className="text-[10px] bg-rose-500/20 text-rose-300 px-2 py-0.5 rounded font-black">
+              Target Price &gt; Spot Price
+            </span>
+          </div>
+          <div className="p-3 rounded-lg bg-black/40 border border-white/10 space-y-1.5 text-xs text-slate-200">
+            <div className="flex items-center gap-2">
+              <span className="text-[#F0B429] font-black">1.</span>
+              <span>You set a target sell price above market: <strong>1,100 IC</strong> (Spot is 950 IC).</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <span className="text-[#F0B429] font-black">2.</span>
+              <span>Your shares are reserved to sell automatically at the top.</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <span className="text-[#F0B429] font-black">3.</span>
+              <span>When the stock rallies to 1,100 IC, it <strong>sells and books your profit to cash</strong>!</span>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
 
-/* 5. NEWS TAB & TOAST WIRE SIMULATOR */
-function NewsInteractiveWidget({ isLight }) {
-  const [headlineIdx, setHeadlineIdx] = useState(0);
+/* 4. BREAKING NEWS & SECTOR IMPACT WIDGET */
+function NewsImpactWidget({ isLight }) {
+  const [idx, setIdx] = useState(0);
 
-  const headlines = [
+  const newsItems = [
     {
-      source: "REUTERS BREAKING WIRE",
-      headline: "Border tensions escalate; government orders urgent emergency military fighter jet and missile radar production.",
-      target: "Defence & Aerospace (HAAL, BEEL)",
-      impact: "MASSIVE BULLISH (+25%)",
+      event: "Defence Ministry awards emergency fighter jet & missile contract to Indian contractors.",
+      sector: "Defence & Aerospace",
+      stocks: "HAAL, BEEL",
+      direction: "UP ▲ (+25%)",
       color: UP,
-      drift: "+20% to +30%"
+      action: "BUY Defence stocks immediately upon hearing the chime!"
     },
     {
-      source: "BLOOMBERG FLASH",
-      headline: "War in Middle East and Russia shuts down major global pipelines; international crude oil price spikes above $120/barrel.",
-      target: "Energy (Reliants, ONGCO)",
-      impact: "STRONG RALLY (+24%)",
+      event: "International crude oil prices spike to $120/barrel due to global pipeline shutdown.",
+      sector: "Energy (Oil & Gas)",
+      stocks: "Reliants, ONGCO",
+      direction: "UP ▲ (+24%)",
       color: UP,
-      drift: "+18% to +25%"
+      action: "BUY Energy stocks to capture surging profit margins!"
     },
     {
-      source: "ECONOMIC TIMES ALERTS",
-      headline: "Diwali festive holiday season sees record-breaking demand; millions of Indians rush to buy new cars and SUVs.",
-      target: "Automobile (Tatva Motors, M&M)",
-      impact: "BULLISH SURGE (+22%)",
-      color: UP,
-      drift: "+15% to +25%"
-    },
-    {
-      source: "CNBC-TV18 DISPATCH",
-      headline: "Government announces ₹50,000 Crore mega subsidy package for green solar parks and giant wind turbine projects.",
-      target: "Renewable Energy (Suzlan, IREDAA)",
-      impact: "SECTOR RALLY (+26%)",
-      color: UP,
-      drift: "+20% to +35%"
+      event: "Global semiconductor microchip shortages force auto assembly factories to halt.",
+      sector: "Automobile",
+      stocks: "Tatva Motors, M&M",
+      direction: "DOWN ▼ (-18%)",
+      color: DOWN,
+      action: "SELL or avoid Auto stocks until production resumes!"
     }
   ];
 
-  const curr = headlines[headlineIdx];
+  const item = newsItems[idx];
 
   return (
     <div
       className={`rounded-2xl border-2 transition-all p-5 sm:p-6 space-y-4 backdrop-blur-xl relative overflow-hidden ${
-        isLight
-          ? "bg-white border-black shadow-[4px_4px_0px_#000000]"
-          : "bg-[#0F1420] border-black shadow-[4px_4px_0px_#000000]"
+        isLight ? "bg-white border-black shadow-[4px_4px_0px_#000000]" : "bg-[#0F1420] border-black shadow-[4px_4px_0px_#000000]"
       }`}
       style={{ borderTop: "4px solid #F0B429" }}
     >
       <div className={`flex items-center justify-between border-b pb-3 ${isLight ? "border-slate-200" : "border-white/10"}`}>
         <div className="flex items-center gap-2">
           <Flame className="w-4 h-4 text-[#F0B429]" />
-          <span className="font-mono text-xs font-bold uppercase tracking-wider text-[#F0B429]">
-            Breaking News Toast Wire
+          <span className="font-mono text-xs font-black uppercase text-[#F0B429]">
+            News Wire & Sector Impact
           </span>
         </div>
         <button
           type="button"
-          onClick={() => setHeadlineIdx((headlineIdx + 1) % headlines.length)}
-          className="text-[10px] font-mono px-2 py-0.5 rounded border border-black bg-[#F0B429] text-black font-black cursor-pointer shadow-[2px_2px_0px_#000000]"
+          onClick={() => setIdx((idx + 1) % newsItems.length)}
+          className="text-[10px] font-mono px-2.5 py-1 rounded border-2 border-black bg-[#F0B429] text-black font-black cursor-pointer shadow-[2px_2px_0px_#000000]"
         >
-          Next Alert ↻
+          Next Headline ↻
         </button>
       </div>
 
-      <div className="p-4 rounded-xl border-2 border-black bg-[#161D2B] space-y-2.5 shadow-[2px_2px_0px_#000000]">
-        <div className="flex items-center justify-between text-[10px] font-mono">
-          <span className="text-[#F0B429] font-black uppercase tracking-wider">
-            ● {curr.source}
-          </span>
-          <span className="text-slate-400">AUDIO CHIME TRIGGERED</span>
+      <div className="p-4 rounded-xl border-2 border-black bg-[#161D2B] space-y-2.5 font-mono shadow-[2px_2px_0px_#000000]">
+        <div className="flex items-center justify-between text-[10px]">
+          <span className="text-[#F0B429] font-black uppercase tracking-wider">● BREAKING WIRE FLASH</span>
+          <span className="text-slate-400">Audio Chime Alerts All Traders</span>
         </div>
 
-        <p className={`text-sm font-black leading-snug ${isLight ? "text-slate-900" : "text-white"}`}>
-          "{curr.headline}"
+        <p className="text-sm font-black text-white leading-snug">
+          "{item.event}"
         </p>
 
-        <div className="pt-2 border-t border-white/10 flex items-center justify-between text-xs font-mono">
-          <span className="text-slate-300">Sector: <strong className="text-white">{curr.target}</strong></span>
-          <span className="font-black px-2 py-0.5 rounded text-[10px]" style={{ color: curr.color, backgroundColor: `${curr.color}25` }}>
-            {curr.impact}
-          </span>
+        <div className="grid grid-cols-2 gap-2 pt-2 border-t border-white/10 text-xs">
+          <div>
+            <span className="text-slate-400 text-[10px] block">Target Sector:</span>
+            <strong className="text-white">{item.sector}</strong>
+          </div>
+          <div className="text-right">
+            <span className="text-slate-400 text-[10px] block">Stock Impact:</span>
+            <span className="font-black text-xs" style={{ color: item.color }}>
+              {item.direction}
+            </span>
+          </div>
+        </div>
+
+        <div className="p-2.5 rounded-lg bg-black/50 border border-white/10 text-xs text-slate-200">
+          <span className="text-[#F0B429] font-black">Winning Action: </span>
+          <span>{item.action}</span>
         </div>
       </div>
-
-      <p className="text-[11px] font-mono text-center text-slate-400 font-bold">
-        News broadcasts trigger live sector drift across the entire exchange.
-      </p>
     </div>
   );
 }
 
-/* 6. GAME TIMER & AUTO-LIQUIDATION */
-function EndgameInteractiveWidget({ isLight }) {
+/* 5. 5-MINUTE AUTO-LIQUIDATION & PODIUM */
+function LiquidationPodiumWidget({ isLight }) {
   return (
     <div
       className={`rounded-2xl border-2 transition-all p-5 sm:p-6 space-y-4 backdrop-blur-xl relative overflow-hidden ${
-        isLight
-          ? "bg-white border-black shadow-[4px_4px_0px_#000000]"
-          : "bg-[#0F1420] border-black shadow-[4px_4px_0px_#000000]"
+        isLight ? "bg-white border-black shadow-[4px_4px_0px_#000000]" : "bg-[#0F1420] border-black shadow-[4px_4px_0px_#000000]"
       }`}
       style={{ borderTop: "4px solid #F0B429" }}
     >
       <div className={`flex items-center justify-between border-b pb-3 ${isLight ? "border-slate-200" : "border-white/10"}`}>
         <div className="flex items-center gap-2">
           <ShieldAlert className="w-4 h-4 text-rose-400" />
-          <span className="font-mono text-xs font-black uppercase tracking-wider text-rose-400">
-            Game Timer & Auto-Liquidation
+          <span className="font-mono text-xs font-black uppercase text-rose-400">
+            5-Min Auto-Liquidation & Winner Podium
           </span>
         </div>
-        <span className="text-xs font-mono text-[#F0B429] font-black bg-amber-500/10 px-2 py-0.5 rounded border border-amber-500/30">
+        <span className="text-xs font-mono text-[#F0B429] font-black bg-amber-500/15 px-2 py-0.5 rounded border border-amber-500/30">
           T-MINUS 5:00
         </span>
       </div>
 
-      <div className="space-y-2.5">
+      <div className="space-y-2.5 font-mono">
         <div className="p-3.5 rounded-xl bg-rose-500/10 border-2 border-black space-y-1 shadow-[2px_2px_0px_#000000]">
-          <div className="flex items-center gap-1.5 text-rose-400 font-mono font-black text-xs uppercase">
+          <div className="flex items-center gap-1.5 text-rose-400 font-black text-xs uppercase">
             <AlertTriangle className="w-3.5 h-3.5" />
-            <span>The 5-Minute Hard Freeze</span>
+            <span>5-Minute Hard Freeze Rule</span>
           </div>
-          <p className="text-xs leading-relaxed font-mono text-slate-200">
-            When 5 minutes remain on the master game clock, order placement locks permanently. Every open share is automatically liquidated to cash at live spot price.
+          <p className="text-xs leading-relaxed text-slate-200">
+            When 5 minutes remain on the clock, trading locks permanently. Every open share across all traders is automatically sold to cash at the current spot price.
           </p>
         </div>
 
-        <div className="grid grid-cols-2 gap-2 text-xs font-mono">
+        <div className="grid grid-cols-2 gap-2 text-xs">
           <div className="p-3 rounded-xl border-2 border-black bg-[#141A28] shadow-[2px_2px_0px_#000000]">
-            <span className="block text-[10px] uppercase text-slate-400 font-bold">Podium Ranking Basis</span>
-            <strong className="text-sm text-white font-black block mt-0.5">100% Cash Balance</strong>
+            <span className="block text-[10px] uppercase text-slate-400 font-bold">Leaderboard Ranking</span>
+            <strong className="text-sm text-emerald-400 font-black block mt-0.5">100% Realized Cash</strong>
           </div>
           <div className="p-3 rounded-xl border-2 border-black bg-[#141A28] shadow-[2px_2px_0px_#000000]">
-            <span className="block text-[10px] uppercase text-slate-400 font-bold">Open Limit Orders</span>
-            <strong className="text-sm text-[#F0B429] font-black block mt-0.5">Refunded to Cash</strong>
+            <span className="block text-[10px] uppercase text-slate-400 font-bold">Unfilled Limits</span>
+            <strong className="text-sm text-[#F0B429] font-black block mt-0.5">Auto-Refunded</strong>
           </div>
+        </div>
+
+        <div className="p-3 rounded-xl border-2 border-black bg-[#F0B429]/15 flex items-center justify-between shadow-[2px_2px_0px_#000000]">
+          <div className="flex items-center gap-2">
+            <Trophy className="w-4 h-4 text-[#F0B429]" />
+            <span className="text-xs text-white font-black">Top 3 Traders Win the Trophy!</span>
+          </div>
+          <span className="text-[10px] text-[#F0B429] font-black uppercase">Live Podium</span>
         </div>
       </div>
     </div>
@@ -643,88 +486,74 @@ function EndgameInteractiveWidget({ isLight }) {
 
 const STEPS = [
   {
-    id: "mindset",
-    badge: "SECTION 01 // CAPITAL & WALLET",
-    title: "Your 20,000 IC Bankroll",
-    subtitle: "Every trader starts with 20,000 IC liquid capital. Your live Net Worth and Leaderboard rank update automatically on every 6-second market tick.",
-    coreRule: "Net Worth = Liquid Cash Balance + Live Market Value of Open Stock Holdings.",
+    id: "schedule",
+    badge: "STAGE 01 // TOURNAMENT SCHEDULE",
+    title: "3-Hour Game & 15-Min Break",
+    subtitle: "The tournament runs for a total of 3 hours with a scheduled 15-minute intermission break to rest, review the leaderboard, and plan your strategy.",
+    coreRule: "Every trader starts with 20,000 IC cash. Protect your capital and maximize returns.",
     tactics: [
-      "Keep dry powder cash ready: maintaining liquid reserves allows you to pounce on sudden market pullbacks.",
-      "Check your TopBar HUD: your available balance and reserved order funds are tracked live in the header.",
-      "Watch your live rank: the leaderboard calculates positions dynamically as prices move."
+      "The tournament is split into two halves with a 15-minute intermission in between.",
+      "During the 15-minute break, market trading freezes and countdown audio plays.",
+      "Check your live Net Worth and Leaderboard rank continuously in the header."
     ],
-    proTip: "Concentrate your capital in 2 to 3 high-conviction trades rather than spreading thin across random stocks.",
-    Visual: WalletInteractiveWidget
+    proTip: "Keep cash reserves ready so you can buy rapid dips when the second half opens.",
+    Visual: ScheduleInteractiveWidget
   },
   {
-    id: "radar",
-    badge: "SECTION 02 // MARKET DIRECTORY",
-    title: "20 Listed Equities Directory",
-    subtitle: "Explore 20 Indian equities across 10 major industry sectors (Automobile, Banking, IT, Defence, Energy, etc.) with real-time quotes.",
-    coreRule: "Green cards indicate upward price momentum. Red indicates selling pressure.",
+    id: "directory",
+    badge: "STAGE 02 // 20 LISTED STOCKS",
+    title: "Listed Stocks & Sector Directory",
+    subtitle: "Browse the 20 Indian equities across 10 major industry sectors (Automobile, Banking, IT, Defence, Energy, etc.) with real-time quotes.",
+    coreRule: "Click any stock on the left to read its company summary and spot price on the right.",
     tactics: [
-      "Use the instant Sector Filter pills at the top of the Market tab to focus on specific industries.",
-      "Inspect the live sparkline trends on each Floor Card to evaluate recent price action before buying.",
-      "Click any stock card to expand its full high-resolution Candlestick Chart and Order Ticket."
+      "Select a stock to instantly see what the company manufactures or delivers.",
+      "Watch the percentage change (▲ Green for gains, ▼ Red for drops) on every 6-second tick.",
+      "Use the search box to find specific tickers like M&M, HAAL, RELI, or TCX."
     ],
-    proTip: "Never chase a stock at the very peak of a spike. Wait for temporary consolidation or place a Limit Order below spot.",
-    Visual: MarketInteractiveWidget
+    proTip: "Knowing what sector each stock belongs to helps you trade breaking news instantly.",
+    Visual: StockDirectoryWidget
   },
   {
-    id: "execution",
-    badge: "SECTION 03 // TRADE EXECUTION",
-    title: "Instant One-Click Fills",
-    subtitle: "Trade instantly with zero commission fees, zero broker delays, and zero price slippage directly from the Stock Detail Modal.",
-    coreRule: "Market orders fill at the live spot price the exact millisecond you click Buy or Sell.",
+    id: "limits",
+    badge: "STAGE 03 // LIMIT BUY & SELL",
+    title: "Mastering Limit Orders",
+    subtitle: "Automate your trading so you don\'t have to stare at the screen. Set target buy or sell prices in advance.",
+    coreRule: "Limit BUY triggers on dips below spot. Limit SELL triggers on rallies above spot.",
     tactics: [
-      "Use quick share presets (+1, +5, +10, +50) or the stepper buttons to rapidly size your trade orders.",
-      "Buying draws immediately from your available wallet; selling books realized profits straight to your cash.",
-      "Track your holdings, average purchase price, and unrealized P&L in the \"My Stocks\" portfolio tab."
+      "Limit BUY: Set a strike price 5% to 15% below market to automatically catch sharp price drops.",
+      "Limit SELL: Set a profit target above market to automatically lock in gains when the stock rallies.",
+      "Committed purchase funds are held securely in escrow and refunded if cancelled."
     ],
-    proTip: "Scale into positions in smaller batches during peak volatility to achieve a balanced average entry price.",
-    Visual: TradeInteractiveWidget
+    proTip: "Leave resting limit buy orders on strong stocks before stepping away or waiting for news.",
+    Visual: LimitOrdersExplainerWidget
   },
   {
-    id: "sniping",
-    badge: "SECTION 04 // LIMIT ORDERS",
-    title: "Automate Entries with Limits",
-    subtitle: "Set automated target buy or sell prices so the exchange matching engine catches market dips and rallies for you automatically.",
-    coreRule: "Limit BUY triggers when price drops to target. Limit SELL triggers when price rises to target.",
-    tactics: [
-      "Place Limit Buy bids 5% to 15% below spot to automatically buy during sudden market dips.",
-      "Committed purchase funds are held securely in escrow so your account can never be overdrawn.",
-      "Review, edit, or cancel active pending orders anytime in the \"Limit Orders\" dashboard tab with 1 click."
-    ],
-    proTip: "Set resting limit buy orders on fundamentally strong stocks before scanning breaking news wires.",
-    Visual: LimitInteractiveWidget
-  },
-  {
-    id: "intel",
-    badge: "SECTION 05 // BREAKING NEWS",
+    id: "news",
+    badge: "STAGE 04 // BREAKING NEWS WIRE",
     title: "Trade Breaking Newsflashes",
-    subtitle: "Real-time analyst newsflashes broadcast directly to your terminal, driving macro market shifts across affected sectors.",
-    coreRule: "Breaking news bulletins broadcast simultaneously to all terminals with an audible chime.",
+    subtitle: "Live analyst news bulletins pop up on your screen with an audio chime and immediately impact stock prices across sectors.",
+    coreRule: "Breaking news directly drives stock prices up or down across related industry sectors.",
     tactics: [
-      "When the notification chime sounds, immediately read the headline banner at the top of your screen.",
-      "Identify the affected industry sector and execute before the rest of the market reacts.",
-      "Visit the \"News\" tab on your sidebar anytime to review the historical transcript of all session bulletins."
+      "When you hear the chime, read the news headline at the top of your screen immediately.",
+      "Positive events (war orders, subsidies, contracts) cause stock prices to surge.",
+      "Negative events (recession, tax hikes, chip shortages) cause stock prices to drop."
     ],
-    proTip: "Act swiftly inside the first 10 seconds of a news drop before market prices fully adjust.",
-    Visual: NewsInteractiveWidget
+    proTip: "Act inside the first 10 seconds of a news drop before the rest of the room buys in.",
+    Visual: NewsImpactWidget
   },
   {
     id: "endgame",
-    badge: "SECTION 06 // THE CLOSING BELL",
-    title: "The 5-Minute Endgame Protocol",
-    subtitle: "Keep an eye on the master tournament clock in the header. Master the countdown rules to secure your podium finish.",
-    coreRule: "When 5 minutes remain on the clock, trading freezes and auto-liquidation executes.",
+    badge: "STAGE 05 // AUTO-LIQUIDATION & PODIUM",
+    title: "5-Minute Auto-Liquidation",
+    subtitle: "When 5 minutes remain on the clock, all open positions automatically liquidate into cash for the final podium finish.",
+    coreRule: "When 5 minutes remain, trading locks permanently and all shares convert to 100% cash.",
     tactics: [
-      "All open stock holdings are automatically liquidated to cash at current market spot prices.",
-      "All pending limit orders are auto-cancelled and escrowed funds are fully refunded to cash.",
-      "The final tournament podium and leaderboard rankings are decided 100% on realized cash net worth."
+      "Every share held by every trader is automatically sold at the current spot price.",
+      "Unfilled limit orders are cancelled and all funds are refunded to your cash balance.",
+      "The final podium winners and trophy rankings are decided 100% on realized cash."
     ],
-    proTip: "Avoid entering new high-risk trades in the final seconds. Lock in your profits calmly before the 5-minute freeze.",
-    Visual: EndgameInteractiveWidget
+    proTip: "Lock in your profits safely before the final 5-minute freeze takes over.",
+    Visual: LiquidationPodiumWidget
   }
 ];
 
