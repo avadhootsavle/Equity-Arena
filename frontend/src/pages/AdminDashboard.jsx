@@ -942,9 +942,9 @@ export function AdminDashboard() {
     let result = [...stocks];
 
     if (stockCategoryFilter === 'PENNY') {
-      result = result.filter((s) => (s.basePrice || s.currentPrice) <= 15.0);
+      result = result.filter((s) => (s.basePrice || s.currentPrice) <= 100.0);
     } else if (stockCategoryFilter === 'REGULAR') {
-      result = result.filter((s) => (s.basePrice || s.currentPrice) > 15.0);
+      result = result.filter((s) => (s.basePrice || s.currentPrice) > 100.0);
     }
 
     if (searchQuery.trim()) {
@@ -1585,7 +1585,7 @@ export function AdminDashboard() {
                     }`}
                   >
                     <span className="w-1.5 h-1.5 rounded-full bg-[#EC4899]" />
-                    <span>PENNY ({stocks.filter((s) => (s.basePrice || s.currentPrice) <= 15).length})</span>
+                    <span>PENNY ({stocks.filter((s) => (s.basePrice || s.currentPrice) <= 100).length})</span>
                   </button>
                   <button
                     type="button"
@@ -1596,7 +1596,7 @@ export function AdminDashboard() {
                         : 'text-[#7B82A0] hover:text-white'
                     }`}
                   >
-                    MAIN ({stocks.filter((s) => (s.basePrice || s.currentPrice) > 15).length})
+                    MAIN ({stocks.filter((s) => (s.basePrice || s.currentPrice) > 100).length})
                   </button>
                 </div>
 
@@ -1643,7 +1643,7 @@ export function AdminDashboard() {
                       {/* Symbol & Name & Penny Badge */}
                       <div className="flex items-center gap-2 min-w-0 flex-1">
                         <span className="font-extrabold text-white text-xs shrink-0">{s.symbol}</span>
-                        {(s.basePrice || s.currentPrice) <= 15 && (
+                        {(s.basePrice || s.currentPrice) <= 100 && (
                           <span className="px-1.5 py-0.2 rounded text-[9px] font-black uppercase tracking-wider bg-[#EC4899]/20 text-[#EC4899] border border-[#EC4899]/40 shrink-0">
                             PENNY
                           </span>
@@ -2213,7 +2213,7 @@ export function AdminDashboard() {
                     Object.values(stockHoldingsData.byStock).map((item) => {
                       const totalShares = item.holders.reduce((acc, h) => acc + h.quantity, 0);
                       const totalVal = item.holders.reduce((acc, h) => acc + h.value, 0);
-                      const isPenny = item.currentPrice <= 15.0;
+                      const isPenny = item.currentPrice <= 100.0;
 
                       return (
                         <div
@@ -2308,7 +2308,7 @@ export function AdminDashboard() {
                           {/* Stocks Held Pills */}
                           <div className="flex flex-wrap gap-1.5">
                             {trader.stocks.map((s) => {
-                              const isPenny = s.currentPrice <= 15.0;
+                              const isPenny = s.currentPrice <= 100.0;
                               return (
                                 <div
                                   key={s.stockId}
