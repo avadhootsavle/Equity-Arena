@@ -572,7 +572,7 @@ router.get('/stock-holdings', async (req, res) => {
         traderName: h.user.name || h.user.email.split('@')[0],
         email: h.user.email,
         quantity: h.quantity,
-        avgBuyPrice: h.averageBuyPrice,
+        avgBuyPrice: h.avgBuyPrice,
         value: stockVal
       });
 
@@ -591,7 +591,7 @@ router.get('/stock-holdings', async (req, res) => {
         symbol: h.stock.symbol,
         name: h.stock.name,
         quantity: h.quantity,
-        avgBuyPrice: h.averageBuyPrice,
+        avgBuyPrice: h.avgBuyPrice,
         currentPrice: h.stock.currentPrice,
         value: stockVal
       });

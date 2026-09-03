@@ -3,6 +3,7 @@ const { io: ioClient } = require('socket.io-client');
 const { PrismaClient } = require('@prisma/client');
 const { generateToken } = require('../src/utils/auth');
 const { emitPortfolioUpdate, emitNewsBroadcast } = require('../src/socket');
+const { server } = require('../src/index');
 
 const prisma = new PrismaClient();
 const API_URL = 'http://localhost:5001';
@@ -15,8 +16,15 @@ async function runMultiTabSyncTest() {
   let socketTab1 = null;
   let socketTab2 = null;
   let socketTab3 = null;
+  let startedServer = false;
 
   try {
+    if (!server.listening) {
+      await new Promise((resolve) => {
+        server.listen(5001, '127.0.0.1', resolve);
+      });
+      startedServer = true;
+    }
     // 1. Create a test trader user
     const testEmail = `multitab_${Date.now()}@test.com`;
     const user = await prisma.user.create({
@@ -118,6 +126,9 @@ async function runMultiTabSyncTest() {
     if (socketTab1) socketTab1.disconnect();
     if (socketTab2) socketTab2.disconnect();
     if (socketTab3) socketTab3.disconnect();
+    if (startedServer && server.listening) {
+      await new Promise((resolve) => server.close(resolve));
+    }
     await prisma.$disconnect();
   }
 }
