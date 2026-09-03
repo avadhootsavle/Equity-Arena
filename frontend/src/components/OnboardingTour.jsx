@@ -3,7 +3,7 @@ import {
   Wallet, MousePointerClick, Target, LineChart, Newspaper, Trophy,
   ArrowRight, ArrowLeft, X, Check, AlertTriangle, Clock, Lightbulb,
   Zap, Flame, ShieldAlert, TrendingUp, TrendingDown, Crosshair,
-  Volume2, Compass, Award, Sparkles, ChevronRight, Terminal
+  Volume2, Compass, Award, Sparkles, ChevronRight, Terminal, Search, Building
 } from 'lucide-react';
 import { useTheme } from '../context/ThemeContext';
 
@@ -142,19 +142,50 @@ function GoalInteractiveWidget({ isLight }) {
 }
 
 function MarketInteractiveWidget({ isLight }) {
-  const [activeStock, setActiveStock] = useState('ANAG');
+  const [activeStock, setActiveStock] = useState('M&M');
+  const [sectorFilter, setSectorFilter] = useState('ALL');
+  const [searchQuery, setSearchQuery] = useState('');
 
-  const stocks = [
-    { code: 'ANAG', name: 'Annapurna Agro', price: 46.80, change: 5.4, sector: 'Agri', vol: '1.2M', sentiment: 'BULLISH' },
-    { code: 'RTB', name: 'Rashtriya Trust Bank', price: 2540.10, change: -3.2, sector: 'Banking', vol: '840K', sentiment: 'BEARISH' },
-    { code: 'GSL', name: 'Ganga Shipping', price: 94.50, change: 1.8, sector: 'Logistics', vol: '2.4M', sentiment: 'STABLE' },
+  const ALL_STOCKS = [
+    // Main Stocks (15)
+    { code: 'HDFB', name: 'HDFB Bank', sector: 'Banking', price: 1800.00, change: 3.4, vol: '1.4M', isPenny: false, desc: 'Leading private bank providing retail banking, loans, mortgages, and credit facilities across India.' },
+    { code: 'ICCO', name: 'ICICO Bank', sector: 'Banking', price: 1250.00, change: -1.8, vol: '1.1M', isPenny: false, desc: 'Premier financial powerhouse known for digital consumer banking, corporate lending, and retail credit.' },
+    { code: 'TCX', name: 'TCX', sector: 'IT', price: 4200.00, change: 2.6, vol: '890K', isPenny: false, desc: 'Global leader in IT services, cloud infrastructure migration, and enterprise software consultancy.' },
+    { code: 'INFS', name: 'Infisys', sector: 'IT', price: 1600.00, change: -0.9, vol: '1.8M', isPenny: false, desc: 'Top Indian digital IT giant delivering enterprise technology, AI modernization, and cloud software solutions.' },
+    { code: 'HAAL', name: 'HAAL', sector: 'Defence & Aerospace', price: 5000.00, change: 6.2, vol: '720K', isPenny: false, desc: 'Premier state-backed aerospace contractor manufacturing military fighter aircraft and defense helicopters.' },
+    { code: 'BEEL', name: 'BEEL', sector: 'Defence & Aerospace', price: 420.00, change: 1.5, vol: '2.3M', isPenny: false, desc: 'High-tech defense electronics manufacturer producing tactical radar, sonar, and avionics systems.' },
+    { code: 'SURY', name: 'Suryan Pharma', sector: 'Pharmaceuticals', price: 1900.00, change: -2.1, vol: '640K', isPenny: false, desc: 'Major pharmaceutical giant developing specialty generic formulations, therapies, and active drugs.' },
+    { code: 'CPLX', name: 'Ciplex', sector: 'Pharmaceuticals', price: 1500.00, change: 4.1, vol: '910K', isPenny: false, desc: 'Global healthcare and pharmaceutical company specializing in respiratory medications and lifesaving treatments.' },
+    { code: 'AIRT', name: 'Bharat Airtell', sector: 'Telecommunications', price: 1850.00, change: 1.2, vol: '1.5M', isPenny: false, desc: 'Leading telecom provider delivering high-speed 5G mobile networks, broadband, and enterprise connectivity.' },
+    { code: 'TATV', name: 'Tatva Motors', sector: 'Automobile', price: 950.00, change: 3.8, vol: '3.1M', isPenny: false, desc: 'Leading automotive powerhouse manufacturing passenger cars, electric vehicles, and commercial heavy trucks.' },
+    { code: 'M&M', name: 'M&M', sector: 'Automobile', price: 3000.00, change: 4.5, vol: '1.2M', isPenny: false, desc: 'India’s top utility vehicle and tractor manufacturer specializing in rugged SUVs, farm machinery, and EVs.' },
+    { code: 'RELI', name: 'Reliants Industries', sector: 'Energy (Oil & Gas)', price: 2900.00, change: -1.2, vol: '2.0M', isPenny: false, desc: 'Mega-conglomerate dominating oil refining, petrochemicals, energy infrastructure, and retail.' },
+    { code: 'ONGC', name: 'ONGCO', sector: 'Energy (Oil & Gas)', price: 350.00, change: 0.8, vol: '4.5M', isPenny: false, desc: 'India’s largest upstream crude oil and natural gas exploration and offshore production company.' },
+    { code: 'DLEF', name: 'DLEF', sector: 'Real Estate', price: 850.00, change: 2.1, vol: '1.3M', isPenny: false, desc: 'Premier real estate builder developing luxury residential townships and prime commercial offices.' },
+    { code: 'GODR', name: 'Godrej Properties', sector: 'Real Estate', price: 2700.00, change: -1.5, vol: '550K', isPenny: false, desc: 'Top-tier sustainable real estate developer creating modern premium housing and urban living projects.' },
+
+    // Penny Stocks (5) (< 100 IC)
+    { code: 'IDEA', name: 'Vodfone Idea', sector: 'Telecommunications', price: 18.00, change: 8.5, vol: '12.4M', isPenny: true, desc: 'Turnaround telecom operator expanding high-frequency 4G/5G mobile subscriber coverage.' },
+    { code: 'SUZL', name: 'Suzlan', sector: 'Renewable Energy', price: 75.00, change: 5.8, vol: '8.7M', isPenny: true, desc: 'Wind energy technology leader supplying commercial wind turbines and green renewable power solutions.' },
+    { code: 'IRED', name: 'IREDAA', sector: 'Renewable Energy', price: 95.00, change: 7.2, vol: '6.2M', isPenny: true, desc: 'Non-banking financial agency financing national green energy, solar grids, and clean power initiatives.' },
+    { code: 'SAAL', name: 'SAAIL', sector: 'Metals & Mining', price: 98.00, change: -2.4, vol: '5.1M', isPenny: true, desc: 'State-owned steelmaking giant supplying industrial steel for mega infrastructure, railways, and construction.' },
+    { code: 'NMDC', name: 'NMDCX', sector: 'Metals & Mining', price: 90.00, change: 1.9, vol: '4.8M', isPenny: true, desc: 'India’s largest iron ore miner supplying essential raw mineral ores to domestic blast furnaces.' }
   ];
 
-  const sel = stocks.find(s => s.code === activeStock) || stocks[0];
+  const filteredStocks = ALL_STOCKS.filter(s => {
+    const matchesSector = sectorFilter === 'ALL' || (sectorFilter === 'PENNY' ? s.isPenny : s.sector === sectorFilter);
+    const matchesSearch = searchQuery.trim() === '' || 
+      s.code.toLowerCase().includes(searchQuery.toLowerCase()) || 
+      s.name.toLowerCase().includes(searchQuery.toLowerCase()) || 
+      s.sector.toLowerCase().includes(searchQuery.toLowerCase());
+    return matchesSector && matchesSearch;
+  });
+
+  const sel = ALL_STOCKS.find(s => s.code === activeStock) || ALL_STOCKS[0];
 
   return (
     <div
-      className={`rounded-2xl border transition-all p-6 sm:p-7 space-y-4 backdrop-blur-xl relative overflow-hidden ${
+      className={`rounded-2xl border transition-all p-5 sm:p-6 space-y-4 backdrop-blur-xl relative overflow-hidden ${
         isLight
           ? 'bg-white border-[#E2E8F0] shadow-[0_12px_40px_rgba(0,0,0,0.06)]'
           : 'bg-[#101520] border-white/[0.1] shadow-[0_20px_50px_rgba(0,0,0,0.6)]'
@@ -166,20 +197,60 @@ function MarketInteractiveWidget({ isLight }) {
           : 'inset 0 1px 2px rgba(240,180,41,0.18), inset 0 0 40px rgba(240,180,41,0.02), 0 20px 50px rgba(0,0,0,0.6)'
       }}
     >
-      <div className={`flex items-center justify-between border-b pb-3.5 ${isLight ? 'border-slate-200' : 'border-white/[0.08]'}`}>
-        <div className="flex items-center gap-2.5">
-          <span className="w-2.5 h-2.5 rounded-full bg-[#F0B429] animate-pulse" />
+      {/* Header */}
+      <div className={`flex items-center justify-between border-b pb-3 ${isLight ? 'border-slate-200' : 'border-white/[0.08]'}`}>
+        <div className="flex items-center gap-2">
+          <Building className="w-4 h-4 text-[#F0B429]" />
           <span className={`font-mono text-xs font-bold uppercase tracking-widest ${isLight ? 'text-slate-900' : 'text-white'}`}>
-            Live Trading Floor Feed
+            20 Listed Indian Equities Directory
           </span>
         </div>
-        <span className="text-[10px] font-mono text-emerald-400 bg-emerald-500/10 px-2 py-0.5 rounded border border-emerald-500/20">
-          ● TICKER RUNNING
+        <span className="text-[10px] font-mono text-emerald-400 bg-emerald-500/10 px-2 py-0.5 rounded border border-emerald-500/20 font-bold">
+          20 / 20 STOCKS ACTIVE
         </span>
       </div>
 
-      <div className="grid grid-cols-3 gap-2.5">
-        {stocks.map(s => {
+      {/* Search & Filter Bar */}
+      <div className="space-y-2">
+        <div className="relative">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-slate-400" />
+          <input
+            type="text"
+            placeholder="Search stock code, name, sector..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            className={`w-full pl-9 pr-3 py-1.5 text-xs font-mono rounded-lg border transition-all focus:outline-none focus:border-[#F0B429] ${
+              isLight
+                ? 'bg-slate-50 border-slate-200 text-slate-900 placeholder:text-slate-400'
+                : 'bg-white/[0.04] border-white/[0.08] text-white placeholder:text-slate-500'
+            }`}
+          />
+        </div>
+
+        {/* Filter Badges */}
+        <div className="flex items-center gap-1.5 overflow-x-auto pb-1 scrollbar-none text-[10px] font-mono">
+          {['ALL', 'PENNY', 'Automobile', 'Banking', 'IT', 'Defence & Aerospace', 'Pharmaceuticals', 'Telecommunications', 'Renewable Energy', 'Metals & Mining', 'Real Estate', 'Energy (Oil & Gas)'].map(sec => (
+            <button
+              key={sec}
+              type="button"
+              onClick={() => setSectorFilter(sec)}
+              className={`px-2 py-0.5 rounded whitespace-nowrap transition-all cursor-pointer font-bold ${
+                sectorFilter === sec
+                  ? 'bg-[#F0B429] text-black shadow-sm'
+                  : isLight
+                    ? 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+                    : 'bg-white/[0.05] text-slate-400 hover:text-white'
+              }`}
+            >
+              {sec === 'PENNY' ? '⚡ PENNY (<100 IC)' : sec}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      {/* Scrollable Stock Selector Grid */}
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 max-h-[160px] overflow-y-auto pr-1">
+        {filteredStocks.map(s => {
           const isUp = s.change >= 0;
           const isActive = s.code === activeStock;
           return (
@@ -187,9 +258,9 @@ function MarketInteractiveWidget({ isLight }) {
               key={s.code}
               type="button"
               onClick={() => setActiveStock(s.code)}
-              className={`p-3 rounded-xl text-left transition-all border cursor-pointer ${
+              className={`p-2 rounded-lg text-left transition-all border cursor-pointer ${
                 isActive
-                  ? 'bg-amber-500/15 border-[#F0B429] shadow-[0_0_20px_rgba(240,180,41,0.2)] scale-[1.02]'
+                  ? 'bg-amber-500/20 border-[#F0B429] shadow-[0_0_12px_rgba(240,180,41,0.25)] scale-[1.02]'
                   : isLight
                     ? 'bg-slate-50 border-slate-200 hover:bg-slate-100'
                     : 'bg-white/[0.02] border-white/[0.06] hover:bg-white/[0.05]'
@@ -197,48 +268,75 @@ function MarketInteractiveWidget({ isLight }) {
             >
               <div className="font-mono font-black text-xs flex items-center justify-between">
                 <span className={isLight ? 'text-slate-900' : 'text-white'}>{s.code}</span>
-                <span className={`text-[10px] ${isUp ? 'text-emerald-400' : 'text-rose-400'}`}>
-                  {isUp ? '▲' : '▼'} {Math.abs(s.change)}%
-                </span>
+                {s.isPenny && (
+                  <span className="text-[8px] bg-amber-500/20 text-[#F0B429] px-1 py-0.2 rounded font-bold">
+                    PENNY
+                  </span>
+                )}
               </div>
-              <div className={`text-sm font-mono font-bold mt-1 ${isLight ? 'text-slate-800' : 'text-slate-200'}`}>
-                {s.price.toFixed(2)}
+              <div className="flex items-baseline justify-between mt-0.5">
+                <span className={`text-[11px] font-mono font-bold ${isLight ? 'text-slate-800' : 'text-slate-200'}`}>
+                  {s.price.toFixed(2)}
+                </span>
+                <span className={`text-[9px] font-mono font-bold ${isUp ? 'text-emerald-400' : 'text-rose-400'}`}>
+                  {isUp ? '▲' : '▼'}{Math.abs(s.change)}%
+                </span>
               </div>
             </button>
           );
         })}
       </div>
 
-      <div className={`p-4 rounded-xl border space-y-3 ${
+      {/* Selected Stock Sector Profile & 1-Line Description Card */}
+      <div className={`p-3.5 rounded-xl border space-y-2 transition-all ${
         isLight
-          ? 'bg-slate-50/80 border-slate-200'
-          : 'bg-gradient-to-br from-white/[0.04] to-transparent border-white/[0.08]'
+          ? 'bg-amber-500/[0.04] border-amber-500/30'
+          : 'bg-gradient-to-br from-amber-500/[0.08] to-transparent border-amber-500/30'
       }`}>
         <div className="flex justify-between items-start">
           <div>
-            <h4 className={`text-base font-bold flex items-center gap-2 ${isLight ? 'text-slate-900' : 'text-white'}`}>
+            <h4 className={`text-sm font-black flex items-center gap-2 ${isLight ? 'text-slate-900' : 'text-white'}`}>
+              <span className="text-[#F0B429] font-mono font-black">{sel.code}</span>
+              <span>—</span>
               <span>{sel.name}</span>
-              <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-slate-800 text-slate-300">
+            </h4>
+            <div className="flex items-center gap-2 mt-0.5">
+              <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-slate-800 text-amber-300 font-bold">
                 {sel.sector}
               </span>
-            </h4>
-            <div className={`text-xs font-mono mt-0.5 ${isLight ? 'text-slate-600' : 'text-slate-400'}`}>
-              Spot: <strong className={`text-sm ${isLight ? 'text-slate-900' : 'text-white'}`}>{sel.price.toFixed(2)} IC</strong>
+              {sel.isPenny && (
+                <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-amber-500/20 text-amber-400 font-bold border border-amber-500/30">
+                  Penny Speculation
+                </span>
+              )}
             </div>
           </div>
-          <span className={`px-2.5 py-1 rounded-full text-xs font-mono font-extrabold ${
-            sel.change >= 0 ? 'bg-emerald-500/20 text-emerald-400' : 'bg-rose-500/20 text-rose-400'
-          }`}>
-            {sel.change >= 0 ? 'STRONG BID' : 'HEAVY OFFER'}
-          </span>
+          <div className="text-right font-mono">
+            <span className={`text-xs font-black block ${isLight ? 'text-slate-900' : 'text-white'}`}>
+              {sel.price.toFixed(2)} IC
+            </span>
+            <span className={`text-[10px] font-bold ${sel.change >= 0 ? 'text-emerald-400' : 'text-rose-400'}`}>
+              {sel.change >= 0 ? '▲ +' : '▼ -'}{Math.abs(sel.change)}% Spot
+            </span>
+          </div>
         </div>
 
-        <div className={`flex items-center justify-between text-[11px] font-mono pt-2 border-t ${
+        {/* 1-Line Description Box */}
+        <div className={`p-2.5 rounded-lg border font-mono text-xs leading-relaxed ${
+          isLight ? 'bg-white border-amber-500/20 text-slate-800' : 'bg-black/40 border-amber-500/20 text-slate-200'
+        }`}>
+          <div className="flex items-start gap-1.5">
+            <span className="text-[#F0B429] font-bold">▸</span>
+            <span className="font-medium">{sel.desc}</span>
+          </div>
+        </div>
+
+        <div className={`flex items-center justify-between text-[10px] font-mono pt-1.5 border-t ${
           isLight ? 'border-slate-200 text-slate-600' : 'border-white/[0.06] text-slate-400'
         }`}>
-          <span>Floor Vol: <strong className={isLight ? 'text-slate-900' : 'text-white'}>{sel.vol}</strong></span>
-          <span>Tape Drift: <strong className="text-[#F0B429]">±2.5% / 6s</strong></span>
-          <span>Action: <strong className="text-emerald-400">Click to Open Ticket</strong></span>
+          <span>Volume: <strong className={isLight ? 'text-slate-900' : 'text-white'}>{sel.vol}</strong></span>
+          <span>Drift: <strong className="text-[#F0B429]">±1.5% / 6s</strong></span>
+          <span>Match Engine: <strong className="text-emerald-400">Zero Slippage</strong></span>
         </div>
       </div>
     </div>
@@ -438,27 +536,35 @@ function NewsInteractiveWidget({ isLight }) {
   const headlines = [
     {
       source: 'REUTERS BREAKING WIRE',
-      headline: 'Govt unveils 20% subsidy boost for domestic fertilizer & agro processing plants.',
-      target: 'ANAG (Annapurna Agro)',
+      headline: 'Defence Ministry awards historic ₹45,000 Crore "Make in India" combat fighter jet and avionics contract to HAAL and BEEL.',
+      target: 'HAAL & BEEL (Defence)',
       impact: 'MASSIVE BULLISH',
+      color: UP,
+      drift: '+18% to +28%'
+    },
+    {
+      source: 'BLOOMBERG FLASH',
+      headline: 'RBI cuts repo rate by 25 basis points; credit borrowing volumes soar across commercial loan portfolios.',
+      target: 'HDFB & ICCO (Banking)',
+      impact: 'STRONG RALLY',
+      color: UP,
+      drift: '+12% to +20%'
+    },
+    {
+      source: 'ECONOMIC TIMES ALERTS',
+      headline: 'Govt greenlights national EV battery gigafactory subsidies; Tatva Motors & M&M launch new electric SUV lines.',
+      target: 'TATV & M&M (Auto)',
+      impact: 'BULLISH SURGE',
       color: UP,
       drift: '+15% to +25%'
     },
     {
-      source: 'BLOOMBERG FLASH',
-      headline: 'RBI hikes cash reserve ratio unexpectedly; bank liquidity squeezed.',
-      target: 'RTB (Rashtriya Trust Bank)',
-      impact: 'SHARP CRASH',
-      color: DOWN,
-      drift: '-12% to -20%'
-    },
-    {
-      source: 'ECONOMIC TIMES ALERTS',
-      headline: 'Suez Canal shipping rates spike 40% amid global container shortages.',
-      target: 'GSL (Ganga Shipping)',
-      impact: 'MOMENTUM SURGE',
+      source: 'CNBC-TV18 DISPATCH',
+      headline: 'National Green Hydrogen mission allocates mega wind & solar capacity quotas to Suzlan and IREDAA.',
+      target: 'SUZL & IRED (Renewables)',
+      impact: 'PENNY BREAKOUT',
       color: UP,
-      drift: '+18% to +30%'
+      drift: '+20% to +35%'
     }
   ];
 
