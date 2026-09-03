@@ -54,7 +54,7 @@ function getRandomVolume(min = 5000, max = 15000) {
 }
 
 async function main() {
-  console.log("🌱 Starting ACTUAL TOURNAMENT database seeding with new stock roster & intuitive news...");
+  console.log("🌱 Starting ACTUAL TOURNAMENT database seeding with new stock roster & 40 intuitive news...");
 
   // 1. Clean previous trading logs, holdings, orders, and stocks
   await prisma.adminAuditLog.deleteMany();
@@ -194,7 +194,7 @@ async function main() {
       }
     });
   }
-  console.log(`✅ Seeded ${ACTUAL_NEWS_TEMPLATES.length} Simple & Intuitive News Templates tailored to new stock roster.`);
+  console.log(`✅ Seeded ${ACTUAL_NEWS_TEMPLATES.length} Simple & Intuitive News Templates (20 Positive + 20 Negative).`);
 
   console.log("🎉 ACTUAL TOURNAMENT database seeding completed successfully!");
 }
