@@ -536,32 +536,32 @@ function NewsInteractiveWidget({ isLight }) {
   const headlines = [
     {
       source: 'REUTERS BREAKING WIRE',
-      headline: 'Defence Ministry awards historic ₹45,000 Crore "Make in India" combat fighter jet and avionics contract to HAAL and BEEL.',
-      target: 'HAAL & BEEL (Defence)',
+      headline: 'Border tensions escalate; government orders urgent emergency military fighter jet and missile radar production.',
+      target: 'Defence & Aerospace (HAAL, BEEL)',
       impact: 'MASSIVE BULLISH',
       color: UP,
-      drift: '+18% to +28%'
+      drift: '+20% to +30%'
     },
     {
       source: 'BLOOMBERG FLASH',
-      headline: 'RBI cuts repo rate by 25 basis points; credit borrowing volumes soar across commercial loan portfolios.',
-      target: 'HDFB & ICCO (Banking)',
+      headline: 'War in Middle East and Russia shuts down major global pipelines; international crude oil price spikes above $120/barrel.',
+      target: 'Energy (Reliants, ONGCO)',
       impact: 'STRONG RALLY',
       color: UP,
-      drift: '+12% to +20%'
+      drift: '+18% to +25%'
     },
     {
       source: 'ECONOMIC TIMES ALERTS',
-      headline: 'Govt greenlights national EV battery gigafactory subsidies; Tatva Motors & M&M launch new electric SUV lines.',
-      target: 'TATV & M&M (Auto)',
+      headline: 'Diwali festive holiday season sees record-breaking demand; millions of Indians rush to buy new cars and SUVs.',
+      target: 'Automobile (Tatva Motors, M&M)',
       impact: 'BULLISH SURGE',
       color: UP,
       drift: '+15% to +25%'
     },
     {
       source: 'CNBC-TV18 DISPATCH',
-      headline: 'National Green Hydrogen mission allocates mega wind & solar capacity quotas to Suzlan and IREDAA.',
-      target: 'SUZL & IRED (Renewables)',
+      headline: 'Government announces ₹50,000 Crore mega subsidy package for green solar parks and giant wind turbine projects.',
+      target: 'Renewable Energy (Suzlan, IREDAA)',
       impact: 'PENNY BREAKOUT',
       color: UP,
       drift: '+20% to +35%'
