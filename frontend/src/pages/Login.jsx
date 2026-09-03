@@ -173,7 +173,7 @@ export function Login() {
 
               <div className="p-3.5 rounded-xl border border-[#F0B429]/30 bg-[#0F1117]/80 backdrop-blur-xs shadow-md">
                 <div className="font-extrabold text-[#22C55E] text-base sm:text-lg mb-0.5 truncate font-mono">
-                  15 STOCKS
+                  20 STOCKS
                 </div>
                 <div className="text-[10px] sm:text-[11px] uppercase tracking-wider text-[#7B82A0] font-mono truncate">
                   Live Exchange
