@@ -106,134 +106,125 @@ function ScheduleInteractiveWidget({ isLight }) {
 
 /* 2. STOCKS DIRECTORY (LIST ON LEFT, DESCRIPTION ON RIGHT) */
 function StockDirectoryWidget({ isLight }) {
-  const [activeStock, setActiveStock] = useState("M&M");
   const [searchQuery, setSearchQuery] = useState("");
+  const [sectorFilter, setSectorFilter] = useState("ALL");
 
   const ALL_STOCKS = [
-    { code: "HDFB", name: "HDFB Bank", sector: "Banking", price: 1800.00, change: 3.4, desc: "Leading private bank providing retail banking, home loans, mortgages, and commercial credit across India." },
-    { code: "ICCO", name: "ICICO Bank", sector: "Banking", price: 1250.00, change: -1.8, desc: "Premier financial powerhouse known for digital consumer banking, corporate lending, and retail credit." },
-    { code: "TCX", name: "TCX", sector: "IT", price: 4200.00, change: 2.6, desc: "Global leader in IT services, cloud migration, and enterprise software consultancy." },
-    { code: "INFS", name: "Infisys", sector: "IT", price: 1600.00, change: -0.9, desc: "Top Indian digital IT giant delivering enterprise technology, AI solutions, and software engineering." },
-    { code: "HAAL", name: "HAAL", sector: "Defence & Aerospace", price: 5000.00, change: 6.2, desc: "Premier state-backed aerospace contractor manufacturing military fighter aircraft and defense helicopters." },
-    { code: "BEEL", name: "BEEL", sector: "Defence & Aerospace", price: 420.00, change: 1.5, desc: "High-tech defense electronics manufacturer producing tactical radar, sonar, and avionics systems." },
-    { code: "SURY", name: "Suryan Pharma", sector: "Pharmaceuticals", price: 1900.00, change: -2.1, desc: "Major pharmaceutical giant developing specialty generic formulations, therapies, and active drugs." },
-    { code: "CPLX", name: "Ciplex", sector: "Pharmaceuticals", price: 1500.00, change: 4.1, desc: "Global healthcare and pharmaceutical company specializing in respiratory medications and treatments." },
-    { code: "AIRT", name: "Bharat Airtell", sector: "Telecommunications", price: 1850.00, change: 1.2, desc: "Leading telecom provider delivering high-speed 5G mobile networks, broadband, and enterprise connectivity." },
-    { code: "IDEA", name: "Vodfone Idea", sector: "Telecommunications", price: 18.00, change: 8.5, desc: "Turnaround telecom operator expanding mobile subscriber coverage across Indian telecom circles." },
-    { code: "TATV", name: "Tatva Motors", sector: "Automobile", price: 950.00, change: 3.8, desc: "Leading automotive powerhouse manufacturing passenger cars, electric vehicles, and commercial heavy trucks." },
-    { code: "M&M", name: "M&M", sector: "Automobile", price: 3000.00, change: 4.5, desc: "India’s top utility vehicle and tractor manufacturer specializing in rugged SUVs, farm machinery, and EVs." },
-    { code: "RELI", name: "Reliants Industries", sector: "Energy (Oil & Gas)", price: 2900.00, change: -1.2, desc: "Mega-conglomerate dominating oil refining, petrochemicals, energy infrastructure, and retail." },
-    { code: "ONGC", name: "ONGCO", sector: "Energy (Oil & Gas)", price: 350.00, change: 0.8, desc: "India’s largest upstream crude oil and natural gas exploration and offshore production company." },
-    { code: "DLEF", name: "DLEF", sector: "Real Estate", price: 850.00, change: 2.1, desc: "Premier real estate builder developing luxury residential townships and prime commercial offices." },
-    { code: "GODR", name: "Godrej Properties", sector: "Real Estate", price: 2700.00, change: -1.5, desc: "Top-tier sustainable real estate developer creating modern premium housing and urban living projects." },
-    { code: "SUZL", name: "Suzlan", sector: "Renewable Energy", price: 75.00, change: 5.8, desc: "Wind energy technology leader supplying commercial wind turbines and green renewable power solutions." },
-    { code: "IRED", name: "IREDAA", sector: "Renewable Energy", price: 95.00, change: 7.2, desc: "Non-banking financial agency financing national green energy, solar grids, and clean power initiatives." },
-    { code: "SAAL", name: "SAAIL", sector: "Metals & Mining", price: 98.00, change: -2.4, desc: "State-owned steelmaking giant supplying industrial steel for mega infrastructure, railways, and construction." },
-    { code: "NMDC", name: "NMDCX", sector: "Metals & Mining", price: 90.00, change: 1.9, desc: "India’s largest iron ore miner supplying essential raw mineral ores to domestic blast furnaces." }
+    { code: "HDFB", name: "HDFB Bank", sector: "Banking", price: 1800.00, change: 3.4, desc: "Leading private bank for consumer banking, home loans, mortgages & credit facilities across India." },
+    { code: "ICCO", name: "ICICO Bank", sector: "Banking", price: 1250.00, change: -1.8, desc: "Financial powerhouse known for corporate credit, retail accounts, loans & digital finance." },
+    { code: "TCX", name: "TCX", sector: "IT", price: 4200.00, change: 2.6, desc: "Global IT consultancy leader delivering enterprise software, cloud infrastructure & tech solutions." },
+    { code: "INFS", name: "Infisys", sector: "IT", price: 1600.00, change: -0.9, desc: "Premier digital tech giant specializing in business software, AI modernization & IT engineering." },
+    { code: "HAAL", name: "HAAL", sector: "Defence & Aerospace", price: 5000.00, change: 6.2, desc: "State-backed aerospace defense manufacturer building fighter jets, helicopters & avionics." },
+    { code: "BEEL", name: "BEEL", sector: "Defence & Aerospace", price: 420.00, change: 1.5, desc: "High-tech military electronics contractor producing tactical radars, sonar & defense gear." },
+    { code: "SURY", name: "Suryan Pharma", sector: "Pharmaceuticals", price: 1900.00, change: -2.1, desc: "Major pharmaceutical giant developing specialty generic drugs, active ingredients & formulations." },
+    { code: "CPLX", name: "Ciplex", sector: "Pharmaceuticals", price: 1500.00, change: 4.1, desc: "Global healthcare provider leading in respiratory medicines, antibiotics & lifesaving therapies." },
+    { code: "AIRT", name: "Bharat Airtell", sector: "Telecommunications", price: 1850.00, change: 1.2, desc: "Leading telecom operator delivering national 5G mobile networks, broadband & digital enterprise." },
+    { code: "IDEA", name: "Vodfone Idea", sector: "Telecommunications", price: 18.00, change: 8.5, desc: "Telecom service provider delivering cellular coverage and 4G data networks across India." },
+    { code: "TATV", name: "Tatva Motors", sector: "Automobile", price: 950.00, change: 3.8, desc: "Automotive powerhouse producing passenger cars, commercial transport trucks & electric vehicles." },
+    { code: "M&M", name: "M&M", sector: "Automobile", price: 3000.00, change: 4.5, desc: "India’s top utility vehicle and tractor company specializing in rugged SUVs, farm tractors & EVs." },
+    { code: "RELI", name: "Reliants Industries", sector: "Energy (Oil & Gas)", price: 2900.00, change: -1.2, desc: "Mega-conglomerate dominating crude oil refining, petrochemicals, retail & energy infrastructure." },
+    { code: "ONGC", name: "ONGCO", sector: "Energy (Oil & Gas)", price: 350.00, change: 0.8, desc: "India’s largest state oil exploration and offshore natural gas production company." },
+    { code: "DLEF", name: "DLEF", sector: "Real Estate", price: 850.00, change: 2.1, desc: "Premier real estate builder constructing premium luxury townships, malls & corporate offices." },
+    { code: "GODR", name: "Godrej Properties", sector: "Real Estate", price: 2700.00, change: -1.5, desc: "Top sustainable developer building modern eco-friendly residential housing & urban apartments." },
+    { code: "SUZL", name: "Suzlan", sector: "Renewable Energy", price: 75.00, change: 5.8, desc: "Wind turbine manufacturing pioneer providing green renewable energy and clean power solutions." },
+    { code: "IRED", name: "IREDAA", sector: "Renewable Energy", price: 95.00, change: 7.2, desc: "Non-banking financial agency financing national green energy, solar parks & hydro grid projects." },
+    { code: "SAAL", name: "SAAIL", sector: "Metals & Mining", price: 98.00, change: -2.4, desc: "State-owned steelmaking titan supplying structural steel for railways, highways & infrastructure." },
+    { code: "NMDC", name: "NMDCX", sector: "Metals & Mining", price: 90.00, change: 1.9, desc: "India’s largest iron ore miner supplying essential raw minerals to domestic industrial foundries." }
   ];
 
-  const filtered = ALL_STOCKS.filter(s =>
-    searchQuery.trim() === "" ||
-    s.code.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    s.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    s.sector.toLowerCase().includes(searchQuery.toLowerCase())
-  );
+  const filtered = ALL_STOCKS.filter(s => {
+    const matchesSector = sectorFilter === "ALL" || s.sector === sectorFilter;
+    const matchesSearch = searchQuery.trim() === "" ||
+      s.code.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      s.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      s.sector.toLowerCase().includes(searchQuery.toLowerCase());
+    return matchesSector && matchesSearch;
+  });
 
-  const sel = ALL_STOCKS.find(s => s.code === activeStock) || ALL_STOCKS[0];
+  const sectors = ["ALL", "Automobile", "Banking", "IT", "Defence & Aerospace", "Pharmaceuticals", "Telecommunications", "Renewable Energy", "Metals & Mining", "Real Estate", "Energy (Oil & Gas)"];
 
   return (
     <div
-      className={`rounded-2xl border-2 transition-all p-4 sm:p-5 space-y-3 backdrop-blur-xl relative overflow-hidden ${
+      className={`rounded-2xl border-2 transition-all p-4 sm:p-5 space-y-3.5 backdrop-blur-xl relative overflow-hidden ${
         isLight ? "bg-white border-black shadow-[4px_4px_0px_#000000]" : "bg-[#0F1420] border-black shadow-[4px_4px_0px_#000000]"
       }`}
       style={{ borderTop: "4px solid #F0B429" }}
     >
-      <div className="flex items-center justify-between gap-2 border-b border-white/10 pb-2.5">
+      {/* Header Bar */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-white/10 pb-3">
         <div className="flex items-center gap-2">
           <Building className="w-4 h-4 text-[#F0B429]" />
-          <span className="font-mono text-xs font-black uppercase text-white">
-            20 Listed Stocks
+          <span className="font-mono text-xs font-black uppercase text-white tracking-wider">
+            All 20 Listed Stocks & What They Do
           </span>
         </div>
-        <div className="relative w-44">
-          <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3 h-3 text-slate-400" />
+        <div className="relative w-full sm:w-48">
+          <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-slate-400" />
           <input
             type="text"
             placeholder="Search stock..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className="w-full pl-7 pr-2 py-1 text-[11px] font-mono rounded border border-white/15 bg-black/40 text-white focus:outline-none focus:border-[#F0B429]"
+            className="w-full pl-8 pr-2.5 py-1 text-xs font-mono rounded-lg border border-white/15 bg-black/50 text-white focus:outline-none focus:border-[#F0B429]"
           />
         </div>
       </div>
 
-      <div className="grid grid-cols-1 sm:grid-cols-[165px_1fr] gap-3">
-        <div className="space-y-1.5 max-h-[250px] overflow-y-auto pr-1 font-mono">
-          {filtered.map(s => {
-            const isActive = s.code === activeStock;
-            const isUp = s.change >= 0;
-            return (
-              <button
-                key={s.code}
-                type="button"
-                onClick={() => setActiveStock(s.code)}
-                className={`w-full p-2 rounded-lg text-left transition-all border cursor-pointer flex items-center justify-between text-xs ${
-                  isActive
-                    ? "bg-[#F0B429] text-black border-black font-black shadow-[2px_2px_0px_#000000]"
-                    : "bg-[#161D2B] border-white/10 text-white hover:bg-white/10"
-                }`}
-              >
+      {/* Sector Quick Filter Pills */}
+      <div className="flex items-center gap-1.5 overflow-x-auto pb-1 scrollbar-none text-[10px] font-mono">
+        {sectors.map(sec => (
+          <button
+            key={sec}
+            type="button"
+            onClick={() => setSectorFilter(sec)}
+            className={`px-2 py-0.5 rounded whitespace-nowrap transition-all cursor-pointer font-black border ${
+              sectorFilter === sec
+                ? "bg-[#F0B429] text-black border-black shadow-[2px_2px_0px_#000000]"
+                : "bg-white/10 border-white/10 text-slate-300 hover:bg-white/20"
+            }`}
+          >
+            {sec}
+          </button>
+        ))}
+      </div>
+
+      {/* Normal Full List Grid: 2 Columns of Clean Stock Cards with Descriptions */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-2 max-h-[460px] overflow-y-auto pr-1">
+        {filtered.map(s => {
+          const isUp = s.change >= 0;
+          return (
+            <div
+              key={s.code}
+              className="p-3 rounded-xl border-2 border-black bg-[#161D2B] space-y-1.5 shadow-[2px_2px_0px_#000000] flex flex-col justify-between"
+            >
+              <div className="flex items-start justify-between gap-2 border-b border-white/10 pb-1.5 font-mono">
                 <div>
-                  <span className="font-black block">{s.code}</span>
-                  <span className={`text-[9px] block truncate max-w-[80px] ${isActive ? "text-black/80" : "text-slate-400"}`}>
+                  <div className="flex items-center gap-1.5">
+                    <span className="px-1.5 py-0.2 rounded bg-[#F0B429] text-black font-black text-xs border border-black">
+                      {s.code}
+                    </span>
+                    <span className="font-black text-xs text-white">
+                      {s.name}
+                    </span>
+                  </div>
+                  <span className="text-[10px] text-slate-400 font-bold block mt-0.5">
                     {s.sector}
                   </span>
                 </div>
                 <div className="text-right">
-                  <span className="font-bold text-[11px] block">{s.price.toFixed(0)} IC</span>
-                  <span className={`text-[9px] font-bold ${isActive ? "text-black" : isUp ? "text-emerald-400" : "text-rose-400"}`}>
-                    {isUp ? "+" : ""}{s.change}%
+                  <span className="text-xs font-black text-white block">{s.price.toFixed(2)} IC</span>
+                  <span className={`text-[10px] font-black ${isUp ? "text-emerald-400" : "text-rose-400"}`}>
+                    {isUp ? "▲ +" : "▼ -"}{Math.abs(s.change)}%
                   </span>
                 </div>
-              </button>
-            );
-          })}
-        </div>
-
-        <div className="p-4 rounded-xl border-2 border-black bg-[#161D2B] space-y-3 shadow-[2px_2px_0px_#000000] flex flex-col justify-between">
-          <div className="space-y-2">
-            <div className="flex items-center justify-between border-b border-white/10 pb-2">
-              <div>
-                <span className="text-lg font-black font-mono text-[#F0B429] block">
-                  {sel.code} — {sel.name}
-                </span>
-                <span className="text-xs font-mono text-slate-300 font-bold">
-                  Sector: <strong className="text-white">{sel.sector}</strong>
-                </span>
               </div>
-              <div className="text-right font-mono">
-                <span className="text-base font-black text-white block">{sel.price.toFixed(2)} IC</span>
-                <span className={`text-xs font-bold ${sel.change >= 0 ? "text-emerald-400" : "text-rose-400"}`}>
-                  {sel.change >= 0 ? "▲ +" : "▼ -"}{Math.abs(sel.change)}% Spot
-                </span>
-              </div>
-            </div>
 
-            <div className="space-y-1">
-              <span className="text-[10px] font-mono uppercase text-[#F0B429] font-black tracking-wider block">
-                What this company does:
-              </span>
-              <p className="text-sm text-slate-100 font-medium leading-relaxed bg-black/40 p-3 rounded-lg border border-white/10">
-                {sel.desc}
+              <p className="text-[11px] text-slate-200 font-medium leading-relaxed bg-black/40 p-2 rounded border border-white/5">
+                {s.desc}
               </p>
             </div>
-          </div>
-
-          <div className="flex items-center justify-between text-[11px] font-mono text-slate-400 pt-2 border-t border-white/10">
-            <span>Market: <strong className="text-white">NSE / BSE India</strong></span>
-            <span>Update: <strong className="text-[#F0B429]">Every 6s</strong></span>
-          </div>
-        </div>
+          );
+        })}
       </div>
     </div>
   );
