@@ -87,20 +87,27 @@ export function Login() {
   return (
     <div
       className={`min-h-screen relative overflow-x-hidden flex flex-col justify-between p-4 sm:p-6 lg:p-8 font-sans selection:bg-[#F0B429] selection:text-black transition-colors ${
-        isDark ? 'bg-[#06080D] text-[#F0F2FF]' : 'bg-[#0F131D] text-[#F0F2FF]'
+        isDark ? 'bg-[#06080D] text-[#F0F2FF]' : 'bg-[#F1F5F9] text-slate-900'
       }`}
       style={{
-        backgroundImage: `
-          radial-gradient(ellipse at 15% 25%, rgba(240,180,41,0.07) 0%, transparent 55%),
-          radial-gradient(ellipse at 85% 85%, rgba(239,68,68,0.04) 0%, transparent 55%),
-          repeating-linear-gradient(45deg, rgba(240,180,41,0.03) 0px, rgba(240,180,41,0.03) 1px, transparent 1px, transparent 24px),
-          repeating-linear-gradient(-45deg, rgba(240,180,41,0.02) 0px, rgba(240,180,41,0.02) 1px, transparent 1px, transparent 24px)
-        `
+        backgroundImage: isDark
+          ? `
+            radial-gradient(ellipse at 15% 25%, rgba(240,180,41,0.07) 0%, transparent 55%),
+            radial-gradient(ellipse at 85% 85%, rgba(239,68,68,0.04) 0%, transparent 55%),
+            repeating-linear-gradient(45deg, rgba(240,180,41,0.03) 0px, rgba(240,180,41,0.03) 1px, transparent 1px, transparent 24px),
+            repeating-linear-gradient(-45deg, rgba(240,180,41,0.02) 0px, rgba(240,180,41,0.02) 1px, transparent 1px, transparent 24px)
+          `
+          : `
+            radial-gradient(ellipse at 15% 25%, rgba(240,180,41,0.12) 0%, transparent 55%),
+            radial-gradient(ellipse at 85% 85%, rgba(59,130,246,0.06) 0%, transparent 55%),
+            repeating-linear-gradient(45deg, rgba(0,0,0,0.02) 0px, rgba(0,0,0,0.02) 1px, transparent 1px, transparent 24px),
+            repeating-linear-gradient(-45deg, rgba(0,0,0,0.02) 0px, rgba(0,0,0,0.02) 1px, transparent 1px, transparent 24px)
+          `
       }}
     >
       {/* BACKGROUND AMBER & RED RADIAL GLOWS */}
-      <div className="absolute left-[-10%] top-[10%] w-[450px] h-[450px] bg-[#F0B429]/10 rounded-full blur-[120px] pointer-events-none" />
-      <div className="absolute right-[-10%] bottom-[10%] w-[450px] h-[450px] bg-red-500/05 rounded-full blur-[120px] pointer-events-none" />
+      <div className={`absolute left-[-10%] top-[10%] w-[450px] h-[450px] rounded-full blur-[120px] pointer-events-none ${isDark ? 'bg-[#F0B429]/10' : 'bg-[#F0B429]/15'}`} />
+      <div className={`absolute right-[-10%] bottom-[10%] w-[450px] h-[450px] rounded-full blur-[120px] pointer-events-none ${isDark ? 'bg-red-500/05' : 'bg-blue-500/10'}`} />
 
       {/* HEADER */}
       <header className="flex items-center justify-between z-10 max-w-6xl mx-auto w-full shrink-0">
@@ -113,8 +120,8 @@ export function Login() {
             <img src="/vite.svg" alt="Equity Arena Logo" className="w-10 h-10 object-cover" />
           </div>
           <div>
-            <h1 className="text-lg font-extrabold tracking-wider font-mono text-white">EQUITY ARENA</h1>
-            <p className="text-[10px] text-[#7B82A0] font-mono tracking-widest uppercase">
+            <h1 className={`text-lg font-extrabold tracking-wider font-mono ${isDark ? 'text-white' : 'text-slate-900'}`}>EQUITY ARENA</h1>
+            <p className={`text-[10px] font-mono tracking-widest uppercase ${isDark ? 'text-[#7B82A0]' : 'text-slate-500 font-bold'}`}>
               Ignite 8.0 • Trading Floor
             </p>
           </div>
@@ -122,7 +129,11 @@ export function Login() {
 
         <button
           onClick={toggleTheme}
-          className="p-2.5 rounded-xl border border-[#2D3142] bg-[#161B27] text-[#F0F2FF] hover:bg-[#1E2333] transition-all cursor-pointer shadow-sm"
+          className={`p-2.5 rounded-xl border transition-all cursor-pointer shadow-sm ${
+            isDark
+              ? 'border-[#2D3142] bg-[#161B27] text-[#F0F2FF] hover:bg-[#1E2333]'
+              : 'border-slate-300 bg-white text-slate-800 hover:bg-slate-100 shadow-sm'
+          }`}
           title="Toggle Theme"
         >
           {isDark ? <Sun className="w-5 h-5" /> : <Moon className="w-5 h-5" />}
@@ -135,14 +146,18 @@ export function Login() {
           
           {/* LEFT HERO COLUMN */}
           <div className="md:col-span-6 space-y-6 text-left">
-            <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-[#F0B429]/10 border border-[#F0B429]/30 text-[#F0B429] font-mono text-xs font-bold">
+            <div className={`inline-flex items-center gap-2 px-3 py-1.5 rounded-full font-mono text-xs font-bold border ${
+              isDark
+                ? 'bg-[#F0B429]/10 border-[#F0B429]/30 text-[#F0B429]'
+                : 'bg-amber-100 border-amber-300 text-amber-900'
+            }`}>
               <span className="w-2 h-2 rounded-full bg-[#F0B429] animate-pulse" />
               <span>OFFICIAL TOURNAMENT TRADING FLOOR</span>
             </div>
 
             {/* BOLD 64px 900 WEIGHT BRANDING */}
             <div className="space-y-0 font-black tracking-tight leading-none uppercase select-none">
-              <div className="text-5xl sm:text-6xl lg:text-[64px] font-black text-white leading-none tracking-tight">
+              <div className={`text-5xl sm:text-6xl lg:text-[64px] font-black leading-none tracking-tight ${isDark ? 'text-white' : 'text-slate-950'}`}>
                 EQUITY
               </div>
               <div className="text-5xl sm:text-6xl lg:text-[64px] font-black text-[#F0B429] leading-none tracking-tight mt-1">
@@ -151,40 +166,52 @@ export function Login() {
             </div>
 
             {/* 20px MUTED GREY SUBLINE */}
-            <p className="text-[20px] font-mono font-bold text-[#94A3B8] tracking-wide mt-2">
+            <p className={`text-[20px] font-mono font-bold tracking-wide mt-2 ${isDark ? 'text-[#94A3B8]' : 'text-slate-600'}`}>
               Trade. Think. Win.
             </p>
 
             {/* 15px SOFTER GREY DESCRIPTION */}
-            <p className="text-[15px] text-[#7B82A0] font-sans leading-relaxed max-w-md">
+            <p className={`text-[15px] font-sans leading-relaxed max-w-md ${isDark ? 'text-[#7B82A0]' : 'text-slate-600'}`}>
               Log in with your registered Email and Phone Number to access your tournament trading portal.
             </p>
 
             {/* 3 STAT CARDS WITH DEPTH */}
             <div className="grid grid-cols-3 gap-2.5 sm:gap-4 pt-2 font-mono">
-              <div className="p-3.5 rounded-xl border border-[#F0B429]/30 bg-[#0F1117]/80 backdrop-blur-xs shadow-md">
-                <div className="font-extrabold text-[#F0B429] text-base sm:text-lg mb-0.5 truncate font-mono">
+              <div className={`p-3.5 rounded-xl border backdrop-blur-xs shadow-md ${
+                isDark
+                  ? 'border-[#F0B429]/30 bg-[#0F1117]/80'
+                  : 'border-slate-300 bg-white shadow-sm'
+              }`}>
+                <div className="font-extrabold text-[#D97706] text-base sm:text-lg mb-0.5 truncate font-mono">
                   20,000 IC
                 </div>
-                <div className="text-[10px] sm:text-[11px] uppercase tracking-wider text-[#7B82A0] font-mono truncate">
+                <div className={`text-[10px] sm:text-[11px] uppercase tracking-wider font-mono truncate ${isDark ? 'text-[#7B82A0]' : 'text-slate-500 font-bold'}`}>
                   Starting Balance
                 </div>
               </div>
 
-              <div className="p-3.5 rounded-xl border border-[#F0B429]/30 bg-[#0F1117]/80 backdrop-blur-xs shadow-md">
-                <div className="font-extrabold text-[#22C55E] text-base sm:text-lg mb-0.5 truncate font-mono">
+              <div className={`p-3.5 rounded-xl border backdrop-blur-xs shadow-md ${
+                isDark
+                  ? 'border-[#F0B429]/30 bg-[#0F1117]/80'
+                  : 'border-slate-300 bg-white shadow-sm'
+              }`}>
+                <div className="font-extrabold text-[#16A34A] text-base sm:text-lg mb-0.5 truncate font-mono">
                   20 STOCKS
                 </div>
-                <div className="text-[10px] sm:text-[11px] uppercase tracking-wider text-[#7B82A0] font-mono truncate">
+                <div className={`text-[10px] sm:text-[11px] uppercase tracking-wider font-mono truncate ${isDark ? 'text-[#7B82A0]' : 'text-slate-500 font-bold'}`}>
                   Live Exchange
                 </div>
               </div>
 
-              <div className="p-3.5 rounded-xl border border-[#F0B429]/30 bg-[#0F1117]/80 backdrop-blur-xs shadow-md">
-                <div className="font-extrabold text-[#3B82F6] text-base sm:text-lg mb-0.5 truncate font-mono">
+              <div className={`p-3.5 rounded-xl border backdrop-blur-xs shadow-md ${
+                isDark
+                  ? 'border-[#F0B429]/30 bg-[#0F1117]/80'
+                  : 'border-slate-300 bg-white shadow-sm'
+              }`}>
+                <div className="font-extrabold text-[#2563EB] text-base sm:text-lg mb-0.5 truncate font-mono">
                   3 HOURS
                 </div>
-                <div className="text-[10px] sm:text-[11px] uppercase tracking-wider text-[#7B82A0] font-mono truncate">
+                <div className={`text-[10px] sm:text-[11px] uppercase tracking-wider font-mono truncate ${isDark ? 'text-[#7B82A0]' : 'text-slate-500 font-bold'}`}>
                   Live Session
                 </div>
               </div>
@@ -194,10 +221,10 @@ export function Login() {
           {/* RIGHT LOGIN CARD */}
           <div className="md:col-span-6">
             <div
-              className={`p-6 sm:p-8 rounded-2xl border transition-all shadow-[0_0_30px_rgba(240,180,41,0.08)] ${
+              className={`p-6 sm:p-8 rounded-2xl border transition-all ${
                 isDark
-                  ? 'bg-[#0F1117] border-[#F0B429]/30 text-white'
-                  : 'bg-white border-[#F0B429]/40 text-[#1A1D27]'
+                  ? 'bg-[#0F1117] border-[#F0B429]/30 text-white shadow-[0_0_30px_rgba(240,180,41,0.08)]'
+                  : 'bg-white border-2 border-black text-slate-900 shadow-[6px_6px_0px_#000000]'
               }`}
             >
               {/* TAB BADGE: TRADER LOG IN & ADMIN */}
@@ -254,11 +281,11 @@ export function Login() {
               {activeTab !== 'ADMIN' && (
                 <form onSubmit={handleTraderSubmit} className="space-y-5 font-mono">
                   <div>
-                    <label className="block text-xs font-bold uppercase tracking-wider mb-1.5 text-[#7B82A0]">
+                    <label className={`block text-xs font-bold uppercase tracking-wider mb-1.5 ${isDark ? 'text-[#7B82A0]' : 'text-slate-700'}`}>
                       Your Email Address
                     </label>
                     <div className="relative">
-                      <Mail className="absolute left-3.5 top-[16px] w-5 h-5 text-[#7B82A0]" />
+                      <Mail className={`absolute left-3.5 top-[16px] w-5 h-5 ${isDark ? 'text-[#7B82A0]' : 'text-slate-400'}`} />
                       <input
                         type="email"
                         required
@@ -268,18 +295,18 @@ export function Login() {
                         className={`w-full h-[52px] pl-11 pr-4 rounded-xl text-[15px] font-sans transition-all focus:outline-none focus:border-[#F0B429] focus:ring-2 focus:ring-[#F0B429]/30 ${
                           isDark
                             ? 'bg-[#161B27] border border-[#2D3142] text-white placeholder-[#555E78]'
-                            : 'bg-slate-50 border border-[#CBD5E1] text-[#1A1D27] placeholder-[#94A3B8]'
+                            : 'bg-white border-2 border-slate-300 text-slate-900 placeholder-slate-400 shadow-xs'
                         }`}
                       />
                     </div>
                   </div>
 
                   <div>
-                    <label className="block text-xs font-bold uppercase tracking-wider mb-1.5 text-[#7B82A0]">
+                    <label className={`block text-xs font-bold uppercase tracking-wider mb-1.5 ${isDark ? 'text-[#7B82A0]' : 'text-slate-700'}`}>
                       Your Phone Number (Login Password)
                     </label>
                     <div className="relative">
-                      <Phone className="absolute left-3.5 top-[16px] w-5 h-5 text-[#7B82A0]" />
+                      <Phone className={`absolute left-3.5 top-[16px] w-5 h-5 ${isDark ? 'text-[#7B82A0]' : 'text-slate-400'}`} />
                       <input
                         type="text"
                         required
@@ -289,7 +316,7 @@ export function Login() {
                         className={`w-full h-[52px] pl-11 pr-4 rounded-xl text-[15px] font-sans transition-all focus:outline-none focus:border-[#F0B429] focus:ring-2 focus:ring-[#F0B429]/30 ${
                           isDark
                             ? 'bg-[#161B27] border border-[#2D3142] text-white placeholder-[#555E78]'
-                            : 'bg-slate-50 border border-[#CBD5E1] text-[#1A1D27] placeholder-[#94A3B8]'
+                            : 'bg-white border-2 border-slate-300 text-slate-900 placeholder-slate-400 shadow-xs'
                         }`}
                       />
                     </div>
@@ -298,7 +325,7 @@ export function Login() {
                   <button
                     type="submit"
                     disabled={loading}
-                    className="w-full h-[52px] bg-[#F0B429] hover:bg-[#f5bc38] text-black font-extrabold text-[15px] font-mono uppercase tracking-wider rounded-xl shadow-lg shadow-[#F0B429]/20 flex items-center justify-center gap-2 transition-all hover:scale-[1.005] active:scale-[0.99] disabled:opacity-50 mt-6 cursor-pointer"
+                    className="w-full h-[52px] bg-[#F0B429] hover:bg-[#f5bc38] text-black font-extrabold text-[15px] font-mono uppercase tracking-wider rounded-xl shadow-lg shadow-[#F0B429]/20 flex items-center justify-center gap-2 transition-all hover:scale-[1.005] active:scale-[0.99] disabled:opacity-50 mt-6 cursor-pointer border-2 border-black"
                   >
                     {loading ? (
                       'AUTHENTICATING...'
@@ -310,7 +337,7 @@ export function Login() {
                     )}
                   </button>
 
-                  <p className="text-[11px] text-center text-[#7B82A0] mt-4 font-mono">
+                  <p className={`text-[11px] text-center mt-4 font-mono ${isDark ? 'text-[#7B82A0]' : 'text-slate-500 font-bold'}`}>
                     Can't log in? Ask the event admin to check your registration.
                   </p>
                 </form>
@@ -320,11 +347,11 @@ export function Login() {
               {activeTab === 'ADMIN' && (
                 <form onSubmit={handleAdminSubmit} className="space-y-5 font-mono">
                   <div>
-                    <label className="block text-xs font-bold uppercase tracking-wider mb-1.5 text-[#7B82A0]">
+                    <label className={`block text-xs font-bold uppercase tracking-wider mb-1.5 ${isDark ? 'text-[#7B82A0]' : 'text-slate-700'}`}>
                       Admin Email
                     </label>
                     <div className="relative">
-                      <Mail className="absolute left-3.5 top-[16px] w-5 h-5 text-[#7B82A0]" />
+                      <Mail className={`absolute left-3.5 top-[16px] w-5 h-5 ${isDark ? 'text-[#7B82A0]' : 'text-slate-400'}`} />
                       <input
                         type="email"
                         required
@@ -335,18 +362,18 @@ export function Login() {
                         className={`w-full h-[52px] pl-11 pr-4 rounded-xl text-[15px] font-sans transition-all focus:outline-none focus:border-[#F0B429] focus:ring-2 focus:ring-[#F0B429]/30 ${
                           isDark
                             ? 'bg-[#161B27] border border-[#2D3142] text-white placeholder-[#555E78]'
-                            : 'bg-slate-50 border border-[#CBD5E1] text-[#1A1D27] placeholder-[#94A3B8]'
+                            : 'bg-white border-2 border-slate-300 text-slate-900 placeholder-slate-400 shadow-xs'
                         }`}
                       />
                     </div>
                   </div>
 
                   <div>
-                    <label className="block text-xs font-bold uppercase tracking-wider mb-1.5 text-[#7B82A0]">
+                    <label className={`block text-xs font-bold uppercase tracking-wider mb-1.5 ${isDark ? 'text-[#7B82A0]' : 'text-slate-700'}`}>
                       Admin Password
                     </label>
                     <div className="relative">
-                      <Lock className="absolute left-3.5 top-[16px] w-5 h-5 text-[#7B82A0]" />
+                      <Lock className={`absolute left-3.5 top-[16px] w-5 h-5 ${isDark ? 'text-[#7B82A0]' : 'text-slate-400'}`} />
                       <input
                         type="password"
                         required
@@ -356,7 +383,7 @@ export function Login() {
                         className={`w-full h-[52px] pl-11 pr-4 rounded-xl text-[15px] font-sans transition-all focus:outline-none focus:border-[#F0B429] focus:ring-2 focus:ring-[#F0B429]/30 ${
                           isDark
                             ? 'bg-[#161B27] border border-[#2D3142] text-white placeholder-[#555E78]'
-                            : 'bg-slate-50 border border-[#CBD5E1] text-[#1A1D27] placeholder-[#94A3B8]'
+                            : 'bg-white border-2 border-slate-300 text-slate-900 placeholder-slate-400 shadow-xs'
                         }`}
                       />
                     </div>
@@ -365,7 +392,7 @@ export function Login() {
                   <button
                     type="submit"
                     disabled={loading}
-                    className="w-full h-[52px] bg-[#F0B429] hover:bg-[#f5bc38] text-black font-extrabold text-[15px] font-mono uppercase tracking-wider rounded-xl shadow-lg shadow-[#F0B429]/20 flex items-center justify-center gap-2 transition-all hover:scale-[1.005] active:scale-[0.99] disabled:opacity-50 mt-6 cursor-pointer"
+                    className="w-full h-[52px] bg-[#F0B429] hover:bg-[#f5bc38] text-black font-extrabold text-[15px] font-mono uppercase tracking-wider rounded-xl shadow-lg shadow-[#F0B429]/20 flex items-center justify-center gap-2 transition-all hover:scale-[1.005] active:scale-[0.99] disabled:opacity-50 mt-6 cursor-pointer border-2 border-black"
                   >
                     {loading ? (
                       'AUTHENTICATING...'
@@ -386,7 +413,7 @@ export function Login() {
       </main>
 
       {/* FOOTER */}
-      <footer className="z-10 max-w-6xl mx-auto w-full text-center text-xs font-mono text-[#7B82A0] pt-4 shrink-0">
+      <footer className={`z-10 max-w-6xl mx-auto w-full text-center text-xs font-mono pt-4 shrink-0 ${isDark ? 'text-[#7B82A0]' : 'text-slate-600 font-bold'}`}>
         Equity Arena • Real-Time Stock Market Trading Terminal • Ignite 8.0
       </footer>
     </div>
