@@ -147,33 +147,30 @@ function MarketInteractiveWidget({ isLight }) {
   const [searchQuery, setSearchQuery] = useState('');
 
   const ALL_STOCKS = [
-    // Main Stocks (15)
-    { code: 'HDFB', name: 'HDFB Bank', sector: 'Banking', price: 1800.00, change: 3.4, vol: '1.4M', isPenny: false, desc: 'Leading private bank providing retail banking, loans, mortgages, and credit facilities across India.' },
-    { code: 'ICCO', name: 'ICICO Bank', sector: 'Banking', price: 1250.00, change: -1.8, vol: '1.1M', isPenny: false, desc: 'Premier financial powerhouse known for digital consumer banking, corporate lending, and retail credit.' },
-    { code: 'TCX', name: 'TCX', sector: 'IT', price: 4200.00, change: 2.6, vol: '890K', isPenny: false, desc: 'Global leader in IT services, cloud infrastructure migration, and enterprise software consultancy.' },
-    { code: 'INFS', name: 'Infisys', sector: 'IT', price: 1600.00, change: -0.9, vol: '1.8M', isPenny: false, desc: 'Top Indian digital IT giant delivering enterprise technology, AI modernization, and cloud software solutions.' },
-    { code: 'HAAL', name: 'HAAL', sector: 'Defence & Aerospace', price: 5000.00, change: 6.2, vol: '720K', isPenny: false, desc: 'Premier state-backed aerospace contractor manufacturing military fighter aircraft and defense helicopters.' },
-    { code: 'BEEL', name: 'BEEL', sector: 'Defence & Aerospace', price: 420.00, change: 1.5, vol: '2.3M', isPenny: false, desc: 'High-tech defense electronics manufacturer producing tactical radar, sonar, and avionics systems.' },
-    { code: 'SURY', name: 'Suryan Pharma', sector: 'Pharmaceuticals', price: 1900.00, change: -2.1, vol: '640K', isPenny: false, desc: 'Major pharmaceutical giant developing specialty generic formulations, therapies, and active drugs.' },
-    { code: 'CPLX', name: 'Ciplex', sector: 'Pharmaceuticals', price: 1500.00, change: 4.1, vol: '910K', isPenny: false, desc: 'Global healthcare and pharmaceutical company specializing in respiratory medications and lifesaving treatments.' },
-    { code: 'AIRT', name: 'Bharat Airtell', sector: 'Telecommunications', price: 1850.00, change: 1.2, vol: '1.5M', isPenny: false, desc: 'Leading telecom provider delivering high-speed 5G mobile networks, broadband, and enterprise connectivity.' },
-    { code: 'TATV', name: 'Tatva Motors', sector: 'Automobile', price: 950.00, change: 3.8, vol: '3.1M', isPenny: false, desc: 'Leading automotive powerhouse manufacturing passenger cars, electric vehicles, and commercial heavy trucks.' },
-    { code: 'M&M', name: 'M&M', sector: 'Automobile', price: 3000.00, change: 4.5, vol: '1.2M', isPenny: false, desc: 'India’s top utility vehicle and tractor manufacturer specializing in rugged SUVs, farm machinery, and EVs.' },
-    { code: 'RELI', name: 'Reliants Industries', sector: 'Energy (Oil & Gas)', price: 2900.00, change: -1.2, vol: '2.0M', isPenny: false, desc: 'Mega-conglomerate dominating oil refining, petrochemicals, energy infrastructure, and retail.' },
-    { code: 'ONGC', name: 'ONGCO', sector: 'Energy (Oil & Gas)', price: 350.00, change: 0.8, vol: '4.5M', isPenny: false, desc: 'India’s largest upstream crude oil and natural gas exploration and offshore production company.' },
-    { code: 'DLEF', name: 'DLEF', sector: 'Real Estate', price: 850.00, change: 2.1, vol: '1.3M', isPenny: false, desc: 'Premier real estate builder developing luxury residential townships and prime commercial offices.' },
-    { code: 'GODR', name: 'Godrej Properties', sector: 'Real Estate', price: 2700.00, change: -1.5, vol: '550K', isPenny: false, desc: 'Top-tier sustainable real estate developer creating modern premium housing and urban living projects.' },
-
-    // Penny Stocks (5) (< 100 IC)
-    { code: 'IDEA', name: 'Vodfone Idea', sector: 'Telecommunications', price: 18.00, change: 8.5, vol: '12.4M', isPenny: true, desc: 'Turnaround telecom operator expanding high-frequency 4G/5G mobile subscriber coverage.' },
-    { code: 'SUZL', name: 'Suzlan', sector: 'Renewable Energy', price: 75.00, change: 5.8, vol: '8.7M', isPenny: true, desc: 'Wind energy technology leader supplying commercial wind turbines and green renewable power solutions.' },
-    { code: 'IRED', name: 'IREDAA', sector: 'Renewable Energy', price: 95.00, change: 7.2, vol: '6.2M', isPenny: true, desc: 'Non-banking financial agency financing national green energy, solar grids, and clean power initiatives.' },
-    { code: 'SAAL', name: 'SAAIL', sector: 'Metals & Mining', price: 98.00, change: -2.4, vol: '5.1M', isPenny: true, desc: 'State-owned steelmaking giant supplying industrial steel for mega infrastructure, railways, and construction.' },
-    { code: 'NMDC', name: 'NMDCX', sector: 'Metals & Mining', price: 90.00, change: 1.9, vol: '4.8M', isPenny: true, desc: 'India’s largest iron ore miner supplying essential raw mineral ores to domestic blast furnaces.' }
+    { code: 'HDFB', name: 'HDFB Bank', sector: 'Banking', price: 1800.00, change: 3.4, vol: '1.4M', desc: 'Leading private bank providing retail banking, loans, mortgages, and credit facilities across India.' },
+    { code: 'ICCO', name: 'ICICO Bank', sector: 'Banking', price: 1250.00, change: -1.8, vol: '1.1M', desc: 'Premier financial powerhouse known for digital consumer banking, corporate lending, and retail credit.' },
+    { code: 'TCX', name: 'TCX', sector: 'IT', price: 4200.00, change: 2.6, vol: '890K', desc: 'Global leader in IT services, cloud infrastructure migration, and enterprise software consultancy.' },
+    { code: 'INFS', name: 'Infisys', sector: 'IT', price: 1600.00, change: -0.9, vol: '1.8M', desc: 'Top Indian digital IT giant delivering enterprise technology, AI modernization, and cloud software solutions.' },
+    { code: 'HAAL', name: 'HAAL', sector: 'Defence & Aerospace', price: 5000.00, change: 6.2, vol: '720K', desc: 'Premier state-backed aerospace contractor manufacturing military fighter aircraft and defense helicopters.' },
+    { code: 'BEEL', name: 'BEEL', sector: 'Defence & Aerospace', price: 420.00, change: 1.5, vol: '2.3M', desc: 'High-tech defense electronics manufacturer producing tactical radar, sonar, and avionics systems.' },
+    { code: 'SURY', name: 'Suryan Pharma', sector: 'Pharmaceuticals', price: 1900.00, change: -2.1, vol: '640K', desc: 'Major pharmaceutical giant developing specialty generic formulations, therapies, and active drugs.' },
+    { code: 'CPLX', name: 'Ciplex', sector: 'Pharmaceuticals', price: 1500.00, change: 4.1, vol: '910K', desc: 'Global healthcare and pharmaceutical company specializing in respiratory medications and lifesaving treatments.' },
+    { code: 'AIRT', name: 'Bharat Airtell', sector: 'Telecommunications', price: 1850.00, change: 1.2, vol: '1.5M', desc: 'Leading telecom provider delivering high-speed 5G mobile networks, broadband, and enterprise connectivity.' },
+    { code: 'TATV', name: 'Tatva Motors', sector: 'Automobile', price: 950.00, change: 3.8, vol: '3.1M', desc: 'Leading automotive powerhouse manufacturing passenger cars, electric vehicles, and commercial heavy trucks.' },
+    { code: 'M&M', name: 'M&M', sector: 'Automobile', price: 3000.00, change: 4.5, vol: '1.2M', desc: 'India’s top utility vehicle and tractor manufacturer specializing in rugged SUVs, farm machinery, and EVs.' },
+    { code: 'RELI', name: 'Reliants Industries', sector: 'Energy (Oil & Gas)', price: 2900.00, change: -1.2, vol: '2.0M', desc: 'Mega-conglomerate dominating oil refining, petrochemicals, energy infrastructure, and retail.' },
+    { code: 'ONGC', name: 'ONGCO', sector: 'Energy (Oil & Gas)', price: 350.00, change: 0.8, vol: '4.5M', desc: 'India’s largest upstream crude oil and natural gas exploration and offshore production company.' },
+    { code: 'DLEF', name: 'DLEF', sector: 'Real Estate', price: 850.00, change: 2.1, vol: '1.3M', desc: 'Premier real estate builder developing luxury residential townships and prime commercial offices.' },
+    { code: 'GODR', name: 'Godrej Properties', sector: 'Real Estate', price: 2700.00, change: -1.5, vol: '550K', desc: 'Top-tier sustainable real estate developer creating modern premium housing and urban living projects.' },
+    { code: 'IDEA', name: 'Vodfone Idea', sector: 'Telecommunications', price: 18.00, change: 8.5, vol: '12.4M', desc: 'Turnaround telecom operator expanding high-frequency 4G/5G mobile subscriber coverage.' },
+    { code: 'SUZL', name: 'Suzlan', sector: 'Renewable Energy', price: 75.00, change: 5.8, vol: '8.7M', desc: 'Wind energy technology leader supplying commercial wind turbines and green renewable power solutions.' },
+    { code: 'IRED', name: 'IREDAA', sector: 'Renewable Energy', price: 95.00, change: 7.2, vol: '6.2M', desc: 'Non-banking financial agency financing national green energy, solar grids, and clean power initiatives.' },
+    { code: 'SAAL', name: 'SAAIL', sector: 'Metals & Mining', price: 98.00, change: -2.4, vol: '5.1M', desc: 'State-owned steelmaking giant supplying industrial steel for mega infrastructure, railways, and construction.' },
+    { code: 'NMDC', name: 'NMDCX', sector: 'Metals & Mining', price: 90.00, change: 1.9, vol: '4.8M', desc: 'India’s largest iron ore miner supplying essential raw mineral ores to domestic blast furnaces.' }
   ];
 
   const filteredStocks = ALL_STOCKS.filter(s => {
-    const matchesSector = sectorFilter === 'ALL' || (sectorFilter === 'PENNY' ? s.isPenny : s.sector === sectorFilter);
+    const matchesSector = sectorFilter === 'ALL' || s.sector === sectorFilter;
     const matchesSearch = searchQuery.trim() === '' || 
       s.code.toLowerCase().includes(searchQuery.toLowerCase()) || 
       s.name.toLowerCase().includes(searchQuery.toLowerCase()) || 
@@ -208,12 +205,12 @@ function MarketInteractiveWidget({ isLight }) {
               20 Listed Equities Directory
             </span>
             <span className={`text-[11px] font-medium block ${isLight ? 'text-slate-600' : 'text-slate-400'}`}>
-              Click any stock below to inspect its business profile
+              Click any stock below to inspect its live spot price and business profile
             </span>
           </div>
         </div>
         <span className="text-[11px] font-mono text-emerald-400 bg-emerald-500/15 px-2.5 py-1 rounded-md border border-emerald-500/30 font-bold">
-          20 / 20 ACTIVE
+          20 / 20 STOCKS ACTIVE
         </span>
       </div>
 
@@ -223,7 +220,7 @@ function MarketInteractiveWidget({ isLight }) {
           <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
           <input
             type="text"
-            placeholder="Search stock code (e.g. M&M, HAAL, RELI, SUZL)..."
+            placeholder="Search stock ticker, name, or sector (e.g. M&M, HAAL, RELI)..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             className={`w-full pl-10 pr-4 py-2 text-xs font-mono rounded-lg border-2 transition-all focus:outline-none focus:border-[#F0B429] ${
@@ -236,7 +233,7 @@ function MarketInteractiveWidget({ isLight }) {
 
         {/* Filter Badges */}
         <div className="flex items-center gap-1.5 overflow-x-auto pb-1 scrollbar-none text-[11px] font-mono">
-          {['ALL', 'PENNY', 'Automobile', 'Banking', 'IT', 'Defence & Aerospace', 'Pharmaceuticals', 'Telecommunications', 'Renewable Energy', 'Metals & Mining', 'Real Estate', 'Energy (Oil & Gas)'].map(sec => (
+          {['ALL', 'Automobile', 'Banking', 'IT', 'Defence & Aerospace', 'Pharmaceuticals', 'Telecommunications', 'Renewable Energy', 'Metals & Mining', 'Real Estate', 'Energy (Oil & Gas)'].map(sec => (
             <button
               key={sec}
               type="button"
@@ -249,7 +246,7 @@ function MarketInteractiveWidget({ isLight }) {
                     : 'bg-white/10 border-white/10 text-slate-300 hover:bg-white/20 hover:text-white'
               }`}
             >
-              {sec === 'PENNY' ? '⚡ PENNY (<100 IC)' : sec}
+              {sec}
             </button>
           ))}
         </div>
@@ -277,11 +274,9 @@ function MarketInteractiveWidget({ isLight }) {
                 <span className={`text-sm ${isActive ? 'text-[#F0B429]' : isLight ? 'text-slate-900' : 'text-white'}`}>
                   {s.code}
                 </span>
-                {s.isPenny && (
-                  <span className="text-[9px] bg-pink-500/25 text-pink-400 border border-pink-500/40 px-1.5 py-0.2 rounded font-black tracking-wider">
-                    PENNY
-                  </span>
-                )}
+                <span className="text-[10px] font-mono text-slate-400 truncate max-w-[70px]">
+                  {s.sector.split(' ')[0]}
+                </span>
               </div>
               <div className="flex items-baseline justify-between mt-1">
                 <span className={`text-xs font-mono font-black ${isLight ? 'text-slate-900' : 'text-slate-100'}`}>
@@ -316,11 +311,6 @@ function MarketInteractiveWidget({ isLight }) {
               <span className="text-[11px] font-mono px-2.5 py-0.5 rounded-md bg-[#232936] text-[#F0B429] font-black border border-[#F0B429]/30">
                 Sector: {sel.sector}
               </span>
-              {sel.isPenny && (
-                <span className="text-[11px] font-mono px-2.5 py-0.5 rounded-md bg-pink-500/20 text-pink-300 font-black border border-pink-500/40">
-                  ⚡ Penny Speculation (&lt;100 IC)
-                </span>
-              )}
             </div>
           </div>
           <div className="text-right font-mono shrink-0">
@@ -345,7 +335,7 @@ function MarketInteractiveWidget({ isLight }) {
             </div>
             <div>
               <span className="text-[10px] font-mono font-black uppercase text-[#F0B429] tracking-wider block mb-0.5">
-                Company & Business Summary:
+                Company & Sector Summary:
               </span>
               <p className="text-sm font-semibold leading-snug">
                 {sel.desc}
@@ -585,7 +575,7 @@ function NewsInteractiveWidget({ isLight }) {
       source: 'CNBC-TV18 DISPATCH',
       headline: 'Government announces ₹50,000 Crore mega subsidy package for green solar parks and giant wind turbine projects.',
       target: 'Renewable Energy (Suzlan, IREDAA)',
-      impact: 'PENNY BREAKOUT',
+      impact: 'SECTOR RALLY',
       color: UP,
       drift: '+20% to +35%'
     }
@@ -738,11 +728,11 @@ const STEPS = [
     id: 'radar',
     badge: 'SECTION 02 // READING THE TAPE',
     title: 'Work the Floor Like a Pro',
-    subtitle: '20 listed equities across Blue Chips, Mid Caps, and highly volatile Penny Stocks. Prices drift live every 6 seconds.',
+    subtitle: '20 listed equities across 10 major market sectors. Prices drift live every 6 seconds based on market forces and breaking news.',
     coreRule: 'Green means price is above open. Red means below. Trend is your only friend.',
     tactics: [
       'Watch the 15-minute sparkline trend on each stock card before touching the buy button.',
-      'Penny stocks (marked with the amber badge) swing wildly: high risk, explosive upside.',
+      'Filter stocks by sector (Automobile, Banking, IT, Energy, etc.) to spot sector-wide trends.',
       'Click any stock card to expand its full Candlestick chart and open its execution ticket.'
     ],
     proTip: 'Never chase a green candle that just rocketed up 20%. Let momentum cool off, wait for the pullback, or leave a limit order underneath the market.',
