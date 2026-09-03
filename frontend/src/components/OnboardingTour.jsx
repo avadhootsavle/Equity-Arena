@@ -110,26 +110,26 @@ function StockDirectoryWidget({ isLight }) {
   const [sectorFilter, setSectorFilter] = useState("ALL");
 
   const ALL_STOCKS = [
-    { code: "HDFB", name: "HDFB Bank", sector: "Banking", price: 1800.00, change: 3.4, desc: "Leading private bank for consumer banking, home loans, mortgages & credit facilities across India." },
-    { code: "ICCO", name: "ICICO Bank", sector: "Banking", price: 1250.00, change: -1.8, desc: "Financial powerhouse known for corporate credit, retail accounts, loans & digital finance." },
-    { code: "TCX", name: "TCX", sector: "IT", price: 4200.00, change: 2.6, desc: "Global IT consultancy leader delivering enterprise software, cloud infrastructure & tech solutions." },
-    { code: "INFS", name: "Infisys", sector: "IT", price: 1600.00, change: -0.9, desc: "Premier digital tech giant specializing in business software, AI modernization & IT engineering." },
-    { code: "HAAL", name: "HAAL", sector: "Defence & Aerospace", price: 5000.00, change: 6.2, desc: "State-backed aerospace defense manufacturer building fighter jets, helicopters & avionics." },
-    { code: "BEEL", name: "BEEL", sector: "Defence & Aerospace", price: 420.00, change: 1.5, desc: "High-tech military electronics contractor producing tactical radars, sonar & defense gear." },
-    { code: "SURY", name: "Suryan Pharma", sector: "Pharmaceuticals", price: 1900.00, change: -2.1, desc: "Major pharmaceutical giant developing specialty generic drugs, active ingredients & formulations." },
-    { code: "CPLX", name: "Ciplex", sector: "Pharmaceuticals", price: 1500.00, change: 4.1, desc: "Global healthcare provider leading in respiratory medicines, antibiotics & lifesaving therapies." },
-    { code: "AIRT", name: "Bharat Airtell", sector: "Telecommunications", price: 1850.00, change: 1.2, desc: "Leading telecom operator delivering national 5G mobile networks, broadband & digital enterprise." },
-    { code: "IDEA", name: "Vodfone Idea", sector: "Telecommunications", price: 18.00, change: 8.5, desc: "Telecom service provider delivering cellular coverage and 4G data networks across India." },
-    { code: "TATV", name: "Tatva Motors", sector: "Automobile", price: 950.00, change: 3.8, desc: "Automotive powerhouse producing passenger cars, commercial transport trucks & electric vehicles." },
-    { code: "M&M", name: "M&M", sector: "Automobile", price: 3000.00, change: 4.5, desc: "India’s top utility vehicle and tractor company specializing in rugged SUVs, farm tractors & EVs." },
-    { code: "RELI", name: "Reliants Industries", sector: "Energy (Oil & Gas)", price: 2900.00, change: -1.2, desc: "Mega-conglomerate dominating crude oil refining, petrochemicals, retail & energy infrastructure." },
-    { code: "ONGC", name: "ONGCO", sector: "Energy (Oil & Gas)", price: 350.00, change: 0.8, desc: "India’s largest state oil exploration and offshore natural gas production company." },
-    { code: "DLEF", name: "DLEF", sector: "Real Estate", price: 850.00, change: 2.1, desc: "Premier real estate builder constructing premium luxury townships, malls & corporate offices." },
-    { code: "GODR", name: "Godrej Properties", sector: "Real Estate", price: 2700.00, change: -1.5, desc: "Top sustainable developer building modern eco-friendly residential housing & urban apartments." },
-    { code: "SUZL", name: "Suzlan", sector: "Renewable Energy", price: 75.00, change: 5.8, desc: "Wind turbine manufacturing pioneer providing green renewable energy and clean power solutions." },
-    { code: "IRED", name: "IREDAA", sector: "Renewable Energy", price: 95.00, change: 7.2, desc: "Non-banking financial agency financing national green energy, solar parks & hydro grid projects." },
-    { code: "SAAL", name: "SAAIL", sector: "Metals & Mining", price: 98.00, change: -2.4, desc: "State-owned steelmaking titan supplying structural steel for railways, highways & infrastructure." },
-    { code: "NMDC", name: "NMDCX", sector: "Metals & Mining", price: 90.00, change: 1.9, desc: "India’s largest iron ore miner supplying essential raw minerals to domestic industrial foundries." }
+    { code: "HDFB", name: "HDFB Bank", sector: "Banking", price: 1800.00, change: 3.4, desc: "Leading private bank providing consumer banking, retail accounts, home loans, mortgages & commercial credit facilities across India." },
+    { code: "ICCO", name: "ICICO Bank", sector: "Banking", price: 1250.00, change: -1.8, desc: "Premier financial powerhouse known for digital banking, corporate finance, consumer credit & investment services." },
+    { code: "TCX", name: "TCX", sector: "IT", price: 4200.00, change: 2.6, desc: "Global IT consultancy leader delivering enterprise software, cloud infrastructure migration & digital transformation." },
+    { code: "INFS", name: "Infisys", sector: "IT", price: 1600.00, change: -0.9, desc: "Top digital IT giant specializing in next-generation cloud services, AI modernization & enterprise software development." },
+    { code: "HAAL", name: "HAAL", sector: "Defence & Aerospace", price: 5000.00, change: 6.2, desc: "State-backed defense aerospace contractor manufacturing military fighter aircraft, attack helicopters & avionics." },
+    { code: "BEEL", name: "BEEL", sector: "Defence & Aerospace", price: 420.00, change: 1.5, desc: "High-tech defense electronics pioneer manufacturing tactical radar, electronic warfare, sonar & defense communications." },
+    { code: "SURY", name: "Suryan Pharma", sector: "Pharmaceuticals", price: 1900.00, change: -2.1, desc: "Major pharmaceutical giant developing specialty generic formulations, active pharmaceutical ingredients & complex drugs." },
+    { code: "CPLX", name: "Ciplex", sector: "Pharmaceuticals", price: 1500.00, change: 4.1, desc: "Global healthcare company specializing in respiratory medications, lifesaving inhalers & pediatric therapies." },
+    { code: "AIRT", name: "Bharat Airtell", sector: "Telecommunications", price: 1850.00, change: 1.2, desc: "Leading telecom operator delivering high-speed nationwide 5G mobile networks, fiber broadband & cloud connectivity." },
+    { code: "IDEA", name: "Vodfone Idea", sector: "Telecommunications", price: 18.00, change: 8.5, desc: "Turnaround telecom service provider operating 4G/5G wireless voice and mobile data services across India." },
+    { code: "TATV", name: "Tatva Motors", sector: "Automobile", price: 950.00, change: 3.8, desc: "India’s top automotive manufacturer producing passenger cars, electric vehicles, commercial buses & heavy-duty haulage trucks." },
+    { code: "M&M", name: "M&M", sector: "Automobile", price: 3000.00, change: 4.5, desc: "India’s leading utility vehicle manufacturer specializing in rugged SUVs, agricultural farm tractors & electric transport." },
+    { code: "RELI", name: "Reliants Industries", sector: "Energy (Oil & Gas)", price: 2900.00, change: -1.2, desc: "Mega-conglomerate dominating oil refining, petrochemicals, retail supermarkets, green hydrogen & energy infrastructure." },
+    { code: "ONGC", name: "ONGCO", sector: "Energy (Oil & Gas)", price: 350.00, change: 0.8, desc: "India’s largest state-owned crude oil exploration and offshore natural gas production company." },
+    { code: "DLEF", name: "DLEF", sector: "Real Estate", price: 850.00, change: 2.1, desc: "Premier real estate builder constructing ultra-luxury residential townships, high-end shopping malls & corporate towers." },
+    { code: "GODR", name: "Godrej Properties", sector: "Real Estate", price: 2700.00, change: -1.5, desc: "Top sustainable developer building modern eco-friendly residential housing, gated communities & urban apartments." },
+    { code: "SUZL", name: "Suzlan", sector: "Renewable Energy", price: 75.00, change: 5.8, desc: "Wind turbine manufacturing pioneer providing comprehensive green renewable energy and clean wind power solutions." },
+    { code: "IRED", name: "IREDAA", sector: "Renewable Energy", price: 95.00, change: 7.2, desc: "Government financial agency financing national green energy, solar grids, wind parks & clean infrastructure projects." },
+    { code: "SAAL", name: "SAAIL", sector: "Metals & Mining", price: 98.00, change: -2.4, desc: "State-owned steelmaking titan supplying heavy structural steel for Indian railways, defense bridges & national highways." },
+    { code: "NMDC", name: "NMDCX", sector: "Metals & Mining", price: 90.00, change: 1.9, desc: "India’s largest iron ore miner extracting and supplying essential raw mineral ores to domestic industrial blast furnaces." }
   ];
 
   const filtered = ALL_STOCKS.filter(s => {
@@ -137,50 +137,53 @@ function StockDirectoryWidget({ isLight }) {
     const matchesSearch = searchQuery.trim() === "" ||
       s.code.toLowerCase().includes(searchQuery.toLowerCase()) ||
       s.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      s.sector.toLowerCase().includes(searchQuery.toLowerCase());
+      s.sector.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      s.desc.toLowerCase().includes(searchQuery.toLowerCase());
     return matchesSector && matchesSearch;
   });
 
   const sectors = ["ALL", "Automobile", "Banking", "IT", "Defence & Aerospace", "Pharmaceuticals", "Telecommunications", "Renewable Energy", "Metals & Mining", "Real Estate", "Energy (Oil & Gas)"];
 
   return (
-    <div
-      className={`rounded-2xl border-2 transition-all p-4 sm:p-5 space-y-3.5 backdrop-blur-xl relative overflow-hidden ${
-        isLight ? "bg-white border-black shadow-[4px_4px_0px_#000000]" : "bg-[#0F1420] border-black shadow-[4px_4px_0px_#000000]"
-      }`}
-      style={{ borderTop: "4px solid #F0B429" }}
-    >
-      {/* Header Bar */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-white/10 pb-3">
-        <div className="flex items-center gap-2">
-          <Building className="w-4 h-4 text-[#F0B429]" />
-          <span className="font-mono text-xs font-black uppercase text-white tracking-wider">
-            All 20 Listed Stocks & What They Do
-          </span>
+    <div className="w-full space-y-6">
+      {/* Header Banner */}
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 p-5 rounded-2xl border-2 border-black bg-[#0F1420] shadow-[4px_4px_0px_#000000]">
+        <div>
+          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-lg border-2 border-black bg-[#F0B429] text-black font-mono font-black text-xs shadow-[2px_2px_0px_#000000] mb-2">
+            <span>STAGE 02 // OFFICIAL DIRECTORY</span>
+          </div>
+          <h1 className="text-2xl sm:text-3xl font-black font-sans text-white tracking-tight uppercase">
+            All 20 Listed Stocks & Company Profiles
+          </h1>
+          <p className="text-xs sm:text-sm text-slate-300 font-medium mt-1">
+            Browse what every company manufactures and delivers so you can instantly trade breaking news catalysts.
+          </p>
         </div>
-        <div className="relative w-full sm:w-48">
-          <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-slate-400" />
+
+        {/* Search Bar */}
+        <div className="relative w-full md:w-72 shrink-0">
+          <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
           <input
             type="text"
-            placeholder="Search stock..."
+            placeholder="Search stock, sector, keyword..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className="w-full pl-8 pr-2.5 py-1 text-xs font-mono rounded-lg border border-white/15 bg-black/50 text-white focus:outline-none focus:border-[#F0B429]"
+            className="w-full pl-10 pr-3.5 py-2 text-xs font-mono rounded-xl border-2 border-black bg-black/60 text-white placeholder:text-slate-400 focus:outline-none focus:border-[#F0B429] shadow-[2px_2px_0px_#000000]"
           />
         </div>
       </div>
 
       {/* Sector Quick Filter Pills */}
-      <div className="flex items-center gap-1.5 overflow-x-auto pb-1 scrollbar-none text-[10px] font-mono">
+      <div className="flex items-center gap-2 overflow-x-auto pb-1 scrollbar-none text-xs font-mono">
         {sectors.map(sec => (
           <button
             key={sec}
             type="button"
             onClick={() => setSectorFilter(sec)}
-            className={`px-2 py-0.5 rounded whitespace-nowrap transition-all cursor-pointer font-black border ${
+            className={`px-3 py-1.5 rounded-xl whitespace-nowrap transition-all cursor-pointer font-black border-2 border-black ${
               sectorFilter === sec
-                ? "bg-[#F0B429] text-black border-black shadow-[2px_2px_0px_#000000]"
-                : "bg-white/10 border-white/10 text-slate-300 hover:bg-white/20"
+                ? "bg-[#F0B429] text-black shadow-[3px_3px_0px_#000000]"
+                : "bg-[#161D2B] text-slate-300 hover:bg-[#202738] shadow-[2px_2px_0px_#000000]"
             }`}
           >
             {sec}
@@ -188,40 +191,53 @@ function StockDirectoryWidget({ isLight }) {
         ))}
       </div>
 
-      {/* Normal Full List Grid: 2 Columns of Clean Stock Cards with Descriptions */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-2 max-h-[460px] overflow-y-auto pr-1">
-        {filtered.map(s => {
+      {/* Full Width Grid of All 20 Stock Cards */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3.5">
+        {filtered.map((s, idx) => {
           const isUp = s.change >= 0;
           return (
             <div
               key={s.code}
-              className="p-3 rounded-xl border-2 border-black bg-[#161D2B] space-y-1.5 shadow-[2px_2px_0px_#000000] flex flex-col justify-between"
+              className="p-4 rounded-2xl border-2 border-black bg-[#101522] hover:bg-[#141A2B] transition-all space-y-2.5 shadow-[4px_4px_0px_#000000] flex flex-col justify-between"
+              style={{ borderTop: "4px solid #F0B429" }}
             >
-              <div className="flex items-start justify-between gap-2 border-b border-white/10 pb-1.5 font-mono">
-                <div>
-                  <div className="flex items-center gap-1.5">
-                    <span className="px-1.5 py-0.2 rounded bg-[#F0B429] text-black font-black text-xs border border-black">
-                      {s.code}
-                    </span>
-                    <span className="font-black text-xs text-white">
-                      {s.name}
+              <div>
+                <div className="flex items-start justify-between gap-2 border-b border-white/10 pb-2 font-mono">
+                  <div>
+                    <div className="flex items-center gap-1.5">
+                      <span className="px-2 py-0.5 rounded-lg bg-[#F0B429] text-black font-black text-xs border border-black shadow-[1px_1px_0px_#000000]">
+                        {s.code}
+                      </span>
+                      <span className="font-black text-sm text-white">
+                        {s.name}
+                      </span>
+                    </div>
+                    <span className="text-[11px] text-[#F0B429] font-bold block mt-1">
+                      {s.sector}
                     </span>
                   </div>
-                  <span className="text-[10px] text-slate-400 font-bold block mt-0.5">
-                    {s.sector}
-                  </span>
+                  <div className="text-right">
+                    <span className="text-sm font-black text-white block">{s.price.toFixed(2)} IC</span>
+                    <span className={`text-[11px] font-black ${isUp ? "text-emerald-400" : "text-rose-400"}`}>
+                      {isUp ? "▲ +" : "▼ -"}{Math.abs(s.change)}% Spot
+                    </span>
+                  </div>
                 </div>
-                <div className="text-right">
-                  <span className="text-xs font-black text-white block">{s.price.toFixed(2)} IC</span>
-                  <span className={`text-[10px] font-black ${isUp ? "text-emerald-400" : "text-rose-400"}`}>
-                    {isUp ? "▲ +" : "▼ -"}{Math.abs(s.change)}%
+
+                <div className="pt-2">
+                  <span className="text-[9px] font-mono font-black uppercase text-slate-400 tracking-wider block mb-1">
+                    What this company does:
                   </span>
+                  <p className="text-xs text-slate-200 font-medium leading-relaxed bg-black/40 p-2.5 rounded-xl border border-white/5">
+                    {s.desc}
+                  </p>
                 </div>
               </div>
 
-              <p className="text-[11px] text-slate-200 font-medium leading-relaxed bg-black/40 p-2 rounded border border-white/5">
-                {s.desc}
-              </p>
+              <div className="flex items-center justify-between text-[10px] font-mono text-slate-400 pt-2 border-t border-white/10">
+                <span>Market: <strong className="text-white">NSE / BSE</strong></span>
+                <span>Ticker #{idx + 1}</span>
+              </div>
             </div>
           );
         })}
@@ -648,106 +664,114 @@ export function OnboardingTour({ isOpen, onClose }) {
           </div>
         </header>
 
-        {/* Center Main Stage: Full-Screen Takeover Two-Column Split (55% Left, 45% Right) */}
+        {/* Center Main Stage */}
         <main className="flex-1 w-full max-w-[1440px] mx-auto px-6 sm:px-12 py-8 sm:py-12 flex items-center">
-          <div className="w-full grid lg:grid-cols-[55%_45%] gap-10 lg:gap-14 items-center">
-            
-            {/* Left Content Column (55% width) */}
-            <div className="space-y-6 max-w-[720px]">
-              
-              {/* Bold Stage Indicator Pill */}
-              <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-lg border-2 border-black font-mono font-black text-xs tracking-wider shadow-[3px_3px_0px_#000000] bg-[#F0B429] text-black">
-                <span className="w-2 h-2 rounded-full bg-black animate-ping" />
-                <span>{step.badge}</span>
-              </div>
-
-              {/* High-Impact Main Heading */}
-              <div className="space-y-3">
-                <h1
-                  className={`font-black tracking-tight leading-[1.05] uppercase font-sans ${
-                    isLight ? "text-slate-950" : "text-white"
-                  }`}
-                  style={{ fontSize: "clamp(32px, 3.8vw, 48px)" }}
-                >
-                  {step.title}
-                </h1>
-                <p className={`text-sm sm:text-base font-medium leading-relaxed font-sans ${
-                  isLight ? "text-slate-700" : "text-slate-300"
-                }`}>
-                  {step.subtitle}
-                </p>
-              </div>
-
-              {/* Highlighted Dramatic CORE FLOOR RULE Box with Solid Neo-Brutalist Shadow */}
-              <div
-                className="p-4 sm:p-5 rounded-xl border-2 border-black shadow-[4px_4px_0px_#000000] transition-all bg-[#0F1420]"
-                style={{
-                  borderLeft: "5px solid #F0B429"
-                }}
-              >
-                <div className="flex items-center gap-2 mb-1.5">
-                  <span className="text-[10px] font-mono uppercase tracking-[0.2em] text-black bg-[#F0B429] px-2 py-0.5 rounded font-black">
-                    FLOOR RULE
-                  </span>
-                </div>
-                <p
-                  className={`font-bold leading-snug ${
-                    isLight ? "text-slate-950" : "text-white"
-                  }`}
-                  style={{ fontSize: "16px" }}
-                >
-                  {step.coreRule}
-                </p>
-              </div>
-
-              {/* Tactile BATTLEGROUND TACTICS List */}
-              <div className="space-y-2 pt-1">
-                <span className="text-xs font-mono uppercase tracking-wider font-bold text-[#8B949E] block">
-                  EXECUTION PLAYBOOK
-                </span>
-                <div className="space-y-2">
-                  {step.tactics.map((t, i) => (
-                    <div
-                      key={i}
-                      className="flex items-start gap-3 p-3 rounded-xl border-2 border-black bg-[#101522] shadow-[3px_3px_0px_#000000] transition-all"
-                    >
-                      <span className="w-5 h-5 rounded bg-[#F0B429] text-black font-mono font-black text-xs flex items-center justify-center flex-shrink-0 mt-0.5 border border-black shadow-[1px_1px_0px_#000000]">
-                        {i + 1}
-                      </span>
-                      <span className="text-xs sm:text-sm font-medium leading-relaxed text-slate-200">
-                        {t}
-                      </span>
-                    </div>
-                  ))}
-                </div>
-              </div>
-
-              {/* Veteran Trader Insight Box */}
-              <div
-                className="flex items-start gap-3.5 p-4 rounded-xl border-2 border-black bg-[#0C1E14] shadow-[4px_4px_0px_#000000] relative overflow-hidden"
-                style={{
-                  borderLeft: "5px solid #22C55E"
-                }}
-              >
-                <Award className="w-5 h-5 text-[#22C55E] flex-shrink-0 mt-0.5" />
-                <div className="relative z-10">
-                  <strong className="block font-mono text-[11px] uppercase mb-1 tracking-wider text-[#22C55E] font-black">
-                    PRO TRADER TIP:
-                  </strong>
-                  <span className="text-xs sm:text-sm leading-relaxed text-slate-200">
-                    {step.proTip}
-                  </span>
-                </div>
-              </div>
-
-            </div>
-
-            {/* Right Column: Institutional Terminal Preview Widget (45% width) */}
+          {step.id === "directory" ? (
+            /* Dedicated Full-Width Stock Directory Page */
             <div className="w-full">
               <Visual isLight={isLight} />
             </div>
+          ) : (
+            /* Standard 2-Column Split for other stages */
+            <div className="w-full grid lg:grid-cols-[55%_45%] gap-10 lg:gap-14 items-center">
+              
+              {/* Left Content Column */}
+              <div className="space-y-6 max-w-[720px]">
+                
+                {/* Bold Stage Indicator Pill */}
+                <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-lg border-2 border-black font-mono font-black text-xs tracking-wider shadow-[3px_3px_0px_#000000] bg-[#F0B429] text-black">
+                  <span className="w-2 h-2 rounded-full bg-black animate-ping" />
+                  <span>{step.badge}</span>
+                </div>
 
-          </div>
+                {/* High-Impact Main Heading */}
+                <div className="space-y-3">
+                  <h1
+                    className={`font-black tracking-tight leading-[1.05] uppercase font-sans ${
+                      isLight ? "text-slate-950" : "text-white"
+                    }`}
+                    style={{ fontSize: "clamp(32px, 3.8vw, 48px)" }}
+                  >
+                    {step.title}
+                  </h1>
+                  <p className={`text-sm sm:text-base font-medium leading-relaxed font-sans ${
+                    isLight ? "text-slate-700" : "text-slate-300"
+                  }`}>
+                    {step.subtitle}
+                  </p>
+                </div>
+
+                {/* Highlighted Dramatic CORE FLOOR RULE Box with Solid Neo-Brutalist Shadow */}
+                <div
+                  className="p-4 sm:p-5 rounded-xl border-2 border-black shadow-[4px_4px_0px_#000000] transition-all bg-[#0F1420]"
+                  style={{
+                    borderLeft: "5px solid #F0B429"
+                  }}
+                >
+                  <div className="flex items-center gap-2 mb-1.5">
+                    <span className="text-[10px] font-mono uppercase tracking-[0.2em] text-black bg-[#F0B429] px-2 py-0.5 rounded font-black">
+                      FLOOR RULE
+                    </span>
+                  </div>
+                  <p
+                    className={`font-bold leading-snug ${
+                      isLight ? "text-slate-950" : "text-white"
+                    }`}
+                    style={{ fontSize: "16px" }}
+                  >
+                    {step.coreRule}
+                  </p>
+                </div>
+
+                {/* Tactile BATTLEGROUND TACTICS List */}
+                <div className="space-y-2 pt-1">
+                  <span className="text-xs font-mono uppercase tracking-wider font-bold text-[#8B949E] block">
+                    EXECUTION PLAYBOOK
+                  </span>
+                  <div className="space-y-2">
+                    {step.tactics.map((t, i) => (
+                      <div
+                        key={i}
+                        className="flex items-start gap-3 p-3 rounded-xl border-2 border-black bg-[#101522] shadow-[3px_3px_0px_#000000] transition-all"
+                      >
+                        <span className="w-5 h-5 rounded bg-[#F0B429] text-black font-mono font-black text-xs flex items-center justify-center flex-shrink-0 mt-0.5 border border-black shadow-[1px_1px_0px_#000000]">
+                          {i + 1}
+                        </span>
+                        <span className="text-xs sm:text-sm font-medium leading-relaxed text-slate-200">
+                          {t}
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Veteran Trader Insight Box */}
+                <div
+                  className="flex items-start gap-3.5 p-4 rounded-xl border-2 border-black bg-[#0C1E14] shadow-[4px_4px_0px_#000000] relative overflow-hidden"
+                  style={{
+                    borderLeft: "5px solid #22C55E"
+                  }}
+                >
+                  <Award className="w-5 h-5 text-[#22C55E] flex-shrink-0 mt-0.5" />
+                  <div className="relative z-10">
+                    <strong className="block font-mono text-[11px] uppercase mb-1 tracking-wider text-[#22C55E] font-black">
+                      PRO TRADER TIP:
+                    </strong>
+                    <span className="text-xs sm:text-sm leading-relaxed text-slate-200">
+                      {step.proTip}
+                    </span>
+                  </div>
+                </div>
+
+              </div>
+
+              {/* Right Column: Institutional Terminal Preview Widget */}
+              <div className="w-full">
+                <Visual isLight={isLight} />
+              </div>
+
+            </div>
+          )}
         </main>
 
         {/* Bottom Navigation Deck */}
