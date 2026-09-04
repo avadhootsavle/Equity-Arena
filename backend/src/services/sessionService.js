@@ -534,12 +534,48 @@ async function checkSessionTimers() {
   return session;
 }
 
+/**
+ * Cleanly resets tournament session state back to NOT_STARTED (Admin Action)
+ */
+async function resetSession() {
+  await prisma.session.updateMany({
+    where: { status: { in: ['ACTIVE', 'PAUSED', 'LIQUIDATING'] } },
+    data: { status: 'ENDED' }
+  });
+
+  resetUsedTemplates();
+  clearBankruptTraders();
+
+  safeEmitSocket('session:ended', {
+    status: 'NOT_STARTED',
+    message: 'Tournament session reset by Admin. Waiting for next session.'
+  });
+
+  return {
+    id: null,
+    status: 'NOT_STARTED',
+    remainingSeconds: 0,
+    durationMinutes: 180,
+    liquidationBufferMinutes: 5,
+    macroCycleIntervalMinutes: 15,
+    volatilityLevel: activeVolatilityLevel,
+    volatilityCustomPercent: activeVolatilityCustomPercent,
+    isLiquidated: false,
+    isTradingLocked: true,
+    isPaused: false,
+    breakRemainingSeconds: 0,
+    breakDurationMinutes: 10,
+    breakNote: ''
+  };
+}
+
 module.exports = {
   getCurrentSession,
   startNewSession,
   pauseSession,
   resumeSession,
   stopSession,
+  resetSession,
   triggerAutoLiquidation,
   checkSessionTimers,
   getUsedTemplateIds,

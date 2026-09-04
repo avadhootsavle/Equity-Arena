@@ -479,22 +479,27 @@ export function TraderDashboard() {
     };
   }, [portfolio?.walletBalance]);
 
+  const [dismissedScorecard, setDismissedScorecard] = useState(false);
+
+  // Reset dismissedScorecard if a new session starts or resets
+  useEffect(() => {
+    if (sessionData?.status === 'ACTIVE' || sessionData?.status === 'NOT_STARTED') {
+      setDismissedScorecard(false);
+    }
+  }, [sessionData?.status]);
+
   /* ---------------------------------------------------------------
      Derived values
      --------------------------------------------------------------- */
   const isTradingLocked =
     !sessionData || sessionData.status !== 'ACTIVE' || sessionData.isTradingLocked;
 
-  // Session has reached liquidation phase or ended completely
+  // Session has ended completely (only show PostGameScorecard when session is officially ENDED)
   const isSessionFinished = 
     Boolean(
       sessionData?.id &&
-      sessionData?.status !== 'NOT_STARTED' &&
-      !sessionData?.isPaused &&
-      (
-        sessionData?.status === 'ENDED' ||
-        sessionData?.status === 'LIQUIDATING'
-      )
+      sessionData?.status === 'ENDED' &&
+      !sessionData?.isPaused
     );
 
   const baseCash =
@@ -699,13 +704,14 @@ export function TraderDashboard() {
   /* ---------------------------------------------------------------
      Render
      --------------------------------------------------------------- */
-  if (isSessionFinished) {
+  if (isSessionFinished && !dismissedScorecard) {
     return (
       <PostGameScorecard
         user={user}
         portfolio={portfolio}
         sessionData={sessionData}
         onWatchLeaderboard={() => window.open('/leaderboard', '_blank')}
+        onClose={() => setDismissedScorecard(true)}
       />
     );
   }
@@ -790,7 +796,7 @@ export function TraderDashboard() {
                   </span>
                 </div>
               ) : (
-                <div className="p-4 rounded-xl border border-rose-500/50 bg-rose-500/10 text-rose-400 animate-fadeIn shadow-lg flex items-center justify-between font-mono">
+                <div className="p-4 rounded-xl border border-rose-500/50 bg-rose-500/10 text-rose-400 animate-fadeIn shadow-lg flex items-center justify-between font-mono flex-wrap gap-3">
                   <div className="flex items-center gap-3">
                     <Lock className="w-6 h-6 text-rose-400 flex-shrink-0" />
                     <div>
@@ -798,9 +804,19 @@ export function TraderDashboard() {
                       <div className="text-xs text-rose-300/80">The session has ended and final standings are locked.</div>
                     </div>
                   </div>
-                  <span className="px-3 py-1 rounded bg-rose-500 text-white font-black text-xs uppercase tracking-wider flex-shrink-0">
-                    SESSION ENDED
-                  </span>
+                  <div className="flex items-center gap-2">
+                    <button
+                      type="button"
+                      onClick={() => setDismissedScorecard(false)}
+                      className="px-3.5 py-1.5 rounded-lg bg-[#F0B429] hover:bg-[#d9a120] text-slate-950 font-black text-xs uppercase tracking-wider transition-all cursor-pointer shadow-md flex items-center gap-1.5"
+                    >
+                      <Trophy className="w-3.5 h-3.5" />
+                      <span>View Final Scorecard</span>
+                    </button>
+                    <span className="px-3 py-1 rounded bg-rose-500 text-white font-black text-xs uppercase tracking-wider flex-shrink-0">
+                      SESSION ENDED
+                    </span>
+                  </div>
                 </div>
               )}
             </div>

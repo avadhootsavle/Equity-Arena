@@ -1118,7 +1118,7 @@ export function AdminDashboard() {
             </button>
           )}
 
-          {(adminSession.status === 'ACTIVE' || adminSession.status === 'ON_BREAK' || adminSession.status === 'PAUSED' || adminSession.isPaused) && (
+          {(adminSession.status === 'ACTIVE' || adminSession.status === 'ON_BREAK' || adminSession.status === 'PAUSED' || adminSession.status === 'LIQUIDATING' || adminSession.isPaused) && (
             <button
               type="button"
               onClick={handleEndSession}

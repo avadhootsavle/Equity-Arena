@@ -1,6 +1,6 @@
 const express = require('express');
 const { authenticateToken, requireAdmin } = require('../middleware/authMiddleware');
-const { getCurrentSession, startNewSession, pauseSession, resumeSession, stopSession } = require('../services/sessionService');
+const { getCurrentSession, startNewSession, pauseSession, resumeSession, stopSession, resetSession } = require('../services/sessionService');
 
 const router = express.Router();
 
@@ -90,6 +90,21 @@ router.post('/admin/session/stop', authenticateToken, requireAdmin, async (req, 
     console.error('Error stopping session:', err);
     const statusCode = err.status || 500;
     return res.status(statusCode).json({ error: err.message || 'Failed to stop session' });
+  }
+});
+
+// POST /api/admin/session/reset — Cleanly reset tournament session to NOT_STARTED (Admin Only)
+router.post('/admin/session/reset', authenticateToken, requireAdmin, async (req, res) => {
+  try {
+    const session = await resetSession();
+    return res.json({
+      message: 'Tournament session reset. Market returned to ready state.',
+      session
+    });
+  } catch (err) {
+    console.error('Error resetting session:', err);
+    const statusCode = err.status || 500;
+    return res.status(statusCode).json({ error: err.message || 'Failed to reset session' });
   }
 });
 

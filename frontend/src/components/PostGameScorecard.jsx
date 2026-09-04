@@ -9,7 +9,9 @@ import {
   Flame, 
   ShieldCheck, 
   Coins, 
-  Crown
+  Crown,
+  X,
+  ArrowLeft
 } from 'lucide-react';
 import { apiFetch } from '../services/api';
 
@@ -17,7 +19,7 @@ import { apiFetch } from '../services/api';
  * Super attractive, Neo-Brutalist Post-Game Tournament Performance & Scorecard Terminal.
  * Mounts when the 3-hour game concludes and auto-liquidation occurs.
  */
-export function PostGameScorecard({ user, portfolio, sessionData, onWatchLeaderboard }) {
+export function PostGameScorecard({ user, portfolio, sessionData, onWatchLeaderboard, onClose }) {
   const [leaderboard, setLeaderboard] = useState([]);
   const [loadingLeaderboard, setLoadingLeaderboard] = useState(true);
   const [copied, setCopied] = useState(false);
@@ -173,6 +175,17 @@ export function PostGameScorecard({ user, portfolio, sessionData, onWatchLeaderb
           <span className="px-3 py-1 bg-black border border-[#22C55E] text-[#22C55E] font-mono text-[11px] font-black uppercase rounded shadow-[2px_2px_0px_#000000]">
             TRADING CONCLUDED
           </span>
+          {onClose && (
+            <button
+              type="button"
+              onClick={onClose}
+              className="px-3 py-1 bg-[#F0B429] hover:bg-[#d9a120] text-black font-mono text-[11px] font-black uppercase rounded shadow-[2px_2px_0px_#000000] transition-all flex items-center gap-1.5 cursor-pointer"
+              title="Close scorecard and view trading dashboard"
+            >
+              <span>View Dashboard</span>
+              <X className="w-3.5 h-3.5" />
+            </button>
+          )}
         </div>
       </header>
 
@@ -297,13 +310,25 @@ export function PostGameScorecard({ user, portfolio, sessionData, onWatchLeaderb
           </div>
 
           {/* Clean Terminal Footer */}
-          <div className="pt-4 border-t-2 border-black/80 flex flex-wrap items-center justify-between gap-2 text-xs font-mono">
+          <div className="pt-4 border-t-2 border-black/80 flex flex-wrap items-center justify-between gap-3 text-xs font-mono">
             <span className="text-slate-400">
               Session verified by Equity Arena Engine • Official College Tournament
             </span>
-            <span className="px-2.5 py-1 bg-black border border-emerald-500 text-emerald-400 font-bold rounded shadow-[2px_2px_0px_#000000]">
-              OFFICIAL RESULTS FINALIZED
-            </span>
+            <div className="flex items-center gap-2">
+              {onClose && (
+                <button
+                  type="button"
+                  onClick={onClose}
+                  className="px-3 py-1 bg-[#1A2030] hover:bg-[#252E45] border border-slate-700 text-slate-200 font-bold rounded shadow-[2px_2px_0px_#000000] flex items-center gap-1.5 transition-all cursor-pointer"
+                >
+                  <ArrowLeft className="w-3.5 h-3.5" />
+                  <span>View Dashboard</span>
+                </button>
+              )}
+              <span className="px-2.5 py-1 bg-black border border-emerald-500 text-emerald-400 font-bold rounded shadow-[2px_2px_0px_#000000]">
+                OFFICIAL RESULTS FINALIZED
+              </span>
+            </div>
           </div>
         </motion.div>
       </main>

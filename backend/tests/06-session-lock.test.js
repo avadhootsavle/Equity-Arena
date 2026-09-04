@@ -104,6 +104,9 @@ async function runSessionLockTests() {
     // Clean up
     await prisma.transaction.deleteMany({ where: { userId: trader.id } });
     await prisma.user.delete({ where: { id: trader.id } });
+    if (testSession?.id) {
+      await prisma.session.deleteMany({ where: { id: testSession.id } });
+    }
 
     console.log(`Summary: Session Lock Suite (${passed} passed, ${failed} failed)\n`);
     return { passed, failed };

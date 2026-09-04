@@ -1020,6 +1020,10 @@ router.post(['/participants/reset-all', '/reset-all-participants'], async (req, 
             walletBalance: 20000,
             hasLoggedIn: false
           }
+        }),
+        prisma.session.updateMany({
+          where: { status: { in: ['ACTIVE', 'PAUSED', 'LIQUIDATING'] } },
+          data: { status: 'ENDED' }
         })
       ]);
 
