@@ -2,11 +2,9 @@
 node_modules/
 .pnpm-store/
 
-# Environment Variables & Secrets (Keep .env.example)
-.env
+# Environment Variables & Secrets
 .env.local
 .env.*.local
-!.env.example
 
 # Local Database & Cache
 .pgdata/
